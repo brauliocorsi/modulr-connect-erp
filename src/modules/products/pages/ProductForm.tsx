@@ -204,8 +204,8 @@ export default function ProductForm() {
           <aside className="space-y-4">
             <Card className="p-4 text-sm">
               <div className="o-section-title mb-2">Resumo</div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Preço</span><span>R$ {Number(form.list_price ?? 0).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Custo</span><span>R$ {Number(form.standard_cost ?? 0).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Preço</span><span>{fmtMoney(form.list_price)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Custo</span><span>{fmtMoney(form.standard_cost)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span>{form.type}</span></div>
             </Card>
           </aside>

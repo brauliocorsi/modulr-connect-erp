@@ -285,7 +285,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                             <Input className="h-8" type="number" step="0.01" value={l.discount_pct ?? 0} onChange={(e) => setLine(i, { discount_pct: Number(e.target.value) })} disabled={isLocked} />
                           </td>
                         )}
-                        <td className="px-3 py-2 text-right tabular-nums">R$ {Number(l.subtotal ?? 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.subtotal)}</td>
                         <td>
                           {!isLocked && (
                             <Button variant="ghost" size="icon" onClick={() => removeLine(i)}>
@@ -299,7 +299,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   <tfoot>
                     <tr className="border-t font-semibold">
                       <td colSpan={kind === "sale" ? 4 : 3} className="px-3 py-2 text-right">Total</td>
-                      <td className="px-3 py-2 text-right tabular-nums">R$ {totals.total.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(totals.total)}</td>
                       <td />
                     </tr>
                   </tfoot>
@@ -314,8 +314,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
             <Card className="p-4 text-sm">
               <div className="o-section-title mb-2">Resumo</div>
               <div className="flex justify-between"><span className="text-muted-foreground">Linhas</span><span>{lines.length}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>R$ {totals.untaxed.toFixed(2)}</span></div>
-              <div className="flex justify-between font-semibold mt-2"><span>Total</span><span>R$ {totals.total.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmtMoney(totals.untaxed)}</span></div>
+              <div className="flex justify-between font-semibold mt-2"><span>Total</span><span>{fmtMoney(totals.total)}</span></div>
             </Card>
           </aside>
         </div>
