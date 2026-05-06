@@ -1,4 +1,7 @@
 import { ListView } from "@/core/layout/ListView";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { LayoutGrid } from "lucide-react";
 
 export const PurchaseOrdersList = () => (
   <ListView
@@ -9,6 +12,11 @@ export const PurchaseOrdersList = () => (
     searchColumn="name"
     createTo="/purchase/orders/new"
     rowLink={(r: any) => `/purchase/orders/${r.id}`}
+    actions={
+      <Button asChild size="sm" variant="outline">
+        <Link to="/purchase/kanban"><LayoutGrid className="h-4 w-4 mr-1" /> Kanban</Link>
+      </Button>
+    }
     columns={[
       { key: "name", header: "Número" },
       { key: "partner", header: "Fornecedor", render: (r: any) => r.partners?.name },

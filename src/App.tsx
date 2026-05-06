@@ -28,6 +28,7 @@ import LotForm from "@/modules/inventory/pages/LotForm";
 import AdjustmentForm from "@/modules/inventory/pages/AdjustmentForm";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
+import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
@@ -94,6 +95,7 @@ const App = () => (
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
               <Route path="purchase/orders" element={<PurchaseOrdersList />} />
+              <Route path="purchase/kanban" element={<RfqKanban />} />
               <Route path="purchase/orders/new" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/orders/:id" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/suppliers" element={<SuppliersList />} />
