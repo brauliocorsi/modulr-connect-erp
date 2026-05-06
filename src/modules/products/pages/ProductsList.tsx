@@ -16,12 +16,12 @@ export default function ProductsList() {
         {
           key: "list_price",
           header: "Preço",
-          render: (r: any) => `R$ ${Number(r.list_price ?? 0).toFixed(2)}`,
+          render: (r: any) => `${fmtMoney(r.list_price)}`,
         },
         {
           key: "standard_cost",
           header: "Custo",
-          render: (r: any) => `R$ ${Number(r.standard_cost ?? 0).toFixed(2)}`,
+          render: (r: any) => `${fmtMoney(r.standard_cost)}`,
         },
       ]}
     />

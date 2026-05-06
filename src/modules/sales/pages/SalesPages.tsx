@@ -14,7 +14,7 @@ export const QuotationsList = () => (
       { key: "name", header: "Número" },
       { key: "partner", header: "Cliente", render: (r: any) => r.partners?.name },
       { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
-      { key: "amount_total", header: "Total", render: (r: any) => `R$ ${Number(r.amount_total ?? 0).toFixed(2)}` },
+      { key: "amount_total", header: "Total", render: (r: any) => `${fmtMoney(r.amount_total)}` },
     ]}
   />
 );
@@ -33,7 +33,7 @@ export const SalesOrdersList = () => (
       { key: "name", header: "Número" },
       { key: "partner", header: "Cliente", render: (r: any) => r.partners?.name },
       { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
-      { key: "amount_total", header: "Total", render: (r: any) => `R$ ${Number(r.amount_total ?? 0).toFixed(2)}` },
+      { key: "amount_total", header: "Total", render: (r: any) => `${fmtMoney(r.amount_total)}` },
     ]}
   />
 );
