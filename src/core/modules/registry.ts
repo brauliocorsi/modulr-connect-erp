@@ -64,6 +64,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Operações", label: "Transferências", to: "/inventory/transfers" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
       { section: "Relatórios", label: "Kardex", to: "/inventory/kardex" },
+      { section: "Relatórios", label: "Stock por Produto", to: "/reports/stock" },
       { section: "Relatórios", label: "Lotes/Séries", to: "/inventory/lots" },
       { section: "Configuração", label: "Armazéns", to: "/inventory/warehouses" },
       { section: "Configuração", label: "Locais", to: "/inventory/locations" },
