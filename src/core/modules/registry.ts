@@ -45,7 +45,9 @@ export const MODULES: ModuleDef[] = [
     description: "RFQs, pedidos de compra e fornecedores",
     menu: [
       { section: "Compras", label: "Pedidos de Compra", to: "/purchase/orders" },
+      { section: "Compras", label: "Kanban RFQ", to: "/purchase/kanban" },
       { section: "Cadastros", label: "Fornecedores", to: "/purchase/suppliers" },
+      { section: "Relatórios", label: "Compras por Estado", to: "/reports/purchase" },
     ],
   },
   {
