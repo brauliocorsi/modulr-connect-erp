@@ -921,6 +921,7 @@ export type Database = {
           purchase_uom_id: string | null
           sales_description: string | null
           standard_cost: number
+          tracking: Database["public"]["Enums"]["product_tracking"]
           type: Database["public"]["Enums"]["product_type"]
           uom_id: string | null
           updated_at: string
@@ -945,6 +946,7 @@ export type Database = {
           purchase_uom_id?: string | null
           sales_description?: string | null
           standard_cost?: number
+          tracking?: Database["public"]["Enums"]["product_tracking"]
           type?: Database["public"]["Enums"]["product_type"]
           uom_id?: string | null
           updated_at?: string
@@ -969,6 +971,7 @@ export type Database = {
           purchase_uom_id?: string | null
           sales_description?: string | null
           standard_cost?: number
+          tracking?: Database["public"]["Enums"]["product_tracking"]
           type?: Database["public"]["Enums"]["product_type"]
           uom_id?: string | null
           updated_at?: string
@@ -2048,6 +2051,7 @@ export type Database = {
         | "manufacturing"
         | "return"
       picking_state: "draft" | "waiting" | "ready" | "done" | "cancelled"
+      product_tracking: "none" | "lot" | "serial"
       product_type: "storable" | "consumable" | "service"
       purchase_state: "draft" | "rfq_sent" | "confirmed" | "done" | "cancelled"
       removal_strategy: "fifo" | "lifo" | "fefo" | "closest"
@@ -2200,6 +2204,7 @@ export const Constants = {
         "return",
       ],
       picking_state: ["draft", "waiting", "ready", "done", "cancelled"],
+      product_tracking: ["none", "lot", "serial"],
       product_type: ["storable", "consumable", "service"],
       purchase_state: ["draft", "rfq_sent", "confirmed", "done", "cancelled"],
       removal_strategy: ["fifo", "lifo", "fefo", "closest"],
