@@ -71,7 +71,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       const { data: o } = await supabase.from(ordersTable as any).select("*").eq("id", id!).maybeSingle();
       if (o) setOrder(o);
       const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", id!).order("sequence");
-      setLines((ls ?? []) as Line[]);
+      setLines((ls ?? []) as unknown as Line[]);
     })();
   }, [id, isNew, ordersTable, linesTable]);
 
