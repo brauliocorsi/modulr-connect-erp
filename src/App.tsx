@@ -25,6 +25,7 @@ import WarehouseForm from "@/modules/inventory/pages/WarehouseForm";
 import LocationForm from "@/modules/inventory/pages/LocationForm";
 import ReorderingForm from "@/modules/inventory/pages/ReorderingForm";
 import LotForm from "@/modules/inventory/pages/LotForm";
+import AdjustmentForm from "@/modules/inventory/pages/AdjustmentForm";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 
