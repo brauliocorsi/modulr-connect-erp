@@ -178,9 +178,20 @@ export default function ProductForm() {
                       <Label>Peso (kg)</Label>
                       <Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} />
                     </div>
-                    <div className="space-y-2">
+                  <div className="space-y-2">
                       <Label>Volume (m³)</Label>
                       <Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Rastreamento</Label>
+                      <Select value={form.tracking ?? "none"} onValueChange={(v) => setForm({ ...form, tracking: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sem rastreamento</SelectItem>
+                          <SelectItem value="lot">Por lote</SelectItem>
+                          <SelectItem value="serial">Por número de série</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </Card>

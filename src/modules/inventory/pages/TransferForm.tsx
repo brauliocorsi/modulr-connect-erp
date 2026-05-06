@@ -7,6 +7,7 @@ import { Chatter } from "@/core/chatter/Chatter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ export default function TransferForm() {
   const nav = useNavigate();
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
+  const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
 
   const load = async () => {
     const { data: p } = await supabase
@@ -27,9 +29,16 @@ export default function TransferForm() {
     setPicking(p);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name)")
+      .select("*, products(name,tracking)")
       .eq("picking_id", id!);
     setMoves(m ?? []);
+    const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
+    if (trackedIds.length) {
+      const { data: lots } = await supabase.from("stock_lots").select("id,name,product_id").in("product_id", trackedIds);
+      const map: Record<string, any[]> = {};
+      (lots ?? []).forEach((l: any) => { (map[l.product_id] ||= []).push(l); });
+      setLotsByProduct(map);
+    }
   };
   useEffect(() => {
     if (id) load();
@@ -43,10 +52,21 @@ export default function TransferForm() {
     });
   };
 
+  const setMoveLot = (idx: number, lot_id: string | null) => {
+    setMoves((p) => { const n = [...p]; n[idx] = { ...n[idx], lot_id }; return n; });
+  };
+
+  const createLot = async (idx: number, name: string) => {
+    const m = moves[idx];
+    const { data, error } = await supabase.from("stock_lots").insert({ product_id: m.product_id, name }).select("id,name,product_id").single();
+    if (error) return toast.error(error.message);
+    setLotsByProduct((prev) => ({ ...prev, [m.product_id]: [...(prev[m.product_id] ?? []), data] }));
+    setMoveLot(idx, (data as any).id);
+  };
+
   const validate = async () => {
-    // persist quantity_done first
     for (const m of moves) {
-      await supabase.from("stock_moves").update({ quantity_done: m.quantity_done ?? m.quantity }).eq("id", m.id);
+      await supabase.from("stock_moves").update({ quantity_done: m.quantity_done ?? m.quantity, lot_id: m.lot_id ?? null }).eq("id", m.id);
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
     if (error) return toast.error(error.message);
@@ -105,11 +125,15 @@ export default function TransferForm() {
                     <th className="text-left px-3 py-2">Produto</th>
                     <th className="text-left px-3 py-2 w-32">Demanda</th>
                     <th className="text-left px-3 py-2 w-32">Feito</th>
+                    <th className="text-left px-3 py-2 w-48">Lote/Série</th>
                     <th className="text-left px-3 py-2 w-32">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {moves.map((m, i) => (
+                  {moves.map((m, i) => {
+                    const tracking = m.products?.tracking ?? "none";
+                    const lots = lotsByProduct[m.product_id] ?? [];
+                    return (
                     <tr key={m.id} className="border-t">
                       <td className="px-3 py-2">{m.products?.name}</td>
                       <td className="px-3 py-2">{m.quantity}</td>
@@ -123,9 +147,38 @@ export default function TransferForm() {
                           onChange={(e) => setMoveDone(i, Number(e.target.value))}
                         />
                       </td>
+                      <td className="px-2 py-1">
+                        {tracking === "none" ? (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Select
+                              value={m.lot_id ?? ""}
+                              onValueChange={(v) => setMoveLot(i, v)}
+                              disabled={isLocked}
+                            >
+                              <SelectTrigger className="h-8"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                              <SelectContent>
+                                {lots.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            {!isLocked && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2"
+                                onClick={() => {
+                                  const name = prompt(`Novo ${tracking === "serial" ? "número de série" : "lote"}:`);
+                                  if (name) createLot(i, name);
+                                }}
+                              >+</Button>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-2">{m.state}</td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </Card>
