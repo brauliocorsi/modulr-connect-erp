@@ -1,3 +1,4 @@
+import { fmtMoney } from "@/lib/format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
@@ -90,7 +91,7 @@ export default function RfqKanban() {
                       <div className="text-xs text-muted-foreground mt-1">{it.partners?.name ?? "—"}</div>
                       <div className="flex justify-between mt-2 text-xs">
                         <span>{it.expected_date ?? ""}</span>
-                        <span className="font-semibold">R$ {Number(it.amount_total ?? 0).toFixed(2)}</span>
+                        <span className="font-semibold">{fmtMoney(it.amount_total)}</span>
                       </div>
                     </Link>
                   </Card>

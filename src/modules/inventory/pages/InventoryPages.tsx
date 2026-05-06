@@ -88,7 +88,7 @@ export const TransfersList = () => (
       {
         key: "scheduled_at",
         header: "Programado",
-        render: (r: any) => (r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-BR") : "—"),
+        render: (r: any) => (r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"),
       },
     ]}
   />
@@ -105,7 +105,7 @@ export const AdjustmentsList = () => (
     columns={[
       { key: "name", header: "Referência" },
       { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
-      { key: "scheduled_at", header: "Programado", render: (r: any) => r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-BR") : "—" },
+      { key: "scheduled_at", header: "Programado", render: (r: any) => r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—" },
     ]}
   />
 );
@@ -118,7 +118,7 @@ export const KardexList = () => (
     select="id, reference, quantity, quantity_done, state, created_at, products(name)"
     searchColumn="reference"
     columns={[
-      { key: "created_at", header: "Data", render: (r: any) => new Date(r.created_at).toLocaleString("pt-BR") },
+      { key: "created_at", header: "Data", render: (r: any) => new Date(r.created_at).toLocaleString("pt-PT") },
       { key: "product", header: "Produto", render: (r: any) => r.products?.name },
       { key: "quantity", header: "Qtd" },
       { key: "quantity_done", header: "Feito" },

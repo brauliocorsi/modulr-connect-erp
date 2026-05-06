@@ -114,7 +114,7 @@ export default function TransferForm() {
               <div><div className="o-section-title">Destino</div>{picking.dest?.full_path ?? picking.dest?.name}</div>
               <div><div className="o-section-title">Parceiro</div>{picking.partners?.name ?? "—"}</div>
               <div><div className="o-section-title">Origem doc.</div>{picking.origin ?? "—"}</div>
-              <div><div className="o-section-title">Programado</div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-BR") : "—"}</div>
+              <div><div className="o-section-title">Programado</div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-PT") : "—"}</div>
             </Card>
 
             <Card>

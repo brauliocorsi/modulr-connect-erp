@@ -1,3 +1,4 @@
+import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -21,7 +22,7 @@ export const PurchaseOrdersList = () => (
       { key: "name", header: "Número" },
       { key: "partner", header: "Fornecedor", render: (r: any) => r.partners?.name },
       { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
-      { key: "amount_total", header: "Total", render: (r: any) => `R$ ${Number(r.amount_total ?? 0).toFixed(2)}` },
+      { key: "amount_total", header: "Total", render: (r: any) => `${fmtMoney(r.amount_total)}` },
     ]}
   />
 );
