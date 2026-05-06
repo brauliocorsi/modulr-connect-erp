@@ -15,21 +15,25 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { TagPicker } from "../components/TagPicker";
+import { SuppliersTab } from "./tabs/SuppliersTab";
+import { VariantsTab } from "./tabs/VariantsTab";
+import { BomTab } from "./tabs/BomTab";
+import { StockTab } from "./tabs/StockTab";
+import { WooTab } from "./tabs/WooTab";
 
 export default function ProductForm() {
   const { id } = useParams();
   const isNew = !id || id === "new";
   const nav = useNavigate();
   const [form, setForm] = useState<any>({
-    name: "",
-    internal_ref: "",
-    type: "storable",
-    list_price: 0,
-    standard_cost: 0,
-    can_be_sold: true,
-    can_be_purchased: true,
-    can_be_manufactured: false,
-    description: "",
+    name: "", internal_ref: "", barcode: "", type: "storable",
+    list_price: 0, standard_cost: 0,
+    can_be_sold: true, can_be_purchased: true, can_be_manufactured: false,
+    description: "", short_description: "",
+    weight: 0, gross_weight: 0, net_weight: 0, volume: 0,
+    height: 0, width: 0, depth: 0,
+    published_woo: false, woo_status: "draft",
   });
 
   const { data: cats } = useQuery({
@@ -78,11 +82,7 @@ export default function ProductForm() {
         breadcrumb={[{ label: "Produtos", to: "/products" }, { label: form.name || "Novo" }]}
         backTo="/products"
         state={form.active === false ? { label: "Arquivado", tone: "destructive" } : undefined}
-        actions={
-          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-            Salvar
-          </Button>
-        }
+        actions={<Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>}
         onDelete={isNew ? undefined : remove}
       />
       <PageBody>
@@ -95,8 +95,12 @@ export default function ProductForm() {
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Referência interna</Label>
+                  <Label>Referência interna (SKU)</Label>
                   <Input value={form.internal_ref ?? ""} onChange={(e) => setForm({ ...form, internal_ref: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Código de barras (EAN/UPC)</Label>
+                  <Input value={form.barcode ?? ""} onChange={(e) => setForm({ ...form, barcode: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo</Label>
@@ -113,29 +117,41 @@ export default function ProductForm() {
                   <Label>Categoria</Label>
                   <Select value={form.category_id ?? ""} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {cats?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{cats?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Unidade</Label>
+                  <Label>UoM venda</Label>
                   <Select value={form.uom_id ?? ""} onValueChange={(v) => setForm({ ...form, uom_id: v })}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      {uoms?.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{uoms?.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>UoM compra</Label>
+                  <Select value={form.purchase_uom_id ?? ""} onValueChange={(v) => setForm({ ...form, purchase_uom_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{uoms?.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label>Etiquetas</Label>
+                  <TagPicker productId={isNew ? undefined : id} />
                 </div>
               </div>
             </Card>
 
             <Tabs defaultValue="sales">
-              <TabsList>
+              <TabsList className="flex-wrap">
                 <TabsTrigger value="sales">Vendas</TabsTrigger>
                 <TabsTrigger value="purchase">Compras</TabsTrigger>
                 <TabsTrigger value="inventory">Inventário</TabsTrigger>
+                <TabsTrigger value="variants" disabled={isNew}>Variantes</TabsTrigger>
+                <TabsTrigger value="bom" disabled={isNew}>BOM/Kit</TabsTrigger>
+                <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
+                <TabsTrigger value="woo">WooCommerce</TabsTrigger>
               </TabsList>
+
               <TabsContent value="sales" className="pt-4">
                 <Card className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
@@ -154,7 +170,8 @@ export default function ProductForm() {
                   </div>
                 </Card>
               </TabsContent>
-              <TabsContent value="purchase" className="pt-4">
+
+              <TabsContent value="purchase" className="pt-4 space-y-4">
                 <Card className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_purchased} onCheckedChange={(v) => setForm({ ...form, can_be_purchased: v })} />
@@ -166,23 +183,28 @@ export default function ProductForm() {
                       <Input type="number" step="0.01" value={form.standard_cost} onChange={(e) => setForm({ ...form, standard_cost: Number(e.target.value) })} />
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Descrição de compra</Label>
+                    <Textarea rows={2} value={form.purchase_description ?? ""} onChange={(e) => setForm({ ...form, purchase_description: e.target.value })} />
+                  </div>
                 </Card>
+                {!isNew && <Card className="p-6"><SuppliersTab productId={id!} /></Card>}
               </TabsContent>
+
               <TabsContent value="inventory" className="pt-4">
                 <Card className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_manufactured} onCheckedChange={(v) => setForm({ ...form, can_be_manufactured: v })} />
-                    <Label>Pode ser fabricado (requer módulo de Manufatura)</Label>
+                    <Label>Pode ser fabricado</Label>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Peso (kg)</Label>
-                      <Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} />
-                    </div>
-                  <div className="space-y-2">
-                      <Label>Volume (m³)</Label>
-                      <Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} />
-                    </div>
+                  <div className="grid sm:grid-cols-3 gap-4">
+                    <div className="space-y-2"><Label>Peso (kg)</Label><Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Peso bruto (kg)</Label><Input type="number" step="0.001" value={form.gross_weight ?? 0} onChange={(e) => setForm({ ...form, gross_weight: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Peso líquido (kg)</Label><Input type="number" step="0.001" value={form.net_weight ?? 0} onChange={(e) => setForm({ ...form, net_weight: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Volume (m³)</Label><Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Altura (cm)</Label><Input type="number" step="0.1" value={form.height ?? 0} onChange={(e) => setForm({ ...form, height: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Largura (cm)</Label><Input type="number" step="0.1" value={form.width ?? 0} onChange={(e) => setForm({ ...form, width: Number(e.target.value) })} /></div>
+                    <div className="space-y-2"><Label>Profundidade (cm)</Label><Input type="number" step="0.1" value={form.depth ?? 0} onChange={(e) => setForm({ ...form, depth: Number(e.target.value) })} /></div>
                     <div className="space-y-2 sm:col-span-2">
                       <Label>Rastreamento</Label>
                       <Select value={form.tracking ?? "none"} onValueChange={(v) => setForm({ ...form, tracking: v })}>
@@ -197,6 +219,11 @@ export default function ProductForm() {
                   </div>
                 </Card>
               </TabsContent>
+
+              {!isNew && <TabsContent value="variants" className="pt-4"><Card className="p-6"><VariantsTab productId={id!} /></Card></TabsContent>}
+              {!isNew && <TabsContent value="bom" className="pt-4"><Card className="p-6"><BomTab productId={id!} /></Card></TabsContent>}
+              {!isNew && <TabsContent value="stock" className="pt-4"><Card className="p-6"><StockTab productId={id!} /></Card></TabsContent>}
+              <TabsContent value="woo" className="pt-4"><Card className="p-6"><WooTab form={form} setForm={setForm} /></Card></TabsContent>
             </Tabs>
 
             {!isNew && <RecordSidebar recordType="product" recordId={id!} />}
@@ -208,6 +235,7 @@ export default function ProductForm() {
               <div className="flex justify-between"><span className="text-muted-foreground">Preço</span><span>{fmtMoney(form.list_price)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Custo</span><span>{fmtMoney(form.standard_cost)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span>{form.type}</span></div>
+              {form.barcode && <div className="flex justify-between"><span className="text-muted-foreground">Barcode</span><span>{form.barcode}</span></div>}
             </Card>
           </aside>
         </div>
