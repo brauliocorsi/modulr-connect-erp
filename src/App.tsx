@@ -25,6 +25,7 @@ import WarehouseForm from "@/modules/inventory/pages/WarehouseForm";
 import LocationForm from "@/modules/inventory/pages/LocationForm";
 import ReorderingForm from "@/modules/inventory/pages/ReorderingForm";
 import LotForm from "@/modules/inventory/pages/LotForm";
+import AdjustmentForm from "@/modules/inventory/pages/AdjustmentForm";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 
@@ -104,6 +105,8 @@ const App = () => (
               <Route path="inventory/transfers" element={<TransfersList />} />
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
               <Route path="inventory/adjustments" element={<AdjustmentsList />} />
+              <Route path="inventory/adjustments/new" element={<AdjustmentForm />} />
+              <Route path="inventory/adjustments/:id" element={<AdjustmentForm />} />
               <Route path="inventory/kardex" element={<KardexList />} />
               <Route path="inventory/lots" element={<LotsList />} />
               <Route path="inventory/lots/new" element={<LotForm />} />

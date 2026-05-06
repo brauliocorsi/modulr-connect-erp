@@ -1973,6 +1973,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
