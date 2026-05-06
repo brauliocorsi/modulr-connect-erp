@@ -28,6 +28,7 @@ import LotForm from "@/modules/inventory/pages/LotForm";
 import AdjustmentForm from "@/modules/inventory/pages/AdjustmentForm";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
+import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
