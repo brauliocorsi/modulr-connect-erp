@@ -16,8 +16,17 @@ import PartnerForm from "@/modules/partners/pages/PartnerForm";
 import OrderForm from "@/core/orders/OrderForm";
 import TransferForm from "@/modules/inventory/pages/TransferForm";
 import CategoriesList from "@/modules/products/pages/CategoriesList";
+import CategoryForm from "@/modules/products/pages/CategoryForm";
 import AttributesList from "@/modules/products/pages/AttributesList";
+import AttributeForm from "@/modules/products/pages/AttributeForm";
 import BomList from "@/modules/products/pages/BomList";
+import BomForm from "@/modules/products/pages/BomForm";
+import WarehouseForm from "@/modules/inventory/pages/WarehouseForm";
+import LocationForm from "@/modules/inventory/pages/LocationForm";
+import ReorderingForm from "@/modules/inventory/pages/ReorderingForm";
+import LotForm from "@/modules/inventory/pages/LotForm";
+import PricelistForm from "@/modules/sales/pages/PricelistForm";
+import GroupForm from "@/modules/settings/pages/GroupForm";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
@@ -59,8 +68,14 @@ const App = () => (
               <Route path="products/new" element={<ProductForm />} />
               <Route path="products/:id" element={<ProductForm />} />
               <Route path="products/categories" element={<CategoriesList />} />
+              <Route path="products/categories/new" element={<CategoryForm />} />
+              <Route path="products/categories/:id" element={<CategoryForm />} />
               <Route path="products/attributes" element={<AttributesList />} />
+              <Route path="products/attributes/new" element={<AttributeForm />} />
+              <Route path="products/attributes/:id" element={<AttributeForm />} />
               <Route path="products/bom" element={<BomList />} />
+              <Route path="products/bom/new" element={<BomForm />} />
+              <Route path="products/bom/:id" element={<BomForm />} />
 
               {/* Sales */}
               <Route path="sales" element={<Navigate to="/sales/quotations" replace />} />
@@ -72,6 +87,8 @@ const App = () => (
               <Route path="sales/customers/new" element={<PartnerForm defaultKind="customer" />} />
               <Route path="sales/customers/:id" element={<PartnerForm defaultKind="customer" />} />
               <Route path="sales/pricelists" element={<PricelistsList />} />
+              <Route path="sales/pricelists/new" element={<PricelistForm />} />
+              <Route path="sales/pricelists/:id" element={<PricelistForm />} />
 
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
@@ -82,11 +99,6 @@ const App = () => (
               <Route path="purchase/suppliers/new" element={<PartnerForm defaultKind="supplier" />} />
               <Route path="purchase/suppliers/:id" element={<PartnerForm defaultKind="supplier" />} />
 
-              {/* Purchase */}
-              <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
-              <Route path="purchase/orders" element={<PurchaseOrdersList />} />
-              <Route path="purchase/suppliers" element={<SuppliersList />} />
-
               {/* Inventory */}
               <Route path="inventory" element={<InventoryDashboard />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
@@ -94,16 +106,27 @@ const App = () => (
               <Route path="inventory/adjustments" element={<AdjustmentsList />} />
               <Route path="inventory/kardex" element={<KardexList />} />
               <Route path="inventory/lots" element={<LotsList />} />
+              <Route path="inventory/lots/new" element={<LotForm />} />
+              <Route path="inventory/lots/:id" element={<LotForm />} />
               <Route path="inventory/warehouses" element={<WarehousesList />} />
+              <Route path="inventory/warehouses/new" element={<WarehouseForm />} />
+              <Route path="inventory/warehouses/:id" element={<WarehouseForm />} />
               <Route path="inventory/locations" element={<LocationsList />} />
+              <Route path="inventory/locations/new" element={<LocationForm />} />
+              <Route path="inventory/locations/:id" element={<LocationForm />} />
               <Route path="inventory/reordering" element={<ReorderingList />} />
+              <Route path="inventory/reordering/new" element={<ReorderingForm />} />
+              <Route path="inventory/reordering/:id" element={<ReorderingForm />} />
 
               {/* Settings */}
               <Route path="settings" element={<Navigate to="/settings/apps" replace />} />
               <Route path="settings/apps" element={<AppsSettings />} />
               <Route path="settings/users" element={<UsersSettings />} />
               <Route path="settings/groups" element={<GroupsSettings />} />
+              <Route path="settings/groups/new" element={<GroupForm />} />
+              <Route path="settings/groups/:id" element={<GroupForm />} />
               <Route path="settings/company" element={<CompanySettings />} />
+
 
               <Route path="*" element={<NotFound />} />
             </Route>

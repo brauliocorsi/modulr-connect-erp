@@ -3,7 +3,10 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList, Zap } from "lucide-react";
+import { toast } from "sonner";
+
 
 export const InventoryDashboard = () => {
   const { data } = useQuery({
@@ -31,10 +34,25 @@ export const InventoryDashboard = () => {
     { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary" },
   ];
 
+  const runReorder = async () => {
+    const { data, error } = await supabase.functions.invoke("reordering-cron");
+    if (error) return toast.error(error.message);
+    toast.success(`Reabastecimento executado (${(data as any)?.created ?? 0} RFQs criadas)`);
+  };
+
   return (
     <>
-      <PageHeader title="Visão geral do Inventário" breadcrumb={[{ label: "Inventário" }]} />
+      <PageHeader
+        title="Visão geral do Inventário"
+        breadcrumb={[{ label: "Inventário" }]}
+        actions={
+          <Button size="sm" variant="outline" onClick={runReorder}>
+            <Zap className="h-4 w-4 mr-1" /> Rodar reabastecimento
+          </Button>
+        }
+      />
       <PageBody>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((c) => (
             <Card key={c.title} className="p-5">
@@ -113,6 +131,8 @@ export const LotsList = () => (
     table="stock_lots"
     select="id, name, expiration_date, products(name)"
     searchColumn="name"
+    createTo="/inventory/lots/new"
+    rowLink={(r: any) => `/inventory/lots/${r.id}`}
     columns={[
       { key: "name", header: "Lote/Série" },
       { key: "product", header: "Produto", render: (r: any) => r.products?.name },
@@ -121,12 +141,15 @@ export const LotsList = () => (
   />
 );
 
+
 export const WarehousesList = () => (
   <ListView
     title="Armazéns"
     breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Armazéns" }]}
     table="warehouses"
     searchColumn="name"
+    createTo="/inventory/warehouses/new"
+    rowLink={(r: any) => `/inventory/warehouses/${r.id}`}
     columns={[
       { key: "code", header: "Código" },
       { key: "name", header: "Nome" },
@@ -142,6 +165,8 @@ export const LocationsList = () => (
     table="stock_locations"
     select="id, name, type, full_path, warehouses(name)"
     searchColumn="name"
+    createTo="/inventory/locations/new"
+    rowLink={(r: any) => `/inventory/locations/${r.id}`}
     columns={[
       { key: "full_path", header: "Caminho" },
       { key: "name", header: "Nome" },
@@ -158,6 +183,8 @@ export const ReorderingList = () => (
     table="reordering_rules"
     select="id, min_qty, max_qty, multiple_qty, products(name), warehouses(name)"
     searchColumn="id"
+    createTo="/inventory/reordering/new"
+    rowLink={(r: any) => `/inventory/reordering/${r.id}`}
     columns={[
       { key: "product", header: "Produto", render: (r: any) => r.products?.name },
       { key: "warehouse", header: "Armazém", render: (r: any) => r.warehouses?.name },
@@ -167,3 +194,4 @@ export const ReorderingList = () => (
     ]}
   />
 );
+
