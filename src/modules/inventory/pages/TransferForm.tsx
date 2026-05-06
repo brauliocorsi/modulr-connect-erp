@@ -18,6 +18,7 @@ export default function TransferForm() {
   const nav = useNavigate();
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
+  const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
 
   const load = async () => {
     const { data: p } = await supabase
@@ -28,9 +29,16 @@ export default function TransferForm() {
     setPicking(p);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name)")
+      .select("*, products(name,tracking)")
       .eq("picking_id", id!);
     setMoves(m ?? []);
+    const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
+    if (trackedIds.length) {
+      const { data: lots } = await supabase.from("stock_lots").select("id,name,product_id").in("product_id", trackedIds);
+      const map: Record<string, any[]> = {};
+      (lots ?? []).forEach((l: any) => { (map[l.product_id] ||= []).push(l); });
+      setLotsByProduct(map);
+    }
   };
   useEffect(() => {
     if (id) load();
