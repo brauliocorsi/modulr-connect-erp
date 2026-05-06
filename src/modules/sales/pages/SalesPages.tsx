@@ -1,3 +1,4 @@
+import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
 
 export const QuotationsList = () => (
