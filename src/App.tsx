@@ -143,6 +143,24 @@ const App = () => (
               <Route path="reports/sales" element={<SalesReport />} />
               <Route path="reports/purchase" element={<PurchaseReport />} />
 
+              {/* HR */}
+              <Route path="hr" element={<Navigate to="/hr/employees" replace />} />
+              <Route path="hr/employees" element={<EmployeesList />} />
+              <Route path="hr/employees/new" element={<EmployeeForm />} />
+              <Route path="hr/employees/:id" element={<EmployeeForm />} />
+              <Route path="hr/departments" element={<DepartmentsList />} />
+              <Route path="hr/departments/new" element={<DepartmentForm />} />
+              <Route path="hr/departments/:id" element={<DepartmentForm />} />
+              <Route path="hr/leaves" element={<LeavesList />} />
+              <Route path="hr/leaves/new" element={<LeaveForm />} />
+              <Route path="hr/leaves/:id" element={<LeaveForm />} />
+              <Route path="hr/attendance" element={<AttendanceClock />} />
+              <Route path="hr/attendances" element={<AttendancesList />} />
+
+              {/* Discuss */}
+              <Route path="discuss" element={<Discuss />} />
+              <Route path="discuss/:channelId" element={<Discuss />} />
+
 
               <Route path="*" element={<NotFound />} />
             </Route>
