@@ -127,6 +127,8 @@ export const WarehousesList = () => (
     breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Armazéns" }]}
     table="warehouses"
     searchColumn="name"
+    createTo="/inventory/warehouses/new"
+    rowLink={(r: any) => `/inventory/warehouses/${r.id}`}
     columns={[
       { key: "code", header: "Código" },
       { key: "name", header: "Nome" },
@@ -142,6 +144,8 @@ export const LocationsList = () => (
     table="stock_locations"
     select="id, name, type, full_path, warehouses(name)"
     searchColumn="name"
+    createTo="/inventory/locations/new"
+    rowLink={(r: any) => `/inventory/locations/${r.id}`}
     columns={[
       { key: "full_path", header: "Caminho" },
       { key: "name", header: "Nome" },
@@ -158,6 +162,8 @@ export const ReorderingList = () => (
     table="reordering_rules"
     select="id, min_qty, max_qty, multiple_qty, products(name), warehouses(name)"
     searchColumn="id"
+    createTo="/inventory/reordering/new"
+    rowLink={(r: any) => `/inventory/reordering/${r.id}`}
     columns={[
       { key: "product", header: "Produto", render: (r: any) => r.products?.name },
       { key: "warehouse", header: "Armazém", render: (r: any) => r.warehouses?.name },
@@ -167,3 +173,4 @@ export const ReorderingList = () => (
     ]}
   />
 );
+
