@@ -58,6 +58,7 @@ export function ListView<T extends { id: string }>({
         breadcrumb={breadcrumb}
         onSearch={searchColumn ? setSearch : undefined}
         createTo={createTo}
+        actions={actions}
       />
       <PageBody>
         {isLoading ? (
