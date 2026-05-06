@@ -3,7 +3,10 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList, Zap } from "lucide-react";
+import { toast } from "sonner";
+
 
 export const InventoryDashboard = () => {
   const { data } = useQuery({
