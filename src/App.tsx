@@ -133,6 +133,11 @@ const App = () => (
               <Route path="settings/groups/:id" element={<GroupForm />} />
               <Route path="settings/company" element={<CompanySettings />} />
 
+              {/* Reports */}
+              <Route path="reports/stock" element={<StockOnHandReport />} />
+              <Route path="reports/sales" element={<SalesReport />} />
+              <Route path="reports/purchase" element={<PurchaseReport />} />
+
 
               <Route path="*" element={<NotFound />} />
             </Route>
