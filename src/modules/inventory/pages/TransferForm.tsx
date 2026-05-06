@@ -125,11 +125,15 @@ export default function TransferForm() {
                     <th className="text-left px-3 py-2">Produto</th>
                     <th className="text-left px-3 py-2 w-32">Demanda</th>
                     <th className="text-left px-3 py-2 w-32">Feito</th>
+                    <th className="text-left px-3 py-2 w-48">Lote/Série</th>
                     <th className="text-left px-3 py-2 w-32">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {moves.map((m, i) => (
+                  {moves.map((m, i) => {
+                    const tracking = m.products?.tracking ?? "none";
+                    const lots = lotsByProduct[m.product_id] ?? [];
+                    return (
                     <tr key={m.id} className="border-t">
                       <td className="px-3 py-2">{m.products?.name}</td>
                       <td className="px-3 py-2">{m.quantity}</td>
@@ -143,9 +147,38 @@ export default function TransferForm() {
                           onChange={(e) => setMoveDone(i, Number(e.target.value))}
                         />
                       </td>
+                      <td className="px-2 py-1">
+                        {tracking === "none" ? (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Select
+                              value={m.lot_id ?? ""}
+                              onValueChange={(v) => setMoveLot(i, v)}
+                              disabled={isLocked}
+                            >
+                              <SelectTrigger className="h-8"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                              <SelectContent>
+                                {lots.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            {!isLocked && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-2"
+                                onClick={() => {
+                                  const name = prompt(`Novo ${tracking === "serial" ? "número de série" : "lote"}:`);
+                                  if (name) createLot(i, name);
+                                }}
+                              >+</Button>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-2">{m.state}</td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </Card>
