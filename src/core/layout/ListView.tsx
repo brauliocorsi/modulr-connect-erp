@@ -23,6 +23,7 @@ export function ListView<T extends { id: string }>({
   orderBy = "created_at",
   ascending = false,
   filter,
+  actions,
 }: {
   title: string;
   breadcrumb?: { label: string; to?: string }[];
@@ -35,6 +36,7 @@ export function ListView<T extends { id: string }>({
   orderBy?: string;
   ascending?: boolean;
   filter?: (q: any) => any;
+  actions?: React.ReactNode;
 }) {
   const [search, setSearch] = useState("");
   const { data, isLoading } = useQuery({
