@@ -62,9 +62,12 @@ export const PricelistsList = () => (
     breadcrumb={[{ label: "Vendas", to: "/sales" }, { label: "Tabelas de Preço" }]}
     table="pricelists"
     searchColumn="name"
+    createTo="/sales/pricelists/new"
+    rowLink={(r: any) => `/sales/pricelists/${r.id}`}
     columns={[
       { key: "name", header: "Nome" },
       { key: "currency", header: "Moeda" },
     ]}
   />
 );
+
