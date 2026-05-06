@@ -113,6 +113,8 @@ export const LotsList = () => (
     table="stock_lots"
     select="id, name, expiration_date, products(name)"
     searchColumn="name"
+    createTo="/inventory/lots/new"
+    rowLink={(r: any) => `/inventory/lots/${r.id}`}
     columns={[
       { key: "name", header: "Lote/Série" },
       { key: "product", header: "Produto", render: (r: any) => r.products?.name },
@@ -120,6 +122,7 @@ export const LotsList = () => (
     ]}
   />
 );
+
 
 export const WarehousesList = () => (
   <ListView
