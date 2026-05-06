@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -85,6 +85,32 @@ export const MODULES: ModuleDef[] = [
       { section: "Catálogo", label: "Atributos", to: "/products/attributes" },
       { section: "Engenharia", label: "Listas de Materiais (BOM)", to: "/products/bom" },
     ],
+  },
+  {
+    id: "hr" as any,
+    name: "Recursos Humanos",
+    shortName: "RH",
+    icon: Users,
+    color: "bg-[hsl(340_82%_52%)]",
+    basePath: "/hr",
+    description: "Colaboradores, ausências e assiduidade",
+    menu: [
+      { section: "Pessoas", label: "Colaboradores", to: "/hr/employees" },
+      { section: "Pessoas", label: "Departamentos", to: "/hr/departments" },
+      { section: "Assiduidade", label: "Relógio de Ponto", to: "/hr/attendance" },
+      { section: "Assiduidade", label: "Registos", to: "/hr/attendances" },
+      { section: "Ausências", label: "Pedidos", to: "/hr/leaves" },
+    ],
+  },
+  {
+    id: "discuss" as any,
+    name: "Conversas",
+    shortName: "Chat",
+    icon: MessageSquare,
+    color: "bg-[hsl(199_89%_48%)]",
+    basePath: "/discuss",
+    description: "Canais de equipa e mensagens diretas",
+    menu: [{ section: "Conversas", label: "Canais", to: "/discuss" }],
   },
   {
     id: "settings",

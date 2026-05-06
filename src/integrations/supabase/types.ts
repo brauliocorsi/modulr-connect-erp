@@ -166,6 +166,84 @@ export type Database = {
           },
         ]
       }
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          joined_at: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          joined_at?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_private: boolean
+          kind: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          kind?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean
+          kind?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          author_id: string
+          body: string
+          channel_id: string
+          created_at: string
+          id: string
+          mentions: string[]
+        }
+        Insert: {
+          author_id: string
+          body: string
+          channel_id: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          channel_id?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string
@@ -246,6 +324,147 @@ export type Database = {
           id?: string
           module?: Database["public"]["Enums"]["app_module"]
           name?: string
+        }
+        Relationships: []
+      }
+      hr_attendances: {
+        Row: {
+          check_in: string
+          check_out: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          worked_hours: number | null
+        }
+        Insert: {
+          check_in?: string
+          check_out?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          worked_hours?: number | null
+        }
+        Update: {
+          check_in?: string
+          check_out?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          worked_hours?: number | null
+        }
+        Relationships: []
+      }
+      hr_departments: {
+        Row: {
+          created_at: string
+          id: string
+          manager_id: string | null
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: []
+      }
+      hr_employees: {
+        Row: {
+          active: boolean
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string
+          department_id: string | null
+          email: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          job_title: string | null
+          manager_id: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          manager_id?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          manager_id?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      hr_leaves: {
+        Row: {
+          approver_id: string | null
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          state: string
+          type: string
+        }
+        Insert: {
+          approver_id?: string | null
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          state?: string
+          type?: string
+        }
+        Update: {
+          approver_id?: string | null
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          state?: string
+          type?: string
         }
         Relationships: []
       }
@@ -1267,6 +1486,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      record_activities: {
+        Row: {
+          activity_type: string
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          done_at: string | null
+          due_date: string | null
+          id: string
+          note: string | null
+          record_id: string
+          record_type: string
+          state: string
+          summary: string
+        }
+        Insert: {
+          activity_type?: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          note?: string | null
+          record_id: string
+          record_type: string
+          state?: string
+          summary: string
+        }
+        Update: {
+          activity_type?: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          note?: string | null
+          record_id?: string
+          record_type?: string
+          state?: string
+          summary?: string
+        }
+        Relationships: []
       }
       record_messages: {
         Row: {

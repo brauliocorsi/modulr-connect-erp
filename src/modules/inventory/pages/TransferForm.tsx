@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
-import { Chatter } from "@/core/chatter/Chatter";
+import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -182,7 +182,7 @@ export default function TransferForm() {
                 </tbody>
               </table>
             </Card>
-            <Chatter recordType="stock_picking" recordId={id!} />
+            <RecordSidebar recordType="stock_picking" recordId={id!} />
           </div>
           <aside />
         </div>
