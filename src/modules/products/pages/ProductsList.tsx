@@ -7,6 +7,8 @@ export default function ProductsList() {
       breadcrumb={[{ label: "Produtos" }]}
       table="products"
       searchColumn="name"
+      createTo="/products/new"
+      rowLink={(r: any) => `/products/${r.id}`}
       columns={[
         { key: "internal_ref", header: "Ref" },
         { key: "name", header: "Nome" },

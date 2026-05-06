@@ -7,6 +7,8 @@ export const PurchaseOrdersList = () => (
     table="purchase_orders"
     select="id, name, state, date_order, amount_total, partners(name)"
     searchColumn="name"
+    createTo="/purchase/orders/new"
+    rowLink={(r: any) => `/purchase/orders/${r.id}`}
     columns={[
       { key: "name", header: "Número" },
       { key: "partner", header: "Fornecedor", render: (r: any) => r.partners?.name },
@@ -22,6 +24,8 @@ export const SuppliersList = () => (
     breadcrumb={[{ label: "Compras", to: "/purchase" }, { label: "Fornecedores" }]}
     table="partners"
     searchColumn="name"
+    createTo="/purchase/suppliers/new"
+    rowLink={(r: any) => `/purchase/suppliers/${r.id}`}
     filter={(q) => q.eq("is_supplier", true)}
     columns={[
       { key: "name", header: "Nome" },
