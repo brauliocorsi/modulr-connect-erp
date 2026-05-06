@@ -446,6 +446,27 @@ export type Database = {
         }
         Relationships: []
       }
+      number_sequences: {
+        Row: {
+          code: string
+          next_number: number
+          padding: number
+          prefix: string
+        }
+        Insert: {
+          code: string
+          next_number?: number
+          padding?: number
+          prefix: string
+        }
+        Update: {
+          code?: string
+          next_number?: number
+          padding?: number
+          prefix?: string
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           active: boolean
@@ -1952,6 +1973,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
+      cancel_sale_order: { Args: { _order: string }; Returns: undefined }
+      confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
+      confirm_sale_order: { Args: { _order: string }; Returns: undefined }
+      customer_location_id: { Args: never; Returns: string }
+      default_location: {
+        Args: { _name: string; _warehouse: string }
+        Returns: string
+      }
+      default_warehouse_id: { Args: never; Returns: string }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
         Args: {
@@ -1966,6 +1997,35 @@ export type Database = {
         Args: { _module: Database["public"]["Enums"]["app_module"] }
         Returns: boolean
       }
+      log_record_event: {
+        Args: {
+          _body: string
+          _payload?: Json
+          _record_id: string
+          _record_type: string
+        }
+        Returns: undefined
+      }
+      next_sequence: { Args: { _code: string }; Returns: string }
+      notify_user: {
+        Args: {
+          _body: string
+          _link?: string
+          _module: Database["public"]["Enums"]["app_module"]
+          _title: string
+          _type: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      product_available_qty: {
+        Args: { _product: string; _warehouse: string }
+        Returns: number
+      }
+      reserve_for_move: { Args: { _move: string }; Returns: number }
+      run_reordering_rules: { Args: never; Returns: number }
+      supplier_location_id: { Args: never; Returns: string }
+      validate_picking: { Args: { _picking: string }; Returns: undefined }
     }
     Enums: {
       app_module: "core" | "products" | "sales" | "purchase" | "inventory"
