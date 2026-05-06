@@ -1,194 +1,151 @@
+# Plano — Produto Completo (estilo Odoo) com preparação WooCommerce
 
-# UP Móveis ERP — Release 1: Fundação + Vendas, Compras e Stock (WMS)
-
-Construir a base de um ERP modular inspirado no Odoo, já entregando o ciclo completo Cotação → Venda → Reserva de stock → Compra automática → Recebimento → Picking/Packing → Entrega. Tudo desenhado para que módulos futuros (Manufatura/MRP, Entregas, Chat tipo RAMBU, Contabilidade, etc.) se conectem sem refatorar.
-
----
-
-## 1. Princípios de arquitetura modular
-
-- **Registro de módulos**: cada módulo (sales, purchase, inventory, products, hr, etc.) se auto-registra com: rotas, itens de menu, permissões, widgets de dashboard, hooks de notificação e "ganchos de integração" (ex.: `onSaleConfirmed`, `onStockBelowMin`).
-- **Bus de eventos interno** (event bus em runtime + tabela `module_events` no banco): módulos publicam eventos; outros assinam **só se instalados/ativos**. Se Compras não estiver ativo, o evento `stock.below_min` simplesmente não dispara reabastecimento.
-- **Tabela `installed_modules`**: liga/desliga módulos por tenant. UI de "Apps" no estilo Odoo.
-- **Camada de UI compartilhada**: layout Odoo-like (top bar com app switcher, breadcrumb, busca global, chatter lateral, sino de notificações), list/kanban/form views reutilizáveis, filtros + agrupamento + favoritos salvos.
+## Objetivo
+Expandir o módulo de Produtos para ter paridade funcional com o Odoo (variantes, BOM/kits, stock previsto, fornecedores, etiquetas, medidas, preços por variante) e deixar a base preparada para sincronização futura com WooCommerce.
 
 ---
 
-## 2. Fundação (núcleo do ERP)
+## 1. Cadastro completo do produto
 
-### 2.1 Autenticação e usuários
-- Lovable Cloud Auth: e-mail/senha + Google.
-- Tabela `profiles` (nome, avatar, cargo, departamento, idioma, ativo).
-- Tabela `companies` (multi-empresa preparada, 1 empresa default agora).
+Expandir `ProductForm.tsx` (já existente) com novas abas/secções:
 
-### 2.2 Permissões granulares (estilo Odoo)
-- `permissions` (módulo, entidade, ação: view/create/edit/delete/export).
-- `groups` (ex.: "Vendas / Usuário", "Vendas / Gerente", "Stock / WMS").
-- `group_permissions` (group ↔ permission).
-- `user_groups` (usuário ↔ grupos).
-- `record_rules` (regras por registro: ex.: vendedor só vê seus pedidos; gerente vê todos do time).
-- Hook `usePermission(module, entity, action)` no front + RLS no banco usando funções `security definer` (`has_permission`, `has_group`).
-- Tela **Configurações → Usuários e Grupos**: matriz de permissões editável.
+**Aba Geral** (já existe — completar)
+- Nome, Referência interna (SKU), Código de barras (EAN/UPC), Tipo, Categoria, Etiquetas, UoM venda, UoM compra, Imagem.
 
-### 2.3 Layout & navegação Odoo-like
-- **App switcher** (grid de apps instalados).
-- **Top bar** com: módulo atual, breadcrumb, busca global, sino de notificações, menu do usuário.
-- **Busca global** (Cmd/Ctrl+K) federada: pesquisa em produtos, clientes, fornecedores, pedidos, ordens de compra, transferências; respeita permissões.
-- **Search bar por módulo** com filtros, agrupamentos e favoritos persistidos por usuário.
-- Views reutilizáveis: List, Kanban, Form, Pivot (básico), Calendar (preparado).
+**Aba Vendas**
+- Preço de venda, Imposto, Tabelas de preço, Política de faturação.
+- Descrição comercial (rich text).
 
-### 2.4 Notificações unificadas
-- `notifications` (user_id, módulo, tipo, payload, lido_em, link).
-- Centralizadas no sino + toast em tempo real (Realtime).
-- Cada módulo publica via helper `notify(users, module, type, payload)`.
-- Preparado para o futuro chat (tabela `chat_threads`, `chat_messages`) — não construído agora, mas o schema de notificações já cobre menções.
+**Aba Compras**
+- Custo padrão, fornecedores (já tem `product_suppliers`) — UI tabular: parceiro, SKU fornecedor, preço, qtd mínima, lead time, prioridade.
+- Descrição de compra.
 
-### 2.5 Chatter por registro (estilo Odoo)
-- Componente `<RecordChatter recordType recordId />` em todo formulário: log de auditoria + comentários + seguidores. Reaproveitável em vendas, compras, produto, transferência, etc.
+**Aba Inventário**
+- Rastreamento (none/lot/serial), Estratégia de remoção (FIFO/LIFO).
+- **Medidas físicas**: peso (kg), volume (m³), altura, largura, profundidade (cm), peso bruto, peso líquido — campos novos.
+- Rotas (comprar/fabricar), regras de reabastecimento (link).
 
-### 2.6 Auditoria
-- `audit_log` automático em criar/editar/excluir das entidades principais.
+**Aba Variantes**
+- Atributos do produto + valores (Tamanho: P/M/G; Cor: Vermelho/Azul…).
+- Geração automática de variantes (cartesiano) com SKU/barcode/preço extra por variante.
+- `price_extra` por valor de atributo (preço final = list_price + Σ extras).
 
----
+**Aba BOM / Kit**
+- Listar BOMs do produto. Tipo: `normal` (manufatura), `phantom` (kit — explode no pedido), `subcontract`.
+- Linhas: componente, variante, quantidade, UoM.
+- Operações (centro de trabalho, duração) — opcional.
+- **Produto composto / kit**: tipo `phantom` para vender como conjunto.
 
-## 3. Módulo Produtos (compartilhado)
+**Aba Stock (somente leitura)**
+- Stock atual (à mão), Reservado, Disponível.
+- **Stock previsto** = Disponível + Recebimentos pendentes (POs confirmadas) − Saídas pendentes (SOs confirmadas).
+- **Stock vendido** = Σ qtd em SOs `confirmed`/`done` (período configurável).
+- Por armazém, com drill-down.
 
-- **Templates de produto** + **variantes** geradas por **atributos** (ex.: cor, tamanho, acabamento). Combinações com SKU próprio, preço extra, código de barras, peso/volume.
-- Tipos: estocável, consumível, serviço.
-- Categorias hierárquicas, unidades de medida + conversões.
-- Múltiplos fornecedores por produto com lead time e preço.
-- **BOM multinível**:
-  - Componentes com quantidade e UM.
-  - Sub-montagens (BOM dentro de BOM) e BOM "fantasma" (phantom).
-  - Operações/rotas (placeholder para o módulo de Manufatura futuro).
-  - Cálculo de custo rolado a partir dos componentes.
-- Aba "Inventário" (rotas: comprar, fabricar — fabricar fica desabilitado até Manufatura ser instalado), pontos de pedido (min/max).
-- Aba "Vendas" (preço de venda, impostos, descrição comercial).
-- Aba "Compras" (fornecedores, prazo).
-- Imagens, anexos, chatter.
+**Aba WooCommerce** (preparação)
+- Toggle "Publicar no WooCommerce".
+- Campos: `woo_product_id`, `woo_sync_status`, `woo_last_sync_at`, slug, short_description, categorias Woo, visibilidade, status (draft/publish).
+- UI mostra estado mas sincronização real fica para passo posterior (após conectar credenciais Woo).
 
 ---
 
-## 4. Módulo Stock / Inventário (WMS completo)
+## 2. Etiquetas (Tags)
 
-### 4.1 Estrutura física
-- **Armazéns** múltiplos.
-- **Locais** hierárquicos por armazém: Stock, Input, Quality, Output, Sucata, Cliente, Fornecedor, Trânsito.
-- **Zonas** dentro de armazém e **posições/bins** (corredor-prateleira-nível).
-
-### 4.2 Movimentos e operações
-- **Tipos de operação**: Recebimento, Transferência interna, Picking, Packing, Expedição, Devolução, Ajuste.
-- **Stock moves** (linha) e **Pickings/Transfers** (cabeçalho), com estados: rascunho → aguardando → pronto → feito → cancelado.
-- **Reservas** automáticas de stock para pedidos de venda.
-- **Lotes/Séries** com rastreabilidade ponta-a-ponta (relatório de rastreabilidade).
-- **Ondas de picking** (wave picking) e **batch picking**.
-- **Estratégias**:
-  - Put-away: regra "produto/categoria → local de destino".
-  - Removal: FIFO, LIFO, FEFO (vencimento), mais próximo.
-- **Cycle counting** (contagem cíclica) e ajustes de inventário com aprovação.
-- **Quants** (quantidade real por produto/lote/local) — fonte da verdade do stock.
-- **Kardex/relatório de movimentações** por produto, lote, local, período.
-
-### 4.3 Regras de reabastecimento
-- Pontos de pedido (min/max) por produto/armazém.
-- Job (edge function agendada) que avalia stock virtual (em mãos − reservado + em pedido) e:
-  - Se módulo Compras instalado → cria RFQ/PO automática para fornecedor preferido.
-  - Se módulo Manufatura instalado → cria ordem de produção (futuro).
-  - Se nenhum → apenas notifica responsáveis.
-- Suporte a **stock negativo** com alerta vermelho e gatilho imediato de compra.
-
-### 4.4 Visões
-- Dashboard de operações (cards por tipo de operação com pendências).
-- Kanban de transferências por estado.
-- Tela de "Atualizar quantidade" rápida em produto.
+Nova tabela `product_tags` (id, name, color) + pivô `product_tag_rel`.
+Componente de chips multi-select no formulário, filtros na lista.
 
 ---
 
-## 5. Módulo Vendas
+## 3. Variantes — Geração e preços
 
-- **Clientes** (compartilha tabela `partners` com Compras; flag is_customer/is_supplier).
-- **Cotações → Pedidos de venda**: numeração, validade, condições, vendedor, equipe de vendas.
-- Linhas com produto/variante, quantidade, desconto, imposto, preço.
-- Tabelas de preço (pricelists) por cliente/categoria/quantidade.
-- Confirmação de pedido:
-  - Cria reserva no Stock (transferência de saída em rascunho).
-  - Dispara evento `sale.confirmed` → Stock reserva; se faltar, evento `stock.shortage` → Compras gera RFQ.
-- Estados: rascunho, enviada, pedido confirmado, entregue, faturado (placeholder), cancelado.
-- Entrega parcial e backorders.
-- Relatórios: vendas por vendedor, por cliente, por produto, funil de cotações.
-- Kanban de cotações + pipeline.
-- Chatter, anexos, envio por e-mail (preparado).
+- UI em `ProductForm` aba Variantes:
+  - Adicionar atributo → escolher valores → "Gerar variantes".
+  - Tabela editável de variantes geradas: SKU, barcode, preço extra, ativo, imagem opcional.
+- Lógica:
+  - `product_template_attributes` + `product_template_attribute_values` (já existem) → gera linhas em `product_variants` + `product_variant_values`.
+  - Função SQL `generate_variants(product_id)` que faz produto cartesiano e cria/limpa variantes inativas.
+- Pedido de venda: ao escolher produto com variantes, mostrar selectors de atributos → resolve `variant_id`; preço = `list_price` + Σ `price_extra`.
 
 ---
 
-## 6. Módulo Compras
+## 4. BOM / Kit (phantom) na venda
 
-- **Fornecedores** (em `partners`).
-- **RFQ (cotação) → Pedido de compra**: linhas, prazos, incoterms (campo), moeda (placeholder).
-- Geração automática a partir de:
-  - Reabastecimento (regras min/max).
-  - Falta de stock para venda confirmada (make-to-order).
-  - Stock negativo (gatilho imediato).
-- Estados: rascunho, RFQ enviada, confirmada, recebida (parcial/total), cancelada.
-- Recebimento gera transferência de entrada no Stock automaticamente.
-- Comparativo de fornecedores por produto (preço, lead time, histórico).
-- Relatórios: compras por fornecedor, por produto, prazo médio.
+- Ao confirmar SO com linha cujo produto tem BOM `phantom` ativa: explodir em movimentos de stock dos componentes (não do produto kit).
+- Ajustar `confirm_sale_order` para detectar phantom e gerar moves dos componentes.
+- BOM `normal`: usado por módulo Manufatura (futuro) — apenas cadastro agora.
 
 ---
 
-## 7. Integrações entre módulos (já neste release)
+## 5. Stock previsto / vendido
 
-```text
-Vendas ──confirma──► Stock (reserva saída)
-                       │
-                       └─ falta stock ──► Compras (RFQ automática)
-Compras ──recebe────► Stock (entrada)
-Stock ──min atingido──► Compras (reabastecimento)
-Produtos ◄──── usado por ──── Vendas, Compras, Stock, (Manufatura futuro)
-Permissões ──filtra──► toda UI + RLS
-Notificações ◄── todos os módulos
-Chatter ◄── todos os registros principais
+**View SQL** `product_stock_forecast`:
+```
+product_id, warehouse_id,
+on_hand, reserved, available,
+incoming (Σ POs confirmed não recebidas),
+outgoing (Σ SOs confirmed não entregues),
+forecasted = available + incoming − outgoing,
+sold_30d, sold_90d
 ```
 
-Todas as integrações passam pelo bus de eventos e checam `installed_modules` antes de agir.
+Exibido na aba Stock e em coluna opcional na lista de produtos.
 
 ---
 
-## 8. Entregáveis de UI deste release
+## 6. Fornecedores vinculados (já parcial)
 
-- Tela de login + recuperação de senha.
-- App switcher / home com apps instalados.
-- **Apps**: ligar/desligar Vendas, Compras, Stock, Produtos.
-- **Configurações**: Usuários, Grupos, Permissões, Empresas, Armazéns, Locais, Atributos, Categorias, UM, Tabelas de preço, Pontos de pedido.
-- **Produtos**: lista + kanban + form com variantes e BOM multinível.
-- **Vendas**: cotações (kanban + lista), clientes, pedidos, relatórios.
-- **Compras**: RFQs, pedidos, fornecedores, relatórios.
-- **Inventário**: dashboard de operações, transferências, ajustes, lotes/séries, kardex, regras de reabastecimento, configuração de armazéns/locais/bins.
-- Busca global (Cmd+K), sino de notificações, chatter em todos os formulários, search bar com filtros/agrupamentos/favoritos em todos os módulos.
+UI tabular completa em `ProductForm` aba Compras usando `product_suppliers`:
+- Adicionar/remover linhas, ordenar por prioridade (drag).
+- Reabastecimento já usa o fornecedor de menor prioridade (função `run_reordering_rules`).
 
 ---
 
-## 9. Detalhes técnicos
+## 7. Preparação WooCommerce
 
-- **Stack**: React + Vite + Tailwind + shadcn (já no projeto), React Router, TanStack Query, Zustand para estado global leve (módulo ativo, app switcher), Lovable Cloud (Postgres + Auth + Realtime + Edge Functions + Storage).
-- **Banco**: schema dividido logicamente por módulo (prefixos `sale_`, `purchase_`, `stock_`, `product_`, `core_`). RLS em todas as tabelas via funções `security definer` (`has_permission(uid, module, entity, action)`, `has_group(uid, group_code)`, `can_access_record(uid, table, id)`).
-- **Realtime**: notificações e atualizações de transferências/pedidos.
-- **Edge Functions**:
-  - `reordering-cron` (varre pontos de pedido).
-  - `auto-purchase-on-shortage` (consome eventos de falta).
-  - `module-event-dispatcher` (entrega eventos a assinantes ativos).
-- **Design tokens**: paleta Odoo-like profissional (roxo/índigo primário, cinzas neutros, estados semânticos), densidade compacta, tipografia Inter, modo claro primeiro (modo escuro preparado).
-- **Padrão de código**: cada módulo em `src/modules/<nome>/` com `routes.ts`, `menu.ts`, `permissions.ts`, `events.ts`, `pages/`, `components/`, `api/`. Registry central em `src/core/modules/registry.ts`.
-- **Seeds**: empresa demo, 1 armazém com locais, alguns produtos com variantes e BOM, 2 fornecedores, 2 clientes, grupos e usuário admin.
+**Schema** (apenas estrutura agora, sem sincronização):
+- Adicionar a `products`: `woo_product_id bigint`, `woo_sync_status text`, `woo_last_sync_at timestamptz`, `woo_slug text`, `woo_status text default 'draft'`, `short_description text`, `published_woo boolean default false`.
+- Adicionar a `product_variants`: `woo_variation_id bigint`, `woo_sync_status text`.
+- Tabela `woo_categories` (id, woo_id, name, parent_id) e pivô `product_woo_categories`.
+- Tabela `woo_sync_log` (entity_type, entity_id, action, status, error, created_at).
+
+**Edge function placeholder** `woo-sync` (criada vazia, retorna "not configured") — quando o utilizador fornecer URL/consumer_key/secret da loja Woo, ativamos via `add_secret`.
 
 ---
 
-## 10. Fora do escopo deste release (próximos módulos)
+## 8. Migrações SQL (resumo)
 
-- Manufatura/MRP (consumirá BOM e rotas já modeladas).
-- Entregas/Transportadoras (plugará no Stock via evento `delivery.ready`).
-- Chat interno tipo RAMBU (plugará nas notificações e chatter).
-- Faturamento/Contabilidade.
-- POS, CRM avançado, e-commerce.
+1. `ALTER products` — adicionar `height, width, depth, gross_weight, net_weight, barcode, short_description` e campos Woo.
+2. `ALTER product_variants` — adicionar campos Woo + `weight, barcode` se faltar.
+3. `CREATE TABLE product_tags`, `product_tag_rel` + RLS.
+4. `CREATE TABLE woo_categories`, `product_woo_categories`, `woo_sync_log` + RLS.
+5. `CREATE OR REPLACE FUNCTION generate_variants(_product uuid)` — gera variantes a partir dos atributos.
+6. `CREATE VIEW product_stock_forecast` — stock previsto/vendido.
+7. Atualizar `confirm_sale_order` — explodir BOM phantom.
 
-A base é desenhada para que cada um destes entre como um novo módulo plugável, sem reescrever o que está sendo construído agora.
+---
+
+## 9. Ficheiros a criar/editar
+
+**Criar**
+- `src/modules/products/pages/VariantsTab.tsx`
+- `src/modules/products/pages/SuppliersTab.tsx`
+- `src/modules/products/pages/BomTab.tsx`
+- `src/modules/products/pages/StockTab.tsx`
+- `src/modules/products/pages/WooTab.tsx`
+- `src/modules/products/components/TagPicker.tsx`
+- `supabase/migrations/..._product_full_woo.sql`
+- `supabase/functions/woo-sync/index.ts` (placeholder)
+
+**Editar**
+- `src/modules/products/pages/ProductForm.tsx` — integrar todas as abas.
+- `src/modules/products/pages/ProductsList.tsx` — colunas de stock previsto, etiquetas, filtros.
+- `src/core/orders/OrderForm.tsx` — selector de variante + resolução de preço.
+
+---
+
+## Fora do âmbito (pode ficar para depois)
+- Sincronização efetiva WooCommerce (requer URL + chaves da loja).
+- Módulo Manufatura completo (ordens de produção). BOM `normal` apenas cadastrada.
+- Configurador avançado tipo Odoo "no_variant" attributes.
+
+Após aprovação implemento tudo de uma vez. Diga se quer ativar a sincronização Woo agora (preciso URL da loja + Consumer Key/Secret) ou deixar só a preparação.
