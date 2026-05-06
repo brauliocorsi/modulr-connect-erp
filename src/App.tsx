@@ -11,6 +11,10 @@ import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
 
 import ProductsList from "@/modules/products/pages/ProductsList";
+import ProductForm from "@/modules/products/pages/ProductForm";
+import PartnerForm from "@/modules/partners/pages/PartnerForm";
+import OrderForm from "@/core/orders/OrderForm";
+import TransferForm from "@/modules/inventory/pages/TransferForm";
 import CategoriesList from "@/modules/products/pages/CategoriesList";
 import AttributesList from "@/modules/products/pages/AttributesList";
 import BomList from "@/modules/products/pages/BomList";
@@ -52,6 +56,8 @@ const App = () => (
 
               {/* Products */}
               <Route path="products" element={<ProductsList />} />
+              <Route path="products/new" element={<ProductForm />} />
+              <Route path="products/:id" element={<ProductForm />} />
               <Route path="products/categories" element={<CategoriesList />} />
               <Route path="products/attributes" element={<AttributesList />} />
               <Route path="products/bom" element={<BomList />} />
@@ -60,8 +66,21 @@ const App = () => (
               <Route path="sales" element={<Navigate to="/sales/quotations" replace />} />
               <Route path="sales/quotations" element={<QuotationsList />} />
               <Route path="sales/orders" element={<SalesOrdersList />} />
+              <Route path="sales/orders/new" element={<OrderForm kind="sale" />} />
+              <Route path="sales/orders/:id" element={<OrderForm kind="sale" />} />
               <Route path="sales/customers" element={<CustomersList />} />
+              <Route path="sales/customers/new" element={<PartnerForm defaultKind="customer" />} />
+              <Route path="sales/customers/:id" element={<PartnerForm defaultKind="customer" />} />
               <Route path="sales/pricelists" element={<PricelistsList />} />
+
+              {/* Purchase */}
+              <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
+              <Route path="purchase/orders" element={<PurchaseOrdersList />} />
+              <Route path="purchase/orders/new" element={<OrderForm kind="purchase" />} />
+              <Route path="purchase/orders/:id" element={<OrderForm kind="purchase" />} />
+              <Route path="purchase/suppliers" element={<SuppliersList />} />
+              <Route path="purchase/suppliers/new" element={<PartnerForm defaultKind="supplier" />} />
+              <Route path="purchase/suppliers/:id" element={<PartnerForm defaultKind="supplier" />} />
 
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
@@ -71,6 +90,7 @@ const App = () => (
               {/* Inventory */}
               <Route path="inventory" element={<InventoryDashboard />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
+              <Route path="inventory/transfers/:id" element={<TransferForm />} />
               <Route path="inventory/adjustments" element={<AdjustmentsList />} />
               <Route path="inventory/kardex" element={<KardexList />} />
               <Route path="inventory/lots" element={<LotsList />} />

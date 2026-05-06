@@ -7,6 +7,8 @@ export const QuotationsList = () => (
     table="sale_orders"
     select="id, name, state, date_order, amount_total, partners(name)"
     searchColumn="name"
+    createTo="/sales/orders/new"
+    rowLink={(r: any) => `/sales/orders/${r.id}`}
     filter={(q) => q.in("state", ["draft", "sent"])}
     columns={[
       { key: "name", header: "Número" },
@@ -24,6 +26,8 @@ export const SalesOrdersList = () => (
     table="sale_orders"
     select="id, name, state, date_order, amount_total, partners(name)"
     searchColumn="name"
+    createTo="/sales/orders/new"
+    rowLink={(r: any) => `/sales/orders/${r.id}`}
     filter={(q) => q.in("state", ["confirmed", "done"])}
     columns={[
       { key: "name", header: "Número" },
@@ -40,6 +44,8 @@ export const CustomersList = () => (
     breadcrumb={[{ label: "Vendas", to: "/sales" }, { label: "Clientes" }]}
     table="partners"
     searchColumn="name"
+    createTo="/sales/customers/new"
+    rowLink={(r: any) => `/sales/customers/${r.id}`}
     filter={(q) => q.eq("is_customer", true)}
     columns={[
       { key: "name", header: "Nome" },

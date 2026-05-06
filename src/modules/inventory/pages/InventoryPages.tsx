@@ -61,6 +61,7 @@ export const TransfersList = () => (
     table="stock_pickings"
     select="id, name, kind, state, scheduled_at, partners(name)"
     searchColumn="name"
+    rowLink={(r: any) => `/inventory/transfers/${r.id}`}
     columns={[
       { key: "name", header: "Referência" },
       { key: "kind", header: "Tipo" },
