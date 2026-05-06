@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
-import { Chatter } from "@/core/chatter/Chatter";
+import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,7 +199,7 @@ export default function ProductForm() {
               </TabsContent>
             </Tabs>
 
-            {!isNew && <Chatter recordType="product" recordId={id!} />}
+            {!isNew && <RecordSidebar recordType="product" recordId={id!} />}
           </div>
 
           <aside className="space-y-4">

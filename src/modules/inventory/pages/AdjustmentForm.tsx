@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
-import { Chatter } from "@/core/chatter/Chatter";
+import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -200,7 +200,7 @@ export default function AdjustmentForm() {
               </table>
             </Card>
 
-            {!isNew && <Chatter recordType="inventory_adjustment" recordId={id!} />}
+            {!isNew && <RecordSidebar recordType="inventory_adjustment" recordId={id!} />}
           </div>
           <aside />
         </div>

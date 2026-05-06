@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
-import { Chatter } from "@/core/chatter/Chatter";
+import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,7 +107,7 @@ export default function PartnerForm({ defaultKind }: { defaultKind: "customer" |
                 Fornecedor
               </label>
             </Card>
-            {!isNew && <Chatter recordType="partner" recordId={id!} />}
+            {!isNew && <RecordSidebar recordType="partner" recordId={id!} />}
           </div>
           <aside />
         </div>
