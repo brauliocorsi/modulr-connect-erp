@@ -16,8 +16,17 @@ import PartnerForm from "@/modules/partners/pages/PartnerForm";
 import OrderForm from "@/core/orders/OrderForm";
 import TransferForm from "@/modules/inventory/pages/TransferForm";
 import CategoriesList from "@/modules/products/pages/CategoriesList";
+import CategoryForm from "@/modules/products/pages/CategoryForm";
 import AttributesList from "@/modules/products/pages/AttributesList";
+import AttributeForm from "@/modules/products/pages/AttributeForm";
 import BomList from "@/modules/products/pages/BomList";
+import BomForm from "@/modules/products/pages/BomForm";
+import WarehouseForm from "@/modules/inventory/pages/WarehouseForm";
+import LocationForm from "@/modules/inventory/pages/LocationForm";
+import ReorderingForm from "@/modules/inventory/pages/ReorderingForm";
+import LotForm from "@/modules/inventory/pages/LotForm";
+import PricelistForm from "@/modules/sales/pages/PricelistForm";
+import GroupForm from "@/modules/settings/pages/GroupForm";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
