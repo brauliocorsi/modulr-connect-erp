@@ -52,10 +52,21 @@ export default function TransferForm() {
     });
   };
 
+  const setMoveLot = (idx: number, lot_id: string | null) => {
+    setMoves((p) => { const n = [...p]; n[idx] = { ...n[idx], lot_id }; return n; });
+  };
+
+  const createLot = async (idx: number, name: string) => {
+    const m = moves[idx];
+    const { data, error } = await supabase.from("stock_lots").insert({ product_id: m.product_id, name }).select("id,name,product_id").single();
+    if (error) return toast.error(error.message);
+    setLotsByProduct((prev) => ({ ...prev, [m.product_id]: [...(prev[m.product_id] ?? []), data] }));
+    setMoveLot(idx, (data as any).id);
+  };
+
   const validate = async () => {
-    // persist quantity_done first
     for (const m of moves) {
-      await supabase.from("stock_moves").update({ quantity_done: m.quantity_done ?? m.quantity }).eq("id", m.id);
+      await supabase.from("stock_moves").update({ quantity_done: m.quantity_done ?? m.quantity, lot_id: m.lot_id ?? null }).eq("id", m.id);
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
     if (error) return toast.error(error.message);
