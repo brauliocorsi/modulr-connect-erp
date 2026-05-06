@@ -100,9 +100,12 @@ export const AdjustmentsList = () => (
     breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Ajustes" }]}
     table="inventory_adjustments"
     searchColumn="name"
+    createTo="/inventory/adjustments/new"
+    rowLink={(r: any) => `/inventory/adjustments/${r.id}`}
     columns={[
-      { key: "name", header: "Nome" },
-      { key: "state", header: "Estado" },
+      { key: "name", header: "Referência" },
+      { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
+      { key: "scheduled_at", header: "Programado", render: (r: any) => r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-BR") : "—" },
     ]}
   />
 );
