@@ -32,7 +32,8 @@ export default function AppShell() {
   }, []);
 
   const activeModule = getModuleByPath(loc.pathname);
-  const visibleModules = MODULES.filter((m) => m.id === "settings" || installed.data?.[m.id as string]);
+  const ALWAYS_ON = new Set(["settings", "hr", "discuss"]);
+  const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
 
   const sectionedMenu = activeModule
     ? activeModule.menu.reduce<Record<string, typeof activeModule.menu>>((acc, item) => {
