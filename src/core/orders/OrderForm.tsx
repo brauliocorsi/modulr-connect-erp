@@ -145,9 +145,20 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const confirmOrder = async () => {
     if (isNew) return toast.error("Salve antes");
+    // Re-check current state to avoid double-confirm with stale UI
+    const { data: cur } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
+    const curState = (cur as any)?.state;
+    if (curState && !["draft", "sent"].includes(curState)) {
+      setOrder((o: any) => ({ ...o, state: curState }));
+      return toast.info(`Pedido já está em "${curState}"`);
+    }
     const fn = kind === "sale" ? "confirm_sale_order" : "confirm_purchase_order";
     const { error } = await supabase.rpc(fn as any, { _order: id });
-    if (error) return toast.error(error.message);
+    if (error) {
+      const { data } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
+      if (data) setOrder((o: any) => ({ ...o, state: (data as any).state }));
+      return toast.error(error.message);
+    }
     toast.success(kind === "sale" ? "Pedido confirmado e transferência criada" : "Compra confirmada e recebimento criado");
     const { data } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
     setOrder((o: any) => ({ ...o, state: (data as any)?.state }));
