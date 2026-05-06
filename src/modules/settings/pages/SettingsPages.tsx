@@ -81,6 +81,8 @@ export const GroupsSettings = () => (
     breadcrumb={[{ label: "Configurações" }, { label: "Grupos" }]}
     table="groups"
     searchColumn="name"
+    createTo="/settings/groups/new"
+    rowLink={(r: any) => `/settings/groups/${r.id}`}
     columns={[
       { key: "code", header: "Código" },
       { key: "name", header: "Nome" },
@@ -89,6 +91,7 @@ export const GroupsSettings = () => (
     ]}
   />
 );
+
 
 export const CompanySettings = () => (
   <ListView
