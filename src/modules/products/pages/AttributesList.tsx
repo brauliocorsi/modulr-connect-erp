@@ -7,6 +7,8 @@ export default function AttributesList() {
       breadcrumb={[{ label: "Produtos", to: "/products" }, { label: "Atributos" }]}
       table="product_attributes"
       searchColumn="name"
+      createTo="/products/attributes/new"
+      rowLink={(r: any) => `/products/attributes/${r.id}`}
       columns={[
         { key: "name", header: "Nome" },
         { key: "display_type", header: "Exibição" },

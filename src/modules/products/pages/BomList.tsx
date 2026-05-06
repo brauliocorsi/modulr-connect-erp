@@ -8,6 +8,8 @@ export default function BomList() {
       table="boms"
       select="id, code, type, quantity, products(name)"
       searchColumn="code"
+      createTo="/products/bom/new"
+      rowLink={(r: any) => `/products/bom/${r.id}`}
       columns={[
         { key: "code", header: "Código" },
         { key: "product", header: "Produto", render: (r: any) => r.products?.name },

@@ -7,6 +7,8 @@ export default function CategoriesList() {
       breadcrumb={[{ label: "Produtos", to: "/products" }, { label: "Categorias" }]}
       table="product_categories"
       searchColumn="name"
+      createTo="/products/categories/new"
+      rowLink={(r: any) => `/products/categories/${r.id}`}
       columns={[
         { key: "name", header: "Nome" },
         { key: "removal_strategy", header: "Estratégia de saída" },
