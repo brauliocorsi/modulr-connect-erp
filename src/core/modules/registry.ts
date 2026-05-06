@@ -33,6 +33,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Vendas", label: "Pedidos", to: "/sales/orders" },
       { section: "Cadastros", label: "Clientes", to: "/sales/customers" },
       { section: "Configuração", label: "Tabelas de Preço", to: "/sales/pricelists" },
+      { section: "Relatórios", label: "Vendas por Estado", to: "/reports/sales" },
     ],
   },
   {
@@ -45,7 +46,9 @@ export const MODULES: ModuleDef[] = [
     description: "RFQs, pedidos de compra e fornecedores",
     menu: [
       { section: "Compras", label: "Pedidos de Compra", to: "/purchase/orders" },
+      { section: "Compras", label: "Kanban RFQ", to: "/purchase/kanban" },
       { section: "Cadastros", label: "Fornecedores", to: "/purchase/suppliers" },
+      { section: "Relatórios", label: "Compras por Estado", to: "/reports/purchase" },
     ],
   },
   {
@@ -61,6 +64,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Operações", label: "Transferências", to: "/inventory/transfers" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
       { section: "Relatórios", label: "Kardex", to: "/inventory/kardex" },
+      { section: "Relatórios", label: "Stock por Produto", to: "/reports/stock" },
       { section: "Relatórios", label: "Lotes/Séries", to: "/inventory/lots" },
       { section: "Configuração", label: "Armazéns", to: "/inventory/warehouses" },
       { section: "Configuração", label: "Locais", to: "/inventory/locations" },

@@ -43,6 +43,7 @@ import {
   ReorderingList,
 } from "@/modules/inventory/pages/InventoryPages";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
+import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,11 @@ const App = () => (
               <Route path="settings/groups/new" element={<GroupForm />} />
               <Route path="settings/groups/:id" element={<GroupForm />} />
               <Route path="settings/company" element={<CompanySettings />} />
+
+              {/* Reports */}
+              <Route path="reports/stock" element={<StockOnHandReport />} />
+              <Route path="reports/sales" element={<SalesReport />} />
+              <Route path="reports/purchase" element={<PurchaseReport />} />
 
 
               <Route path="*" element={<NotFound />} />
