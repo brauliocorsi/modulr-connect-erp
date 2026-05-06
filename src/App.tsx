@@ -44,6 +44,11 @@ import {
 } from "@/modules/inventory/pages/InventoryPages";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
+import Discuss from "@/modules/discuss/Discuss";
+import {
+  EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
+  LeavesList, LeaveForm, AttendanceClock, AttendancesList,
+} from "@/modules/hr/pages/HrPages";
 
 const queryClient = new QueryClient();
 
