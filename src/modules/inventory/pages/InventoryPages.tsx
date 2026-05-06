@@ -34,10 +34,25 @@ export const InventoryDashboard = () => {
     { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary" },
   ];
 
+  const runReorder = async () => {
+    const { data, error } = await supabase.functions.invoke("reordering-cron");
+    if (error) return toast.error(error.message);
+    toast.success(`Reabastecimento executado (${(data as any)?.created ?? 0} RFQs criadas)`);
+  };
+
   return (
     <>
-      <PageHeader title="Visão geral do Inventário" breadcrumb={[{ label: "Inventário" }]} />
+      <PageHeader
+        title="Visão geral do Inventário"
+        breadcrumb={[{ label: "Inventário" }]}
+        actions={
+          <Button size="sm" variant="outline" onClick={runReorder}>
+            <Zap className="h-4 w-4 mr-1" /> Rodar reabastecimento
+          </Button>
+        }
+      />
       <PageBody>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((c) => (
             <Card key={c.title} className="p-5">
