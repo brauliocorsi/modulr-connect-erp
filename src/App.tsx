@@ -95,6 +95,7 @@ const App = () => (
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
               <Route path="purchase/orders" element={<PurchaseOrdersList />} />
+              <Route path="purchase/kanban" element={<RfqKanban />} />
               <Route path="purchase/orders/new" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/orders/:id" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/suppliers" element={<SuppliersList />} />
