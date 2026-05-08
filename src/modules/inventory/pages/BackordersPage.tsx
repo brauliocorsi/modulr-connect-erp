@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { stateLabel, kindLabel } from "@/lib/picking";
-import { ArrowLeftRight } from "lucide-react";
 
 const STATE_TONE: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
