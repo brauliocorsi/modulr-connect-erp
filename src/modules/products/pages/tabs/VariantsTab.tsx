@@ -139,8 +139,33 @@ export function VariantsTab({ productId }: { productId: string }) {
   };
 
   const updateVariant = async (v: Variant, patch: any) => {
+    const checkField = (field: "sku" | "barcode") => {
+      if (!(field in patch)) return null;
+      const val = (patch[field] ?? "").toString().trim();
+      if (!val) return null;
+      const dup = variants.find((x) => x.id !== v.id && ((x as any)[field] ?? "").toString().trim() === val);
+      if (dup) {
+        const label = (dup.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ") || dup.id.slice(0, 6);
+        return `Já usado por: ${label}`;
+      }
+      return null;
+    };
+    const skuErr = checkField("sku");
+    const bcErr = checkField("barcode");
+    if (skuErr) { setRowError(v.id, "sku", skuErr); toast.error(`SKU duplicado — ${skuErr}`); return; }
+    if (bcErr) { setRowError(v.id, "barcode", bcErr); toast.error(`Código de barras duplicado — ${bcErr}`); return; }
+
     const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (isUniqueError(error)) {
+        const field = /barcode/i.test(error.message) ? "barcode" : "sku";
+        setRowError(v.id, field, "Valor duplicado no banco");
+        return toast.error(`${field === "sku" ? "SKU" : "Código de barras"} já existe em outra variante`);
+      }
+      return toast.error(error.message);
+    }
+    if ("sku" in patch) setRowError(v.id, "sku", undefined);
+    if ("barcode" in patch) setRowError(v.id, "barcode", undefined);
     load();
   };
   const removeVariant = async (id: string) => {
