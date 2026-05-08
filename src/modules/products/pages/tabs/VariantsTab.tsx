@@ -33,6 +33,17 @@ export function VariantsTab({ productId }: { productId: string }) {
   const [bulkWeight, setBulkWeight] = useState<string>("");
   const [skuPrefix, setSkuPrefix] = useState<string>("");
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [rowErrors, setRowErrors] = useState<Record<string, { sku?: string; barcode?: string }>>({});
+  const [bulkErrors, setBulkErrors] = useState<string[]>([]);
+
+  const setRowError = (id: string, field: "sku" | "barcode", msg?: string) =>
+    setRowErrors((p) => {
+      const next = { ...p, [id]: { ...p[id], [field]: msg } };
+      if (!next[id].sku && !next[id].barcode) delete next[id];
+      return next;
+    });
+
+  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique/i.test(err?.message ?? "");
 
   const load = async () => {
     const { data: prod } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
