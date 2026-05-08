@@ -62,6 +62,7 @@ export const MODULES: ModuleDef[] = [
     menu: [
       { section: "Operações", label: "Visão Geral", to: "/inventory" },
       { section: "Operações", label: "Cronograma", to: "/inventory/schedule" },
+      { section: "Operações", label: "Recebimentos", to: "/inventory/receipts" },
       { section: "Operações", label: "Transferências", to: "/inventory/transfers" },
       { section: "Operações", label: "Movimentos", to: "/inventory/moves" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
