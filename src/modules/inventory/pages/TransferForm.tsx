@@ -33,9 +33,15 @@ export default function TransferForm() {
       .eq("id", id!)
       .maybeSingle();
     setPicking(p);
+    if (p?.backorder_id) {
+      const { data: orig } = await supabase.from("stock_pickings").select("id,name").eq("id", p.backorder_id).maybeSingle();
+      setOriginal(orig);
+    } else setOriginal(null);
+    const { data: bo } = await supabase.from("stock_pickings").select("id,name,state").eq("backorder_id", id!).maybeSingle();
+    setBackorder(bo);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name,tracking)")
+      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
     setMoves(m ?? []);
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
