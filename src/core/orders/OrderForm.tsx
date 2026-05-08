@@ -81,6 +81,16 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge").order("name")).data ?? [],
   });
+  const { data: zipRules } = useQuery({
+    queryKey: ["delivery_zip_rules_active"],
+    queryFn: async () =>
+      (await supabase.from("delivery_zip_rules").select("id,label,zip_from,zip_to,price").eq("active", true).order("zip_from")).data ?? [],
+  });
+  const { data: regionRules } = useQuery({
+    queryKey: ["delivery_region_rules_active"],
+    queryFn: async () =>
+      (await supabase.from("delivery_region_rules").select("id,region,country,price").eq("active", true).order("region")).data ?? [],
+  });
   const { data: variantsByProduct } = useQuery({
     queryKey: ["product-variants-by-product"],
     queryFn: async () => {
