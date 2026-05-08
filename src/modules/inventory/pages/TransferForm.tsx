@@ -23,6 +23,8 @@ export default function TransferForm() {
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
+  const [backorder, setBackorder] = useState<any>(null);
+  const [original, setOriginal] = useState<any>(null);
 
   const load = async () => {
     const { data: p } = await supabase
