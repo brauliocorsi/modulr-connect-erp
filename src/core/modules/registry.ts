@@ -106,6 +106,20 @@ export const MODULES: ModuleDef[] = [
     ],
   },
   {
+    id: "finance" as any,
+    name: "Financeiro",
+    shortName: "Financeiro",
+    icon: Wallet,
+    color: "bg-[hsl(160_84%_39%)]",
+    basePath: "/finance",
+    description: "Recebimentos, diários e métodos de pagamento",
+    menu: [
+      { section: "Operações", label: "Recebimentos", to: "/finance/payments" },
+      { section: "Configuração", label: "Diários", to: "/finance/journals" },
+      { section: "Configuração", label: "Métodos de Pagamento", to: "/finance/methods" },
+    ],
+  },
+  {
     id: "discuss" as any,
     name: "Conversas",
     shortName: "Chat",
