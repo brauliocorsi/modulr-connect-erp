@@ -209,6 +209,8 @@ export async function printSaleOrder(orderId: string) {
     <tbody>${linesHtml || `<tr><td colspan="5" style="text-align:center;padding:20px;color:#888">Sem linhas</td></tr>`}</tbody>
   </table>
 
+  ${servicesHtml}
+
   <div class="totals">
     <div class="row"><span>Subtotal</span><span>${fmtMoney(Number(order.amount_untaxed || 0))}</span></div>
     <div class="row"><span>Imposto</span><span>${fmtMoney(Number(order.amount_tax || 0))}</span></div>
