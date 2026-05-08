@@ -82,8 +82,9 @@ export default function CashRegisterDetail() {
         }
       />
       <PageBody>
-        <Card className="p-4 grid sm:grid-cols-3 gap-3 mb-4 text-sm">
+        <Card className="p-4 grid sm:grid-cols-4 gap-3 mb-4 text-sm">
           <div><div className="o-section-title">Loja</div>{reg.warehouses?.name ?? "—"}</div>
+          <div><div className="o-section-title">Responsável</div>{userName}</div>
           <div><div className="o-section-title">Diário</div>{reg.account_journals?.name ?? "—"}</div>
           <div><div className="o-section-title">Último fecho</div>{fmtMoney(lastClosed)}</div>
         </Card>
