@@ -39,7 +39,7 @@ export function RegisterPaymentDialog({
     setForm((f) => ({ ...f, amount: defaultAmount ?? 0 }));
     (async () => {
       const [{ data: m }, { data: j }] = await Promise.all([
-        supabase.from("payment_methods").select("id,name,default_journal_id").eq("active", true).order("name"),
+        supabase.from("payment_methods").select("id,name,default_journal_id,confirmation_mode,requires_reference").eq("active", true).order("name"),
         supabase.from("account_journals").select("id,name,type").eq("active", true).order("name"),
       ]);
       setMethods(m ?? []);
@@ -61,6 +61,12 @@ export function RegisterPaymentDialog({
     if (!form.amount || form.amount <= 0) return toast.error("Valor inválido");
     if (!form.method_id) return toast.error("Escolha um método");
     if (!form.journal_id) return toast.error("Escolha um diário");
+    const method = methods.find((x) => x.id === form.method_id);
+    if (method?.requires_reference && !form.reference) return toast.error("Este método exige referência");
+    const initialState =
+      method?.confirmation_mode === "pending_finance" ? "pending"
+      : method?.confirmation_mode === "pending_delivery" ? "pending_delivery"
+      : "posted";
     const { data: seq } = await supabase.rpc("next_sequence", { _code: "customer_payment" });
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("customer_payments").insert({
@@ -73,7 +79,7 @@ export function RegisterPaymentDialog({
       journal_id: form.journal_id,
       reference: form.reference || null,
       notes: form.notes || null,
-      state: "posted",
+      state: initialState,
       created_by: user?.id,
     });
     if (error) return toast.error(error.message);

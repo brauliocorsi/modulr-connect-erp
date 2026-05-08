@@ -72,6 +72,47 @@ export const MethodForm = () => (
       { name: "default_journal_id", label: "Diário padrão", type: "select",
         optionsFrom: { table: "account_journals", value: "id", label: "name", filter: (q) => q.eq("active", true) }
       },
+      { name: "confirmation_mode", label: "Confirmação", type: "select", required: true, default: "auto",
+        options: [
+          { value: "auto", label: "Automática (ex: Dinheiro)" },
+          { value: "pending_finance", label: "Pendente do financeiro (ex: Multibanco)" },
+          { value: "pending_delivery", label: "Pendente da entrega (entregador confirma)" },
+        ]
+      },
+      { name: "feeds_cash_session", label: "Alimenta caixa da loja", type: "boolean", default: false },
+      { name: "requires_reference", label: "Exige referência", type: "boolean", default: false },
+      { name: "active", label: "Ativo", type: "boolean", default: true },
+    ]}
+  />
+);
+
+export const CostCentersList = () => (
+  <ListView
+    title="Centros de Custo"
+    breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Centros de Custo" }]}
+    table="cost_centers"
+    searchColumn="name"
+    createTo="/finance/cost_centers/new"
+    rowLink={(r: any) => `/finance/cost_centers/${r.id}`}
+    columns={[
+      { key: "code", header: "Código" },
+      { key: "name", header: "Nome" },
+      { key: "active", header: "Ativo", render: (r: any) => (r.active ? "Sim" : "Não") },
+    ]}
+  />
+);
+
+export const CostCenterForm = () => (
+  <SimpleForm
+    table="cost_centers"
+    title="Centro de Custo"
+    basePath="/finance/cost_centers"
+    breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Centros de Custo", to: "/finance/cost_centers" }, { label: "Editar" }]}
+    fields={[
+      { name: "code", label: "Código", required: true },
+      { name: "name", label: "Nome", required: true },
+      { name: "parent_id", label: "Pai", type: "select",
+        optionsFrom: { table: "cost_centers", value: "id", label: "name", filter: (q) => q.eq("active", true) } },
       { name: "active", label: "Ativo", type: "boolean", default: true },
     ]}
   />

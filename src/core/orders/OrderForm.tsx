@@ -8,6 +8,9 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
 import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
+import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
+import { MarkInvoicedDialog } from "@/core/orders/MarkInvoicedDialog";
+import { FileCheck2 } from "lucide-react";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
@@ -195,6 +198,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   };
 
   const isLocked = ["confirmed", "done", "cancelled"].includes(order.state);
+  const [invDlg, setInvDlg] = useState(false);
+
+  const revertInvoice = async () => {
+    if (!confirm("Reverter faturação?")) return;
+    await supabase.from("sale_orders").update({ invoice_status: "not_invoiced", invoice_number: null, invoice_date: null }).eq("id", id!);
+    const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", id!).maybeSingle();
+    if (data) setOrder((o: any) => ({ ...o, ...data }));
+  };
 
   return (
     <>
@@ -211,6 +222,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
           <div className="flex gap-2 items-center">
             {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
             {kind === "sale" && <PaymentStatusBadge status={order.payment_status} />}
+            {kind === "sale" && !isNew && <InvoiceStatusBadge status={order.invoice_status} />}
+            {kind === "sale" && !isNew && order.invoice_status !== "invoiced" && (
+              <Button size="sm" variant="outline" onClick={() => setInvDlg(true)}>
+                <FileCheck2 className="h-4 w-4 mr-1" /> Marcar faturado
+              </Button>
+            )}
+            {kind === "sale" && !isNew && order.invoice_status === "invoiced" && (
+              <Button size="sm" variant="ghost" onClick={revertInvoice}>Reverter fatura</Button>
+            )}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar

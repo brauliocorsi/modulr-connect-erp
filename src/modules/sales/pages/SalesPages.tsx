@@ -1,6 +1,8 @@
 import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
+import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
+import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 
 export const QuotationsList = () => (
   <ListView
@@ -26,7 +28,7 @@ export const SalesOrdersList = () => (
     title="Pedidos de Venda"
     breadcrumb={[{ label: "Vendas", to: "/sales" }, { label: "Pedidos" }]}
     table="sale_orders"
-    select="id, name, state, fulfillment_status, date_order, amount_total, partners(name)"
+    select="id, name, state, fulfillment_status, payment_status, invoice_status, date_order, amount_total, partners(name)"
     searchColumn="name"
     createTo="/sales/orders/new"
     rowLink={(r: any) => `/sales/orders/${r.id}`}
@@ -36,6 +38,8 @@ export const SalesOrdersList = () => (
       { key: "partner", header: "Cliente", render: (r: any) => r.partners?.name },
       { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
       { key: "fulfillment_status", header: "Fulfillment", render: (r: any) => <FulfillmentBadge status={r.fulfillment_status} /> },
+      { key: "payment_status", header: "Pagamento", render: (r: any) => <PaymentStatusBadge status={r.payment_status} /> },
+      { key: "invoice_status", header: "Fatura", render: (r: any) => <InvoiceStatusBadge status={r.invoice_status} /> },
       { key: "amount_total", header: "Total", render: (r: any) => `${fmtMoney(r.amount_total)}` },
     ]}
   />
