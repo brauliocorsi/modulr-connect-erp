@@ -114,6 +114,8 @@ const App = () => (
               <Route path="inventory" element={<InventoryDashboard />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
+              <Route path="inventory/schedule" element={<SchedulePage />} />
+              <Route path="inventory/moves" element={<MovesPage />} />
               <Route path="inventory/adjustments" element={<AdjustmentsList />} />
               <Route path="inventory/adjustments/new" element={<AdjustmentForm />} />
               <Route path="inventory/adjustments/:id" element={<AdjustmentForm />} />
