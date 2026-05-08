@@ -61,6 +61,8 @@ import {
   ReorderingList,
 } from "@/modules/inventory/pages/InventoryPages";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
+import StoresList from "@/modules/settings/pages/StoresList";
+import StoreForm from "@/modules/settings/pages/StoreForm";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
 import Discuss from "@/modules/discuss/Discuss";
 import {
