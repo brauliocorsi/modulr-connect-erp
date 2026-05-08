@@ -28,6 +28,7 @@ import LotForm from "@/modules/inventory/pages/LotForm";
 import AdjustmentForm from "@/modules/inventory/pages/AdjustmentForm";
 import SchedulePage from "@/modules/inventory/pages/SchedulePage";
 import MovesPage from "@/modules/inventory/pages/MovesPage";
+import ReceiptsPage from "@/modules/inventory/pages/ReceiptsPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
               <Route path="inventory/schedule" element={<SchedulePage />} />
               <Route path="inventory/moves" element={<MovesPage />} />
+              <Route path="inventory/receipts" element={<ReceiptsPage />} />
               <Route path="inventory/adjustments" element={<AdjustmentsList />} />
               <Route path="inventory/adjustments/new" element={<AdjustmentForm />} />
               <Route path="inventory/adjustments/:id" element={<AdjustmentForm />} />

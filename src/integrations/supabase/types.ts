@@ -2629,6 +2629,10 @@ export type Database = {
       }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
+      reserve_incoming_to_origin_so: {
+        Args: { _picking: string }
+        Returns: undefined
+      }
       run_reordering_rules: { Args: never; Returns: number }
       set_product_stock: {
         Args: {

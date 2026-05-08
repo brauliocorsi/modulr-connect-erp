@@ -1,134 +1,86 @@
+## Fluxo de Recebimentos com reserva automática para a venda de origem
 
-# Vendas + Inventário — Fulfillment, Cronograma e Rastreio
+### Objetivo
 
-## 1. Status de fulfillment do pedido de venda (automático)
-
-Novo campo `fulfillment_status` em `sale_orders` (cache) recalculado por view + trigger:
-
-- `pending` — pedido confirmado, ainda sem reserva nem PO
-- `backordered` — todas as linhas dependem de PO ainda não recebida (status "Encomendado")
-- `purchased` — PO vinculada confirmada (compra feita com sucesso, aguarda chegada)
-- `partial` — parte das linhas reservada/disponível, parte ainda em PO
-- `ready` — 100% reservado/disponível, pronto para entrega
-- `delivered` — picking de saída validado (`done`)
-
-### Regras de cálculo (view `sale_order_fulfillment`)
-Para cada SO confirmada, agrega `stock_moves` do picking outgoing + POs com `origin = SO.name`:
-- qty_reserved = Σ moves com state `ready/assigned`
-- qty_done = Σ moves `done`
-- qty_incoming = Σ linhas de PO vinculadas não recebidas
-- qty_total = Σ linhas SO
-
-Resultado:
-```text
-done == total          → delivered
-reserved == total      → ready
-done+reserved > 0 e incoming > 0 → partial
-incoming == total e PO confirmed → purchased
-incoming == total e PO draft     → backordered
-caso geral              → pending
-```
-
-### Trigger
-- `AFTER UPDATE` em `stock_moves`, `purchase_orders`, `stock_pickings` → recalcula e grava `sale_orders.fulfillment_status` para o SO afetado (resolvido via `origin`).
-
-### UI
-- Badge colorido em `OrderForm` e listas (`SalesOrdersList`) — cores: cinza/âmbar/azul/violeta/verde/esmeralda.
-- Filtro por status na lista.
+Fechar o ciclo **Venda → Compra → Recebimento → Reserva → Entrega** para que, ao chegar mercadoria comprada por causa de uma venda específica, o stock entre e seja **imediatamente reservado para o cliente que disparou a compra**. Inclui uma nova tela de **Recebimentos** dividida em "originados em vendas" e "manuais".
 
 ---
 
-## 2. Cronograma de entregas (Calendário + Lista)
+### 1. Comportamento de stock por estado
 
-Nova rota `/inventory/schedule` com 2 abas:
+| Momento | Efeito no stock |
+|---|---|
+| PO confirmada | Picking de entrada criado em estado `ready`. Stock **on-hand não muda** — fica como "previsto de chegada" (já é o que o badge `incoming` da venda mostra). |
+| Recebimento validado | Stock entra no armazém (já existe via `validate_picking`). **NOVO:** se o recebimento veio de um PO que originou de uma SO, criar reserva imediata na linha equivalente do picking outgoing dessa SO. |
+| Picking outgoing validado | Saída para o cliente (já existe). |
 
-**Calendário** (mensal/semanal)
-- Componente baseado em `react-day-picker` já instalado, com células custom mostrando nº de pickings por dia + cores por estado.
-- Click no dia → drawer lateral com pickings desse dia.
-- Drag & drop opcional v2 — agora apenas click para reagendar via dialog.
-
-**Lista**
-- Tabela de `stock_pickings` com filtros: tipo (incoming/outgoing/internal), armazém, parceiro, estado, intervalo de datas (`scheduled_at`), origem (SO/PO).
-- Ações rápidas: abrir, validar, reagendar.
-
-Campo necessário: `stock_pickings.scheduled_at` (verificar; se faltar, adicionar `timestamptz default now()`).
+A coluna "Disponível" do produto continua refletindo `quantity − reserved_quantity`, então o cliente que disparou a compra "consome" o stock no momento em que ele chega — exatamente o fluxo descrito (-1 → 0 mas reservado).
 
 ---
 
-## 3. Rastreio do pedido (Timeline vertical)
+### 2. Migração SQL
 
-Nova aba "Rastreio" em `OrderForm` (sale) — componente `OrderTraceability.tsx`:
+**a) Nova função `reserve_incoming_to_origin_so(_picking uuid)`**
+
+Após validar um picking `incoming` cuja `origin` aponta para um PO, e esse PO foi gerado por uma SO (`purchase_orders.origin = sale_orders.name`):
 
 ```text
-● Pedido confirmado          SO00012   08/05 14:02
-│
-├─● Compra criada            PO00045   08/05 14:02   → fornecedor X
-│ └─● Compra confirmada      PO00045   08/05 15:10
-│   └─● Recebimento          WH/IN/021 12/05 09:30   ✓ done
-│
-├─● Reserva de stock         3/5 unid.  Stock → Cliente
-│
-├─● Transferência criada     WH/OUT/088 draft
-│ └─○ Validação pendente
-│
-└─○ Entrega ao cliente       previsto 13/05
+para cada move feito (quantity_done > 0) no recebimento:
+  encontrar move correspondente no picking outgoing da SO (mesmo product_id, state in ('draft','waiting'))
+  chamar reserve_for_move(move_outgoing.id) limitado à quantidade recebida
+  registrar log no picking outgoing: "Reservado X un. via recebimento WH/IN/..."
 ```
 
-Fontes: `sale_orders` + `purchase_orders (origin=SO.name)` + `stock_pickings (origin=SO.name OR PO.name)` + `stock_moves` + `record_messages`. Cada nó tem link para abrir o documento e mostra a rota associada (warehouse → location).
+**b) Patch em `validate_picking`**
 
-Mesma timeline (simplificada) também na PO mostrando o SO de origem.
+No final, se `kind = 'incoming'`, chamar `reserve_incoming_to_origin_so(_picking)`.
 
----
+**c) Patch em `confirm_purchase_order`**
 
-## 4. Filtros avançados no inventário
-
-### A) Nova tela `/inventory/moves` — Movimentos de stock
-Lista única de `stock_moves` (entrada/saída/interno) com filtros combinados:
-- Intervalo de datas (criação, conclusão)
-- Tipo: entrada / saída / interna / ajuste
-- Produto, variante, lote
-- Parceiro (cliente/fornecedor via picking)
-- Armazém / localização origem / destino
-- Estado (draft/waiting/ready/done/cancelled)
-- Origem (texto: SO/PO/ajuste)
-- Export CSV.
-
-### B) Melhorias nos filtros das listas existentes
-`InventoryPages.tsx` (Recebimentos, Entregas, Transferências, Ajustes):
-- Componente `AdvancedFilters` reutilizável: chips removíveis + popover com data range, parceiro, produto, estado.
-- Persistência dos filtros no URL (querystring).
+Garantir que o picking incoming criado herda `origin` do PO (já herda) e que o `scheduled_at` usa `expected_date` da PO quando disponível, para o calendário/cronograma.
 
 ---
 
-## 5. Detalhes técnicos
+### 3. Nova tela `/inventory/receipts` — Recebimentos
 
-### Migrações SQL
-1. `ALTER TABLE sale_orders ADD COLUMN fulfillment_status text DEFAULT 'pending';`
-2. `ALTER TABLE stock_pickings ADD COLUMN IF NOT EXISTS scheduled_at timestamptz DEFAULT now();` (se não existir)
-3. `CREATE OR REPLACE VIEW sale_order_fulfillment AS …` (agregação descrita acima)
-4. `CREATE FUNCTION recalc_so_fulfillment(_so uuid) … ` — escreve em `sale_orders.fulfillment_status` lendo a view.
-5. Triggers `AFTER INSERT/UPDATE` em `stock_moves`, `purchase_orders`, `stock_pickings` que resolvem o SO via `origin` e chamam `recalc_so_fulfillment`.
-6. Atualizar `confirm_sale_order` para chamar `recalc_so_fulfillment` no final.
-7. Índices: `stock_pickings(scheduled_at)`, `stock_moves(state, picking_id)`, `purchase_orders(origin)`.
+Card no dashboard de Inventário (já existe "Recebimentos" como contador — virar link clicável) e entrada no menu lateral.
 
-### Ficheiros a criar
-- `src/modules/inventory/pages/SchedulePage.tsx` (calendário + lista)
-- `src/modules/inventory/pages/MovesPage.tsx` (movimentos com filtros)
-- `src/modules/inventory/components/AdvancedFilters.tsx` (reutilizável)
-- `src/core/orders/OrderTraceability.tsx` (timeline vertical)
-- `src/core/orders/FulfillmentBadge.tsx`
-- `supabase/migrations/..._sale_fulfillment_schedule.sql`
+Layout em **2 abas**:
 
-### Ficheiros a editar
-- `src/core/orders/OrderForm.tsx` — adicionar aba "Rastreio" e badge no header
-- `src/modules/sales/pages/SalesPages.tsx` — coluna + filtro fulfillment_status
-- `src/modules/inventory/pages/InventoryPages.tsx` — integrar `AdvancedFilters` nas listas
-- `src/App.tsx` + `src/core/modules/registry.ts` — rotas `/inventory/schedule` e `/inventory/moves`
-- `src/core/layout/AppShell.tsx` — entradas de menu
+- **Aba "De Vendas"** — `stock_pickings` onde `kind='incoming'` e existe SO cujo `name = (PO da origin).origin`. Mostra colunas: Recebimento, PO, **SO de origem**, Cliente final, Fornecedor, Programado, Estado.
+- **Aba "Manuais"** — `kind='incoming'` sem cadeia para SO (origin é PO de reordering, ajuste, ou criação manual). Colunas: Recebimento, PO, Fornecedor, Programado, Estado.
+
+Filtros (via `AdvancedFilters` já reutilizável): estado, intervalo de datas, fornecedor, armazém.
+
+Cada linha abre o `TransferForm` existente.
 
 ---
 
-## Fora do âmbito
-- Drag & drop de reagendamento no calendário (v2).
-- Notificações automáticas ao cliente por email a cada mudança de status (pode entrar depois).
-- Integração com transportadoras / tracking number externo.
+### 4. UI complementar
+
+- **`SmartButtons` no PO**: já lista recebimentos. Adicionar card "Cliente final" quando o PO veio de SO, com link para a SO.
+- **`TransferForm` (recebimento)**: ao validar, se reservou para uma SO, mostrar toast "Recebido e reservado para SO XXXX".
+- **Badge na lista de recebimentos**: chip "↳ Venda 0012" quando vier de SO, em cinza neutro quando manual.
+
+---
+
+### 5. Arquivos
+
+**Migração**
+- `supabase/migrations/..._receipts_reserve_to_so.sql` — função `reserve_incoming_to_origin_so` + patch em `validate_picking` + patch em `confirm_purchase_order` (scheduled_at).
+
+**Novos**
+- `src/modules/inventory/pages/ReceiptsPage.tsx` — abas De Vendas / Manuais.
+
+**Editados**
+- `src/App.tsx` + `src/core/modules/registry.ts` — rota `/inventory/receipts`.
+- `src/core/layout/AppShell.tsx` — entrada de menu "Recebimentos".
+- `src/modules/inventory/pages/InventoryPages.tsx` — card "Recebimentos" do dashboard vira link.
+- `src/core/orders/SmartButtons.tsx` — card "Cliente final" no PO.
+- `src/modules/inventory/pages/TransferForm.tsx` — toast quando recebimento reserva para SO.
+
+---
+
+### Fora do escopo
+- Reserva parcial cross-warehouse (assume mesmo armazém da SO).
+- Notificação automática ao cliente quando o stock chega (pode entrar depois via `module_events`).
