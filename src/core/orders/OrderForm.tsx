@@ -540,7 +540,19 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           ) : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
                         <td className="px-2 py-1">
-                          <Input className="h-8" type="number" step="0.01" value={l.quantity} onChange={(e) => setLine(i, { quantity: Number(e.target.value) })} disabled={isLocked} />
+                          {(() => {
+                            const prod = products?.find((x: any) => x.id === l.product_id);
+                            const cat = prod?.product_uom?.category;
+                            const isInt = !cat || cat === "unit";
+                            return (
+                              <Input className="h-8" type="number" step={isInt ? 1 : 0.01} min={0} value={l.quantity}
+                                onChange={(e) => {
+                                  const v = Number(e.target.value);
+                                  setLine(i, { quantity: isInt ? Math.max(0, Math.floor(v)) : v });
+                                }}
+                                disabled={isLocked} />
+                            );
+                          })()}
                         </td>
                         <td className="px-2 py-1">
                           <Input className="h-8" type="number" step="0.01" value={l.unit_price} onChange={(e) => setLine(i, { unit_price: Number(e.target.value) })} disabled={isLocked} />
