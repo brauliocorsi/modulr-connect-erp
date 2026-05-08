@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, ShoppingBag, PackageCheck } from "lucide-react";
+import { stateLabel } from "@/lib/picking";
 
 type Row = {
   id: string;
