@@ -219,7 +219,7 @@ export default function TransferForm() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2">{m.state}</td>
+                      <td className="px-3 py-2">{stateLabel(m.state)}</td>
                     </tr>
                   );})}
                 </tbody>
