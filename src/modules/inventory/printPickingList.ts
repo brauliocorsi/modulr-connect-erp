@@ -170,7 +170,7 @@ export async function printPickingList(pickingId: string) {
     <tbody>${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:#666;padding:16px">Sem movimentos</td></tr>`}</tbody>
   </table>
 
-  ${picking.notes ? `<h2>Notas</h2><div class="card">${esc(picking.notes)}</div>` : ""}
+  ${""}
 
   <div class="footer">
     <div class="sig">Preparado por · Data</div>
