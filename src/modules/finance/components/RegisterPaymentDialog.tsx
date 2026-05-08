@@ -75,6 +75,7 @@ export function RegisterPaymentDialog({
       name: seq ?? "PAY",
       partner_id: partnerId ?? null,
       order_id: orderId,
+      schedule_id: scheduleId ?? null,
       payment_date: form.payment_date,
       amount: form.amount,
       method_id: form.method_id,
