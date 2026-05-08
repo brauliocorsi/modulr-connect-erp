@@ -351,6 +351,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               </div>
             </Card>
 
+            {!isNew && kind === "sale" && (
+              <PaymentsTab orderId={id!} partnerId={order.partner_id} total={Number(order.amount_total ?? totals.total)} isLocked={["cancelled"].includes(order.state)} />
+            )}
             {!isNew && kind === "sale" && <OrderTraceability saleOrderId={id!} />}
             {!isNew && <RecordSidebar recordType={kind === "sale" ? "sale_order" : "purchase_order"} recordId={id!} />}
           </div>
