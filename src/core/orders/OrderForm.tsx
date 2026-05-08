@@ -77,23 +77,23 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { data: products } = useQuery({
     queryKey: ["products-list"],
     queryFn: async () =>
-      (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
+      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode").order("name")).data ?? [],
   });
   const { data: variantsByProduct } = useQuery({
     queryKey: ["product-variants-by-product"],
     queryFn: async () => {
       const { data } = await supabase
         .from("product_variants")
-        .select("id, product_id, sku, price_extra, active, product_variant_values(product_attribute_values(name))")
+        .select("id, product_id, sku, price_extra, active, image_url, product_variant_values(product_attribute_values(name))")
         .eq("active", true);
-      const m: Record<string, { id: string; label: string; price_extra: number }[]> = {};
+      const m: Record<string, { id: string; label: string; price_extra: number; image_url: string | null; sku: string | null }[]> = {};
       (data ?? []).forEach((v: any) => {
         const names = (v.product_variant_values || [])
           .map((x: any) => x.product_attribute_values?.name)
           .filter(Boolean)
           .join(" / ");
         const label = names || v.sku || "Variante";
-        (m[v.product_id] ||= []).push({ id: v.id, label, price_extra: Number(v.price_extra || 0) });
+        (m[v.product_id] ||= []).push({ id: v.id, label, price_extra: Number(v.price_extra || 0), image_url: v.image_url, sku: v.sku });
       });
       return m;
     },
