@@ -51,7 +51,7 @@ export async function printPickingList(pickingId: string) {
 
   const { data: moves } = await supabase
     .from("stock_moves")
-    .select("quantity, quantity_done, state, products(name, sku, barcode), stock_lots(name)")
+    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), stock_lots(name)")
     .eq("picking_id", pickingId);
 
   const { data: company } = await supabase
@@ -65,13 +65,13 @@ export async function printPickingList(pickingId: string) {
 
   const rowsHtml = movesList
     .map((m: any, i: number) => {
-      const code = m.products?.barcode || m.products?.sku || "";
+      const code = m.products?.barcode || m.products?.internal_ref || "";
       return `
       <tr>
         <td class="num">${i + 1}</td>
         <td>
           <div class="prod-name">${esc(m.products?.name ?? "—")}</div>
-          ${m.products?.sku ? `<div class="muted">SKU: ${esc(m.products.sku)}</div>` : ""}
+          ${m.products?.internal_ref ? `<div class="muted">SKU: ${esc(m.products.internal_ref)}</div>` : ""}
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
         </td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
