@@ -381,50 +381,109 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                         : avail > 0 ? "text-amber-600" : "text-rose-600";
                       return (
                       <tr key={i} className="border-t">
-                        <td className="px-2 py-1">
-                          <Select
-                            value={l.product_id ?? ""}
-                            onValueChange={(v) => {
-                              const p = products?.find((x: any) => x.id === v);
-                              setLine(i, {
-                                product_id: v,
-                                variant_id: null,
-                                unit_price: kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0),
-                                description: p?.name ?? "",
-                              });
-                            }}
-                            disabled={isLocked}
-                          >
-                            <SelectTrigger className="h-8"><SelectValue placeholder="Produto…" /></SelectTrigger>
-                            <SelectContent>
-                              {products?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          {l.product_id && (variantsByProduct?.[l.product_id]?.length ?? 0) > 0 && (
-                            <Select
-                              value={l.variant_id ?? ""}
-                              onValueChange={(v) => {
-                                const p = products?.find((x: any) => x.id === l.product_id);
-                                const variant = variantsByProduct?.[l.product_id!]?.find((x) => x.id === v);
-                                const base = kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0);
-                                setLine(i, {
-                                  variant_id: v,
-                                  unit_price: base + Number(variant?.price_extra ?? 0),
-                                  description: `${p?.name ?? ""}${variant ? ` — ${variant.label}` : ""}`,
-                                });
-                              }}
-                              disabled={isLocked}
-                            >
-                              <SelectTrigger className="h-7 mt-1 text-xs"><SelectValue placeholder="Variante…" /></SelectTrigger>
-                              <SelectContent>
-                                {variantsByProduct[l.product_id]!.map((v) => (
-                                  <SelectItem key={v.id} value={v.id}>
-                                    {v.label}{v.price_extra ? ` (+${fmtMoney(v.price_extra)})` : ""}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
+                        <td className="px-2 py-1 min-w-[280px]">
+                          {(() => {
+                            const product = products?.find((x: any) => x.id === l.product_id);
+                            const variants = l.product_id ? variantsByProduct?.[l.product_id] ?? [] : [];
+                            const variant = variants.find((x) => x.id === l.variant_id);
+                            const thumb = variant?.image_url || product?.image_url;
+                            return (
+                              <div className="flex items-start gap-2">
+                                <div className="w-11 h-11 rounded border bg-muted/30 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                  {thumb ? <img src={thumb} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] text-muted-foreground">—</span>}
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 w-full justify-between font-normal"
+                                        disabled={isLocked}
+                                      >
+                                        <span className="truncate text-left">
+                                          {product?.name ?? <span className="text-muted-foreground">Produto…</span>}
+                                        </span>
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0 w-[420px]" align="start">
+                                      <Command>
+                                        <CommandInput placeholder="Buscar por nome, SKU ou código…" />
+                                        <CommandList>
+                                          <CommandEmpty>Nenhum produto</CommandEmpty>
+                                          <CommandGroup>
+                                            {products?.map((p: any) => (
+                                              <CommandItem
+                                                key={p.id}
+                                                value={`${p.name} ${p.barcode ?? ""}`}
+                                                onSelect={() => {
+                                                  setLine(i, {
+                                                    product_id: p.id,
+                                                    variant_id: null,
+                                                    unit_price: kind === "sale" ? Number(p.list_price ?? 0) : Number(p.standard_cost ?? 0),
+                                                    description: p.name ?? "",
+                                                  });
+                                                  (document.activeElement as HTMLElement)?.blur();
+                                                }}
+                                                className="gap-2"
+                                              >
+                                                <div className="w-8 h-8 rounded border bg-muted/30 overflow-hidden flex-shrink-0">
+                                                  {p.image_url && <img src={p.image_url} alt="" className="w-full h-full object-cover" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="truncate">{p.name}</div>
+                                                  {p.barcode && <div className="text-[10px] text-muted-foreground font-mono">{p.barcode}</div>}
+                                                </div>
+                                                <div className="text-xs tabular-nums text-muted-foreground">{fmtMoney(Number(kind === "sale" ? p.list_price : p.standard_cost) || 0)}</div>
+                                                {l.product_id === p.id && <Check className="h-3 w-3" />}
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        </CommandList>
+                                      </Command>
+                                    </PopoverContent>
+                                  </Popover>
+
+                                  {variants.length > 0 && (
+                                    <div className="space-y-1">
+                                      <Select
+                                        value={l.variant_id ?? ""}
+                                        onValueChange={(v) => {
+                                          const p = products?.find((x: any) => x.id === l.product_id);
+                                          const vt = variants.find((x) => x.id === v);
+                                          const base = kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0);
+                                          setLine(i, {
+                                            variant_id: v,
+                                            unit_price: base + Number(vt?.price_extra ?? 0),
+                                            description: `${p?.name ?? ""}${vt ? ` — ${vt.label}` : ""}`,
+                                          });
+                                        }}
+                                        disabled={isLocked}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Escolher variante…" /></SelectTrigger>
+                                        <SelectContent>
+                                          {variants.map((v) => (
+                                            <SelectItem key={v.id} value={v.id}>
+                                              {v.label}{v.price_extra ? ` (+${fmtMoney(v.price_extra)})` : ""}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      {variant && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {variant.label.split(" / ").map((t, k) => (
+                                            <Badge key={k} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                                          ))}
+                                          {variant.sku && <span className="text-[10px] text-muted-foreground font-mono ml-1">SKU {variant.sku}</span>}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-2 py-1">
                           {l.product_id ? (
