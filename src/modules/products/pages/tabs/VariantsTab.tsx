@@ -395,6 +395,19 @@ export function VariantsTab({ productId }: { productId: string }) {
         </div>
       )}
 
+      {bulkErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Conflitos detectados ({bulkErrors.length})</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 space-y-0.5 text-xs mt-1 max-h-40 overflow-auto">
+              {bulkErrors.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+            <Button size="sm" variant="ghost" className="mt-1 h-6" onClick={() => setBulkErrors([])}>Fechar</Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Variants table */}
       <div className="space-y-2">
         <div className="font-semibold">Variantes ({filteredVariants.length}{filteredVariants.length !== variants.length ? ` de ${variants.length}` : ""})</div>
