@@ -114,6 +114,7 @@ const App = () => (
               <Route path="sales/pricelists" element={<PricelistsList />} />
               <Route path="sales/pricelists/new" element={<PricelistForm />} />
               <Route path="sales/pricelists/:id" element={<PricelistForm />} />
+              <Route path="sales/delivery-rules" element={<DeliveryRulesPage />} />
 
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
