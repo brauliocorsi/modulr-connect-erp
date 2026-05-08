@@ -97,7 +97,7 @@ export default function MovesPage() {
                   <th className="text-left px-3 py-2">Documento</th>
                   <th className="text-left px-3 py-2">Tipo</th>
                   <th className="text-left px-3 py-2">Produto</th>
-                  <th className="text-left px-3 py-2">Origem → Destino</th>
+                  <th className="text-left px-3 py-2">Parceiro</th>
                   <th className="text-right px-3 py-2">Qtd</th>
                   <th className="text-right px-3 py-2">Feito</th>
                   <th className="text-left px-3 py-2">Estado</th>
@@ -106,9 +106,9 @@ export default function MovesPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Carregando…</td></tr>
+                  <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Carregando…</td></tr>
                 ) : !data || data.length === 0 ? (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Sem movimentos</td></tr>
+                  <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem movimentos</td></tr>
                 ) : data.map((r: any) => (
                   <tr key={r.id} className="border-t">
                     <td className="px-3 py-2">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
@@ -121,9 +121,7 @@ export default function MovesPage() {
                     </td>
                     <td className="px-3 py-2">{r.stock_pickings?.kind ?? "—"}</td>
                     <td className="px-3 py-2">{r.products?.name ?? "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {r.source_location?.name ?? "—"} → {r.destination_location?.name ?? "—"}
-                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{r.stock_pickings?.partners?.name ?? "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.quantity}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.quantity_done}</td>
                     <td className="px-3 py-2"><span className="o-state-badge">{r.state}</span></td>
