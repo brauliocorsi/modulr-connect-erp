@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/core/auth/AuthProvider";
 import { PageHeader, PageBody, EmptyState } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,17 +15,19 @@ import { fmtMoney } from "@/lib/format";
 
 export default function CashRegistersList() {
   const nav = useNavigate();
+  const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
   const [journals, setJournals] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: "", warehouse_id: "", journal_id: "", user_id: "" });
+  const [form, setForm] = useState({ name: "", store_id: "", warehouse_id: "", journal_id: "", user_id: "" });
 
   const load = async () => {
     const { data } = await supabase
       .from("cash_registers")
-      .select("*, warehouses(name), account_journals(name), cash_sessions(id, state, opening_balance, closing_balance_counted)")
+      .select("*, store:stores(name), warehouses(name), account_journals(name), cash_sessions(id, state, opening_balance, closing_balance_counted)")
       .order("name");
     const userIds = Array.from(new Set((data ?? []).map((r: any) => r.user_id).filter(Boolean)));
     let userMap: Record<string, string> = {};
@@ -38,29 +41,45 @@ export default function CashRegistersList() {
   useEffect(() => {
     load();
     (async () => {
-      const [{ data: w }, { data: j }, { data: e }] = await Promise.all([
-        supabase.from("warehouses").select("id,name").eq("active", true).eq("is_store", true).order("name"),
+      const [{ data: s }, { data: w }, { data: j }, { data: e }] = await Promise.all([
+        supabase.from("stores").select("id,name,warehouse_id").eq("active", true).order("name"),
+        supabase.from("warehouses").select("id,name").eq("active", true).order("name"),
         supabase.from("account_journals").select("id,name").eq("type", "cash").eq("active", true).order("name"),
         supabase.from("hr_employees").select("user_id, full_name").eq("active", true).not("user_id", "is", null).order("full_name"),
       ]);
-      setStores(w ?? []);
+      setStores(s ?? []);
+      setWarehouses(w ?? []);
       setJournals(j ?? []);
       setUsers(e ?? []);
     })();
   }, []);
 
+  // Default responsável = utilizador autenticado
+  useEffect(() => {
+    if (open && user?.id && !form.user_id) {
+      setForm((f) => ({ ...f, user_id: user.id }));
+    }
+  }, [open, user?.id]);
+
+  // Ao escolher loja, herda armazém da loja se existir
+  const onStoreChange = (v: string) => {
+    const st = stores.find((s) => s.id === v);
+    setForm((f) => ({ ...f, store_id: v, warehouse_id: st?.warehouse_id ?? f.warehouse_id }));
+  };
+
   const create = async () => {
-    if (!form.name || !form.warehouse_id) return toast.error("Preencha nome e loja");
+    if (!form.name || !form.store_id) return toast.error("Preencha nome e loja");
     const { error } = await supabase.from("cash_registers").insert({
       name: form.name,
-      warehouse_id: form.warehouse_id,
+      store_id: form.store_id,
+      warehouse_id: form.warehouse_id || null,
       journal_id: form.journal_id || null,
-      user_id: form.user_id || null,
+      user_id: form.user_id || user?.id || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Caixa criado");
     setOpen(false);
-    setForm({ name: "", warehouse_id: "", journal_id: "", user_id: "" });
+    setForm({ name: "", store_id: "", warehouse_id: "", journal_id: "", user_id: "" });
     load();
   };
 
@@ -84,7 +103,8 @@ export default function CashRegistersList() {
                     <Wallet className="h-4 w-4 text-primary" />
                     <div className="font-semibold">{r.name}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">Loja: {r.warehouses?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">Loja: {r.store?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">Armazém: {r.warehouses?.name ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">Responsável: {r.user_name ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">Diário: {r.account_journals?.name ?? "—"}</div>
                   <div className="mt-3">
@@ -110,9 +130,16 @@ export default function CashRegistersList() {
             <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div>
               <Label>Loja</Label>
+              <Select value={form.store_id} onValueChange={onStoreChange}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{stores.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Armazém</Label>
               <Select value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{stores.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{warehouses.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -121,6 +148,7 @@ export default function CashRegistersList() {
                 <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
                 <SelectContent>{users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.full_name}</SelectItem>)}</SelectContent>
               </Select>
+              <div className="text-xs text-muted-foreground mt-1">Por defeito é o utilizador autenticado.</div>
             </div>
             <div>
               <Label>Diário (cash)</Label>
