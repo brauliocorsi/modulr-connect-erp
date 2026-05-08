@@ -37,6 +37,7 @@ type Line = {
   discount_pct?: number;
   tax_pct?: number;
   subtotal: number;
+  line_kind?: string;
 };
 
 const STATE_TONES: Record<string, "default" | "success" | "warning" | "info" | "destructive"> = {
