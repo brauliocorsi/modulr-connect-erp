@@ -272,6 +272,11 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
             {kind === "sale" && !isNew && order.invoice_status === "invoiced" && (
               <Button size="sm" variant="ghost" onClick={revertInvoice}>Reverter fatura</Button>
             )}
+            {kind === "sale" && !isNew && (
+              <Button size="sm" variant="outline" onClick={() => printSaleOrder(id!)}>
+                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar
