@@ -2312,6 +2312,7 @@ export type Database = {
           amount_tax: number
           amount_total: number
           amount_untaxed: number
+          commitment_date: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
@@ -2337,6 +2338,7 @@ export type Database = {
           amount_tax?: number
           amount_total?: number
           amount_untaxed?: number
+          commitment_date?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -2362,6 +2364,7 @@ export type Database = {
           amount_tax?: number
           amount_total?: number
           amount_untaxed?: number
+          commitment_date?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
