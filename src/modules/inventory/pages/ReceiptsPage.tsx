@@ -91,7 +91,7 @@ function ReceiptRow({ r, showSO }: { r: Row; showSO: boolean }) {
       <td className="px-3 py-2 text-xs">{r.partners?.name ?? "—"}</td>
       <td className="px-3 py-2 text-xs">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
       <td className="px-3 py-2">
-        <span className={`text-xs px-2 py-0.5 rounded ${STATE_TONE[r.state] ?? ""}`}>{r.state}</span>
+        <span className={`text-xs px-2 py-0.5 rounded ${STATE_TONE[r.state] ?? ""}`}>{stateLabel(r.state)}</span>
       </td>
       <td className="px-2 py-1">
         <div className="flex items-center justify-end gap-1">
