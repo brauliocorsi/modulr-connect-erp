@@ -190,6 +190,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       const lp: any = {
         order_id: oid,
         product_id: l.product_id,
+        variant_id: l.variant_id ?? null,
         description: l.description,
         quantity: l.quantity,
         unit_price: l.unit_price,
