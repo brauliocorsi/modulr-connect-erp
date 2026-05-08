@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X, Printer } from "lucide-react";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
 const TONE: Record<string, any> = { draft: "default", waiting: "warning", ready: "info", done: "success", cancelled: "destructive" };
@@ -103,6 +104,9 @@ export default function TransferForm() {
         state={{ label: picking.state, tone: TONE[picking.state] ?? "default" }}
         actions={
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir picking
+            </Button>
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
