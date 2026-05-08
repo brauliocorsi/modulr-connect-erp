@@ -2392,6 +2392,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_order: string
+          delivery_region_rule_id: string | null
+          delivery_zip_rule_id: string | null
           delivery_zone_label: string | null
           fulfillment_status: string
           id: string
@@ -2421,6 +2423,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_region_rule_id?: string | null
+          delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
           fulfillment_status?: string
           id?: string
@@ -2450,6 +2454,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_region_rule_id?: string | null
+          delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
           fulfillment_status?: string
           id?: string
@@ -2476,6 +2482,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_delivery_region_rule_id_fkey"
+            columns: ["delivery_region_rule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_region_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_delivery_zip_rule_id_fkey"
+            columns: ["delivery_zip_rule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zip_rules"
             referencedColumns: ["id"]
           },
           {
@@ -3282,7 +3302,7 @@ export type Database = {
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
       calc_delivery_price: {
-        Args: { _partner: string }
+        Args: { _order: string }
         Returns: {
           label: string
           price: number
