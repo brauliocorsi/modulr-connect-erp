@@ -190,7 +190,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         backTo={basePath}
         state={{ label: order.state, tone: STATE_TONES[order.state] ?? "default" }}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar
