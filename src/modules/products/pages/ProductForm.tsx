@@ -163,6 +163,16 @@ export default function ProductForm() {
                       <Label>Preço de venda</Label>
                       <Input type="number" step="0.01" value={form.list_price} onChange={(e) => setForm({ ...form, list_price: Number(e.target.value) })} />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Valor de montagem (€)</Label>
+                      <Input type="number" step="0.01" value={form.assembly_fee ?? 0} onChange={(e) => setForm({ ...form, assembly_fee: Number(e.target.value) })} />
+                      <p className="text-xs text-muted-foreground">Cobrado por unidade quando o cliente pede montagem.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Adicional de entrega (€)</Label>
+                      <Input type="number" step="0.01" value={form.delivery_surcharge ?? 0} onChange={(e) => setForm({ ...form, delivery_surcharge: Number(e.target.value) })} />
+                      <p className="text-xs text-muted-foreground">Somado à entrega base por unidade (ex.: produto volumoso).</p>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Descrição comercial</Label>

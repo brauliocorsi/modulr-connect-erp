@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, CheckCircle2, X, Printer, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -37,6 +38,7 @@ type Line = {
   discount_pct?: number;
   tax_pct?: number;
   subtotal: number;
+  line_kind?: string;
 };
 
 const STATE_TONES: Record<string, "default" | "success" | "warning" | "info" | "destructive"> = {
@@ -77,7 +79,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { data: products } = useQuery({
     queryKey: ["products-list"],
     queryFn: async () =>
-      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode").order("name")).data ?? [],
+      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge").order("name")).data ?? [],
   });
   const { data: variantsByProduct } = useQuery({
     queryKey: ["product-variants-by-product"],
@@ -139,10 +141,28 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     })();
   }, [id, isNew, ordersTable, linesTable]);
 
+  const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
+  const serviceLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") !== "product"), [lines]);
   const totals = useMemo(() => {
     const untaxed = lines.reduce((s, l) => s + Number(l.subtotal || 0), 0);
     return { untaxed, tax: 0, total: untaxed };
   }, [lines]);
+
+  const refreshServices = async (oid: string) => {
+    const { error } = await supabase.rpc("refresh_order_services" as any, { _order: oid });
+    if (error) return toast.error(error.message);
+    const { data: o } = await supabase.from("sale_orders").select("*").eq("id", oid).maybeSingle();
+    if (o) setOrder(o);
+    const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", oid).order("sequence");
+    setLines((ls ?? []) as unknown as Line[]);
+  };
+
+  const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
+    if (isNew) return toast.error("Salve o pedido primeiro");
+    setOrder((o: any) => ({ ...o, [key]: value }));
+    await supabase.from("sale_orders").update({ [key]: value } as any).eq("id", id!);
+    await refreshServices(id!);
+  };
 
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) => {
@@ -188,8 +208,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       const { error } = await supabase.from(ordersTable as any).update(payload).eq("id", oid!);
       if (error) return toast.error(error.message);
     }
-    // upsert lines
+    // upsert lines (only product lines; service lines are managed by RPC)
     for (const l of lines) {
+      if ((l.line_kind ?? "product") !== "product") continue;
       if (!l.product_id) continue;
       const lp: any = {
         order_id: oid,
@@ -204,6 +225,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       };
       if (l.id) await supabase.from(linesTable as any).update(lp).eq("id", l.id);
       else await supabase.from(linesTable as any).insert(lp);
+    }
+    if (kind === "sale" && oid && (order.include_assembly || order.include_delivery)) {
+      await refreshServices(oid);
     }
     toast.success("Salvo");
     if (isNew && oid) nav(`${basePath}/${oid}`);
@@ -370,9 +394,10 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {lines.length === 0 ? (
+                    {productLines.length === 0 ? (
                       <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
-                    ) : lines.map((l, i) => {
+                    ) : productLines.map((l) => {
+                      const i = lines.indexOf(l);
                       const s = l.product_id ? stockMap?.[l.product_id] : undefined;
                       const avail = s?.available ?? 0;
                       const qty = Number(l.quantity || 0);
@@ -526,6 +551,52 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                 </table>
               </div>
             </Card>
+
+            {kind === "sale" && !isNew && (
+              <Card className="p-4 space-y-3">
+                <div className="font-semibold">Serviços</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3 p-3 rounded border">
+                    <Switch
+                      checked={!!order.include_assembly}
+                      onCheckedChange={(v) => toggleService("include_assembly", v)}
+                      disabled={isLocked}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">Incluir montagem</div>
+                      <div className="text-xs text-muted-foreground">Soma o valor de montagem definido em cada produto.</div>
+                      {serviceLines.filter((l) => l.line_kind === "assembly").map((l) => (
+                        <div key={l.id} className="text-sm mt-2 tabular-nums">{fmtMoney(l.subtotal)}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded border">
+                    <Switch
+                      checked={!!order.include_delivery}
+                      onCheckedChange={(v) => toggleService("include_delivery", v)}
+                      disabled={isLocked}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">Incluir entrega</div>
+                      <div className="text-xs text-muted-foreground">
+                        Calculada pelo código postal do cliente, com adicional dos produtos.
+                      </div>
+                      {order.delivery_zone_label && (
+                        <div className="text-xs mt-1">Zona: <span className="font-medium">{order.delivery_zone_label}</span></div>
+                      )}
+                      {serviceLines.filter((l) => l.line_kind === "delivery").map((l) => (
+                        <div key={l.id} className="text-sm mt-2 tabular-nums">{fmtMoney(l.subtotal)}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {(order.include_assembly || order.include_delivery) && !isLocked && (
+                  <Button size="sm" variant="outline" onClick={() => refreshServices(id!)}>
+                    Recalcular serviços
+                  </Button>
+                )}
+              </Card>
+            )}
 
             {!isNew && kind === "sale" && (
               <PaymentsTab orderId={id!} partnerId={order.partner_id} total={Number(order.amount_total ?? totals.total)} isLocked={["cancelled"].includes(order.state)} />
