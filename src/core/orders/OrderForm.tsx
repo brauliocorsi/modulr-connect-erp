@@ -286,11 +286,36 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   </SelectContent>
                 </Select>
               </div>
+              {kind === "sale" && (
+                <div className="space-y-2">
+                  <Label>Data de entrega prometida</Label>
+                  <Input
+                    type="date"
+                    value={order.commitment_date ?? ""}
+                    onChange={(e) => setOrder({ ...order, commitment_date: e.target.value || null })}
+                    disabled={isLocked}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Notas</Label>
                 <Input value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} disabled={isLocked} />
               </div>
             </Card>
+
+            {kind === "sale" && shipment && (
+              <Card className="p-3 flex items-center gap-3 border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <div className="text-sm flex-1">
+                  <span className="font-medium">Entrega programada</span> — {shipment.name}
+                  {shipment.scheduled_at && <> · prevista {new Date(shipment.scheduled_at).toLocaleString("pt-PT")}</>}
+                  {shipment.done_at && <> · entregue {new Date(shipment.done_at).toLocaleString("pt-PT")}</>}
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <a href={`/inventory/transfers/${shipment.id}`}>Abrir</a>
+                </Button>
+              </Card>
+            )}
 
             <Card>
               <div className="px-4 py-3 border-b flex items-center justify-between">
