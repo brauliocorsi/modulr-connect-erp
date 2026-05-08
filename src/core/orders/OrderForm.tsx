@@ -26,6 +26,7 @@ import { toast } from "sonner";
 type Line = {
   id?: string;
   product_id: string | null;
+  variant_id?: string | null;
   description: string;
   quantity: number;
   unit_price: number;
@@ -73,6 +74,25 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryKey: ["products-list"],
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
+  });
+  const { data: variantsByProduct } = useQuery({
+    queryKey: ["product-variants-by-product"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_variants")
+        .select("id, product_id, sku, price_extra, active, product_variant_values(product_attribute_values(name))")
+        .eq("active", true);
+      const m: Record<string, { id: string; label: string; price_extra: number }[]> = {};
+      (data ?? []).forEach((v: any) => {
+        const names = (v.product_variant_values || [])
+          .map((x: any) => x.product_attribute_values?.name)
+          .filter(Boolean)
+          .join(" / ");
+        const label = names || v.sku || "Variante";
+        (m[v.product_id] ||= []).push({ id: v.id, label, price_extra: Number(v.price_extra || 0) });
+      });
+      return m;
+    },
   });
   const { data: shipment } = useQuery({
     enabled: kind === "sale" && !!order.name && order.name !== "Rascunho",
@@ -170,6 +190,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       const lp: any = {
         order_id: oid,
         product_id: l.product_id,
+        variant_id: l.variant_id ?? null,
         description: l.description,
         quantity: l.quantity,
         unit_price: l.unit_price,
@@ -358,6 +379,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                               const p = products?.find((x: any) => x.id === v);
                               setLine(i, {
                                 product_id: v,
+                                variant_id: null,
                                 unit_price: kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0),
                                 description: p?.name ?? "",
                               });
@@ -369,6 +391,31 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                               {products?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                          {l.product_id && (variantsByProduct?.[l.product_id]?.length ?? 0) > 0 && (
+                            <Select
+                              value={l.variant_id ?? ""}
+                              onValueChange={(v) => {
+                                const p = products?.find((x: any) => x.id === l.product_id);
+                                const variant = variantsByProduct?.[l.product_id!]?.find((x) => x.id === v);
+                                const base = kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0);
+                                setLine(i, {
+                                  variant_id: v,
+                                  unit_price: base + Number(variant?.price_extra ?? 0),
+                                  description: `${p?.name ?? ""}${variant ? ` — ${variant.label}` : ""}`,
+                                });
+                              }}
+                              disabled={isLocked}
+                            >
+                              <SelectTrigger className="h-7 mt-1 text-xs"><SelectValue placeholder="Variante…" /></SelectTrigger>
+                              <SelectContent>
+                                {variantsByProduct[l.product_id]!.map((v) => (
+                                  <SelectItem key={v.id} value={v.id}>
+                                    {v.label}{v.price_extra ? ` (+${fmtMoney(v.price_extra)})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </td>
                         <td className="px-2 py-1">
                           {l.product_id ? (
