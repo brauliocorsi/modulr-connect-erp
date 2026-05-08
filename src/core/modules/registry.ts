@@ -119,7 +119,6 @@ export const MODULES: ModuleDef[] = [
       { section: "Operações", label: "A Receber", to: "/finance/receivables" },
       { section: "Operações", label: "Confirmações", to: "/finance/pending" },
       { section: "Operações", label: "Contas a Pagar", to: "/finance/payables" },
-      { section: "Caixas", label: "Caixas", to: "/finance/cash" },
       { section: "Configuração", label: "Diários", to: "/finance/journals" },
       { section: "Configuração", label: "Métodos de Pagamento", to: "/finance/methods" },
       { section: "Configuração", label: "Centros de Custo", to: "/finance/cost_centers" },
