@@ -22,12 +22,18 @@ export default function CashRegisterDetail() {
   const [openingBalance, setOpeningBalance] = useState<string>("");
   const [lastClosed, setLastClosed] = useState<number>(0);
 
+  const [userName, setUserName] = useState<string>("—");
+
   const load = async () => {
     const { data: r } = await supabase
       .from("cash_registers")
       .select("*, warehouses(name), account_journals(name)")
       .eq("id", id!).maybeSingle();
     setReg(r);
+    if (r?.user_id) {
+      const { data: emp } = await supabase.from("hr_employees").select("full_name").eq("user_id", r.user_id).maybeSingle();
+      setUserName(emp?.full_name ?? "—");
+    } else setUserName("—");
     const { data: s } = await supabase
       .from("cash_sessions")
       .select("*")
@@ -76,8 +82,9 @@ export default function CashRegisterDetail() {
         }
       />
       <PageBody>
-        <Card className="p-4 grid sm:grid-cols-3 gap-3 mb-4 text-sm">
+        <Card className="p-4 grid sm:grid-cols-4 gap-3 mb-4 text-sm">
           <div><div className="o-section-title">Loja</div>{reg.warehouses?.name ?? "—"}</div>
+          <div><div className="o-section-title">Responsável</div>{userName}</div>
           <div><div className="o-section-title">Diário</div>{reg.account_journals?.name ?? "—"}</div>
           <div><div className="o-section-title">Último fecho</div>{fmtMoney(lastClosed)}</div>
         </Card>

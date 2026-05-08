@@ -16,27 +16,36 @@ export default function CashRegistersList() {
   const nav = useNavigate();
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   const [journals, setJournals] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: "", warehouse_id: "", journal_id: "" });
+  const [users, setUsers] = useState<any[]>([]);
+  const [form, setForm] = useState({ name: "", warehouse_id: "", journal_id: "", user_id: "" });
 
   const load = async () => {
     const { data } = await supabase
       .from("cash_registers")
       .select("*, warehouses(name), account_journals(name), cash_sessions(id, state, opening_balance, closing_balance_counted)")
       .order("name");
-    setRows(data ?? []);
+    const userIds = Array.from(new Set((data ?? []).map((r: any) => r.user_id).filter(Boolean)));
+    let userMap: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: emp } = await supabase.from("hr_employees").select("user_id, full_name").in("user_id", userIds);
+      userMap = Object.fromEntries((emp ?? []).map((e: any) => [e.user_id, e.full_name]));
+    }
+    setRows((data ?? []).map((r: any) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] : null })));
   };
 
   useEffect(() => {
     load();
     (async () => {
-      const [{ data: w }, { data: j }] = await Promise.all([
-        supabase.from("warehouses").select("id,name").eq("active", true).order("name"),
+      const [{ data: w }, { data: j }, { data: e }] = await Promise.all([
+        supabase.from("warehouses").select("id,name").eq("active", true).eq("is_store", true).order("name"),
         supabase.from("account_journals").select("id,name").eq("type", "cash").eq("active", true).order("name"),
+        supabase.from("hr_employees").select("user_id, full_name").eq("active", true).not("user_id", "is", null).order("full_name"),
       ]);
-      setWarehouses(w ?? []);
+      setStores(w ?? []);
       setJournals(j ?? []);
+      setUsers(e ?? []);
     })();
   }, []);
 
@@ -46,11 +55,12 @@ export default function CashRegistersList() {
       name: form.name,
       warehouse_id: form.warehouse_id,
       journal_id: form.journal_id || null,
+      user_id: form.user_id || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Caixa criado");
     setOpen(false);
-    setForm({ name: "", warehouse_id: "", journal_id: "" });
+    setForm({ name: "", warehouse_id: "", journal_id: "", user_id: "" });
     load();
   };
 
@@ -75,6 +85,7 @@ export default function CashRegistersList() {
                     <div className="font-semibold">{r.name}</div>
                   </div>
                   <div className="text-xs text-muted-foreground">Loja: {r.warehouses?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">Responsável: {r.user_name ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">Diário: {r.account_journals?.name ?? "—"}</div>
                   <div className="mt-3">
                     {openSession ? (
@@ -98,10 +109,17 @@ export default function CashRegistersList() {
           <div className="grid gap-3">
             <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div>
-              <Label>Loja (Armazém)</Label>
+              <Label>Loja</Label>
               <Select value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{warehouses.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{stores.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Utilizador responsável</Label>
+              <Select value={form.user_id} onValueChange={(v) => setForm({ ...form, user_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>

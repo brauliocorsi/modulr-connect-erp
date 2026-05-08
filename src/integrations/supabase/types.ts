@@ -281,6 +281,7 @@ export type Database = {
           journal_id: string | null
           name: string
           updated_at: string
+          user_id: string | null
           warehouse_id: string | null
         }
         Insert: {
@@ -290,6 +291,7 @@ export type Database = {
           journal_id?: string | null
           name: string
           updated_at?: string
+          user_id?: string | null
           warehouse_id?: string | null
         }
         Update: {
@@ -299,6 +301,7 @@ export type Database = {
           journal_id?: string | null
           name?: string
           updated_at?: string
+          user_id?: string | null
           warehouse_id?: string | null
         }
         Relationships: [
@@ -3064,6 +3067,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          is_store: boolean
           name: string
         }
         Insert: {
@@ -3073,6 +3077,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          is_store?: boolean
           name: string
         }
         Update: {
@@ -3082,6 +3087,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          is_store?: boolean
           name?: string
         }
         Relationships: [
