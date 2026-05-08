@@ -18,7 +18,9 @@ export const AppsSettings = () => {
   });
   const toggle = useMutation({
     mutationFn: async ({ module, installed }: { module: string; installed: boolean }) => {
-      const { error } = await supabase.from("installed_modules").update({ installed }).eq("module", module as any);
+      const { error } = await supabase
+        .from("installed_modules")
+        .upsert({ module: module as any, installed, installed_at: new Date().toISOString() }, { onConflict: "module" });
       if (error) throw error;
     },
     onSuccess: () => {

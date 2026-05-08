@@ -1,0 +1,3 @@
+ALTER TYPE app_module ADD VALUE IF NOT EXISTS 'hr';
+ALTER TYPE app_module ADD VALUE IF NOT EXISTS 'cashbox';
+ALTER TYPE app_module ADD VALUE IF NOT EXISTS 'discuss';
