@@ -26,6 +26,7 @@ import { toast } from "sonner";
 type Line = {
   id?: string;
   product_id: string | null;
+  variant_id?: string | null;
   description: string;
   quantity: number;
   unit_price: number;
