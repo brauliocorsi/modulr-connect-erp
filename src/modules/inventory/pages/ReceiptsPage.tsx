@@ -128,11 +128,12 @@ function Table({ rows, showSO }: { rows: Row[]; showSO: boolean }) {
               <th className="text-left px-3 py-2">Fornecedor</th>
               <th className="text-left px-3 py-2">Programado</th>
               <th className="text-left px-3 py-2">Estado</th>
+              <th className="text-right px-3 py-2">Ações</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={showSO ? 7 : 5} className="text-center py-6 text-muted-foreground">Sem recebimentos</td></tr>
+              <tr><td colSpan={showSO ? 8 : 6} className="text-center py-6 text-muted-foreground">Sem recebimentos</td></tr>
             ) : rows.map((r) => <ReceiptRow key={r.id} r={r} showSO={showSO} />)}
           </tbody>
         </table>
