@@ -263,6 +263,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="text-left px-3 py-2">Produto</th>
+                      <th className="text-left px-3 py-2 w-28">Stock</th>
                       <th className="text-left px-3 py-2 w-32">Qtd</th>
                       <th className="text-left px-3 py-2 w-40">Preço unit.</th>
                       {kind === "sale" && <th className="text-left px-3 py-2 w-24">Desc %</th>}
@@ -272,8 +273,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   </thead>
                   <tbody>
                     {lines.length === 0 ? (
-                      <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
-                    ) : lines.map((l, i) => (
+                      <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
+                    ) : lines.map((l, i) => {
+                      const s = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const avail = s?.available ?? 0;
+                      const qty = Number(l.quantity || 0);
+                      const tone = !l.product_id ? "text-muted-foreground"
+                        : avail >= qty ? "text-emerald-600"
+                        : avail > 0 ? "text-amber-600" : "text-rose-600";
+                      return (
                       <tr key={i} className="border-t">
                         <td className="px-2 py-1">
                           <Select
