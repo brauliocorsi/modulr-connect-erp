@@ -78,21 +78,93 @@ export default function Discuss() {
     }
   };
 
+  const dmKey = (a: string, b: string) => "dm:" + [a, b].sort().join("|");
+  const profileLabel = (p: Profile) => p.full_name ?? p.email ?? "Utilizador";
+
+  const openDm = async (otherId: string) => {
+    if (!user || otherId === user.id) return;
+    const key = dmKey(user.id, otherId);
+    const { data: existing } = await supabase
+      .from("chat_channels").select("*").eq("kind", "dm").eq("name", key).maybeSingle();
+    let channel = existing as Channel | null;
+    if (!channel) {
+      const otherProf = profiles.find((p) => p.id === otherId);
+      const { data: created, error } = await supabase
+        .from("chat_channels")
+        .insert({ name: key, kind: "dm", is_private: true, created_by: user.id, description: otherProf ? `DM com ${profileLabel(otherProf)}` : "Mensagem direta" })
+        .select().single();
+      if (error || !created) return;
+      channel = created as Channel;
+      await supabase.from("chat_channel_members").insert([
+        { channel_id: channel.id, user_id: user.id },
+        { channel_id: channel.id, user_id: otherId },
+      ]);
+      setChannels((c) => [...c, channel as Channel]);
+    }
+    setDmOpen(false); setDmSearch("");
+    nav(`/discuss/${channel.id}`);
+  };
+
+  const dmDisplayName = (c: Channel) => {
+    if (c.kind !== "dm" || !user) return c.name;
+    // name is sorted user ids joined by "|" prefixed with "dm:"
+    const ids = c.name.replace(/^dm:/, "").split("|");
+    const otherId = ids.find((i) => i !== user.id);
+    const p = profiles.find((x) => x.id === otherId);
+    return p ? profileLabel(p) : "Mensagem direta";
+  };
+
   return (
     <div className="flex h-[calc(100vh-3rem)]">
       <aside className="w-60 border-r bg-card flex flex-col">
-        <div className="p-3 border-b flex items-center justify-between">
+        <div className="p-3 border-b flex items-center justify-between gap-1">
           <span className="font-semibold text-sm">Conversas</span>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="icon" variant="ghost"><Plus className="h-4 w-4" /></Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Novo canal</DialogTitle></DialogHeader>
-              <Input placeholder="nome-do-canal" value={newName} onChange={(e) => setNewName(e.target.value)} />
-              <DialogFooter><Button onClick={createChannel}>Criar</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center">
+            <Dialog open={dmOpen} onOpenChange={setDmOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" title="Nova mensagem direta"><MessageCircle className="h-4 w-4" /></Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova mensagem direta</DialogTitle></DialogHeader>
+                <Input placeholder="Buscar utilizador…" value={dmSearch} onChange={(e) => setDmSearch(e.target.value)} />
+                <div className="max-h-72 overflow-auto border rounded-md divide-y">
+                  {profiles
+                    .filter((p) => p.id !== user?.id)
+                    .filter((p) => {
+                      const q = dmSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (p.full_name ?? "").toLowerCase().includes(q) || (p.email ?? "").toLowerCase().includes(q);
+                    })
+                    .slice(0, 50)
+                    .map((p) => (
+                      <button key={p.id} onClick={() => openDm(p.id)}
+                        className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-primary/15 grid place-items-center text-xs font-semibold">
+                          {profileLabel(p)[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{profileLabel(p)}</div>
+                          {p.email && <div className="text-xs text-muted-foreground truncate">{p.email}</div>}
+                        </div>
+                      </button>
+                    ))}
+                  {profiles.filter((p) => p.id !== user?.id).length === 0 && (
+                    <div className="p-3 text-sm text-muted-foreground">Nenhum utilizador disponível.</div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" title="Novo canal"><Plus className="h-4 w-4" /></Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Novo canal</DialogTitle></DialogHeader>
+                <Input placeholder="nome-do-canal" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                <DialogFooter><Button onClick={createChannel}>Criar</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
         <div className="flex-1 overflow-auto p-2 space-y-0.5">
           {channels.map((c) => (
