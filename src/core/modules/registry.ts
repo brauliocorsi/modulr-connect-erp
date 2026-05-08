@@ -112,7 +112,7 @@ export const MODULES: ModuleDef[] = [
     icon: Wallet,
     color: "bg-[hsl(160_84%_39%)]",
     basePath: "/finance",
-    description: "Recebimentos, contas a pagar, caixas e centros de custo",
+    description: "Recebimentos, contas a pagar e centros de custo",
     menu: [
       { section: "Visão Geral", label: "Dashboard", to: "/finance" },
       { section: "Operações", label: "Recebimentos", to: "/finance/payments" },
