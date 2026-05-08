@@ -34,7 +34,7 @@ export const AppsSettings = () => {
       <PageBody>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {MODULES.filter((m) => m.id !== "settings").map((m) => {
-            const row = data?.find((d: any) => d.module === m.id);
+            const row = Array.isArray(data) ? data.find((d: any) => d.module === m.id) : undefined;
             const installed = row?.installed ?? false;
             return (
               <Card key={m.id} className="p-4 flex items-start gap-4">
