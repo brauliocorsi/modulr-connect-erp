@@ -78,7 +78,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { data: products } = useQuery({
     queryKey: ["products-list"],
     queryFn: async () =>
-      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode").order("name")).data ?? [],
+      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge").order("name")).data ?? [],
   });
   const { data: variantsByProduct } = useQuery({
     queryKey: ["product-variants-by-product"],
