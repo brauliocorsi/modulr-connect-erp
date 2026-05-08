@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Truck, PackageCheck } from "lucide-react";
+import { stateLabel } from "@/lib/picking";
 
 const STATE_TONE: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
