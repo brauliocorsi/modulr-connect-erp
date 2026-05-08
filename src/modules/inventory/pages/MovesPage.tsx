@@ -49,10 +49,9 @@ export default function MovesPage() {
         r.stock_pickings?.name ?? "",
         r.stock_pickings?.kind ?? "",
         r.products?.name ?? "",
-        r.source_location?.name ?? "",
-        r.destination_location?.name ?? "",
         r.quantity, r.quantity_done, r.state,
         r.stock_pickings?.origin ?? "",
+        r.stock_pickings?.partners?.name ?? "",
       ]),
     ];
     const csv = rows.map((row) => row.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
