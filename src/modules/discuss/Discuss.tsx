@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Hash, Plus, Send, Lock, Users } from "lucide-react";
+import { Hash, Plus, Send, Lock, Users, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
 
@@ -24,6 +24,8 @@ export default function Discuss() {
   const [text, setText] = useState("");
   const [newName, setNewName] = useState("");
   const [open, setOpen] = useState(false);
+  const [dmOpen, setDmOpen] = useState(false);
+  const [dmSearch, setDmSearch] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
