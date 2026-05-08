@@ -14,6 +14,7 @@ export function RegisterPaymentDialog({
   orderId,
   partnerId,
   defaultAmount,
+  scheduleId,
   onSaved,
 }: {
   open: boolean;
@@ -21,6 +22,7 @@ export function RegisterPaymentDialog({
   orderId: string;
   partnerId?: string | null;
   defaultAmount?: number;
+  scheduleId?: string | null;
   onSaved?: () => void;
 }) {
   const [methods, setMethods] = useState<any[]>([]);
