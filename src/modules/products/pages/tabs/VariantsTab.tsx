@@ -215,13 +215,61 @@ export function VariantsTab({ productId }: { productId: string }) {
   const applyBulkSku = async () => {
     const ids = requireSelection(); if (!ids) return;
     const prefix = skuPrefix || productCode || "VAR";
-    await Promise.all(ids.map((id) => {
-      const v = variants.find((x) => x.id === id);
-      const parts = (v?.product_variant_values || []).map((x) => slug(x.product_attribute_values?.name || ""));
+    setBulkErrors([]);
+
+    // 1. Compute target SKUs
+    const targets = ids.map((id) => {
+      const v = variants.find((x) => x.id === id)!;
+      const parts = (v.product_variant_values || []).map((x) => slug(x.product_attribute_values?.name || ""));
       const sku = [prefix, ...parts].filter(Boolean).join("-");
-      return supabase.from("product_variants").update({ sku }).eq("id", id);
-    }));
-    toast.success(`${ids.length} SKUs gerados`);
+      const label = (v.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ") || id.slice(0, 6);
+      return { id, sku, label };
+    });
+
+    const errs: string[] = [];
+    const newRowErrs: Record<string, { sku?: string; barcode?: string }> = { ...rowErrors };
+
+    // 2. Detect duplicates within the batch itself
+    const counts = new Map<string, string[]>();
+    targets.forEach((t) => {
+      if (!t.sku) return;
+      counts.set(t.sku, [...(counts.get(t.sku) || []), t.label]);
+    });
+    counts.forEach((labels, sku) => {
+      if (labels.length > 1) errs.push(`SKU "${sku}" geraria duplicata para: ${labels.join(", ")}`);
+    });
+
+    // 3. Detect conflicts with variants outside the selection
+    const idSet = new Set(ids);
+    targets.forEach((t) => {
+      if (!t.sku) return;
+      const conflict = variants.find((x) => !idSet.has(x.id) && (x.sku ?? "").trim() === t.sku);
+      if (conflict) {
+        const cl = (conflict.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ");
+        errs.push(`SKU "${t.sku}" (${t.label}) já existe em: ${cl}`);
+        newRowErrs[t.id] = { ...newRowErrs[t.id], sku: `Conflita com ${cl}` };
+      }
+    });
+
+    if (errs.length) {
+      setBulkErrors(errs);
+      setRowErrors(newRowErrs);
+      toast.error(`${errs.length} conflito(s) de SKU — nada foi salvo`);
+      return;
+    }
+
+    // 4. Apply
+    const results = await Promise.all(targets.map((t) =>
+      supabase.from("product_variants").update({ sku: t.sku }).eq("id", t.id).then((r) => ({ t, r }))
+    ));
+    const failed = results.filter((x) => x.r.error);
+    if (failed.length) {
+      const msgs = failed.map(({ t, r }) => `${t.label}: ${r.error?.message}`);
+      setBulkErrors(msgs);
+      toast.error(`${failed.length} erro(s) ao salvar`);
+    } else {
+      toast.success(`${ids.length} SKUs gerados`);
+    }
     load();
   };
 
