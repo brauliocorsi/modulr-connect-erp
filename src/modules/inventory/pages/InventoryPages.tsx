@@ -30,8 +30,8 @@ export const InventoryDashboard = () => {
 
   const cards = [
     { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success", to: "/inventory/receipts" },
-    { title: "Expedições", icon: ArrowUpFromLine, count: data?.outgoing ?? 0, color: "text-info", to: "/inventory/transfers" },
-    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-warning", to: "/inventory/transfers" },
+    { title: "Expedições", icon: ArrowUpFromLine, count: data?.outgoing ?? 0, color: "text-info", to: "/inventory/shipments" },
+    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-warning", to: "/inventory/internal-transfers" },
     { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary", to: "/inventory/adjustments" },
   ];
 
