@@ -68,6 +68,21 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
   });
+  const { data: stockMap } = useQuery({
+    queryKey: ["products-stock-agg"],
+    queryFn: async () => {
+      const { data } = await supabase.from("product_stock_forecast").select("product_id,available,on_hand,incoming");
+      const m: Record<string, { available: number; on_hand: number; incoming: number }> = {};
+      (data ?? []).forEach((r: any) => {
+        const k = r.product_id;
+        if (!m[k]) m[k] = { available: 0, on_hand: 0, incoming: 0 };
+        m[k].available += Number(r.available || 0);
+        m[k].on_hand += Number(r.on_hand || 0);
+        m[k].incoming += Number(r.incoming || 0);
+      });
+      return m;
+    },
+  });
 
   useEffect(() => {
     if (isNew) return;
@@ -248,6 +263,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="text-left px-3 py-2">Produto</th>
+                      <th className="text-left px-3 py-2 w-28">Stock</th>
                       <th className="text-left px-3 py-2 w-32">Qtd</th>
                       <th className="text-left px-3 py-2 w-40">Preço unit.</th>
                       {kind === "sale" && <th className="text-left px-3 py-2 w-24">Desc %</th>}
@@ -257,8 +273,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   </thead>
                   <tbody>
                     {lines.length === 0 ? (
-                      <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
-                    ) : lines.map((l, i) => (
+                      <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
+                    ) : lines.map((l, i) => {
+                      const s = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const avail = s?.available ?? 0;
+                      const qty = Number(l.quantity || 0);
+                      const tone = !l.product_id ? "text-muted-foreground"
+                        : avail >= qty ? "text-emerald-600"
+                        : avail > 0 ? "text-amber-600" : "text-rose-600";
+                      return (
                       <tr key={i} className="border-t">
                         <td className="px-2 py-1">
                           <Select
@@ -280,6 +303,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           </Select>
                         </td>
                         <td className="px-2 py-1">
+                          {l.product_id ? (
+                            <div className={`text-xs ${tone}`}>
+                              <div className="font-medium">{avail} disp.</div>
+                              {s?.incoming ? <div className="text-[10px] text-muted-foreground">+{s.incoming} a chegar</div> : null}
+                            </div>
+                          ) : <span className="text-muted-foreground text-xs">—</span>}
+                        </td>
+                        <td className="px-2 py-1">
                           <Input className="h-8" type="number" step="0.01" value={l.quantity} onChange={(e) => setLine(i, { quantity: Number(e.target.value) })} disabled={isLocked} />
                         </td>
                         <td className="px-2 py-1">
@@ -299,11 +330,12 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t font-semibold">
-                      <td colSpan={kind === "sale" ? 4 : 3} className="px-3 py-2 text-right">Total</td>
+                      <td colSpan={kind === "sale" ? 5 : 4} className="px-3 py-2 text-right">Total</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(totals.total)}</td>
                       <td />
                     </tr>

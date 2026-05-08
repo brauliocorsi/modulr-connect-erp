@@ -177,6 +177,10 @@ export default function ProductForm() {
                     <Switch checked={form.can_be_purchased} onCheckedChange={(v) => setForm({ ...form, can_be_purchased: v })} />
                     <Label>Pode ser comprado</Label>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Switch checked={!!form.auto_purchase} onCheckedChange={(v) => setForm({ ...form, auto_purchase: v })} />
+                    <Label>Compra automática quando faltar stock <span className="text-xs text-muted-foreground">(usa o fornecedor preferencial e envia e-mail)</span></Label>
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Custo padrão</Label>
