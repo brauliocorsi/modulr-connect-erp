@@ -68,6 +68,21 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
   });
+  const { data: stockMap } = useQuery({
+    queryKey: ["products-stock-agg"],
+    queryFn: async () => {
+      const { data } = await supabase.from("product_stock_forecast").select("product_id,available,on_hand,incoming");
+      const m: Record<string, { available: number; on_hand: number; incoming: number }> = {};
+      (data ?? []).forEach((r: any) => {
+        const k = r.product_id;
+        if (!m[k]) m[k] = { available: 0, on_hand: 0, incoming: 0 };
+        m[k].available += Number(r.available || 0);
+        m[k].on_hand += Number(r.on_hand || 0);
+        m[k].incoming += Number(r.incoming || 0);
+      });
+      return m;
+    },
+  });
 
   useEffect(() => {
     if (isNew) return;
