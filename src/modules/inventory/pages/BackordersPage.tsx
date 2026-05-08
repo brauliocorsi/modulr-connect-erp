@@ -48,7 +48,7 @@ export default function BackordersPage() {
 
   return (
     <>
-      <PageHeader title="Backorders" subtitle="Entregas/recebimentos pendentes gerados automaticamente" icon={ArrowLeftRight} />
+      <PageHeader title="Backorders" breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Backorders" }]} />
       <PageBody>
         <Card className="p-4 mb-4 grid sm:grid-cols-3 gap-3">
           <div>
