@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { fmtMoney } from "@/lib/format";
-import { Receipt, Wallet, AlertTriangle, ArrowDownToLine } from "lucide-react";
+import { Receipt, Wallet, AlertTriangle, ArrowDownToLine, Scale } from "lucide-react";
 
 export default function FinanceDashboard() {
   const [stats, setStats] = useState<any>({
