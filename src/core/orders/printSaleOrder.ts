@@ -46,33 +46,60 @@ export async function printSaleOrder(orderId: string) {
   const paid = (payments ?? []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const balance = Number(order.amount_total || 0) - paid;
 
-  const linesHtml = (lines ?? [])
-    .map((l: any) => {
-      const variantNames = (l.product_variants?.product_variant_values || [])
-        .map((x: any) => x.product_attribute_values?.name)
-        .filter(Boolean)
-        .join(" / ");
-      const img = l.product_variants?.image_url || l.products?.image_url || "";
-      const sku = l.product_variants?.sku || "";
-      return `
-        <tr>
-          <td class="cell">
-            <div class="prod">
-              ${img ? `<img src="${esc(img)}" alt="" />` : `<div class="ph"></div>`}
-              <div>
-                <div class="pn">${esc(l.products?.name || l.description)}</div>
-                ${variantNames ? `<div class="pv">${esc(variantNames)}</div>` : ""}
-                ${sku ? `<div class="ps">SKU ${esc(sku)}</div>` : ""}
-              </div>
+  const productLines = (lines ?? []).filter((l: any) => (l.line_kind ?? "product") === "product");
+  const serviceLines = (lines ?? []).filter((l: any) => (l.line_kind ?? "product") !== "product");
+
+  const renderProductRow = (l: any) => {
+    const variantNames = (l.product_variants?.product_variant_values || [])
+      .map((x: any) => x.product_attribute_values?.name)
+      .filter(Boolean)
+      .join(" / ");
+    const img = l.product_variants?.image_url || l.products?.image_url || "";
+    const sku = l.product_variants?.sku || "";
+    return `
+      <tr>
+        <td class="cell">
+          <div class="prod">
+            ${img ? `<img src="${esc(img)}" alt="" />` : `<div class="ph"></div>`}
+            <div>
+              <div class="pn">${esc(l.products?.name || l.description)}</div>
+              ${variantNames ? `<div class="pv">${esc(variantNames)}</div>` : ""}
+              ${sku ? `<div class="ps">SKU ${esc(sku)}</div>` : ""}
             </div>
-          </td>
-          <td class="num">${Number(l.quantity).toLocaleString("pt-PT")}</td>
-          <td class="num">${fmtMoney(Number(l.unit_price))}</td>
-          <td class="num">${l.discount_pct ? `${Number(l.discount_pct)}%` : "—"}</td>
-          <td class="num bold">${fmtMoney(Number(l.subtotal))}</td>
-        </tr>`;
-    })
-    .join("");
+          </div>
+        </td>
+        <td class="num">${Number(l.quantity).toLocaleString("pt-PT")}</td>
+        <td class="num">${fmtMoney(Number(l.unit_price))}</td>
+        <td class="num">${l.discount_pct ? `${Number(l.discount_pct)}%` : "—"}</td>
+        <td class="num bold">${fmtMoney(Number(l.subtotal))}</td>
+      </tr>`;
+  };
+
+  const linesHtml = productLines.map(renderProductRow).join("");
+
+  const servicesHtml = serviceLines.length
+    ? `<table class="lines" style="margin-top:16px">
+        <thead><tr><th colspan="5" style="background:#eef4ff;color:#1e3a8a">Serviços</th></tr></thead>
+        <tbody>
+          ${serviceLines
+            .map(
+              (l: any) => `
+            <tr>
+              <td class="cell"><div class="pn">${esc(l.description)}</div>${
+                l.line_kind === "delivery" && (order as any).delivery_zone_label
+                  ? `<div class="pv">Zona: ${esc((order as any).delivery_zone_label)}</div>`
+                  : ""
+              }</td>
+              <td class="num">${Number(l.quantity).toLocaleString("pt-PT")}</td>
+              <td class="num">${fmtMoney(Number(l.unit_price))}</td>
+              <td class="num">—</td>
+              <td class="num bold">${fmtMoney(Number(l.subtotal))}</td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>`
+    : "";
 
   const paymentsHtml = (payments ?? []).length
     ? `<table class="pay">
