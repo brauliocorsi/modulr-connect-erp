@@ -602,8 +602,44 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                       <div className="text-xs text-muted-foreground">
                         Calculada pelo código postal do cliente, com adicional dos produtos.
                       </div>
+                      <div className="mt-2">
+                        <Label className="text-xs">Zona de entrega</Label>
+                        <Select
+                          value={
+                            order.delivery_zip_rule_id ? `zip:${order.delivery_zip_rule_id}` :
+                            order.delivery_region_rule_id ? `region:${order.delivery_region_rule_id}` : "auto"
+                          }
+                          onValueChange={setDeliveryZone}
+                          disabled={isLocked}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automático (pelo cliente)</SelectItem>
+                            {(zipRules ?? []).length > 0 && (
+                              <>
+                                <div className="px-2 py-1 text-xs text-muted-foreground">Por código postal</div>
+                                {(zipRules ?? []).map((r: any) => (
+                                  <SelectItem key={`z${r.id}`} value={`zip:${r.id}`}>
+                                    {(r.label || `${r.zip_from}-${r.zip_to}`)} — {fmtMoney(r.price)}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {(regionRules ?? []).length > 0 && (
+                              <>
+                                <div className="px-2 py-1 text-xs text-muted-foreground">Por distrito / região</div>
+                                {(regionRules ?? []).map((r: any) => (
+                                  <SelectItem key={`r${r.id}`} value={`region:${r.id}`}>
+                                    {r.region} ({r.country}) — {fmtMoney(r.price)}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       {order.delivery_zone_label && (
-                        <div className="text-xs mt-1">Zona: <span className="font-medium">{order.delivery_zone_label}</span></div>
+                        <div className="text-xs mt-1">Zona aplicada: <span className="font-medium">{order.delivery_zone_label}</span></div>
                       )}
                       {serviceLines.filter((l) => l.line_kind === "delivery").map((l) => (
                         <div key={l.id} className="text-sm mt-2 tabular-nums">{fmtMoney(l.subtotal)}</div>
