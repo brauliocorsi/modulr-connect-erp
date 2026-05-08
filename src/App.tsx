@@ -167,9 +167,12 @@ const App = () => (
               <Route path="finance/payables" element={<PayablesList />} />
               <Route path="finance/payables/new" element={<BillForm />} />
               <Route path="finance/payables/:id" element={<BillForm />} />
-              <Route path="finance/cash" element={<CashRegistersList />} />
-              <Route path="finance/cash/sessions/:id" element={<CashSessionDetail />} />
-              <Route path="finance/cash/:id" element={<CashRegisterDetail />} />
+
+              {/* Cashbox */}
+              <Route path="cashbox" element={<CashRegistersList />} />
+              <Route path="cashbox/sessions/:id" element={<CashSessionDetail />} />
+              <Route path="cashbox/:id" element={<CashRegisterDetail />} />
+
               <Route path="finance/journals" element={<JournalsList />} />
               <Route path="finance/journals/new" element={<JournalForm />} />
               <Route path="finance/journals/:id" element={<JournalForm />} />
