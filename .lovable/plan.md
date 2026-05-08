@@ -1,45 +1,79 @@
 ## Objetivo
 
-Unificar o fluxo de pagamentos numa única experiência. Hoje existem duas etapas separadas — **Cronograma** (planear parcelas) e **Recebimentos** (registar dinheiro recebido) — o que confunde o utilizador. Vamos transformar tudo num **único processo: "Plano de Pagamento"** onde cada linha é, ao mesmo tempo, a parcela a receber **e** o local onde se confirma o recebimento.
+Permitir cadastrar e gerenciar a Cama Estofada com 3 atributos (Medida, Tipo de Tecido, Cor), gerando todas as combinações como variantes, com edição em massa de preço/SKU, controle de estoque por variante e foto opcional por variante.
 
-## Como vai ficar (visão do utilizador)
+## O que já funciona hoje
 
-Na tab "Pagamentos" da venda:
+- Cadastro de atributos e valores (`/products/attributes`).
+- Aba "Variantes" no produto: selecionar atributos e valores, gerar combinações via RPC `generate_product_variants`, editar SKU/código de barras/preço extra/peso/ativo linha a linha.
+- Estoque já é por variante (tabelas de estoque referenciam `variant_id`).
+- Pedidos de venda permitem escolher variante e somam `price_extra` ao preço.
 
-1. **Resumo no topo** — Total, Recebido, Em aberto, Próximo vencimento.
-2. **Modelos rápidos** (visíveis quando ainda não há plano):
-   - "100% na entrega" (default)
-   - "50% sinal + 50% entrega"
-   - "30% sinal + 70% entrega"
-   - "2× (entrega + 30 dias)"
-   - "3× (entrega + 30/60 dias)"
-   - "Personalizado" (abre editor)
-3. **Lista de parcelas** — cada parcela mostra: rótulo, vencimento, valor, estado (A receber / Parcial / Pago) e um botão único **"Receber"** ao lado.
-   - Ao clicar **Receber** abre o diálogo já preenchido com o valor em aberto da parcela e o cliente. Confirmar marca a parcela como paga (ou parcial) automaticamente.
-   - Cada parcela paga mostra inline o(s) recebimento(s) associado(s) (data, método, valor, referência) com opção de cancelar.
-4. **Editar/adicionar parcela** — botão discreto "Editar plano" abre modo edição inline (sem o "modo avançado" separado). Adicionar/remover linhas, mudar valores/datas, salvar.
+## O que falta (escopo deste plano)
 
-Removemos:
-- A separação visual entre "Cronograma" e "Recebimentos".
-- O toggle "Avançado" / "Simples".
-- A tabela de "Recebimentos" no fundo (o histórico passa a viver dentro de cada parcela; mantemos um link discreto "ver todos os recebimentos desta venda" que expande).
+### 1. Cadastrar os atributos da Cama Estofada (dados, não código)
 
-## Mudanças técnicas
+Antes de qualquer mudança de código, você (usuário) cria em **Produtos → Atributos**:
 
-### Frontend (apenas `src/core/orders/PaymentsTab.tsx`)
-- Reescrever o componente em torno de **uma única secção**: lista de parcelas (`sale_payment_schedules`) com ações inline.
-- Botão **"Receber"** por linha → abre `RegisterPaymentDialog` passando `schedule_id`, `defaultAmount = amount - paid_amount`, `partnerId`.
-- Após gravar pagamento, recarregar e expandir a linha mostrando o recebimento criado.
-- Modo "Editar plano" substitui o toggle Avançado: mesmos presets, mesma tabela editável, mas dentro do mesmo card.
-- Auto-criação: se não houver plano e o utilizador clicar "Receber" sem escolher modelo, criamos automaticamente uma única parcela "Total" com `due_kind=on_delivery` antes de abrir o diálogo.
+- **Medida** (Lista) — valores: 190x140, 190x158, 190x188, 200x158, 200x188 (você ajusta).
+- **Tipo de Tecido** (Botões) — valores: Suede, Veludo, Linho, Sintético, Boucle.
+- **Cor** (Cor) — valores com hex, ex.: Cinza #9CA3AF, Bege #D6C5A8, Preto #111111.
 
-### Backend
-- **Sem migrations.** O schema já suporta tudo: `sale_payment_schedules` tem `paid_amount/state` e `customer_payments` tem `schedule_id`. Já existe (presumivelmente) um trigger que atualiza `paid_amount`/`state` da parcela quando se insere/cancela um `customer_payment` com `schedule_id`. Vou verificar e, se faltar, adicionar via migration separada — mas a UI nova já assume este comportamento.
-- `RegisterPaymentDialog` passa a aceitar e gravar `schedule_id` (campo opcional novo no insert; já existe na tabela).
+Depois, no produto Cama Estofada → aba Variantes → adiciona os 3 atributos, marca os valores e clica em **Gerar variantes**.
 
-### Páginas relacionadas (sem alteração de comportamento, só consistência)
-- `PaymentsPage.tsx` e `ReceivablesPage.tsx` continuam a funcionar — usam as mesmas tabelas. Sem mudanças nesta iteração.
+### 2. Melhorias na UI da aba Variantes (`VariantsTab.tsx`)
 
-## Fora de âmbito
-- Não mexer em pagamentos a fornecedores nem em caixa.
-- Não mudar o schema (a menos que o trigger de sincronização parcela↔pagamento esteja em falta — nesse caso, migration mínima).
+**a) Edição em massa**
+- Adicionar barra de filtros acima da tabela: um `Select` por atributo do produto (ex.: "Medida: todas", "Tecido: Veludo", "Cor: todas") para filtrar as linhas exibidas.
+- Adicionar barra de ações em massa que aparece quando há linhas selecionadas (checkbox por linha + checkbox "selecionar todas filtradas"):
+  - Definir preço extra (input numérico + botão Aplicar).
+  - Adicionar/somar valor ao preço extra atual.
+  - Definir peso.
+  - Ativar / Desativar.
+  - Preencher SKU por padrão (template tipo `CAMA-{medida}-{tecido}-{cor}`, gerando automaticamente para cada linha selecionada usando os nomes dos valores).
+- Botão "Exportar CSV" e "Importar CSV" das variantes (opcional, fase 2).
+
+**b) Foto opcional por variante**
+- Adicionar coluna "Foto" na tabela. Cada linha mostra miniatura (se houver) e botão para upload/remover.
+- Usar bucket de Storage existente para produtos (ou criar `product-variants` se não houver). Salvar URL em `product_variants.image_url`.
+
+**c) Pequenos polimentos**
+- Mostrar contador "X selecionadas" e botão "Limpar seleção".
+- Ordenar variantes pela combinação (Medida → Tecido → Cor) para facilitar leitura.
+- Indicar visualmente variantes inativas (linha em opacidade reduzida).
+
+### 3. Mudanças de banco
+
+- Adicionar coluna `image_url text` em `product_variants` (nullable).
+- Garantir bucket de Storage com policies para upload por usuários autenticados com permissão de editar produtos.
+
+### 4. Exibição da foto da variante
+
+- No formulário de pedido (`OrderForm.tsx`), quando a variante for selecionada e tiver foto, mostrar miniatura ao lado do nome.
+- Na lista de produtos, manter a foto principal do produto (sem mudança).
+
+## Detalhes técnicos
+
+```text
+product_variants
+├─ image_url  (NEW, text, nullable)
+└─ resto inalterado
+```
+
+Filtros do front: derivados de `attrs` carregados em `VariantsTab`. Cada `product_variant_values` traz `value_id` → cruzamos com `attrs[].values[].value_id` para saber a qual atributo pertence cada valor da variante.
+
+Edição em massa: um único `UPDATE ... WHERE id IN (...)` no Supabase por ação aplicada (preço, peso, ativo). Para SKU template, fazemos um `update` por linha porque o valor é diferente para cada uma — usar `Promise.all` com chunks de 20.
+
+Storage: reaproveitar bucket `products` se já existir; senão criar `product-variants` público para leitura, escrita restrita a usuários com permissão `products.products.edit`.
+
+## Fora do escopo (fica para depois)
+
+- Pricelist por combinação de atributos.
+- Estoque "sob encomenda" / mix com produção sob demanda.
+- Regras automáticas tipo "+R$X por valor de atributo" (você optou por edição em massa em vez disso).
+
+## Entregáveis
+
+1. Migração: coluna `image_url` em `product_variants` + bucket/policies de storage.
+2. `VariantsTab.tsx` reescrita com filtros, seleção, ações em massa, gerador de SKU template e upload de foto por linha.
+3. Pequena exibição da miniatura da variante no `OrderForm.tsx`.
