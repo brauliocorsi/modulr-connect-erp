@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X, Printer } from "lucide-react";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
 const TONE: Record<string, any> = { draft: "default", waiting: "warning", ready: "info", done: "success", cancelled: "destructive" };
