@@ -171,11 +171,11 @@ export default function Discuss() {
             <Link key={c.id} to={`/discuss/${c.id}`}
               className={cn("flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted",
                 channelId === c.id && "bg-muted font-medium")}>
-              {c.is_private ? <Lock className="h-3 w-3" /> : <Hash className="h-3 w-3" />}
-              {c.name}
+              {c.kind === "dm" ? <MessageCircle className="h-3 w-3" /> : c.is_private ? <Lock className="h-3 w-3" /> : <Hash className="h-3 w-3" />}
+              {c.kind === "dm" ? dmDisplayName(c) : c.name}
             </Link>
           ))}
-          {channels.length === 0 && <div className="text-xs text-muted-foreground p-2">Crie o primeiro canal.</div>}
+          {channels.length === 0 && <div className="text-xs text-muted-foreground p-2">Crie o primeiro canal ou inicie uma DM.</div>}
         </div>
       </aside>
 
@@ -183,9 +183,9 @@ export default function Discuss() {
         {current ? (
           <>
             <div className="px-4 py-3 border-b flex items-center gap-2">
-              <Hash className="h-4 w-4" />
+              {current.kind === "dm" ? <MessageCircle className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
               <div>
-                <div className="font-semibold">{current.name}</div>
+                <div className="font-semibold">{current.kind === "dm" ? dmDisplayName(current) : current.name}</div>
                 {current.description && <div className="text-xs text-muted-foreground">{current.description}</div>}
               </div>
             </div>
