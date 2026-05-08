@@ -25,7 +25,7 @@ export default function MovesPage() {
     queryFn: async () => {
       let q: any = supabase
         .from("stock_moves")
-        .select("id, reference, quantity, quantity_done, state, created_at, products(name), stock_pickings!inner(id,name,kind,scheduled_at,done_at,origin,warehouse_id, partners(name)), source_location:stock_locations!stock_moves_source_location_id_fkey(name), destination_location:stock_locations!stock_moves_destination_location_id_fkey(name)")
+        .select("id, reference, quantity, quantity_done, state, created_at, products(name), stock_pickings!inner(id,name,kind,scheduled_at,done_at,origin,warehouse_id, partners(name))")
         .order("created_at", { ascending: false })
         .limit(500);
       if (filters.product_id) q = q.eq("product_id", filters.product_id);
