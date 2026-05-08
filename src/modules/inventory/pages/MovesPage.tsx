@@ -120,12 +120,12 @@ export default function MovesPage() {
                         </Link>
                       ) : "—"}
                     </td>
-                    <td className="px-3 py-2">{r.stock_pickings?.kind ?? "—"}</td>
+                    <td className="px-3 py-2">{kindLabel(r.stock_pickings?.kind)}</td>
                     <td className="px-3 py-2">{r.products?.name ?? "—"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{r.stock_pickings?.partners?.name ?? "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.quantity}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.quantity_done}</td>
-                    <td className="px-3 py-2"><span className="o-state-badge">{r.state}</span></td>
+                    <td className="px-3 py-2"><span className="o-state-badge">{stateLabel(r.state)}</span></td>
                     <td className="px-3 py-2 text-xs">{r.stock_pickings?.origin ?? "—"}</td>
                   </tr>
                 ))}
