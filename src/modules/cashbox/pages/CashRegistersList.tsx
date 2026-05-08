@@ -85,6 +85,7 @@ export default function CashRegistersList() {
                     <div className="font-semibold">{r.name}</div>
                   </div>
                   <div className="text-xs text-muted-foreground">Loja: {r.warehouses?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">Responsável: {r.user_name ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">Diário: {r.account_journals?.name ?? "—"}</div>
                   <div className="mt-3">
                     {openSession ? (
