@@ -379,6 +379,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                               const p = products?.find((x: any) => x.id === v);
                               setLine(i, {
                                 product_id: v,
+                                variant_id: null,
                                 unit_price: kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0),
                                 description: p?.name ?? "",
                               });
@@ -390,6 +391,31 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                               {products?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                          {l.product_id && (variantsByProduct?.[l.product_id]?.length ?? 0) > 0 && (
+                            <Select
+                              value={l.variant_id ?? ""}
+                              onValueChange={(v) => {
+                                const p = products?.find((x: any) => x.id === l.product_id);
+                                const variant = variantsByProduct?.[l.product_id!]?.find((x) => x.id === v);
+                                const base = kind === "sale" ? Number(p?.list_price ?? 0) : Number(p?.standard_cost ?? 0);
+                                setLine(i, {
+                                  variant_id: v,
+                                  unit_price: base + Number(variant?.price_extra ?? 0),
+                                  description: `${p?.name ?? ""}${variant ? ` — ${variant.label}` : ""}`,
+                                });
+                              }}
+                              disabled={isLocked}
+                            >
+                              <SelectTrigger className="h-7 mt-1 text-xs"><SelectValue placeholder="Variante…" /></SelectTrigger>
+                              <SelectContent>
+                                {variantsByProduct[l.product_id]!.map((v) => (
+                                  <SelectItem key={v.id} value={v.id}>
+                                    {v.label}{v.price_extra ? ` (+${fmtMoney(v.price_extra)})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </td>
                         <td className="px-2 py-1">
                           {l.product_id ? (
