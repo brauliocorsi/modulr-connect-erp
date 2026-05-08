@@ -42,7 +42,7 @@ export async function printPickingList(pickingId: string) {
   const { data: picking } = await supabase
     .from("stock_pickings")
     .select(
-      "name, kind, state, scheduled_at, done_at, origin, partners(name, tax_id, phone, email, street, city, state, zip), source:source_location_id(name, full_path), dest:destination_location_id(name, full_path)"
+      "name, kind, state, scheduled_at, done_at, origin, partners(name, tax_id, phone, email, street, city, state, zip), source:stock_locations!stock_pickings_source_location_id_fkey(name, full_path), dest:stock_locations!stock_pickings_destination_location_id_fkey(name, full_path)"
     )
     .eq("id", pickingId)
     .maybeSingle();
