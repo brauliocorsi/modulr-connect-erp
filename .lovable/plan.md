@@ -1,113 +1,37 @@
-# Plano: Entrega e Montagem nos Pedidos de Venda
-
 ## Objetivo
-Permitir que o pedido de venda calcule automaticamente:
-- **Montagem**: somatório do "valor de montagem" definido em cada produto (quando o cliente pede montagem).
-- **Entrega**: valor calculado a partir do código postal do cliente, com fallback por região, e adicional opcional por produto.
 
-Ambos aparecem como linhas separadas no pedido e no PDF de impressão.
+Implementar 4 melhorias no inventário:
 
-## 1. Cadastro de Produto (`ProductForm.tsx`)
+1. **Quantidades inteiras por tipo de UoM** — produtos cuja unidade de medida é "unidade/peça" só aceitam inteiros (input com `step=1`, validação no formulário e no `OrderForm`); UoMs contínuas (kg, m, l) mantêm decimais.
 
-Nova secção "Serviços":
-- `assembly_fee` (numérico, €) — valor de montagem unitário por produto.
-- `delivery_surcharge` (numérico, €) — adicional de entrega por unidade (ex.: produto volumoso).
+2. **Backorders automáticas** — ao validar uma picking (entrada/saída/interna), se algum movimento tiver `quantity_done < quantity`, criar automaticamente uma nova `stock_pickings` em estado `ready` com a diferença pendente, ligada por `backorder_id` à original. Aplica-se a `incoming`, `outgoing` e `internal`.
 
-Estes campos são opcionais e ignorados em produtos sem necessidade.
+3. **Criar transferência interna manual** — botão "Nova transferência interna" em `InternalTransfersPage` que abre um formulário (origem, destino, parceiro opcional, linhas de produtos+quantidades) e cria a picking em estado `draft`/`ready`.
 
-## 2. Regras de Entrega (nova área em Vendas → Configuração)
+4. **Estados em português** — mapa `pt` para `state` e `kind` aplicado em todas as páginas/badges (`ShipmentsPage`, `ReceiptsPage`, `TransferForm`, `InternalTransfersPage`, `MovesPage`).
 
-Duas tabelas geríveis pelo utilizador:
+## Detalhes técnicos
 
-**a) `delivery_zip_rules`** — faixas de código postal portuguesas
-- `zip_from` (text, ex.: "1000")
-- `zip_to` (text, ex.: "1999")
-- `price` (numérico)
-- `label` (ex.: "Lisboa centro")
-- `active`
+### Backend (migration)
+- Adicionar coluna `backorder_id uuid references stock_pickings(id)` em `stock_pickings`.
+- Modificar `validate_picking(_picking)`:
+  - Após processar quants e marcar moves done, detectar moves onde `quantity_done < quantity`.
+  - Se existirem, criar nova `stock_pickings` (mesmo `kind`, `source/dest`, `partner`, `origin`, `warehouse`, `backorder_id = _picking`, nome via `next_sequence` adequada) com novos `stock_moves` para a quantidade restante (`quantity = quantity - quantity_done`), estado `ready`, e tentar `reserve_for_move` para outgoing.
+- Aplicar a `incoming`, `outgoing`, `internal`.
+- Adicionar sequência `picking_internal` se não existir.
 
-**b) `delivery_region_rules`** — fallback por região/distrito
-- `region` (text, ex.: "Lisboa", "Porto", "Algarve")
-- `country` (default 'PT')
-- `price`
-- `active`
+### Frontend
+- `src/lib/uom.ts` (novo) — helper `isIntegerUom(uomCategory|name)` reconhecendo "unit", "unidade", "pç", "pcs".
+- `src/lib/picking.ts` (novo) — mapas `STATE_PT`, `KIND_PT`.
+- `ProductForm` / `OrderForm` / `TransferForm` — usar `step={isInt ? 1 : 0.01}` e `Math.floor` em onChange para UoMs inteiras.
+- `InternalTransfersPage` — botão "Nova" → dialog ou nova rota `/inventory/transfers/new?kind=internal` reutilizando um form simples.
+- Substituir labels de estado pelos PT em todas as tabelas/badges relevantes.
 
-**Lista UI**: tabela editável estilo `ListView` com criar/editar/desativar. Acessível em `/sales/delivery-rules`.
-
-## 3. Lógica de Cálculo
-
-Função no banco `calc_delivery_price(_partner uuid, _country text default 'PT')`:
-1. Lê `partners.zip` (formato PT: "XXXX-XXX" ou "XXXX").
-2. Procura em `delivery_zip_rules` por faixa que contenha o prefixo de 4 dígitos.
-3. Se não encontrar, procura em `delivery_region_rules` por `partners.state` (distrito).
-4. Retorna o preço base (ou 0 se nada match).
-
-No frontend (`OrderForm.tsx`), a entrega total = `preço_base_zona + Σ (linha.qty × produto.delivery_surcharge)`.
-
-## 4. UI do Pedido (`OrderForm.tsx`)
-
-Novo painel "Serviços" no cabeçalho do pedido, após linhas de produto:
-
-```text
-[ ] Incluir montagem        Total montagem: 120,00 €  (auto)
-[x] Incluir entrega         Zona: Lisboa (1000-1999)  35,00 €
-                            Adicional produtos:        15,00 €
-                            Total entrega:             50,00 €
-[ Recalcular ]
-```
-
-Comportamento:
-- Toggle **Montagem**: quando ativo, soma `Σ (qty × produto.assembly_fee)` das linhas.
-- Toggle **Entrega**: quando ativo, calcula via regras + adicionais de produto.
-- Recalcula automaticamente ao alterar linhas, cliente ou toggles.
-- Cada serviço gera/atualiza uma **linha de pedido especial** (campo `line_kind` = `'assembly'` ou `'delivery'`), que o utilizador pode ver mas não editar manualmente (apenas remover desativando o toggle).
-
-## 5. Mudanças de Banco
-
-```text
-products
-├─ assembly_fee numeric default 0
-└─ delivery_surcharge numeric default 0
-
-sale_orders
-├─ include_assembly boolean default false
-├─ include_delivery boolean default false
-└─ delivery_zone_label text  (informativo, ex.: "Lisboa 1000-1999")
-
-sale_order_lines
-└─ line_kind text default 'product'  -- 'product' | 'assembly' | 'delivery'
-
-NOVA: delivery_zip_rules (zip_from, zip_to, price, label, active)
-NOVA: delivery_region_rules (region, country, price, active)
-
-NOVA RPC: calc_delivery_price(_partner, _country) returns numeric
-NOVA RPC: refresh_order_services(_order) returns void
-   -- recria linhas 'assembly' e 'delivery' com base nos toggles e produtos
-```
-
-RLS: `delivery_*_rules` legível por todos autenticados; escrita exige permissão `sales.config.edit` (reusa group existente).
-
-## 6. PDF de Venda (`printSaleOrder.ts`)
-
-Na secção de linhas, separar visualmente:
-- **Produtos** (atual)
-- **Serviços** — bloco próprio listando "Entrega — zona X" e "Montagem", com subtotais.
-- Total continua somando tudo.
-
-## 7. Localização
-
-Garantir que toda nova UI usa pt-PT consistentemente ("Código Postal", "Distrito", "Montagem", "Entrega").
-
-## Entregáveis
-
-1. **Migração**: colunas em `products`, `sale_orders`, `sale_order_lines`; tabelas `delivery_zip_rules` e `delivery_region_rules`; funções `calc_delivery_price` e `refresh_order_services`; RLS.
-2. **`ProductForm.tsx`**: secção Serviços com `assembly_fee` e `delivery_surcharge`.
-3. **Nova página** `/sales/delivery-rules` com 2 abas (CP / Região) usando `ListView`.
-4. **`OrderForm.tsx`**: painel Serviços + toggles + chamada à RPC `refresh_order_services`.
-5. **`printSaleOrder.ts`**: bloco "Serviços" no PDF.
-6. **Menu Vendas**: entrada "Regras de Entrega".
-
-## Fora do escopo
-- Integração com transportadoras externas (CTT, DPD).
-- Janelas horárias / agendamento de entrega.
-- Cálculo por peso/volume (apenas adicional fixo por produto).
+### Ficheiros tocados
+- migration nova
+- `src/lib/uom.ts` (novo), `src/lib/picking.ts` (novo)
+- `src/modules/inventory/pages/TransferForm.tsx`
+- `src/modules/inventory/pages/InternalTransfersPage.tsx`
+- `src/modules/inventory/pages/ShipmentsPage.tsx`, `ReceiptsPage.tsx`, `MovesPage.tsx`
+- `src/modules/products/pages/ProductForm.tsx` (qty inicial)
+- `src/core/orders/OrderForm.tsx` (input qty linhas)
