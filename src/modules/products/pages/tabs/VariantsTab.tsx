@@ -467,8 +467,14 @@ export function VariantsTab({ productId }: { productId: string }) {
                     </div>
                   </td>
                   <td className="p-2">{(v.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ")}</td>
-                  <td className="p-1"><Input className="h-8" defaultValue={v.sku ?? ""} key={`sku-${v.id}-${v.sku}`} onBlur={(e) => e.target.value !== (v.sku ?? "") && updateVariant(v, { sku: e.target.value })} /></td>
-                  <td className="p-1"><Input className="h-8" defaultValue={v.barcode ?? ""} key={`bc-${v.id}-${v.barcode}`} onBlur={(e) => e.target.value !== (v.barcode ?? "") && updateVariant(v, { barcode: e.target.value })} /></td>
+                  <td className="p-1">
+                    <Input className={`h-8 ${rowErrors[v.id]?.sku ? "border-destructive focus-visible:ring-destructive" : ""}`} defaultValue={v.sku ?? ""} key={`sku-${v.id}-${v.sku}`} title={rowErrors[v.id]?.sku || ""} onBlur={(e) => e.target.value !== (v.sku ?? "") && updateVariant(v, { sku: e.target.value })} />
+                    {rowErrors[v.id]?.sku && <div className="text-[10px] text-destructive mt-0.5">{rowErrors[v.id].sku}</div>}
+                  </td>
+                  <td className="p-1">
+                    <Input className={`h-8 ${rowErrors[v.id]?.barcode ? "border-destructive focus-visible:ring-destructive" : ""}`} defaultValue={v.barcode ?? ""} key={`bc-${v.id}-${v.barcode}`} title={rowErrors[v.id]?.barcode || ""} onBlur={(e) => e.target.value !== (v.barcode ?? "") && updateVariant(v, { barcode: e.target.value })} />
+                    {rowErrors[v.id]?.barcode && <div className="text-[10px] text-destructive mt-0.5">{rowErrors[v.id].barcode}</div>}
+                  </td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.01" defaultValue={v.price_extra} key={`px-${v.id}-${v.price_extra}`} onBlur={(e) => Number(e.target.value) !== Number(v.price_extra) && updateVariant(v, { price_extra: Number(e.target.value) })} /></td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.001" defaultValue={v.weight ?? 0} key={`w-${v.id}-${v.weight}`} onBlur={(e) => Number(e.target.value) !== Number(v.weight ?? 0) && updateVariant(v, { weight: Number(e.target.value) })} /></td>
                   <td className="p-2 text-center"><input type="checkbox" checked={v.active} onChange={(e) => updateVariant(v, { active: e.target.checked })} /></td>
