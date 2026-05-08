@@ -189,6 +189,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         ]}
         backTo={basePath}
         state={{ label: order.state, tone: STATE_TONES[order.state] ?? "default" }}
+        meta={kind === "sale" ? <FulfillmentBadge status={order.fulfillment_status} /> : null}
         actions={
           <div className="flex gap-2">
             {!isLocked && (
