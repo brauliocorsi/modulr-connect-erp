@@ -210,6 +210,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         actions={
           <div className="flex gap-2 items-center">
             {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
+            {kind === "sale" && <PaymentStatusBadge status={order.payment_status} />}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar
