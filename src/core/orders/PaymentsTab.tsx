@@ -383,6 +383,7 @@ export function PaymentsTab({
           orderId={orderId}
           partnerId={partnerId}
           defaultAmount={picked.amount}
+          scheduleId={picked.scheduleId}
           onSaved={() => { setPicked(null); load(); }}
         />
       )}
