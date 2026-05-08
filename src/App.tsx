@@ -61,6 +61,8 @@ import {
   ReorderingList,
 } from "@/modules/inventory/pages/InventoryPages";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
+import StoresList from "@/modules/settings/pages/StoresList";
+import StoreForm from "@/modules/settings/pages/StoreForm";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
 import Discuss from "@/modules/discuss/Discuss";
 import {
@@ -162,6 +164,9 @@ const App = () => (
               <Route path="settings/groups/new" element={<GroupForm />} />
               <Route path="settings/groups/:id" element={<GroupForm />} />
               <Route path="settings/company" element={<CompanySettings />} />
+              <Route path="settings/stores" element={<StoresList />} />
+              <Route path="settings/stores/new" element={<StoreForm />} />
+              <Route path="settings/stores/:id" element={<StoreForm />} />
 
               {/* Reports */}
               <Route path="reports/stock" element={<StockOnHandReport />} />

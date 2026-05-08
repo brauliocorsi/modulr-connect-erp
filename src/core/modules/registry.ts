@@ -160,6 +160,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Usuários", label: "Usuários", to: "/settings/users" },
       { section: "Usuários", label: "Grupos & Permissões", to: "/settings/groups" },
       { section: "Empresa", label: "Empresa", to: "/settings/company" },
+      { section: "Empresa", label: "Lojas", to: "/settings/stores" },
     ],
   },
 ];
