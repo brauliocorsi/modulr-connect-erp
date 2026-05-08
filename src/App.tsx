@@ -32,6 +32,8 @@ import ReceiptsPage from "@/modules/inventory/pages/ReceiptsPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
+import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
+import { JournalsList, JournalForm, MethodsList, MethodForm } from "@/modules/finance/pages/FinancePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
