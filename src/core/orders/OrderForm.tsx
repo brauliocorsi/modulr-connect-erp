@@ -159,7 +159,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     setOrder((o: any) => ({ ...o, [key]: value }));
-    await supabase.from("sale_orders").update({ [key]: value }).eq("id", id!);
+    await supabase.from("sale_orders").update({ [key]: value } as any).eq("id", id!);
     await refreshServices(id!);
   };
 
