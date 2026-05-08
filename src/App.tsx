@@ -41,6 +41,7 @@ import ReceivablesPage from "@/modules/finance/pages/ReceivablesPage";
 import PendingConfirmationsPage from "@/modules/finance/pages/PendingConfirmationsPage";
 import PayablesList from "@/modules/finance/pages/PayablesList";
 import BillForm from "@/modules/finance/pages/BillForm";
+import ReconciliationPage from "@/modules/finance/pages/ReconciliationPage";
 import CashRegistersList from "@/modules/cashbox/pages/CashRegistersList";
 import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
