@@ -5,6 +5,7 @@ import { useInstalledModules } from "@/core/modules/useInstalledModules";
 import { MODULES, getModuleByPath } from "@/core/modules/registry";
 import { GlobalSearch } from "@/core/search/GlobalSearch";
 import { NotificationsBell } from "@/core/notifications/NotificationsBell";
+import { MessagesBell } from "@/core/notifications/MessagesBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
@@ -85,6 +86,7 @@ export default function AppShell() {
           <kbd className="ml-2 text-[10px] border border-white/20 rounded px-1">⌘K</kbd>
         </button>
 
+        <MessagesBell />
         <NotificationsBell />
 
         <DropdownMenu>
