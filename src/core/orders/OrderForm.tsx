@@ -8,6 +8,7 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
+import { SmartButtons } from "@/core/orders/SmartButtons";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
