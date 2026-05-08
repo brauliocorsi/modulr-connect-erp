@@ -79,7 +79,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { data: products } = useQuery({
     queryKey: ["products-list"],
     queryFn: async () =>
-      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge").order("name")).data ?? [],
+      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge,uom_id, product_uom!products_uom_id_fkey(category)").order("name")).data ?? [],
   });
   const { data: zipRules } = useQuery({
     queryKey: ["delivery_zip_rules_active"],
