@@ -111,7 +111,7 @@ export default function TransferForm() {
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{ label: picking.state, tone: TONE[picking.state] ?? "default" }}
+        state={{ label: stateLabel(picking.state), tone: TONE[picking.state] ?? "default" }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
