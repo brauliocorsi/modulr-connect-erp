@@ -164,6 +164,17 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     await refreshServices(id!);
   };
 
+  const setDeliveryZone = async (value: string) => {
+    if (isNew) return toast.error("Salve o pedido primeiro");
+    // value format: "zip:<id>" | "region:<id>" | "auto"
+    const patch: any = { delivery_zip_rule_id: null, delivery_region_rule_id: null };
+    if (value.startsWith("zip:")) patch.delivery_zip_rule_id = value.slice(4);
+    else if (value.startsWith("region:")) patch.delivery_region_rule_id = value.slice(7);
+    setOrder((o: any) => ({ ...o, ...patch }));
+    await supabase.from("sale_orders").update(patch).eq("id", id!);
+    if (order.include_delivery) await refreshServices(id!);
+  };
+
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) => {
       const next = [...prev];
