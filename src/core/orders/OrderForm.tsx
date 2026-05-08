@@ -552,6 +552,52 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               </div>
             </Card>
 
+            {kind === "sale" && !isNew && (
+              <Card className="p-4 space-y-3">
+                <div className="font-semibold">Serviços</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3 p-3 rounded border">
+                    <Switch
+                      checked={!!order.include_assembly}
+                      onCheckedChange={(v) => toggleService("include_assembly", v)}
+                      disabled={isLocked}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">Incluir montagem</div>
+                      <div className="text-xs text-muted-foreground">Soma o valor de montagem definido em cada produto.</div>
+                      {serviceLines.filter((l) => l.line_kind === "assembly").map((l) => (
+                        <div key={l.id} className="text-sm mt-2 tabular-nums">{fmtMoney(l.subtotal)}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded border">
+                    <Switch
+                      checked={!!order.include_delivery}
+                      onCheckedChange={(v) => toggleService("include_delivery", v)}
+                      disabled={isLocked}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">Incluir entrega</div>
+                      <div className="text-xs text-muted-foreground">
+                        Calculada pelo código postal do cliente, com adicional dos produtos.
+                      </div>
+                      {order.delivery_zone_label && (
+                        <div className="text-xs mt-1">Zona: <span className="font-medium">{order.delivery_zone_label}</span></div>
+                      )}
+                      {serviceLines.filter((l) => l.line_kind === "delivery").map((l) => (
+                        <div key={l.id} className="text-sm mt-2 tabular-nums">{fmtMoney(l.subtotal)}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {(order.include_assembly || order.include_delivery) && !isLocked && (
+                  <Button size="sm" variant="outline" onClick={() => refreshServices(id!)}>
+                    Recalcular serviços
+                  </Button>
+                )}
+              </Card>
+            )}
+
             {!isNew && kind === "sale" && (
               <PaymentsTab orderId={id!} partnerId={order.partner_id} total={Number(order.amount_total ?? totals.total)} isLocked={["cancelled"].includes(order.state)} />
             )}
