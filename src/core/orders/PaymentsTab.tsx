@@ -168,18 +168,17 @@ export function PaymentsTab({
 
   const openReceive = async (sched?: any) => {
     if (!schedules.length && !sched) {
-      // criar parcela default e abrir
-      await supabase.from("sale_payment_schedules").insert({
+      const { data: created } = await supabase.from("sale_payment_schedules").insert({
         order_id: orderId, sequence: 10, label: "Total a receber",
         due_kind: "on_delivery", percent: 100, amount: total,
-      });
+      }).select().single();
       await load();
-      setPicked({ amount: total });
+      setPicked({ amount: total, scheduleId: created?.id ?? null });
       return;
     }
     const s = sched ?? schedules.find((x) => x.state !== "paid") ?? schedules[0];
     const remaining = Math.max(0, Number(s.amount || 0) - Number(s.paid_amount || 0));
-    setPicked({ amount: remaining > 0 ? remaining : open });
+    setPicked({ amount: remaining > 0 ? remaining : open, scheduleId: s?.id ?? null });
   };
 
   const sumPct = draft.reduce((s, x) => s + Number(x.percent || 0), 0);
