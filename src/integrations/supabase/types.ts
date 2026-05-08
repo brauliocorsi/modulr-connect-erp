@@ -2847,6 +2847,7 @@ export type Database = {
       }
       stock_pickings: {
         Row: {
+          backorder_id: string | null
           created_at: string
           created_by: string | null
           destination_location_id: string | null
@@ -2863,6 +2864,7 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          backorder_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
@@ -2879,6 +2881,7 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          backorder_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
@@ -2895,6 +2898,13 @@ export type Database = {
           warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_pickings_backorder_id_fkey"
+            columns: ["backorder_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_pickings_destination_location_id_fkey"
             columns: ["destination_location_id"]
@@ -3320,6 +3330,16 @@ export type Database = {
       }
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
+      create_internal_transfer: {
+        Args: {
+          _destination: string
+          _lines: Json
+          _partner?: string
+          _scheduled_at?: string
+          _source: string
+        }
+        Returns: string
+      }
       customer_location_id: { Args: never; Returns: string }
       default_location: {
         Args: { _name: string; _warehouse: string }

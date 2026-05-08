@@ -13,6 +13,8 @@ import { SmartButtons } from "@/core/orders/SmartButtons";
 import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
+import { stateLabel, kindLabel } from "@/lib/picking";
+
 const TONE: Record<string, any> = { draft: "default", waiting: "warning", ready: "info", done: "success", cancelled: "destructive" };
 
 export default function TransferForm() {
@@ -21,6 +23,8 @@ export default function TransferForm() {
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
+  const [backorder, setBackorder] = useState<any>(null);
+  const [original, setOriginal] = useState<any>(null);
 
   const load = async () => {
     const { data: p } = await supabase
@@ -29,9 +33,15 @@ export default function TransferForm() {
       .eq("id", id!)
       .maybeSingle();
     setPicking(p);
+    if (p?.backorder_id) {
+      const { data: orig } = await supabase.from("stock_pickings").select("id,name").eq("id", p.backorder_id).maybeSingle();
+      setOriginal(orig);
+    } else setOriginal(null);
+    const { data: bo } = await supabase.from("stock_pickings").select("id,name,state").eq("backorder_id", id!).maybeSingle();
+    setBackorder(bo);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name,tracking)")
+      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
     setMoves(m ?? []);
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
@@ -101,7 +111,7 @@ export default function TransferForm() {
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{ label: picking.state, tone: TONE[picking.state] ?? "default" }}
+        state={{ label: stateLabel(picking.state), tone: TONE[picking.state] ?? "default" }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
@@ -124,8 +134,18 @@ export default function TransferForm() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
+            {(original || backorder) && (
+              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
+                {original && (
+                  <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
+                )}
+                {backorder && (
+                  <div>→ Backorder gerada: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline font-medium">{backorder.name}</a> ({stateLabel(backorder.state)})</div>
+                )}
+              </Card>
+            )}
             <Card className="p-4 grid sm:grid-cols-3 gap-4 text-sm">
-              <div><div className="o-section-title">Tipo</div>{picking.kind}</div>
+              <div><div className="o-section-title">Tipo</div>{kindLabel(picking.kind)}</div>
               <div><div className="o-section-title">Origem</div>{picking.source?.full_path ?? picking.source?.name}</div>
               <div><div className="o-section-title">Destino</div>{picking.dest?.full_path ?? picking.dest?.name}</div>
               <div><div className="o-section-title">Parceiro</div>{picking.partners?.name ?? "—"}</div>
@@ -148,6 +168,8 @@ export default function TransferForm() {
                 <tbody>
                   {moves.map((m, i) => {
                     const tracking = m.products?.tracking ?? "none";
+                    const cat = m.products?.product_uom?.category;
+                    const isInt = !cat || cat === "unit";
                     const lots = lotsByProduct[m.product_id] ?? [];
                     return (
                     <tr key={m.id} className="border-t">
@@ -157,10 +179,15 @@ export default function TransferForm() {
                         <Input
                           className="h-8"
                           type="number"
-                          step="0.01"
+                          step={isInt ? 1 : 0.01}
+                          min={0}
+                          max={m.quantity}
                           value={m.quantity_done ?? m.quantity}
                           disabled={isLocked}
-                          onChange={(e) => setMoveDone(i, Number(e.target.value))}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setMoveDone(i, isInt ? Math.max(0, Math.floor(v)) : v);
+                          }}
                         />
                       </td>
                       <td className="px-2 py-1">
@@ -192,7 +219,7 @@ export default function TransferForm() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2">{m.state}</td>
+                      <td className="px-3 py-2">{stateLabel(m.state)}</td>
                     </tr>
                   );})}
                 </tbody>
