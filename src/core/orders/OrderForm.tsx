@@ -207,8 +207,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       const { error } = await supabase.from(ordersTable as any).update(payload).eq("id", oid!);
       if (error) return toast.error(error.message);
     }
-    // upsert lines
+    // upsert lines (only product lines; service lines are managed by RPC)
     for (const l of lines) {
+      if ((l.line_kind ?? "product") !== "product") continue;
       if (!l.product_id) continue;
       const lp: any = {
         order_id: oid,
@@ -223,6 +224,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       };
       if (l.id) await supabase.from(linesTable as any).update(lp).eq("id", l.id);
       else await supabase.from(linesTable as any).insert(lp);
+    }
+    if (kind === "sale" && oid && (order.include_assembly || order.include_delivery)) {
+      await refreshServices(oid);
     }
     toast.success("Salvo");
     if (isNew && oid) nav(`${basePath}/${oid}`);
