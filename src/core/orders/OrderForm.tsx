@@ -303,6 +303,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           </Select>
                         </td>
                         <td className="px-2 py-1">
+                          {l.product_id ? (
+                            <div className={`text-xs ${tone}`}>
+                              <div className="font-medium">{avail} disp.</div>
+                              {s?.incoming ? <div className="text-[10px] text-muted-foreground">+{s.incoming} a chegar</div> : null}
+                            </div>
+                          ) : <span className="text-muted-foreground text-xs">—</span>}
+                        </td>
+                        <td className="px-2 py-1">
                           <Input className="h-8" type="number" step="0.01" value={l.quantity} onChange={(e) => setLine(i, { quantity: Number(e.target.value) })} disabled={isLocked} />
                         </td>
                         <td className="px-2 py-1">
@@ -322,11 +330,12 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t font-semibold">
-                      <td colSpan={kind === "sale" ? 4 : 3} className="px-3 py-2 text-right">Total</td>
+                      <td colSpan={kind === "sale" ? 5 : 4} className="px-3 py-2 text-right">Total</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(totals.total)}</td>
                       <td />
                     </tr>
