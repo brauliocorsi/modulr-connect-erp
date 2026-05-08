@@ -628,6 +628,69 @@ export type Database = {
           },
         ]
       }
+      delivery_region_rules: {
+        Row: {
+          active: boolean
+          country: string
+          created_at: string
+          id: string
+          price: number
+          region: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          country?: string
+          created_at?: string
+          id?: string
+          price?: number
+          region: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          country?: string
+          created_at?: string
+          id?: string
+          price?: number
+          region?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_zip_rules: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string | null
+          price: number
+          updated_at: string
+          zip_from: string
+          zip_to: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string | null
+          price?: number
+          updated_at?: string
+          zip_from: string
+          zip_to: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string | null
+          price?: number
+          updated_at?: string
+          zip_from?: string
+          zip_to?: string
+        }
+        Relationships: []
+      }
       group_permissions: {
         Row: {
           action: Database["public"]["Enums"]["permission_action"]
@@ -1629,6 +1692,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          assembly_fee: number
           auto_purchase: boolean
           barcode: string | null
           can_be_manufactured: boolean
@@ -1637,6 +1701,7 @@ export type Database = {
           category_id: string | null
           company_id: string | null
           created_at: string
+          delivery_surcharge: number
           depth: number | null
           description: string | null
           gross_weight: number | null
@@ -1668,6 +1733,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assembly_fee?: number
           auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
@@ -1676,6 +1742,7 @@ export type Database = {
           category_id?: string | null
           company_id?: string | null
           created_at?: string
+          delivery_surcharge?: number
           depth?: number | null
           description?: string | null
           gross_weight?: number | null
@@ -1707,6 +1774,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assembly_fee?: number
           auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
@@ -1715,6 +1783,7 @@ export type Database = {
           category_id?: string | null
           company_id?: string | null
           created_at?: string
+          delivery_surcharge?: number
           depth?: number | null
           description?: string | null
           gross_weight?: number | null
@@ -2227,8 +2296,9 @@ export type Database = {
           description: string | null
           discount_pct: number
           id: string
+          line_kind: string
           order_id: string
-          product_id: string
+          product_id: string | null
           quantity: number
           sequence: number
           subtotal: number
@@ -2241,8 +2311,9 @@ export type Database = {
           description?: string | null
           discount_pct?: number
           id?: string
+          line_kind?: string
           order_id: string
-          product_id: string
+          product_id?: string | null
           quantity?: number
           sequence?: number
           subtotal?: number
@@ -2255,8 +2326,9 @@ export type Database = {
           description?: string | null
           discount_pct?: number
           id?: string
+          line_kind?: string
           order_id?: string
-          product_id?: string
+          product_id?: string | null
           quantity?: number
           sequence?: number
           subtotal?: number
@@ -2320,8 +2392,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_order: string
+          delivery_zone_label: string | null
           fulfillment_status: string
           id: string
+          include_assembly: boolean
+          include_delivery: boolean
           invoice_date: string | null
           invoice_notes: string | null
           invoice_number: string | null
@@ -2346,8 +2421,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_zone_label?: string | null
           fulfillment_status?: string
           id?: string
+          include_assembly?: boolean
+          include_delivery?: boolean
           invoice_date?: string | null
           invoice_notes?: string | null
           invoice_number?: string | null
@@ -2372,8 +2450,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_zone_label?: string | null
           fulfillment_status?: string
           id?: string
+          include_assembly?: boolean
+          include_delivery?: boolean
           invoice_date?: string | null
           invoice_notes?: string | null
           invoice_number?: string | null
@@ -3200,6 +3281,13 @@ export type Database = {
         Returns: undefined
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
+      calc_delivery_price: {
+        Args: { _partner: string }
+        Returns: {
+          label: string
+          price: number
+        }[]
+      }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
       close_cash_session: {
@@ -3266,6 +3354,7 @@ export type Database = {
       recalc_bill_state: { Args: { _bill: string }; Returns: undefined }
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
+      refresh_order_services: { Args: { _order: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       reserve_incoming_to_origin_so: {
         Args: { _picking: string }
