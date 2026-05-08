@@ -51,7 +51,7 @@ export function PaymentsTab({
   const [payments, setPayments] = useState<any[]>([]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<any[]>([]);
-  const [picked, setPicked] = useState<{ amount: number } | null>(null);
+  const [picked, setPicked] = useState<{ amount: number; scheduleId?: string | null } | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const load = async () => {
