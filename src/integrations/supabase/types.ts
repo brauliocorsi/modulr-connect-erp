@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_journals: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bom_lines: {
         Row: {
           bom_id: string
@@ -281,6 +314,100 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      customer_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string | null
+          method_id: string | null
+          name: string
+          notes: string | null
+          order_id: string | null
+          partner_id: string | null
+          payment_date: string
+          reference: string | null
+          schedule_id: string | null
+          state: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method_id?: string | null
+          name: string
+          notes?: string | null
+          order_id?: string | null
+          partner_id?: string | null
+          payment_date?: string
+          reference?: string | null
+          schedule_id?: string | null
+          state?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method_id?: string | null
+          name?: string
+          notes?: string | null
+          order_id?: string | null
+          partner_id?: string | null
+          payment_date?: string
+          reference?: string | null
+          schedule_id?: string | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "account_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "customer_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_payment_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_permissions: {
         Row: {
@@ -774,6 +901,44 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          default_journal_id: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          default_journal_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          default_journal_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_default_journal_id_fkey"
+            columns: ["default_journal_id"]
+            isOneToOne: false
+            referencedRelation: "account_journals"
             referencedColumns: ["id"]
           },
         ]
@@ -1928,6 +2093,7 @@ export type Database = {
           name: string
           notes: string | null
           partner_id: string
+          payment_status: string
           pricelist_id: string | null
           salesperson_id: string | null
           state: Database["public"]["Enums"]["sale_state"]
@@ -1948,6 +2114,7 @@ export type Database = {
           name: string
           notes?: string | null
           partner_id: string
+          payment_status?: string
           pricelist_id?: string | null
           salesperson_id?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
@@ -1968,6 +2135,7 @@ export type Database = {
           name?: string
           notes?: string | null
           partner_id?: string
+          payment_status?: string
           pricelist_id?: string | null
           salesperson_id?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
@@ -2009,6 +2177,66 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_payment_schedules: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          due_days: number | null
+          due_kind: string
+          id: string
+          label: string
+          order_id: string
+          paid_amount: number
+          percent: number
+          sequence: number
+          state: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          due_days?: number | null
+          due_kind?: string
+          id?: string
+          label?: string
+          order_id: string
+          paid_amount?: number
+          percent?: number
+          sequence?: number
+          state?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          due_days?: number | null
+          due_kind?: string
+          id?: string
+          label?: string
+          order_id?: string
+          paid_amount?: number
+          percent?: number
+          sequence?: number
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_payment_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_payment_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -2576,6 +2804,10 @@ export type Database = {
       }
     }
     Functions: {
+      allocate_payment_to_schedules: {
+        Args: { _so: string }
+        Returns: undefined
+      }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
@@ -2627,6 +2859,7 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       reserve_incoming_to_origin_so: {
@@ -2634,6 +2867,7 @@ export type Database = {
         Returns: undefined
       }
       run_reordering_rules: { Args: never; Returns: number }
+      seed_default_schedule: { Args: { _so: string }; Returns: undefined }
       set_product_stock: {
         Args: {
           _product: string
@@ -2647,7 +2881,13 @@ export type Database = {
       validate_picking: { Args: { _picking: string }; Returns: undefined }
     }
     Enums: {
-      app_module: "core" | "products" | "sales" | "purchase" | "inventory"
+      app_module:
+        | "core"
+        | "products"
+        | "sales"
+        | "purchase"
+        | "inventory"
+        | "finance"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -2798,7 +3038,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_module: ["core", "products", "sales", "purchase", "inventory"],
+      app_module: [
+        "core",
+        "products",
+        "sales",
+        "purchase",
+        "inventory",
+        "finance",
+      ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
         "internal",

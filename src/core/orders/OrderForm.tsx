@@ -7,8 +7,10 @@ import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
+import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,6 +210,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         actions={
           <div className="flex gap-2 items-center">
             {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
+            {kind === "sale" && <PaymentStatusBadge status={order.payment_status} />}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar
@@ -348,6 +351,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               </div>
             </Card>
 
+            {!isNew && kind === "sale" && (
+              <PaymentsTab orderId={id!} partnerId={order.partner_id} total={Number(order.amount_total ?? totals.total)} isLocked={["cancelled"].includes(order.state)} />
+            )}
             {!isNew && kind === "sale" && <OrderTraceability saleOrderId={id!} />}
             {!isNew && <RecordSidebar recordType={kind === "sale" ? "sale_order" : "purchase_order"} recordId={id!} />}
           </div>

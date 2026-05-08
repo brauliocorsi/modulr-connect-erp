@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -103,6 +103,20 @@ export const MODULES: ModuleDef[] = [
       { section: "Assiduidade", label: "Relógio de Ponto", to: "/hr/attendance" },
       { section: "Assiduidade", label: "Registos", to: "/hr/attendances" },
       { section: "Ausências", label: "Pedidos", to: "/hr/leaves" },
+    ],
+  },
+  {
+    id: "finance" as any,
+    name: "Financeiro",
+    shortName: "Financeiro",
+    icon: Wallet,
+    color: "bg-[hsl(160_84%_39%)]",
+    basePath: "/finance",
+    description: "Recebimentos, diários e métodos de pagamento",
+    menu: [
+      { section: "Operações", label: "Recebimentos", to: "/finance/payments" },
+      { section: "Configuração", label: "Diários", to: "/finance/journals" },
+      { section: "Configuração", label: "Métodos de Pagamento", to: "/finance/methods" },
     ],
   },
   {

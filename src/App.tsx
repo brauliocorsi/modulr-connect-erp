@@ -32,6 +32,8 @@ import ReceiptsPage from "@/modules/inventory/pages/ReceiptsPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
+import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
+import { JournalsList, JournalForm, MethodsList, MethodForm } from "@/modules/finance/pages/FinancePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
@@ -148,6 +150,16 @@ const App = () => (
               <Route path="reports/stock" element={<StockOnHandReport />} />
               <Route path="reports/sales" element={<SalesReport />} />
               <Route path="reports/purchase" element={<PurchaseReport />} />
+
+              {/* Finance */}
+              <Route path="finance" element={<Navigate to="/finance/payments" replace />} />
+              <Route path="finance/payments" element={<PaymentsPage />} />
+              <Route path="finance/journals" element={<JournalsList />} />
+              <Route path="finance/journals/new" element={<JournalForm />} />
+              <Route path="finance/journals/:id" element={<JournalForm />} />
+              <Route path="finance/methods" element={<MethodsList />} />
+              <Route path="finance/methods/new" element={<MethodForm />} />
+              <Route path="finance/methods/:id" element={<MethodForm />} />
 
               {/* HR */}
               <Route path="hr" element={<Navigate to="/hr/employees" replace />} />
