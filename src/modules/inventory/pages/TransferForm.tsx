@@ -134,8 +134,18 @@ export default function TransferForm() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
+            {(original || backorder) && (
+              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
+                {original && (
+                  <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
+                )}
+                {backorder && (
+                  <div>→ Backorder gerada: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline font-medium">{backorder.name}</a> ({stateLabel(backorder.state)})</div>
+                )}
+              </Card>
+            )}
             <Card className="p-4 grid sm:grid-cols-3 gap-4 text-sm">
-              <div><div className="o-section-title">Tipo</div>{picking.kind}</div>
+              <div><div className="o-section-title">Tipo</div>{kindLabel(picking.kind)}</div>
               <div><div className="o-section-title">Origem</div>{picking.source?.full_path ?? picking.source?.name}</div>
               <div><div className="o-section-title">Destino</div>{picking.dest?.full_path ?? picking.dest?.name}</div>
               <div><div className="o-section-title">Parceiro</div>{picking.partners?.name ?? "—"}</div>
