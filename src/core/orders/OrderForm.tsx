@@ -8,6 +8,7 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
+import { SmartButtons } from "@/core/orders/SmartButtons";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,6 +230,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
+            {!isNew && order.name && order.name !== "Rascunho" && (
+              <SmartButtons kind={kind} orderName={order.name} />
+            )}
             <Card className="p-6 grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{kind === "sale" ? "Cliente" : "Fornecedor"}</Label>

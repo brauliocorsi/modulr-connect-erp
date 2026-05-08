@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, X } from "lucide-react";
+import { SmartButtons } from "@/core/orders/SmartButtons";
 import { toast } from "sonner";
 
 const TONE: Record<string, any> = { draft: "default", waiting: "warning", ready: "info", done: "success", cancelled: "destructive" };
@@ -108,6 +109,7 @@ export default function TransferForm() {
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
+            {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
             <Card className="p-4 grid sm:grid-cols-3 gap-4 text-sm">
               <div><div className="o-section-title">Tipo</div>{picking.kind}</div>
               <div><div className="o-section-title">Origem</div>{picking.source?.full_path ?? picking.source?.name}</div>
