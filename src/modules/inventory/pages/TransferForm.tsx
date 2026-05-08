@@ -13,6 +13,8 @@ import { SmartButtons } from "@/core/orders/SmartButtons";
 import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
+import { stateLabel, kindLabel } from "@/lib/picking";
+
 const TONE: Record<string, any> = { draft: "default", waiting: "warning", ready: "info", done: "success", cancelled: "destructive" };
 
 export default function TransferForm() {
