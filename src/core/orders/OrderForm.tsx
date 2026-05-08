@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
+import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
+import { OrderTraceability } from "@/core/orders/OrderTraceability";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -187,7 +190,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         backTo={basePath}
         state={{ label: order.state, tone: STATE_TONES[order.state] ?? "default" }}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
             {!isLocked && (
               <Button size="sm" variant="outline" onClick={save}>
                 Salvar
@@ -308,6 +312,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               </div>
             </Card>
 
+            {!isNew && kind === "sale" && <OrderTraceability saleOrderId={id!} />}
             {!isNew && <RecordSidebar recordType={kind === "sale" ? "sale_order" : "purchase_order"} recordId={id!} />}
           </div>
 

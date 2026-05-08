@@ -61,7 +61,9 @@ export const MODULES: ModuleDef[] = [
     description: "Operações WMS, transferências e regras de stock",
     menu: [
       { section: "Operações", label: "Visão Geral", to: "/inventory" },
+      { section: "Operações", label: "Cronograma", to: "/inventory/schedule" },
       { section: "Operações", label: "Transferências", to: "/inventory/transfers" },
+      { section: "Operações", label: "Movimentos", to: "/inventory/moves" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
       { section: "Relatórios", label: "Kardex", to: "/inventory/kardex" },
       { section: "Relatórios", label: "Stock por Produto", to: "/reports/stock" },

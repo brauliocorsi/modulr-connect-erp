@@ -1871,6 +1871,13 @@ export type Database = {
             foreignKeyName: "sale_order_lines_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
@@ -1913,6 +1920,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_order: string
+          fulfillment_status: string
           id: string
           name: string
           notes: string | null
@@ -1932,6 +1940,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          fulfillment_status?: string
           id?: string
           name: string
           notes?: string | null
@@ -1951,6 +1960,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          fulfillment_status?: string
           id?: string
           name?: string
           notes?: string | null
@@ -2548,6 +2558,19 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_order_fulfillment: {
+        Row: {
+          order_id: string | null
+          po_any_confirmed: boolean | null
+          po_any_draft: boolean | null
+          qty_done: number | null
+          qty_incoming: number | null
+          qty_reserved: number | null
+          qty_total: number | null
+          state: Database["public"]["Enums"]["sale_state"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
@@ -2601,6 +2624,7 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       run_reordering_rules: { Args: never; Returns: number }
       supplier_location_id: { Args: never; Returns: string }
