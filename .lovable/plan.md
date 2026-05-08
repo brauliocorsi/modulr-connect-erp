@@ -1,151 +1,134 @@
-# Plano — Produto Completo (estilo Odoo) com preparação WooCommerce
 
-## Objetivo
-Expandir o módulo de Produtos para ter paridade funcional com o Odoo (variantes, BOM/kits, stock previsto, fornecedores, etiquetas, medidas, preços por variante) e deixar a base preparada para sincronização futura com WooCommerce.
+# Vendas + Inventário — Fulfillment, Cronograma e Rastreio
 
----
+## 1. Status de fulfillment do pedido de venda (automático)
 
-## 1. Cadastro completo do produto
+Novo campo `fulfillment_status` em `sale_orders` (cache) recalculado por view + trigger:
 
-Expandir `ProductForm.tsx` (já existente) com novas abas/secções:
+- `pending` — pedido confirmado, ainda sem reserva nem PO
+- `backordered` — todas as linhas dependem de PO ainda não recebida (status "Encomendado")
+- `purchased` — PO vinculada confirmada (compra feita com sucesso, aguarda chegada)
+- `partial` — parte das linhas reservada/disponível, parte ainda em PO
+- `ready` — 100% reservado/disponível, pronto para entrega
+- `delivered` — picking de saída validado (`done`)
 
-**Aba Geral** (já existe — completar)
-- Nome, Referência interna (SKU), Código de barras (EAN/UPC), Tipo, Categoria, Etiquetas, UoM venda, UoM compra, Imagem.
+### Regras de cálculo (view `sale_order_fulfillment`)
+Para cada SO confirmada, agrega `stock_moves` do picking outgoing + POs com `origin = SO.name`:
+- qty_reserved = Σ moves com state `ready/assigned`
+- qty_done = Σ moves `done`
+- qty_incoming = Σ linhas de PO vinculadas não recebidas
+- qty_total = Σ linhas SO
 
-**Aba Vendas**
-- Preço de venda, Imposto, Tabelas de preço, Política de faturação.
-- Descrição comercial (rich text).
-
-**Aba Compras**
-- Custo padrão, fornecedores (já tem `product_suppliers`) — UI tabular: parceiro, SKU fornecedor, preço, qtd mínima, lead time, prioridade.
-- Descrição de compra.
-
-**Aba Inventário**
-- Rastreamento (none/lot/serial), Estratégia de remoção (FIFO/LIFO).
-- **Medidas físicas**: peso (kg), volume (m³), altura, largura, profundidade (cm), peso bruto, peso líquido — campos novos.
-- Rotas (comprar/fabricar), regras de reabastecimento (link).
-
-**Aba Variantes**
-- Atributos do produto + valores (Tamanho: P/M/G; Cor: Vermelho/Azul…).
-- Geração automática de variantes (cartesiano) com SKU/barcode/preço extra por variante.
-- `price_extra` por valor de atributo (preço final = list_price + Σ extras).
-
-**Aba BOM / Kit**
-- Listar BOMs do produto. Tipo: `normal` (manufatura), `phantom` (kit — explode no pedido), `subcontract`.
-- Linhas: componente, variante, quantidade, UoM.
-- Operações (centro de trabalho, duração) — opcional.
-- **Produto composto / kit**: tipo `phantom` para vender como conjunto.
-
-**Aba Stock (somente leitura)**
-- Stock atual (à mão), Reservado, Disponível.
-- **Stock previsto** = Disponível + Recebimentos pendentes (POs confirmadas) − Saídas pendentes (SOs confirmadas).
-- **Stock vendido** = Σ qtd em SOs `confirmed`/`done` (período configurável).
-- Por armazém, com drill-down.
-
-**Aba WooCommerce** (preparação)
-- Toggle "Publicar no WooCommerce".
-- Campos: `woo_product_id`, `woo_sync_status`, `woo_last_sync_at`, slug, short_description, categorias Woo, visibilidade, status (draft/publish).
-- UI mostra estado mas sincronização real fica para passo posterior (após conectar credenciais Woo).
-
----
-
-## 2. Etiquetas (Tags)
-
-Nova tabela `product_tags` (id, name, color) + pivô `product_tag_rel`.
-Componente de chips multi-select no formulário, filtros na lista.
-
----
-
-## 3. Variantes — Geração e preços
-
-- UI em `ProductForm` aba Variantes:
-  - Adicionar atributo → escolher valores → "Gerar variantes".
-  - Tabela editável de variantes geradas: SKU, barcode, preço extra, ativo, imagem opcional.
-- Lógica:
-  - `product_template_attributes` + `product_template_attribute_values` (já existem) → gera linhas em `product_variants` + `product_variant_values`.
-  - Função SQL `generate_variants(product_id)` que faz produto cartesiano e cria/limpa variantes inativas.
-- Pedido de venda: ao escolher produto com variantes, mostrar selectors de atributos → resolve `variant_id`; preço = `list_price` + Σ `price_extra`.
-
----
-
-## 4. BOM / Kit (phantom) na venda
-
-- Ao confirmar SO com linha cujo produto tem BOM `phantom` ativa: explodir em movimentos de stock dos componentes (não do produto kit).
-- Ajustar `confirm_sale_order` para detectar phantom e gerar moves dos componentes.
-- BOM `normal`: usado por módulo Manufatura (futuro) — apenas cadastro agora.
-
----
-
-## 5. Stock previsto / vendido
-
-**View SQL** `product_stock_forecast`:
-```
-product_id, warehouse_id,
-on_hand, reserved, available,
-incoming (Σ POs confirmed não recebidas),
-outgoing (Σ SOs confirmed não entregues),
-forecasted = available + incoming − outgoing,
-sold_30d, sold_90d
+Resultado:
+```text
+done == total          → delivered
+reserved == total      → ready
+done+reserved > 0 e incoming > 0 → partial
+incoming == total e PO confirmed → purchased
+incoming == total e PO draft     → backordered
+caso geral              → pending
 ```
 
-Exibido na aba Stock e em coluna opcional na lista de produtos.
+### Trigger
+- `AFTER UPDATE` em `stock_moves`, `purchase_orders`, `stock_pickings` → recalcula e grava `sale_orders.fulfillment_status` para o SO afetado (resolvido via `origin`).
+
+### UI
+- Badge colorido em `OrderForm` e listas (`SalesOrdersList`) — cores: cinza/âmbar/azul/violeta/verde/esmeralda.
+- Filtro por status na lista.
 
 ---
 
-## 6. Fornecedores vinculados (já parcial)
+## 2. Cronograma de entregas (Calendário + Lista)
 
-UI tabular completa em `ProductForm` aba Compras usando `product_suppliers`:
-- Adicionar/remover linhas, ordenar por prioridade (drag).
-- Reabastecimento já usa o fornecedor de menor prioridade (função `run_reordering_rules`).
+Nova rota `/inventory/schedule` com 2 abas:
 
----
+**Calendário** (mensal/semanal)
+- Componente baseado em `react-day-picker` já instalado, com células custom mostrando nº de pickings por dia + cores por estado.
+- Click no dia → drawer lateral com pickings desse dia.
+- Drag & drop opcional v2 — agora apenas click para reagendar via dialog.
 
-## 7. Preparação WooCommerce
+**Lista**
+- Tabela de `stock_pickings` com filtros: tipo (incoming/outgoing/internal), armazém, parceiro, estado, intervalo de datas (`scheduled_at`), origem (SO/PO).
+- Ações rápidas: abrir, validar, reagendar.
 
-**Schema** (apenas estrutura agora, sem sincronização):
-- Adicionar a `products`: `woo_product_id bigint`, `woo_sync_status text`, `woo_last_sync_at timestamptz`, `woo_slug text`, `woo_status text default 'draft'`, `short_description text`, `published_woo boolean default false`.
-- Adicionar a `product_variants`: `woo_variation_id bigint`, `woo_sync_status text`.
-- Tabela `woo_categories` (id, woo_id, name, parent_id) e pivô `product_woo_categories`.
-- Tabela `woo_sync_log` (entity_type, entity_id, action, status, error, created_at).
-
-**Edge function placeholder** `woo-sync` (criada vazia, retorna "not configured") — quando o utilizador fornecer URL/consumer_key/secret da loja Woo, ativamos via `add_secret`.
+Campo necessário: `stock_pickings.scheduled_at` (verificar; se faltar, adicionar `timestamptz default now()`).
 
 ---
 
-## 8. Migrações SQL (resumo)
+## 3. Rastreio do pedido (Timeline vertical)
 
-1. `ALTER products` — adicionar `height, width, depth, gross_weight, net_weight, barcode, short_description` e campos Woo.
-2. `ALTER product_variants` — adicionar campos Woo + `weight, barcode` se faltar.
-3. `CREATE TABLE product_tags`, `product_tag_rel` + RLS.
-4. `CREATE TABLE woo_categories`, `product_woo_categories`, `woo_sync_log` + RLS.
-5. `CREATE OR REPLACE FUNCTION generate_variants(_product uuid)` — gera variantes a partir dos atributos.
-6. `CREATE VIEW product_stock_forecast` — stock previsto/vendido.
-7. Atualizar `confirm_sale_order` — explodir BOM phantom.
+Nova aba "Rastreio" em `OrderForm` (sale) — componente `OrderTraceability.tsx`:
 
----
+```text
+● Pedido confirmado          SO00012   08/05 14:02
+│
+├─● Compra criada            PO00045   08/05 14:02   → fornecedor X
+│ └─● Compra confirmada      PO00045   08/05 15:10
+│   └─● Recebimento          WH/IN/021 12/05 09:30   ✓ done
+│
+├─● Reserva de stock         3/5 unid.  Stock → Cliente
+│
+├─● Transferência criada     WH/OUT/088 draft
+│ └─○ Validação pendente
+│
+└─○ Entrega ao cliente       previsto 13/05
+```
 
-## 9. Ficheiros a criar/editar
+Fontes: `sale_orders` + `purchase_orders (origin=SO.name)` + `stock_pickings (origin=SO.name OR PO.name)` + `stock_moves` + `record_messages`. Cada nó tem link para abrir o documento e mostra a rota associada (warehouse → location).
 
-**Criar**
-- `src/modules/products/pages/VariantsTab.tsx`
-- `src/modules/products/pages/SuppliersTab.tsx`
-- `src/modules/products/pages/BomTab.tsx`
-- `src/modules/products/pages/StockTab.tsx`
-- `src/modules/products/pages/WooTab.tsx`
-- `src/modules/products/components/TagPicker.tsx`
-- `supabase/migrations/..._product_full_woo.sql`
-- `supabase/functions/woo-sync/index.ts` (placeholder)
-
-**Editar**
-- `src/modules/products/pages/ProductForm.tsx` — integrar todas as abas.
-- `src/modules/products/pages/ProductsList.tsx` — colunas de stock previsto, etiquetas, filtros.
-- `src/core/orders/OrderForm.tsx` — selector de variante + resolução de preço.
+Mesma timeline (simplificada) também na PO mostrando o SO de origem.
 
 ---
 
-## Fora do âmbito (pode ficar para depois)
-- Sincronização efetiva WooCommerce (requer URL + chaves da loja).
-- Módulo Manufatura completo (ordens de produção). BOM `normal` apenas cadastrada.
-- Configurador avançado tipo Odoo "no_variant" attributes.
+## 4. Filtros avançados no inventário
 
-Após aprovação implemento tudo de uma vez. Diga se quer ativar a sincronização Woo agora (preciso URL da loja + Consumer Key/Secret) ou deixar só a preparação.
+### A) Nova tela `/inventory/moves` — Movimentos de stock
+Lista única de `stock_moves` (entrada/saída/interno) com filtros combinados:
+- Intervalo de datas (criação, conclusão)
+- Tipo: entrada / saída / interna / ajuste
+- Produto, variante, lote
+- Parceiro (cliente/fornecedor via picking)
+- Armazém / localização origem / destino
+- Estado (draft/waiting/ready/done/cancelled)
+- Origem (texto: SO/PO/ajuste)
+- Export CSV.
+
+### B) Melhorias nos filtros das listas existentes
+`InventoryPages.tsx` (Recebimentos, Entregas, Transferências, Ajustes):
+- Componente `AdvancedFilters` reutilizável: chips removíveis + popover com data range, parceiro, produto, estado.
+- Persistência dos filtros no URL (querystring).
+
+---
+
+## 5. Detalhes técnicos
+
+### Migrações SQL
+1. `ALTER TABLE sale_orders ADD COLUMN fulfillment_status text DEFAULT 'pending';`
+2. `ALTER TABLE stock_pickings ADD COLUMN IF NOT EXISTS scheduled_at timestamptz DEFAULT now();` (se não existir)
+3. `CREATE OR REPLACE VIEW sale_order_fulfillment AS …` (agregação descrita acima)
+4. `CREATE FUNCTION recalc_so_fulfillment(_so uuid) … ` — escreve em `sale_orders.fulfillment_status` lendo a view.
+5. Triggers `AFTER INSERT/UPDATE` em `stock_moves`, `purchase_orders`, `stock_pickings` que resolvem o SO via `origin` e chamam `recalc_so_fulfillment`.
+6. Atualizar `confirm_sale_order` para chamar `recalc_so_fulfillment` no final.
+7. Índices: `stock_pickings(scheduled_at)`, `stock_moves(state, picking_id)`, `purchase_orders(origin)`.
+
+### Ficheiros a criar
+- `src/modules/inventory/pages/SchedulePage.tsx` (calendário + lista)
+- `src/modules/inventory/pages/MovesPage.tsx` (movimentos com filtros)
+- `src/modules/inventory/components/AdvancedFilters.tsx` (reutilizável)
+- `src/core/orders/OrderTraceability.tsx` (timeline vertical)
+- `src/core/orders/FulfillmentBadge.tsx`
+- `supabase/migrations/..._sale_fulfillment_schedule.sql`
+
+### Ficheiros a editar
+- `src/core/orders/OrderForm.tsx` — adicionar aba "Rastreio" e badge no header
+- `src/modules/sales/pages/SalesPages.tsx` — coluna + filtro fulfillment_status
+- `src/modules/inventory/pages/InventoryPages.tsx` — integrar `AdvancedFilters` nas listas
+- `src/App.tsx` + `src/core/modules/registry.ts` — rotas `/inventory/schedule` e `/inventory/moves`
+- `src/core/layout/AppShell.tsx` — entradas de menu
+
+---
+
+## Fora do âmbito
+- Drag & drop de reagendamento no calendário (v2).
+- Notificações automáticas ao cliente por email a cada mudança de status (pode entrar depois).
+- Integração com transportadoras / tracking number externo.
