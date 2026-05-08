@@ -168,6 +168,8 @@ export default function TransferForm() {
                 <tbody>
                   {moves.map((m, i) => {
                     const tracking = m.products?.tracking ?? "none";
+                    const cat = m.products?.product_uom?.category;
+                    const isInt = !cat || cat === "unit";
                     const lots = lotsByProduct[m.product_id] ?? [];
                     return (
                     <tr key={m.id} className="border-t">
@@ -177,10 +179,15 @@ export default function TransferForm() {
                         <Input
                           className="h-8"
                           type="number"
-                          step="0.01"
+                          step={isInt ? 1 : 0.01}
+                          min={0}
+                          max={m.quantity}
                           value={m.quantity_done ?? m.quantity}
                           disabled={isLocked}
-                          onChange={(e) => setMoveDone(i, Number(e.target.value))}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setMoveDone(i, isInt ? Math.max(0, Math.floor(v)) : v);
+                          }}
                         />
                       </td>
                       <td className="px-2 py-1">
