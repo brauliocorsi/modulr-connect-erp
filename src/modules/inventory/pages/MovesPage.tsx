@@ -43,7 +43,7 @@ export default function MovesPage() {
   const exportCsv = () => {
     if (!data) return;
     const rows = [
-      ["Data", "Documento", "Tipo", "Produto", "Origem", "Destino", "Qtd", "Feito", "Estado", "Origem doc"],
+      ["Data", "Documento", "Tipo", "Produto", "Qtd", "Feito", "Estado", "Origem doc", "Parceiro"],
       ...data.map((r: any) => [
         new Date(r.created_at).toLocaleString("pt-PT"),
         r.stock_pickings?.name ?? "",
