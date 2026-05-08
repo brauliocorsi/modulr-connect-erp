@@ -32,6 +32,7 @@ import ReceiptsPage from "@/modules/inventory/pages/ReceiptsPage";
 import ShipmentsPage from "@/modules/inventory/pages/ShipmentsPage";
 import InternalTransfersPage from "@/modules/inventory/pages/InternalTransfersPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
+import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
