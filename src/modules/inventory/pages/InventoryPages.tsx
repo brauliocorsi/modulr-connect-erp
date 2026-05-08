@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 
@@ -28,10 +29,10 @@ export const InventoryDashboard = () => {
   });
 
   const cards = [
-    { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success" },
-    { title: "Expedições", icon: ArrowUpFromLine, count: data?.outgoing ?? 0, color: "text-info" },
-    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-warning" },
-    { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary" },
+    { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success", to: "/inventory/receipts" },
+    { title: "Expedições", icon: ArrowUpFromLine, count: data?.outgoing ?? 0, color: "text-info", to: "/inventory/transfers" },
+    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-warning", to: "/inventory/transfers" },
+    { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary", to: "/inventory/adjustments" },
   ];
 
   const runReorder = async () => {
@@ -55,16 +56,18 @@ export const InventoryDashboard = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((c) => (
-            <Card key={c.title} className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-muted-foreground">{c.title}</div>
-                  <div className="text-3xl font-bold mt-1">{c.count}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Aguardando processamento</div>
+            <Link key={c.title} to={c.to}>
+              <Card className="p-5 hover:shadow-md hover:bg-accent/30 transition-all cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-muted-foreground">{c.title}</div>
+                    <div className="text-3xl font-bold mt-1">{c.count}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Aguardando processamento</div>
+                  </div>
+                  <c.icon className={"h-8 w-8 " + c.color} />
                 </div>
-                <c.icon className={"h-8 w-8 " + c.color} />
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       </PageBody>

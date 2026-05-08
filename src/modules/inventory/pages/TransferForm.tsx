@@ -71,7 +71,17 @@ export default function TransferForm() {
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
     if (error) return toast.error(error.message);
-    toast.success("Transferência validada");
+    // detect chain SO ← PO ← this incoming
+    if (picking?.kind === "incoming" && picking?.origin) {
+      const { data: po } = await supabase.from("purchase_orders").select("origin").eq("name", picking.origin).maybeSingle();
+      if (po?.origin) {
+        toast.success(`Recebido e reservado para ${po.origin}`);
+      } else {
+        toast.success("Transferência validada");
+      }
+    } else {
+      toast.success("Transferência validada");
+    }
     load();
   };
 
