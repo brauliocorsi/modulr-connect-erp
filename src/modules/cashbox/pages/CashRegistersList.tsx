@@ -109,10 +109,17 @@ export default function CashRegistersList() {
           <div className="grid gap-3">
             <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div>
-              <Label>Loja (Armazém)</Label>
+              <Label>Loja</Label>
               <Select value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{warehouses.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{stores.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Utilizador responsável</Label>
+              <Select value={form.user_id} onValueChange={(v) => setForm({ ...form, user_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                <SelectContent>{users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
