@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { Lock, Plus, ArrowDownToLine } from "lucide-react";
-import { CashMovementDialog } from "@/modules/finance/components/CashMovementDialog";
+import { CashMovementDialog } from "@/modules/cashbox/components/CashMovementDialog";
 
 const KIND_LABEL: Record<string, string> = {
   opening: "Abertura", sale: "Venda", withdrawal: "Retirada", expense: "Despesa",
@@ -63,12 +63,12 @@ export default function CashSessionDetail() {
       <FormHeader
         title={sess.name}
         breadcrumb={[
-          { label: "Financeiro", to: "/finance" },
-          { label: "Caixas", to: "/finance/cash" },
-          { label: sess.cash_registers?.name ?? "Caixa", to: `/finance/cash/${sess.register_id}` },
+          { label: "Caixa" },
+          { label: "Caixas", to: "/cashbox" },
+          { label: sess.cash_registers?.name ?? "Caixa", to: `/cashbox/${sess.register_id}` },
           { label: sess.name },
         ]}
-        backTo={`/finance/cash/${sess.register_id}`}
+        backTo={`/cashbox/${sess.register_id}`}
         state={{ label: isOpen ? "aberta" : "fechada", tone: isOpen ? "success" : "default" }}
         actions={
           isOpen ? (

@@ -42,7 +42,7 @@ export default function FinanceDashboard() {
           <DashCard to="/finance/receivables" icon={ArrowDownToLine} title="A Receber" value={fmtMoney(stats.receivable)} tone="emerald" sub={`Vencido: ${fmtMoney(stats.overdue_recv)}`} />
           <DashCard to="/finance/payables" icon={Receipt} title="A Pagar" value={fmtMoney(stats.payable)} tone="rose" sub={`Vencido: ${fmtMoney(stats.overdue_pay)}`} />
           <DashCard to="/finance/pending" icon={AlertTriangle} title="Confirmações pendentes" value={String(stats.pending)} tone="amber" sub="Multibanco / transferência" />
-          <DashCard to="/finance/cash" icon={Wallet} title="Caixas abertos" value={String(stats.openSessions)} tone="muted" />
+          <DashCard to="/cashbox" icon={Wallet} title="Caixas abertos" value={String(stats.openSessions)} tone="muted" />
           <DashCard to="/finance/payments" icon={Receipt} title="Recebimentos" value="Ver lista" tone="muted" />
           <DashCard to="/finance/cost_centers" icon={Wallet} title="Centros de Custo" value="Configurar" tone="muted" />
         </div>
