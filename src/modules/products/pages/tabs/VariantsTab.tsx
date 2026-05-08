@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Sparkles, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Trash2, Sparkles, Upload, X, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Variant = {
   id: string;
@@ -32,6 +33,17 @@ export function VariantsTab({ productId }: { productId: string }) {
   const [bulkWeight, setBulkWeight] = useState<string>("");
   const [skuPrefix, setSkuPrefix] = useState<string>("");
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [rowErrors, setRowErrors] = useState<Record<string, { sku?: string; barcode?: string }>>({});
+  const [bulkErrors, setBulkErrors] = useState<string[]>([]);
+
+  const setRowError = (id: string, field: "sku" | "barcode", msg?: string) =>
+    setRowErrors((p) => {
+      const next = { ...p, [id]: { ...p[id], [field]: msg } };
+      if (!next[id].sku && !next[id].barcode) delete next[id];
+      return next;
+    });
+
+  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique/i.test(err?.message ?? "");
 
   const load = async () => {
     const { data: prod } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
@@ -127,8 +139,33 @@ export function VariantsTab({ productId }: { productId: string }) {
   };
 
   const updateVariant = async (v: Variant, patch: any) => {
+    const checkField = (field: "sku" | "barcode") => {
+      if (!(field in patch)) return null;
+      const val = (patch[field] ?? "").toString().trim();
+      if (!val) return null;
+      const dup = variants.find((x) => x.id !== v.id && ((x as any)[field] ?? "").toString().trim() === val);
+      if (dup) {
+        const label = (dup.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ") || dup.id.slice(0, 6);
+        return `Já usado por: ${label}`;
+      }
+      return null;
+    };
+    const skuErr = checkField("sku");
+    const bcErr = checkField("barcode");
+    if (skuErr) { setRowError(v.id, "sku", skuErr); toast.error(`SKU duplicado — ${skuErr}`); return; }
+    if (bcErr) { setRowError(v.id, "barcode", bcErr); toast.error(`Código de barras duplicado — ${bcErr}`); return; }
+
     const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (isUniqueError(error)) {
+        const field = /barcode/i.test(error.message) ? "barcode" : "sku";
+        setRowError(v.id, field, "Valor duplicado no banco");
+        return toast.error(`${field === "sku" ? "SKU" : "Código de barras"} já existe em outra variante`);
+      }
+      return toast.error(error.message);
+    }
+    if ("sku" in patch) setRowError(v.id, "sku", undefined);
+    if ("barcode" in patch) setRowError(v.id, "barcode", undefined);
     load();
   };
   const removeVariant = async (id: string) => {
@@ -178,13 +215,61 @@ export function VariantsTab({ productId }: { productId: string }) {
   const applyBulkSku = async () => {
     const ids = requireSelection(); if (!ids) return;
     const prefix = skuPrefix || productCode || "VAR";
-    await Promise.all(ids.map((id) => {
-      const v = variants.find((x) => x.id === id);
-      const parts = (v?.product_variant_values || []).map((x) => slug(x.product_attribute_values?.name || ""));
+    setBulkErrors([]);
+
+    // 1. Compute target SKUs
+    const targets = ids.map((id) => {
+      const v = variants.find((x) => x.id === id)!;
+      const parts = (v.product_variant_values || []).map((x) => slug(x.product_attribute_values?.name || ""));
       const sku = [prefix, ...parts].filter(Boolean).join("-");
-      return supabase.from("product_variants").update({ sku }).eq("id", id);
-    }));
-    toast.success(`${ids.length} SKUs gerados`);
+      const label = (v.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ") || id.slice(0, 6);
+      return { id, sku, label };
+    });
+
+    const errs: string[] = [];
+    const newRowErrs: Record<string, { sku?: string; barcode?: string }> = { ...rowErrors };
+
+    // 2. Detect duplicates within the batch itself
+    const counts = new Map<string, string[]>();
+    targets.forEach((t) => {
+      if (!t.sku) return;
+      counts.set(t.sku, [...(counts.get(t.sku) || []), t.label]);
+    });
+    counts.forEach((labels, sku) => {
+      if (labels.length > 1) errs.push(`SKU "${sku}" geraria duplicata para: ${labels.join(", ")}`);
+    });
+
+    // 3. Detect conflicts with variants outside the selection
+    const idSet = new Set(ids);
+    targets.forEach((t) => {
+      if (!t.sku) return;
+      const conflict = variants.find((x) => !idSet.has(x.id) && (x.sku ?? "").trim() === t.sku);
+      if (conflict) {
+        const cl = (conflict.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ");
+        errs.push(`SKU "${t.sku}" (${t.label}) já existe em: ${cl}`);
+        newRowErrs[t.id] = { ...newRowErrs[t.id], sku: `Conflita com ${cl}` };
+      }
+    });
+
+    if (errs.length) {
+      setBulkErrors(errs);
+      setRowErrors(newRowErrs);
+      toast.error(`${errs.length} conflito(s) de SKU — nada foi salvo`);
+      return;
+    }
+
+    // 4. Apply
+    const results = await Promise.all(targets.map((t) =>
+      supabase.from("product_variants").update({ sku: t.sku }).eq("id", t.id).then((r) => ({ t, r }))
+    ));
+    const failed = results.filter((x) => x.r.error);
+    if (failed.length) {
+      const msgs = failed.map(({ t, r }) => `${t.label}: ${r.error?.message}`);
+      setBulkErrors(msgs);
+      toast.error(`${failed.length} erro(s) ao salvar`);
+    } else {
+      toast.success(`${ids.length} SKUs gerados`);
+    }
     load();
   };
 
@@ -310,6 +395,19 @@ export function VariantsTab({ productId }: { productId: string }) {
         </div>
       )}
 
+      {bulkErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Conflitos detectados ({bulkErrors.length})</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-5 space-y-0.5 text-xs mt-1 max-h-40 overflow-auto">
+              {bulkErrors.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+            <Button size="sm" variant="ghost" className="mt-1 h-6" onClick={() => setBulkErrors([])}>Fechar</Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Variants table */}
       <div className="space-y-2">
         <div className="font-semibold">Variantes ({filteredVariants.length}{filteredVariants.length !== variants.length ? ` de ${variants.length}` : ""})</div>
@@ -369,8 +467,14 @@ export function VariantsTab({ productId }: { productId: string }) {
                     </div>
                   </td>
                   <td className="p-2">{(v.product_variant_values || []).map((x: any) => x.product_attribute_values?.name).join(" / ")}</td>
-                  <td className="p-1"><Input className="h-8" defaultValue={v.sku ?? ""} key={`sku-${v.id}-${v.sku}`} onBlur={(e) => e.target.value !== (v.sku ?? "") && updateVariant(v, { sku: e.target.value })} /></td>
-                  <td className="p-1"><Input className="h-8" defaultValue={v.barcode ?? ""} key={`bc-${v.id}-${v.barcode}`} onBlur={(e) => e.target.value !== (v.barcode ?? "") && updateVariant(v, { barcode: e.target.value })} /></td>
+                  <td className="p-1">
+                    <Input className={`h-8 ${rowErrors[v.id]?.sku ? "border-destructive focus-visible:ring-destructive" : ""}`} defaultValue={v.sku ?? ""} key={`sku-${v.id}-${v.sku}`} title={rowErrors[v.id]?.sku || ""} onBlur={(e) => e.target.value !== (v.sku ?? "") && updateVariant(v, { sku: e.target.value })} />
+                    {rowErrors[v.id]?.sku && <div className="text-[10px] text-destructive mt-0.5">{rowErrors[v.id].sku}</div>}
+                  </td>
+                  <td className="p-1">
+                    <Input className={`h-8 ${rowErrors[v.id]?.barcode ? "border-destructive focus-visible:ring-destructive" : ""}`} defaultValue={v.barcode ?? ""} key={`bc-${v.id}-${v.barcode}`} title={rowErrors[v.id]?.barcode || ""} onBlur={(e) => e.target.value !== (v.barcode ?? "") && updateVariant(v, { barcode: e.target.value })} />
+                    {rowErrors[v.id]?.barcode && <div className="text-[10px] text-destructive mt-0.5">{rowErrors[v.id].barcode}</div>}
+                  </td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.01" defaultValue={v.price_extra} key={`px-${v.id}-${v.price_extra}`} onBlur={(e) => Number(e.target.value) !== Number(v.price_extra) && updateVariant(v, { price_extra: Number(e.target.value) })} /></td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.001" defaultValue={v.weight ?? 0} key={`w-${v.id}-${v.weight}`} onBlur={(e) => Number(e.target.value) !== Number(v.weight ?? 0) && updateVariant(v, { weight: Number(e.target.value) })} /></td>
                   <td className="p-2 text-center"><input type="checkbox" checked={v.active} onChange={(e) => updateVariant(v, { active: e.target.checked })} /></td>
