@@ -2647,7 +2647,13 @@ export type Database = {
       validate_picking: { Args: { _picking: string }; Returns: undefined }
     }
     Enums: {
-      app_module: "core" | "products" | "sales" | "purchase" | "inventory"
+      app_module:
+        | "core"
+        | "products"
+        | "sales"
+        | "purchase"
+        | "inventory"
+        | "finance"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -2798,7 +2804,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_module: ["core", "products", "sales", "purchase", "inventory"],
+      app_module: [
+        "core",
+        "products",
+        "sales",
+        "purchase",
+        "inventory",
+        "finance",
+      ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
         "internal",
