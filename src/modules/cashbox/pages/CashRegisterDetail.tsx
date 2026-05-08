@@ -22,12 +22,18 @@ export default function CashRegisterDetail() {
   const [openingBalance, setOpeningBalance] = useState<string>("");
   const [lastClosed, setLastClosed] = useState<number>(0);
 
+  const [userName, setUserName] = useState<string>("—");
+
   const load = async () => {
     const { data: r } = await supabase
       .from("cash_registers")
       .select("*, warehouses(name), account_journals(name)")
       .eq("id", id!).maybeSingle();
     setReg(r);
+    if (r?.user_id) {
+      const { data: emp } = await supabase.from("hr_employees").select("full_name").eq("user_id", r.user_id).maybeSingle();
+      setUserName(emp?.full_name ?? "—");
+    } else setUserName("—");
     const { data: s } = await supabase
       .from("cash_sessions")
       .select("*")
