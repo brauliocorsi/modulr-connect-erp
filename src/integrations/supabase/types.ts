@@ -280,6 +280,7 @@ export type Database = {
           id: string
           journal_id: string | null
           name: string
+          store_id: string | null
           updated_at: string
           user_id: string | null
           warehouse_id: string | null
@@ -290,6 +291,7 @@ export type Database = {
           id?: string
           journal_id?: string | null
           name: string
+          store_id?: string | null
           updated_at?: string
           user_id?: string | null
           warehouse_id?: string | null
@@ -300,6 +302,7 @@ export type Database = {
           id?: string
           journal_id?: string | null
           name?: string
+          store_id?: string | null
           updated_at?: string
           user_id?: string | null
           warehouse_id?: string | null
@@ -310,6 +313,13 @@ export type Database = {
             columns: ["journal_id"]
             isOneToOne: false
             referencedRelation: "account_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_registers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
           {
@@ -2410,6 +2420,7 @@ export type Database = {
           pricelist_id: string | null
           salesperson_id: string | null
           state: Database["public"]["Enums"]["sale_state"]
+          store_id: string | null
           updated_at: string
           validity_date: string | null
           warehouse_id: string | null
@@ -2441,6 +2452,7 @@ export type Database = {
           pricelist_id?: string | null
           salesperson_id?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
+          store_id?: string | null
           updated_at?: string
           validity_date?: string | null
           warehouse_id?: string | null
@@ -2472,6 +2484,7 @@ export type Database = {
           pricelist_id?: string | null
           salesperson_id?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
+          store_id?: string | null
           updated_at?: string
           validity_date?: string | null
           warehouse_id?: string | null
@@ -2510,6 +2523,13 @@ export type Database = {
             columns: ["pricelist_id"]
             isOneToOne: false
             referencedRelation: "pricelists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
           {
@@ -3007,6 +3027,114 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_members: {
+        Row: {
+          created_at: string
+          role: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_members_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          active: boolean
+          city: string | null
+          code: string
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          manager_id: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          street: string | null
+          tax_id: string | null
+          updated_at: string
+          warehouse_id: string | null
+          zip: string | null
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          code: string
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          manager_id?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          street?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+          zip?: string | null
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          code?: string
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          manager_id?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          street?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stores_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "stores_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
