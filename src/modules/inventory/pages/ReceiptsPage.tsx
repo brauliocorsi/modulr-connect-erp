@@ -5,6 +5,8 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, ShoppingBag, PackageCheck } from "lucide-react";
 
 type Row = {
   id: string;
@@ -68,7 +70,9 @@ function ReceiptRow({ r, showSO }: { r: Row; showSO: boolean }) {
   return (
     <tr className="border-t hover:bg-accent/40">
       <td className="px-3 py-2">
-        <Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline">{r.name}</Link>
+        <Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline inline-flex items-center gap-1">
+          <PackageCheck className="h-3.5 w-3.5" />{r.name}
+        </Link>
       </td>
       <td className="px-3 py-2">
         {r.po ? (
@@ -88,6 +92,24 @@ function ReceiptRow({ r, showSO }: { r: Row; showSO: boolean }) {
       <td className="px-3 py-2">
         <span className={`text-xs px-2 py-0.5 rounded ${STATE_TONE[r.state] ?? ""}`}>{r.state}</span>
       </td>
+      <td className="px-2 py-1">
+        <div className="flex items-center justify-end gap-1">
+          {r.so && (
+            <Button asChild size="sm" variant="outline" className="h-7 px-2" title={`Abrir venda ${r.so.name}`}>
+              <Link to={`/sales/orders/${r.so.id}`}>
+                <ShoppingCart className="h-3.5 w-3.5 mr-1" />Venda
+              </Link>
+            </Button>
+          )}
+          {r.po && (
+            <Button asChild size="sm" variant="outline" className="h-7 px-2" title={`Abrir compra ${r.po.name}`}>
+              <Link to={`/purchase/orders/${r.po.id}`}>
+                <ShoppingBag className="h-3.5 w-3.5 mr-1" />Compra
+              </Link>
+            </Button>
+          )}
+        </div>
+      </td>
     </tr>
   );
 }
@@ -106,11 +128,12 @@ function Table({ rows, showSO }: { rows: Row[]; showSO: boolean }) {
               <th className="text-left px-3 py-2">Fornecedor</th>
               <th className="text-left px-3 py-2">Programado</th>
               <th className="text-left px-3 py-2">Estado</th>
+              <th className="text-right px-3 py-2">Ações</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={showSO ? 7 : 5} className="text-center py-6 text-muted-foreground">Sem recebimentos</td></tr>
+              <tr><td colSpan={showSO ? 8 : 6} className="text-center py-6 text-muted-foreground">Sem recebimentos</td></tr>
             ) : rows.map((r) => <ReceiptRow key={r.id} r={r} showSO={showSO} />)}
           </tbody>
         </table>
