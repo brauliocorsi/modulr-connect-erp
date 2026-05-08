@@ -140,10 +140,28 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     })();
   }, [id, isNew, ordersTable, linesTable]);
 
+  const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
+  const serviceLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") !== "product"), [lines]);
   const totals = useMemo(() => {
     const untaxed = lines.reduce((s, l) => s + Number(l.subtotal || 0), 0);
     return { untaxed, tax: 0, total: untaxed };
   }, [lines]);
+
+  const refreshServices = async (oid: string) => {
+    const { error } = await supabase.rpc("refresh_order_services" as any, { _order: oid });
+    if (error) return toast.error(error.message);
+    const { data: o } = await supabase.from("sale_orders").select("*").eq("id", oid).maybeSingle();
+    if (o) setOrder(o);
+    const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", oid).order("sequence");
+    setLines((ls ?? []) as unknown as Line[]);
+  };
+
+  const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
+    if (isNew) return toast.error("Salve o pedido primeiro");
+    setOrder((o: any) => ({ ...o, [key]: value }));
+    await supabase.from("sale_orders").update({ [key]: value }).eq("id", id!);
+    await refreshServices(id!);
+  };
 
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) => {
