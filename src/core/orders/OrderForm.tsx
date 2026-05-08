@@ -74,6 +74,21 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
   });
+  const { data: shipment } = useQuery({
+    enabled: kind === "sale" && !!order.name && order.name !== "Rascunho",
+    queryKey: ["sale-shipment", order.name],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stock_pickings")
+        .select("id,name,state,scheduled_at,done_at")
+        .eq("kind", "outgoing")
+        .eq("origin", order.name)
+        .order("scheduled_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
   const { data: stockMap } = useQuery({
     queryKey: ["products-stock-agg"],
     queryFn: async () => {
