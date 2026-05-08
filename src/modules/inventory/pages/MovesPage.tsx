@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { AdvancedFilters, FilterValues } from "@/modules/inventory/components/AdvancedFilters";
 import { Download } from "lucide-react";
+import { stateLabel, kindLabel } from "@/lib/picking";
 
 export default function MovesPage() {
   const [filters, setFilters] = useState<FilterValues>({});
