@@ -213,6 +213,177 @@ export type Database = {
           },
         ]
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          notes: string | null
+          partner_id: string | null
+          payment_id: string | null
+          reference: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          partner_id?: string | null
+          payment_id?: string | null
+          reference?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          partner_id?: string | null
+          payment_id?: string | null
+          reference?: string | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_registers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          journal_id: string | null
+          name: string
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          journal_id?: string | null
+          name: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          journal_id?: string | null
+          name?: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_registers_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "account_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_registers_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "cash_registers_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_balance_counted: number | null
+          closing_balance_theoretical: number | null
+          created_at: string
+          difference: number | null
+          id: string
+          name: string
+          notes: string | null
+          opened_at: string
+          opened_by: string | null
+          opening_balance: number
+          register_id: string
+          state: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance_counted?: number | null
+          closing_balance_theoretical?: number | null
+          created_at?: string
+          difference?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          opening_balance?: number
+          register_id: string
+          state?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_balance_counted?: number | null
+          closing_balance_theoretical?: number | null
+          created_at?: string
+          difference?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          opening_balance?: number
+          register_id?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channel_members: {
         Row: {
           channel_id: string
@@ -315,9 +486,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cost_centers: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_centers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_payments: {
         Row: {
           amount: number
+          cost_center_id: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -334,6 +541,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -350,6 +558,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -365,6 +574,13 @@ export type Database = {
           state?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "customer_payments_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customer_payments_journal_id_fkey"
             columns: ["journal_id"]
@@ -909,28 +1125,37 @@ export type Database = {
         Row: {
           active: boolean
           code: string
+          confirmation_mode: string
           created_at: string
           default_journal_id: string | null
+          feeds_cash_session: boolean
           id: string
           name: string
+          requires_reference: boolean
           updated_at: string
         }
         Insert: {
           active?: boolean
           code: string
+          confirmation_mode?: string
           created_at?: string
           default_journal_id?: string | null
+          feeds_cash_session?: boolean
           id?: string
           name: string
+          requires_reference?: boolean
           updated_at?: string
         }
         Update: {
           active?: boolean
           code?: string
+          confirmation_mode?: string
           created_at?: string
           default_journal_id?: string | null
+          feeds_cash_session?: boolean
           id?: string
           name?: string
+          requires_reference?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -2090,6 +2315,10 @@ export type Database = {
           date_order: string
           fulfillment_status: string
           id: string
+          invoice_date: string | null
+          invoice_notes: string | null
+          invoice_number: string | null
+          invoice_status: string
           name: string
           notes: string | null
           partner_id: string
@@ -2111,6 +2340,10 @@ export type Database = {
           date_order?: string
           fulfillment_status?: string
           id?: string
+          invoice_date?: string | null
+          invoice_notes?: string | null
+          invoice_number?: string | null
+          invoice_status?: string
           name: string
           notes?: string | null
           partner_id: string
@@ -2132,6 +2365,10 @@ export type Database = {
           date_order?: string
           fulfillment_status?: string
           id?: string
+          invoice_date?: string | null
+          invoice_notes?: string | null
+          invoice_number?: string | null
+          invoice_status?: string
           name?: string
           notes?: string | null
           partner_id?: string
@@ -2654,6 +2891,148 @@ export type Database = {
           },
         ]
       }
+      supplier_bills: {
+        Row: {
+          amount_paid: number
+          amount_total: number
+          bill_date: string
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          purchase_order_id: string | null
+          reference: string | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          amount_total?: number
+          bill_date?: string
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          partner_id: string
+          purchase_order_id?: string | null
+          reference?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          amount_total?: number
+          bill_date?: string
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          partner_id?: string
+          purchase_order_id?: string | null
+          reference?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_bills_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_payments: {
+        Row: {
+          amount: number
+          bill_id: string | null
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string | null
+          method_id: string | null
+          name: string
+          notes: string | null
+          partner_id: string | null
+          payment_date: string
+          reference: string | null
+          state: string
+        }
+        Insert: {
+          amount: number
+          bill_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method_id?: string | null
+          name: string
+          notes?: string | null
+          partner_id?: string | null
+          payment_date?: string
+          reference?: string | null
+          state?: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string | null
+          method_id?: string | null
+          name?: string
+          notes?: string | null
+          partner_id?: string | null
+          payment_date?: string
+          reference?: string | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payments_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: false
+            referencedRelation: "account_journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_groups: {
         Row: {
           group_id: string
@@ -2811,6 +3190,14 @@ export type Database = {
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
+      close_cash_session: {
+        Args: { _counted: number; _session: string }
+        Returns: undefined
+      }
+      confirm_pending_payment: {
+        Args: { _payment: string }
+        Returns: undefined
+      }
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
       customer_location_id: { Args: never; Returns: string }
@@ -2819,6 +3206,7 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
       generate_product_variants: { Args: { _product: string }; Returns: number }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
@@ -2855,10 +3243,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      open_cash_session: {
+        Args: { _opening?: number; _register: string }
+        Returns: string
+      }
       product_available_qty: {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      recalc_bill_state: { Args: { _bill: string }; Returns: undefined }
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }

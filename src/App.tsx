@@ -33,7 +33,15 @@ import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
-import { JournalsList, JournalForm, MethodsList, MethodForm } from "@/modules/finance/pages/FinancePages";
+import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm } from "@/modules/finance/pages/FinancePages";
+import FinanceDashboard from "@/modules/finance/pages/FinanceDashboard";
+import ReceivablesPage from "@/modules/finance/pages/ReceivablesPage";
+import PendingConfirmationsPage from "@/modules/finance/pages/PendingConfirmationsPage";
+import PayablesList from "@/modules/finance/pages/PayablesList";
+import BillForm from "@/modules/finance/pages/BillForm";
+import CashRegistersList from "@/modules/finance/pages/CashRegistersList";
+import CashRegisterDetail from "@/modules/finance/pages/CashRegisterDetail";
+import CashSessionDetail from "@/modules/finance/pages/CashSessionDetail";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
@@ -152,14 +160,25 @@ const App = () => (
               <Route path="reports/purchase" element={<PurchaseReport />} />
 
               {/* Finance */}
-              <Route path="finance" element={<Navigate to="/finance/payments" replace />} />
+              <Route path="finance" element={<FinanceDashboard />} />
               <Route path="finance/payments" element={<PaymentsPage />} />
+              <Route path="finance/receivables" element={<ReceivablesPage />} />
+              <Route path="finance/pending" element={<PendingConfirmationsPage />} />
+              <Route path="finance/payables" element={<PayablesList />} />
+              <Route path="finance/payables/new" element={<BillForm />} />
+              <Route path="finance/payables/:id" element={<BillForm />} />
+              <Route path="finance/cash" element={<CashRegistersList />} />
+              <Route path="finance/cash/sessions/:id" element={<CashSessionDetail />} />
+              <Route path="finance/cash/:id" element={<CashRegisterDetail />} />
               <Route path="finance/journals" element={<JournalsList />} />
               <Route path="finance/journals/new" element={<JournalForm />} />
               <Route path="finance/journals/:id" element={<JournalForm />} />
               <Route path="finance/methods" element={<MethodsList />} />
               <Route path="finance/methods/new" element={<MethodForm />} />
               <Route path="finance/methods/:id" element={<MethodForm />} />
+              <Route path="finance/cost_centers" element={<CostCentersList />} />
+              <Route path="finance/cost_centers/new" element={<CostCenterForm />} />
+              <Route path="finance/cost_centers/:id" element={<CostCenterForm />} />
 
               {/* HR */}
               <Route path="hr" element={<Navigate to="/hr/employees" replace />} />
