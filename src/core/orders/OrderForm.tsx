@@ -75,6 +75,25 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("products").select("id,name,list_price,standard_cost").order("name")).data ?? [],
   });
+  const { data: variantsByProduct } = useQuery({
+    queryKey: ["product-variants-by-product"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_variants")
+        .select("id, product_id, sku, price_extra, active, product_variant_values(product_attribute_values(name))")
+        .eq("active", true);
+      const m: Record<string, { id: string; label: string; price_extra: number }[]> = {};
+      (data ?? []).forEach((v: any) => {
+        const names = (v.product_variant_values || [])
+          .map((x: any) => x.product_attribute_values?.name)
+          .filter(Boolean)
+          .join(" / ");
+        const label = names || v.sku || "Variante";
+        (m[v.product_id] ||= []).push({ id: v.id, label, price_extra: Number(v.price_extra || 0) });
+      });
+      return m;
+    },
+  });
   const { data: shipment } = useQuery({
     enabled: kind === "sale" && !!order.name && order.name !== "Rascunho",
     queryKey: ["sale-shipment", order.name],
