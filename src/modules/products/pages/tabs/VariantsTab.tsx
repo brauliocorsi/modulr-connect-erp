@@ -34,8 +34,8 @@ export function VariantsTab({ productId }: { productId: string }) {
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const load = async () => {
-    const { data: prod } = await supabase.from("products").select("default_code, name").eq("id", productId).maybeSingle();
-    setProductCode((prod as any)?.default_code || slug((prod as any)?.name || "").slice(0, 8));
+    const { data: prod } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
+    setProductCode(slug((prod as any)?.name || "").slice(0, 8));
 
     const { data: tas } = await supabase
       .from("product_template_attributes")
