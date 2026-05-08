@@ -393,9 +393,10 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {lines.length === 0 ? (
+                    {productLines.length === 0 ? (
                       <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
-                    ) : lines.map((l, i) => {
+                    ) : productLines.map((l) => {
+                      const i = lines.indexOf(l);
                       const s = l.product_id ? stockMap?.[l.product_id] : undefined;
                       const avail = s?.available ?? 0;
                       const qty = Number(l.quantity || 0);
