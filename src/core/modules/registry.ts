@@ -125,6 +125,18 @@ export const MODULES: ModuleDef[] = [
     ],
   },
   {
+    id: "cashbox" as any,
+    name: "Caixa",
+    shortName: "Caixa",
+    icon: Banknote,
+    color: "bg-[hsl(24_95%_53%)]",
+    basePath: "/cashbox",
+    description: "Caixas de loja, sessões e movimentos diários",
+    menu: [
+      { section: "Caixas", label: "Caixas", to: "/cashbox" },
+    ],
+  },
+  {
     id: "discuss" as any,
     name: "Conversas",
     shortName: "Chat",
