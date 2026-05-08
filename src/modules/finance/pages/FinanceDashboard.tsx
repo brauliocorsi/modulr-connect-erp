@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { fmtMoney } from "@/lib/format";
-import { Receipt, Wallet, AlertTriangle, ArrowDownToLine } from "lucide-react";
+import { Receipt, Wallet, AlertTriangle, ArrowDownToLine, Scale } from "lucide-react";
 
 export default function FinanceDashboard() {
   const [stats, setStats] = useState<any>({
@@ -44,6 +44,7 @@ export default function FinanceDashboard() {
           <DashCard to="/finance/pending" icon={AlertTriangle} title="Confirmações pendentes" value={String(stats.pending)} tone="amber" sub="Multibanco / transferência" />
           <DashCard to="/cashbox" icon={Wallet} title="Caixas abertos" value={String(stats.openSessions)} tone="muted" />
           <DashCard to="/finance/payments" icon={Receipt} title="Recebimentos" value="Ver lista" tone="muted" />
+          <DashCard to="/finance/reconciliation" icon={Scale} title="Reconciliação" value="Comparar venda × recebido" tone="muted" />
           <DashCard to="/finance/cost_centers" icon={Wallet} title="Centros de Custo" value="Configurar" tone="muted" />
         </div>
       </PageBody>

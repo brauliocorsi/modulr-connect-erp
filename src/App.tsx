@@ -41,6 +41,7 @@ import ReceivablesPage from "@/modules/finance/pages/ReceivablesPage";
 import PendingConfirmationsPage from "@/modules/finance/pages/PendingConfirmationsPage";
 import PayablesList from "@/modules/finance/pages/PayablesList";
 import BillForm from "@/modules/finance/pages/BillForm";
+import ReconciliationPage from "@/modules/finance/pages/ReconciliationPage";
 import CashRegistersList from "@/modules/cashbox/pages/CashRegistersList";
 import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
@@ -168,6 +169,7 @@ const App = () => (
               <Route path="finance/payments" element={<PaymentsPage />} />
               <Route path="finance/receivables" element={<ReceivablesPage />} />
               <Route path="finance/pending" element={<PendingConfirmationsPage />} />
+              <Route path="finance/reconciliation" element={<ReconciliationPage />} />
               <Route path="finance/payables" element={<PayablesList />} />
               <Route path="finance/payables/new" element={<BillForm />} />
               <Route path="finance/payables/:id" element={<BillForm />} />
