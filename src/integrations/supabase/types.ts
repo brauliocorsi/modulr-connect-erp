@@ -1233,6 +1233,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          auto_purchase: boolean
           barcode: string | null
           can_be_manufactured: boolean
           can_be_purchased: boolean
@@ -1271,6 +1272,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
           can_be_purchased?: boolean
@@ -1309,6 +1311,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
           can_be_purchased?: boolean
@@ -2627,6 +2630,15 @@ export type Database = {
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       run_reordering_rules: { Args: never; Returns: number }
+      set_product_stock: {
+        Args: {
+          _product: string
+          _qty: number
+          _reason?: string
+          _warehouse: string
+        }
+        Returns: number
+      }
       supplier_location_id: { Args: never; Returns: string }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
     }
