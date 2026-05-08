@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -112,17 +112,28 @@ export const MODULES: ModuleDef[] = [
     icon: Wallet,
     color: "bg-[hsl(160_84%_39%)]",
     basePath: "/finance",
-    description: "Recebimentos, contas a pagar, caixas e centros de custo",
+    description: "Recebimentos, contas a pagar e centros de custo",
     menu: [
       { section: "Visão Geral", label: "Dashboard", to: "/finance" },
       { section: "Operações", label: "Recebimentos", to: "/finance/payments" },
       { section: "Operações", label: "A Receber", to: "/finance/receivables" },
       { section: "Operações", label: "Confirmações", to: "/finance/pending" },
       { section: "Operações", label: "Contas a Pagar", to: "/finance/payables" },
-      { section: "Caixas", label: "Caixas", to: "/finance/cash" },
       { section: "Configuração", label: "Diários", to: "/finance/journals" },
       { section: "Configuração", label: "Métodos de Pagamento", to: "/finance/methods" },
       { section: "Configuração", label: "Centros de Custo", to: "/finance/cost_centers" },
+    ],
+  },
+  {
+    id: "cashbox" as any,
+    name: "Caixa",
+    shortName: "Caixa",
+    icon: Banknote,
+    color: "bg-[hsl(24_95%_53%)]",
+    basePath: "/cashbox",
+    description: "Caixas de loja, sessões e movimentos diários",
+    menu: [
+      { section: "Caixas", label: "Caixas", to: "/cashbox" },
     ],
   },
   {

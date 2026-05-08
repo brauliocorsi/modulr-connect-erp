@@ -48,7 +48,7 @@ export default function CashRegisterDetail() {
     toast.success("Sessão aberta");
     setOpenDlg(false);
     setOpeningBalance("");
-    if (data) nav(`/finance/cash/sessions/${data}`);
+    if (data) nav(`/cashbox/sessions/${data}`);
   };
 
   if (!reg) return <div className="p-6 text-muted-foreground">Carregando…</div>;
@@ -58,14 +58,14 @@ export default function CashRegisterDetail() {
       <FormHeader
         title={reg.name}
         breadcrumb={[
-          { label: "Financeiro", to: "/finance" },
-          { label: "Caixas", to: "/finance/cash" },
+          { label: "Caixa" },
+          { label: "Caixas", to: "/cashbox" },
           { label: reg.name },
         ]}
-        backTo="/finance/cash"
+        backTo="/cashbox"
         actions={
           openSession ? (
-            <Button size="sm" onClick={() => nav(`/finance/cash/sessions/${openSession.id}`)}>
+            <Button size="sm" onClick={() => nav(`/cashbox/sessions/${openSession.id}`)}>
               Ver sessão aberta
             </Button>
           ) : (
@@ -101,7 +101,7 @@ export default function CashRegisterDetail() {
               {sessions.length === 0 ? (
                 <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem sessões</td></tr>
               ) : sessions.map((s) => (
-                <tr key={s.id} className="border-t hover:bg-muted/40 cursor-pointer" onClick={() => nav(`/finance/cash/sessions/${s.id}`)}>
+                <tr key={s.id} className="border-t hover:bg-muted/40 cursor-pointer" onClick={() => nav(`/cashbox/sessions/${s.id}`)}>
                   <td className="px-3 py-2 font-mono">{s.name}</td>
                   <td className="px-3 py-2">{new Date(s.opened_at).toLocaleString("pt-PT")}</td>
                   <td className="px-3 py-2">{s.closed_at ? new Date(s.closed_at).toLocaleString("pt-PT") : "—"}</td>

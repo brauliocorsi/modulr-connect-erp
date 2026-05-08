@@ -58,7 +58,7 @@ export default function CashRegistersList() {
     <>
       <PageHeader
         title="Caixas"
-        breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Caixas" }]}
+        breadcrumb={[{ label: "Caixa" }, { label: "Caixas" }]}
         actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Novo Caixa</Button>}
       />
       <PageBody>
@@ -69,7 +69,7 @@ export default function CashRegistersList() {
             {rows.map((r) => {
               const openSession = (r.cash_sessions ?? []).find((s: any) => s.state === "open");
               return (
-                <Card key={r.id} className="p-4 hover:shadow-md cursor-pointer" onClick={() => nav(`/finance/cash/${r.id}`)}>
+                <Card key={r.id} className="p-4 hover:shadow-md cursor-pointer" onClick={() => nav(`/cashbox/${r.id}`)}>
                   <div className="flex items-center gap-2 mb-2">
                     <Wallet className="h-4 w-4 text-primary" />
                     <div className="font-semibold">{r.name}</div>
