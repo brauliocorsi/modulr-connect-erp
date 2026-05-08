@@ -1,5 +1,6 @@
 import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
+import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
 
 export const QuotationsList = () => (
   <ListView
