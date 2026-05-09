@@ -221,6 +221,13 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     if (isNew) {
       const { data: seqRes } = await supabase.rpc("next_sequence", { _code: kind === "sale" ? "sale_order" : "purchase_order" });
       payload.name = seqRes ?? "TMP";
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id ?? null;
+      if (uid) {
+        payload.created_by = uid;
+        if (kind === "purchase") payload.buyer_id = uid;
+        else payload.salesperson_id = uid;
+      }
       const { data, error } = await supabase.from(ordersTable as any).insert(payload).select("id, name").single();
       if (error) return toast.error(error.message);
       oid = (data as any).id;
