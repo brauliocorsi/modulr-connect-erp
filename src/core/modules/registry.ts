@@ -67,7 +67,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Operações", label: "Transferências", to: "/inventory/transfers" },
       { section: "Operações", label: "Lotes (Batch)", to: "/inventory/batches" },
       { section: "Operações", label: "Ondas (Wave)", to: "/inventory/waves" },
-      { section: "Operações", label: "Códigos de Barras", to: "/inventory/barcode" },
+      { section: "Operações", label: "Códigos de Barras (App)", to: "/barcode" },
       { section: "Operações", label: "Movimentos", to: "/inventory/moves" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
       { section: "Relatórios", label: "Kardex", to: "/inventory/kardex" },
