@@ -66,6 +66,9 @@ export default function DeliveryPicking() {
   const allOk = moves.length > 0 && moves.every((m: any) => (scanned[m.id] ?? 0) >= Number(m.quantity));
 
   const finalize = async () => {
+    if (amount > openBalance + 0.01) {
+      return toast.error(`Valor excede o em aberto (${openBalance.toFixed(2)} €)`);
+    }
     setOpenPay(false);
     const { error } = await supabase.rpc("driver_deliver_picking", {
       _picking: id!,
