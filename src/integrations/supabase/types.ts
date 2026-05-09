@@ -1982,6 +1982,46 @@ export type Database = {
           },
         ]
       }
+      purchase_order_origins: {
+        Row: {
+          created_at: string
+          po_id: string
+          sale_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          po_id: string
+          sale_order_id: string
+        }
+        Update: {
+          created_at?: string
+          po_id?: string
+          sale_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_origins_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           amount_tax: number
@@ -3497,6 +3537,10 @@ export type Database = {
           _record_id: string
           _record_type: string
         }
+        Returns: undefined
+      }
+      merge_purchase_orders: {
+        Args: { _sources: string[]; _target: string }
         Returns: undefined
       }
       next_sequence: { Args: { _code: string }; Returns: string }

@@ -1,46 +1,76 @@
-## Cadastro de Lojas (Pontos de Venda Físicos)
+## Melhorias no módulo de Compras
 
-Adicionar uma entidade **Loja** ao sistema, com cadastro próprio, ligação a armazém/caixas/equipa, e usar como filtro em vendas e relatórios.
+### 1. Receção automática + parcial com backorder
+- Trigger no `stock_pickings`: quando uma receção (`kind='incoming'`) cuja `origin` corresponde a um PO passa a `state='done'`, marcar o PO como `done` (mesmo se for parcial — a função `validate_picking` já cria automaticamente a backorder com os itens em falta).
+- Manter o registo de quanto foi recebido por linha do PO (calculado via soma dos `stock_moves.quantity_done` agrupados por produto e `origin`).
 
-### 1. Base de dados (migration)
+### 2. Quem pediu e quando
+- Garantir que ao criar um PO se gravam `created_by = auth.uid()`, `buyer_id = auth.uid()` (se vazio) e `created_at`.
+- Mostrar nome do comprador e data/hora na lista e detalhes.
 
-Nova tabela `stores`:
-- Identificação: `code` (único), `name`, `active`
-- Morada: `street`, `city`, `zip`, `country`, `phone`, `email`, `tax_id`
-- Operação: `warehouse_id` (FK → `stock_warehouses`), `manager_id` (FK → `hr_employees`)
-- Auditoria: `created_at`, `updated_at`
+### 3. Lista de PO com expandir e rastreio de vendas
+Substituir o `ListView` genérico por uma lista própria com:
+- Linha principal: Número, Fornecedor, Comprador, Data, Estado, Total, Vendas de origem (badges).
+- Botão de expansão (chevron) que mostra:
+  - Tabela das **linhas de produto** (produto, qtd pedida, qtd recebida, qtd em falta, preço, subtotal).
+  - Lista das **encomendas de venda de origem** com link para `/sales/orders/:id`.
+  - Lista de **receções relacionadas** com estado.
+- Filtros rápidos por estado (Rascunho, Enviado, Confirmado, Concluído).
 
-Tabela de junção `store_members`:
-- `store_id`, `user_id`, `role` (manager/staff)
-- PK composta (store_id, user_id)
+### 4. Origens múltiplas (vendas → 1 compra)
+Hoje `purchase_orders.origin` é um único `text` (nome da SO). Para suportar agrupamento, criar:
 
-Relação loja ↔ caixas: adicionar coluna `store_id` em `cash_registers` (nullable, FK).
+```text
+purchase_order_origins
+  po_id  uuid → purchase_orders.id (cascade)
+  sale_order_id uuid → sale_orders.id
+  PRIMARY KEY (po_id, sale_order_id)
+```
 
-Relação loja ↔ vendas: adicionar coluna `store_id` em `sales_orders` (nullable, FK) — usado apenas para filtragem/relatórios, sem regras automáticas.
+- Backfill: para cada PO existente cujo `origin` corresponde a uma SO, inserir a relação.
+- Atualizar `confirm_sale_order` para inserir também na nova tabela quando criar/reaproveitar o PO automático.
+- Ajustar `tg_recalc_from_po` para usar a nova tabela (suporta múltiplas SOs).
 
-RLS: padrão do sistema (`has_permission(..., 'core', 'stores', ...)`) — view aberta a autenticados, edit/create/delete via permissão. Adicionar entrada de permissão no módulo `core`.
+### 5. Agrupamento de pedidos por fornecedor
+Funciona de duas formas:
 
-### 2. Frontend
+**Automático** (já existe parcialmente):
+- `confirm_sale_order` continua a procurar PO em `draft` do mesmo fornecedor + armazém. Mudança: deixa de filtrar por `origin = o.name` (hoje cria um por SO). Passa a juntar qualquer rascunho do mesmo fornecedor/armazém e regista a SO em `purchase_order_origins`.
 
-**Nova página** `src/modules/core/pages/StoresPage.tsx` em `/stores`:
-- Listagem com colunas: Código, Nome, Cidade, Armazém, Gestor, Ativo
-- Botão "Nova loja" → diálogo com campos de identificação, morada, seleção de armazém e gestor
-- Edição inline ou diálogo, toggle ativo/inativo
+**Manual**:
+- Botão **"Agrupar selecionados"** na lista de PO, ativo só quando todos os selecionados são `draft`, do mesmo fornecedor e armazém.
+- Função RPC `merge_purchase_orders(_target uuid, _sources uuid[])`:
+  - Move/Funde linhas (mesmo produto + preço → soma quantidades; senão acrescenta linha).
+  - Copia origens das SOs para o destino.
+  - Recalcula `amount_*`.
+  - Cancela e apaga os POs de origem.
+- Ação só aparece enquanto o PO ainda não foi enviado a fornecedor (`state='draft'`).
 
-**Diálogo de equipa** dentro da edição da loja:
-- Listar membros (`store_members`), adicionar/remover utilizadores
+### 6. UI — destaques
+- Badge cinza "Rascunho", azul "Enviado", âmbar "Confirmado", verde "Concluído".
+- Coluna "Vendas" mostra até 3 chips com nº da SO; tooltip com lista completa.
+- Linhas expansíveis com animação suave; persistir o estado expandido na sessão.
+- Checkbox de seleção por linha + barra de ações (Agrupar, Cancelar).
 
-**Navegação**: entrada "Lojas" no menu lateral em **Configurações** (ou Core), ícone Store.
+---
 
-**Integração mínima nas vendas** (`OrderForm`):
-- Selector "Loja" (opcional) que grava `store_id` na ordem
-- Filtro "Loja" na listagem de orders e nos relatórios financeiros
+### Detalhes técnicos
 
-### 3. Out of scope (confirmado pelo utilizador)
-- Sem segregação de stock por loja
-- Sem restrição de utilizadores por loja (apenas informativo)
-- Sem pricelist/horário por loja
+**Migrações SQL**
+- Criar tabela `purchase_order_origins` + RLS (qualquer authenticated lê; insert/update/delete a quem tem permissão `purchase.orders.edit`).
+- Trigger `tg_po_done_on_receipt` em `stock_pickings AFTER UPDATE` que faz:
+  ```sql
+  UPDATE purchase_orders SET state='done'
+  WHERE name = NEW.origin AND state IN ('confirmed','rfq_sent') AND NEW.kind='incoming' AND NEW.state='done';
+  ```
+- Função `merge_purchase_orders(_target uuid, _sources uuid[])` SECURITY DEFINER.
+- Atualizar `confirm_sale_order` para procurar PO em rascunho **sem** filtro de origin e popular `purchase_order_origins`.
+- Backfill da nova tabela a partir do `origin` existente.
 
-### Ficheiros impactados
-- **Criados**: migration `stores + store_members + colunas store_id`, `src/modules/core/pages/StoresPage.tsx`, `src/modules/core/components/StoreDialog.tsx`, `src/modules/core/components/StoreMembersDialog.tsx`
-- **Editados**: `src/App.tsx` (rota `/stores`), sidebar, `src/core/orders/OrderForm.tsx` e listagem de orders (selector + filtro), relatórios financeiros (filtro por loja)
+**Frontend**
+- Nova página `src/modules/purchase/pages/PurchaseOrdersList.tsx` (substitui o export atual no `PurchasePages.tsx`).
+- Hook auxiliar para carregar lines + receipts + origins por PO sob demanda ao expandir.
+- Reutilizar `PageHeader`, `Badge`, `Table`, `Checkbox` shadcn.
+- No `OrderForm` (kind="purchase") garantir defaults `created_by`/`buyer_id = auth.uid()`.
+
+**Sem alterações** em: rotas, `RfqKanban`, `OrderForm` estrutura geral.
