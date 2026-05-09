@@ -12,7 +12,7 @@ export default function ProductLookup() {
     const v = raw.trim();
     const { data: p } = await supabase
       .from("products")
-      .select("id,name,internal_ref,barcode,sale_price,cost_price")
+      .select("id,name,internal_ref,barcode")
       .or(`barcode.eq.${v},internal_ref.eq.${v}`)
       .maybeSingle();
     if (!p) {
