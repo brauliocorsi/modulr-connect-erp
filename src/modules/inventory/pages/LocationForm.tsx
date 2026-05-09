@@ -9,6 +9,7 @@ export default function LocationForm() {
       breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Locais", to: "/inventory/locations" }, { label: "Editar" }]}
       fields={[
         { name: "name", label: "Nome", required: true },
+        { name: "barcode", label: "Código de barras" },
         { name: "type", label: "Tipo", type: "select", required: true, default: "internal", options: [
           { value: "internal", label: "Interno" },
           { value: "supplier", label: "Fornecedor" },
