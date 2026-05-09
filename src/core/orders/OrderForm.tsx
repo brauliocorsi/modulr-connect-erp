@@ -553,24 +553,52 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                             const cat = prod?.product_uom?.category;
                             const isInt = !cat || cat === "unit";
                             return (
-                              <Input className="h-8" type="number" step={isInt ? 1 : 0.01} min={0} value={l.quantity}
-                                onChange={(e) => {
-                                  const v = Number(e.target.value);
-                                  setLine(i, { quantity: isInt ? Math.max(0, Math.floor(v)) : v });
-                                }}
-                                disabled={isLocked} />
+                              <NumberField
+                                value={Number(l.quantity || 0)}
+                                onChange={(v) => setLine(i, { quantity: isInt ? Math.max(0, Math.floor(v)) : v })}
+                                step={isInt ? 1 : 0.5}
+                                min={0}
+                                decimals={isInt ? 0 : 2}
+                                disabled={isLocked}
+                              />
                             );
                           })()}
                         </td>
                         <td className="px-2 py-1">
-                          <Input className="h-8" type="number" step="0.01" value={l.unit_price} onChange={(e) => setLine(i, { unit_price: Number(e.target.value) })} disabled={isLocked} />
+                          <NumberField
+                            value={Number(l.unit_price || 0)}
+                            onChange={(v) => setLine(i, { unit_price: v })}
+                            step={1}
+                            min={0}
+                            decimals={2}
+                            prefix="€"
+                            showStepper={false}
+                            disabled={isLocked}
+                          />
                         </td>
                         {kind === "sale" && (
                           <td className="px-2 py-1">
-                            <Input className="h-8" type="number" step="0.01" value={l.discount_pct ?? 0} onChange={(e) => setLine(i, { discount_pct: Number(e.target.value) })} disabled={isLocked} />
+                            <NumberField
+                              value={Number(l.discount_pct ?? 0)}
+                              onChange={(v) => setLine(i, { discount_pct: v })}
+                              step={5}
+                              min={0}
+                              max={100}
+                              decimals={0}
+                              suffix="%"
+                              showStepper={false}
+                              disabled={isLocked}
+                            />
                           </td>
                         )}
-                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.subtotal)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-medium">
+                          {fmtMoney(l.subtotal)}
+                          {kind === "sale" && Number(l.discount_pct || 0) > 0 && (
+                            <div className="text-[10px] text-muted-foreground line-through">
+                              {fmtMoney(Number(l.quantity || 0) * Number(l.unit_price || 0))}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           {!isLocked && (
                             <Button variant="ghost" size="icon" onClick={() => removeLine(i)}>
@@ -582,10 +610,17 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                       );
                     })}
                   </tbody>
-                  <tfoot>
-                    <tr className="border-t font-semibold">
-                      <td colSpan={kind === "sale" ? 5 : 4} className="px-3 py-2 text-right">Total</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(totals.total)}</td>
+                  <tfoot className="bg-muted/30">
+                    {kind === "sale" && totals.untaxed !== totals.total && (
+                      <tr className="border-t">
+                        <td colSpan={kind === "sale" ? 5 : 4} className="px-3 py-1.5 text-right text-sm text-muted-foreground">Subtotal sem imposto</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-sm">{fmtMoney(totals.untaxed)}</td>
+                        <td />
+                      </tr>
+                    )}
+                    <tr className="border-t font-semibold text-base">
+                      <td colSpan={kind === "sale" ? 5 : 4} className="px-3 py-2.5 text-right">Total</td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-primary">{fmtMoney(totals.total)}</td>
                       <td />
                     </tr>
                   </tfoot>
