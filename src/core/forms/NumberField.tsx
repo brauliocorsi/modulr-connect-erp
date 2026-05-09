@@ -102,7 +102,21 @@ export function NumberField({
             showStepper && "rounded-none",
           )}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setText(raw);
+            // Live update the parent so dependent fields (subtotal, etc.) recompute as the user types
+            if (raw === "" || raw === "-") {
+              onChange(0);
+              return;
+            }
+            const n = parsePtNumber(raw);
+            if (!Number.isFinite(n)) return;
+            let v = n;
+            if (min != null) v = Math.max(min, v);
+            if (max != null) v = Math.min(max, v);
+            onChange(v);
+          }}
           onFocus={(e) => {
             setFocused(true);
             e.currentTarget.select();
