@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { fmtMoney } from "@/lib/format";
 
 export function RegisterPaymentDialog({
   open,
@@ -27,8 +28,12 @@ export function RegisterPaymentDialog({
 }) {
   const [methods, setMethods] = useState<any[]>([]);
   const [journals, setJournals] = useState<any[]>([]);
+  const [orderTotal, setOrderTotal] = useState(0);
+  const [orderPaid, setOrderPaid] = useState(0);
+  const [schedAmount, setSchedAmount] = useState<number | null>(null);
+  const [schedPaid, setSchedPaid] = useState(0);
   const [form, setForm] = useState({
-    amount: defaultAmount ?? 0,
+    amount: 0,
     payment_date: new Date().toISOString().slice(0, 10),
     method_id: "",
     journal_id: "",
@@ -36,23 +41,56 @@ export function RegisterPaymentDialog({
     notes: "",
   });
 
+  const orderOpen = useMemo(() => Math.max(0, +(orderTotal - orderPaid).toFixed(2)), [orderTotal, orderPaid]);
+  const schedOpen = useMemo(
+    () => (schedAmount == null ? null : Math.max(0, +(schedAmount - schedPaid).toFixed(2))),
+    [schedAmount, schedPaid],
+  );
+  const maxAllowed = useMemo(() => {
+    const caps = [orderOpen, schedOpen ?? Infinity];
+    return Math.min(...caps);
+  }, [orderOpen, schedOpen]);
+
   useEffect(() => {
     if (!open) return;
-    setForm((f) => ({ ...f, amount: defaultAmount ?? 0 }));
     (async () => {
-      const [{ data: m }, { data: j }] = await Promise.all([
+      const [{ data: m }, { data: j }, { data: order }, { data: pays }] = await Promise.all([
         supabase.from("payment_methods").select("id,name,default_journal_id,confirmation_mode,requires_reference").eq("active", true).order("name"),
         supabase.from("account_journals").select("id,name,type").eq("active", true).order("name"),
+        supabase.from("sale_orders").select("amount_total").eq("id", orderId).maybeSingle(),
+        supabase.from("customer_payments").select("amount, schedule_id, state").eq("order_id", orderId).neq("state", "cancelled"),
       ]);
       setMethods(m ?? []);
       setJournals(j ?? []);
-      if ((m ?? []).length && !form.method_id) {
-        const first = (m ?? [])[0];
-        setForm((f) => ({ ...f, method_id: first.id, journal_id: first.default_journal_id ?? (j?.[0]?.id ?? "") }));
+      const total = Number(order?.amount_total ?? 0);
+      const paidAll = (pays ?? []).reduce((a, p: any) => a + Number(p.amount || 0), 0);
+      setOrderTotal(total);
+      setOrderPaid(paidAll);
+
+      let sAmount: number | null = null;
+      let sPaid = 0;
+      if (scheduleId) {
+        const { data: s } = await supabase.from("sale_payment_schedules").select("amount").eq("id", scheduleId).maybeSingle();
+        sAmount = Number(s?.amount ?? 0);
+        sPaid = (pays ?? []).filter((p: any) => p.schedule_id === scheduleId).reduce((a, p: any) => a + Number(p.amount || 0), 0);
       }
+      setSchedAmount(sAmount);
+      setSchedPaid(sPaid);
+
+      const orderOpenLocal = Math.max(0, +(total - paidAll).toFixed(2));
+      const schedOpenLocal = sAmount == null ? Infinity : Math.max(0, +(sAmount - sPaid).toFixed(2));
+      const cap = Math.min(orderOpenLocal, schedOpenLocal);
+      const proposed = Math.min(defaultAmount ?? cap, cap);
+
+      setForm((f) => ({
+        ...f,
+        amount: proposed,
+        method_id: f.method_id || ((m ?? [])[0]?.id ?? ""),
+        journal_id: f.journal_id || ((m ?? [])[0]?.default_journal_id ?? (j?.[0]?.id ?? "")),
+      }));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultAmount]);
+  }, [open, orderId, scheduleId, defaultAmount]);
 
   const onMethodChange = (id: string) => {
     const m = methods.find((x) => x.id === id);
@@ -61,6 +99,9 @@ export function RegisterPaymentDialog({
 
   const save = async () => {
     if (!form.amount || form.amount <= 0) return toast.error("Valor inválido");
+    if (form.amount > maxAllowed + 0.01) {
+      return toast.error(`Valor excede o em aberto (${fmtMoney(maxAllowed)})`);
+    }
     if (!form.method_id) return toast.error("Escolha um método");
     if (!form.journal_id) return toast.error("Escolha um diário");
     const method = methods.find((x) => x.id === form.method_id);
@@ -97,6 +138,29 @@ export function RegisterPaymentDialog({
         <DialogHeader>
           <DialogTitle>Registar recebimento</DialogTitle>
         </DialogHeader>
+
+        <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm grid grid-cols-3 gap-2">
+          <div>
+            <div className="text-xs text-muted-foreground">Total venda</div>
+            <div className="tabular-nums font-medium">{fmtMoney(orderTotal)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Já recebido</div>
+            <div className="tabular-nums font-medium">{fmtMoney(orderPaid)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Em aberto</div>
+            <div className={`tabular-nums font-semibold ${orderOpen > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+              {fmtMoney(orderOpen)}
+            </div>
+          </div>
+          {schedAmount != null && (
+            <div className="col-span-3 text-xs text-muted-foreground border-t pt-2">
+              Parcela: {fmtMoney(schedPaid)} / {fmtMoney(schedAmount)} · em aberto {fmtMoney(schedOpen ?? 0)}
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-3 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -105,7 +169,21 @@ export function RegisterPaymentDialog({
             </div>
             <div>
               <Label>Valor</Label>
-              <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} />
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  max={maxAllowed}
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, amount: maxAllowed })} disabled={maxAllowed <= 0}>
+                  Tudo
+                </Button>
+              </div>
+              {form.amount > maxAllowed + 0.01 && (
+                <div className="text-xs text-rose-600 mt-1">Excede o em aberto ({fmtMoney(maxAllowed)})</div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -135,7 +213,7 @@ export function RegisterPaymentDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={save}>Registar</Button>
+          <Button onClick={save} disabled={form.amount <= 0 || form.amount > maxAllowed + 0.01}>Registar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
