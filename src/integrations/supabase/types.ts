@@ -277,6 +277,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          driver_id: string | null
           id: string
           journal_id: string | null
           name: string
@@ -288,6 +289,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          driver_id?: string | null
           id?: string
           journal_id?: string | null
           name: string
@@ -299,6 +301,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          driver_id?: string | null
           id?: string
           journal_id?: string | null
           name?: string
@@ -2929,6 +2932,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          delivery_date: string | null
+          driver_id: string | null
           id: string
           name: string
           notes: string | null
@@ -2936,10 +2941,13 @@ export type Database = {
           state: string
           updated_at: string
           user_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          delivery_date?: string | null
+          driver_id?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -2947,10 +2955,13 @@ export type Database = {
           state?: string
           updated_at?: string
           user_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          delivery_date?: string | null
+          driver_id?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -2958,8 +2969,17 @@ export type Database = {
           state?: string
           updated_at?: string
           user_id?: string | null
+          vehicle_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_picking_batches_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_picking_waves: {
         Row: {
@@ -3473,6 +3493,53 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          active: boolean
+          barcode: string | null
+          cash_register_id: string | null
+          created_at: string
+          driver_id: string | null
+          id: string
+          license_plate: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          barcode?: string | null
+          cash_register_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          license_plate?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          barcode?: string | null
+          cash_register_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          license_plate?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           active: boolean
@@ -3720,6 +3787,23 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      driver_assign_batch: {
+        Args: {
+          _batch: string
+          _date?: string
+          _driver: string
+          _vehicle: string
+        }
+        Returns: undefined
+      }
+      driver_deliver_picking: {
+        Args: {
+          _method_id?: string
+          _payment_amount?: number
+          _picking: string
+        }
+        Returns: Json
+      }
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
@@ -3823,6 +3907,7 @@ export type Database = {
         | "hr"
         | "cashbox"
         | "discuss"
+        | "delivery"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -3983,6 +4068,7 @@ export const Constants = {
         "hr",
         "cashbox",
         "discuss",
+        "delivery",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [

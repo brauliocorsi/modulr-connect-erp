@@ -6,7 +6,9 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Play, X, Printer } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Truck, CheckCircle2, Play, X, Printer } from "lucide-react";
 import { stateLabel, kindLabel } from "@/lib/picking";
 import { printBatchBarcodes } from "@/modules/inventory/printBatchBarcodes";
 import { toast } from "sonner";
@@ -16,10 +18,31 @@ export default function BatchForm() {
   const [batch, setBatch] = useState<any>(null);
   const [pickings, setPickings] = useState<any[]>([]);
   const [aggMoves, setAggMoves] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [vehicleId, setVehicleId] = useState<string>("");
+  const [driverId, setDriverId] = useState<string>("");
+  const [delivDate, setDelivDate] = useState<string>("");
 
   const load = async () => {
     const { data: b } = await supabase.from("stock_picking_batches").select("*").eq("id", id!).maybeSingle();
     setBatch(b);
+    if (b) {
+      setVehicleId(b.vehicle_id ?? "");
+      setDriverId(b.driver_id ?? "");
+      setDelivDate(b.delivery_date ?? new Date().toISOString().slice(0, 10));
+    }
+    const { data: vs } = await supabase.from("vehicles").select("id,name,license_plate,driver_id").eq("active", true).order("name");
+    setVehicles(vs ?? []);
+    const { data: ug } = await supabase
+      .from("user_groups")
+      .select("user_id, groups!inner(code)")
+      .eq("groups.code", "delivery_driver");
+    const dids = (ug ?? []).map((r: any) => r.user_id);
+    if (dids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", dids);
+      setDrivers(profs ?? []);
+    } else setDrivers([]);
     const { data: ps } = await supabase
       .from("stock_pickings")
       .select("id,name,kind,state,step_label,partners(name)")
@@ -68,6 +91,15 @@ export default function BatchForm() {
     toast.success("Lote cancelado e reservas libertadas");
     load();
   };
+  const assign = async () => {
+    if (!vehicleId || !driverId) return toast.error("Escolhe carrinha e motorista");
+    const { error } = await supabase.rpc("driver_assign_batch", {
+      _batch: id!, _vehicle: vehicleId, _driver: driverId, _date: delivDate || new Date().toISOString().slice(0, 10),
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Lote atribuído à carrinha");
+    load();
+  };
 
   if (!batch) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const done = pickings.filter((p) => p.state === "done").length;
@@ -100,6 +132,48 @@ export default function BatchForm() {
       />
       <PageBody>
         <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Truck className="h-4 w-4 text-primary" />
+              <div className="text-sm font-medium">Atribuição à carrinha / motorista</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <Label className="text-xs">Carrinha</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={vehicleId}
+                  onChange={(e) => {
+                    setVehicleId(e.target.value);
+                    const v = vehicles.find((x: any) => x.id === e.target.value);
+                    if (v?.driver_id) setDriverId(v.driver_id);
+                  }} disabled={locked}>
+                  <option value="">—</option>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name}{v.license_plate ? ` (${v.license_plate})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Motorista</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={driverId}
+                  onChange={(e) => setDriverId(e.target.value)} disabled={locked}>
+                  <option value="">—</option>
+                  {drivers.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.full_name || d.email}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Data de entrega</Label>
+                <Input type="date" value={delivDate} onChange={(e) => setDelivDate(e.target.value)} disabled={locked} />
+              </div>
+              <div className="flex items-end">
+                <Button size="sm" onClick={assign} disabled={locked} className="w-full">
+                  <Truck className="h-4 w-4 mr-1" /> Carregar na carrinha
+                </Button>
+              </div>
+            </div>
+          </Card>
+
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium">Progresso</div>

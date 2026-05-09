@@ -72,6 +72,13 @@ import BatchScan from "@/modules/barcode/BatchScan";
 import WaveScan from "@/modules/barcode/WaveScan";
 import ProductLookup from "@/modules/barcode/ProductLookup";
 import LocationLookup from "@/modules/barcode/LocationLookup";
+import VehiclesList from "@/modules/inventory/pages/VehiclesList";
+import VehicleForm from "@/modules/inventory/pages/VehicleForm";
+import DeliveryShell from "@/modules/delivery/DeliveryShell";
+import DeliveryHome from "@/modules/delivery/pages/DeliveryHome";
+import DeliveryBatch from "@/modules/delivery/pages/DeliveryBatch";
+import DeliveryPicking from "@/modules/delivery/pages/DeliveryPicking";
+import DeliveryCashbox from "@/modules/delivery/pages/DeliveryCashbox";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
@@ -93,6 +100,15 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+
+            {/* Delivery app (layout próprio) */}
+            <Route path="/delivery" element={<RequireAuth><DeliveryShell /></RequireAuth>}>
+              <Route index element={<DeliveryHome />} />
+              <Route path="batch/:id" element={<DeliveryBatch />} />
+              <Route path="picking/:id" element={<DeliveryPicking />} />
+              <Route path="cashbox" element={<DeliveryCashbox />} />
+            </Route>
+
             <Route
               path="/"
               element={
@@ -183,6 +199,9 @@ const App = () => (
               <Route path="inventory/reordering" element={<ReorderingList />} />
               <Route path="inventory/reordering/new" element={<ReorderingForm />} />
               <Route path="inventory/reordering/:id" element={<ReorderingForm />} />
+              <Route path="inventory/vehicles" element={<VehiclesList />} />
+              <Route path="inventory/vehicles/new" element={<VehicleForm />} />
+              <Route path="inventory/vehicles/:id" element={<VehicleForm />} />
 
               {/* Settings */}
               <Route path="settings" element={<Navigate to="/settings/apps" replace />} />

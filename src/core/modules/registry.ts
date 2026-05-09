@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -75,6 +75,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Relatórios", label: "Lotes/Séries", to: "/inventory/lots" },
       { section: "Configuração", label: "Armazéns", to: "/inventory/warehouses" },
       { section: "Configuração", label: "Locais", to: "/inventory/locations" },
+      { section: "Configuração", label: "Carrinhas / Veículos", to: "/inventory/vehicles" },
       { section: "Configuração", label: "Regras de Reabastecimento", to: "/inventory/reordering" },
     ],
   },
@@ -138,6 +139,19 @@ export const MODULES: ModuleDef[] = [
     description: "Caixas de loja, sessões e movimentos diários",
     menu: [
       { section: "Caixas", label: "Caixas", to: "/cashbox" },
+    ],
+  },
+  {
+    id: "delivery" as any,
+    name: "Entregas",
+    shortName: "Entregas",
+    icon: Truck,
+    color: "bg-[hsl(150_70%_40%)]",
+    basePath: "/delivery",
+    description: "App do entregador: scan, entrega e cobrança",
+    menu: [
+      { section: "Entregas", label: "Hoje", to: "/delivery" },
+      { section: "Entregas", label: "Caixa", to: "/delivery/cashbox" },
     ],
   },
   {
