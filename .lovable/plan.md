@@ -1,96 +1,91 @@
 ## Objetivo
+Impedir que o total recebido de uma venda ultrapasse o valor da nota. O cliente nunca pode pagar a mais — nem por engano do utilizador, nem via Módulo do Entregador.
 
-Permitir identificar em que carrinha vai cada lote de entregas, dar ao entregador um módulo restrito para fechar a última etapa (entrega + cobrança do saldo), e gerir o caixa de cada motorista.
+## Regras de negócio
 
----
+1. **Por venda**: `Σ recebimentos válidos ≤ amount_total` (tolerância de 0,01 € para arredondamento).
+2. **Por parcela** (quando `schedule_id` definido): `Σ recebimentos da parcela ≤ schedule.amount`.
+3. Estados que contam para o limite: `posted`, `pending`, `pending_delivery` (qualquer recebimento não cancelado).
+4. Cancelamento (`state = cancelled`) liberta o valor automaticamente.
+5. Aplica-se a **todos os fluxos**: diálogo de recebimento, Reconciliação, Módulo do Entregador (RPC `driver_deliver_picking`), importações futuras.
 
-## 1. Base de dados (migration)
+## Implementação
 
-**Nova tabela `vehicles`**
-- `name` (ex: "VAN-01"), `license_plate`, `driver_id` (uuid → auth.users), `cash_register_id` (uuid → cash_registers, opcional), `barcode` (único), `active`.
-- RLS: leitura para utilizadores autenticados; gestão só para admin/inventory_manager.
+### 1. Validação no servidor (fonte da verdade)
 
-**Extensões a tabelas existentes**
-- `stock_picking_batches`: adicionar `vehicle_id uuid`, `driver_id uuid`, `delivery_date date`.
-- `cash_registers`: adicionar `driver_id uuid` (caixa partilhado por motorista, mapeamento 1:1 ou 1:N).
+Trigger `BEFORE INSERT OR UPDATE` em `customer_payments` que:
+- Calcula `em_aberto = sale_orders.amount_total - Σ outros pagamentos não cancelados` (exclui a própria linha em UPDATE).
+- Se `NEW.state ≠ 'cancelled'` e `NEW.amount > em_aberto + 0.01` → `RAISE EXCEPTION` com mensagem clara em PT:
+  `"Recebimento excede o valor em aberto da venda XYZ (em aberto: 120,00 €, tentativa: 150,00 €)"`.
+- Mesma verificação por parcela quando `schedule_id` presente.
 
-**Novo grupo + permissões**
-- Grupo `delivery_driver` (code).
-- Permissão apenas para o módulo `delivery` (novo `app_module`).
-- NÃO recebe os grupos default no `handle_new_user` quando criado como driver (gestão manual do admin).
+Vantagens: protege também `driver_deliver_picking`, edições diretas e qualquer integração futura.
 
-**Função `driver_assign_batch(_batch, _vehicle, _driver)`**
-- Atribui batch a carrinha/motorista, valida que o batch é só de pickings outgoing.
+### 2. UX no diálogo `RegisterPaymentDialog`
 
-**Função `driver_deliver_picking(_picking, _payment_amount, _payment_method_id)`**
-- Valida que o picking pertence a um batch atribuído ao motorista corrente (`auth.uid()`).
-- Chama `validate_picking(_picking)`.
-- Se `_payment_amount > 0`: cria `customer_payments` (state='posted') ligado à SO de origem, com `cash_register_id` da carrinha, e gera `cash_movements`.
-- Trigger existente recalcula `payment_status` da SO.
+- Ao abrir, calcular e mostrar:
+  - **Total da venda**, **Já recebido**, **Em aberto** (destacado).
+- `defaultAmount` passa a ser `min(em_aberto, scheduleAmount)` em vez do total da parcela.
+- Campo Valor com `max={em_aberto}` e validação client-side antes de gravar (toast: *"Valor excede o em aberto (X €)"*).
+- Botão **"Pagar tudo"** que preenche com o em aberto exato.
 
----
+### 3. UX no Módulo do Entregador (`DeliveryPicking`)
 
-## 2. Frontend — extensões existentes
+- Mostrar o em aberto da venda associada antes de cobrar.
+- Limitar input do `payment_amount` ao em aberto.
+- A RPC já será bloqueada pelo trigger; mas validamos antes para mensagem amigável no ecrã do motorista.
 
-**`/inventory/batches/:id` (BatchForm)**
-- Selectores novos: Carrinha (vehicles) + Motorista + Data de entrega.
-- Botão "Carregar na carrinha" → marca batch como `in_progress` e atribui.
+### 4. Reconciliação
 
-**`/inventory/vehicles`** (CRUD novo)
-- Lista + form (nome, matrícula, motorista, caixa, código de barras).
-- Adicionar ao menu Inventory > Configuração.
+- Como o trigger impede novos excessos, a categoria "Recebido a mais" passa a refletir apenas casos **legados**.
+- Adicionar nota informativa no topo: *"Bloqueio ativo: novos recebimentos não podem exceder o valor da venda."*
 
-**App Barcode existente (`/barcode/batches`)**
-- Ao scanear código da carrinha → filtra batches dessa carrinha.
+## Detalhes técnicos
 
----
+```sql
+CREATE FUNCTION public.prevent_overpayment() RETURNS trigger AS $$
+DECLARE
+  v_total numeric;
+  v_paid  numeric;
+  v_open  numeric;
+  v_name  text;
+BEGIN
+  IF NEW.state = 'cancelled' OR NEW.order_id IS NULL THEN RETURN NEW; END IF;
 
-## 3. Novo módulo "Entregas" (`/delivery`)
+  SELECT amount_total, name INTO v_total, v_name
+    FROM sale_orders WHERE id = NEW.order_id;
 
-Menu próprio no sidebar, visível apenas para `delivery_driver` (e admins). Layout simplificado, mobile-first.
+  SELECT COALESCE(SUM(amount), 0) INTO v_paid
+    FROM customer_payments
+   WHERE order_id = NEW.order_id
+     AND state <> 'cancelled'
+     AND id <> COALESCE(NEW.id, gen_random_uuid());
 
+  v_open := v_total - v_paid;
+  IF NEW.amount > v_open + 0.01 THEN
+    RAISE EXCEPTION 'Recebimento excede o valor em aberto da venda % (em aberto: %, tentativa: %)',
+      v_name, to_char(v_open,'FM999G990D00'), to_char(NEW.amount,'FM999G990D00');
+  END IF;
+
+  -- check por parcela
+  IF NEW.schedule_id IS NOT NULL THEN
+    -- (mesma lógica contra sale_payment_schedules.amount)
+  END IF;
+
+  RETURN NEW;
+END $$ LANGUAGE plpgsql;
 ```
-/delivery                 → Home: lista batches do dia atribuídos ao motorista
-/delivery/batch/:id       → Lista pickings do batch + estado (pendente/entregue)
-/delivery/picking/:id     → Scan produtos → confirmar entrega → cobrar saldo
-/delivery/cashbox         → Sessão de caixa do motorista (abrir/fechar/movimentos)
-```
 
-**Fluxo `/delivery/picking/:id`:**
-1. Mostra cliente, morada, linhas do picking, saldo da SO em aberto.
-2. Scan de cada produto (valida quantidades como no PickingScan).
-3. Botão "Entregar e Cobrar" → modal com saldo em aberto + método de pagamento → chama `driver_deliver_picking`.
-4. Feedback visual claro: ✅ entregue / 💰 cobrado / ❌ erro.
+## Ficheiros afetados
 
-**Restrição de menu:** `useInstalledModules` / sidebar passa a esconder todos os módulos exceto `delivery` (e `discuss`) para utilizadores no grupo `delivery_driver`.
+- **Migration nova**: trigger `prevent_overpayment` em `customer_payments`.
+- `src/modules/finance/components/RegisterPaymentDialog.tsx` — mostrar em aberto, cap no input, botão "Pagar tudo", validação.
+- `src/modules/delivery/pages/DeliveryPicking.tsx` — mostrar em aberto e limitar input.
+- `src/modules/finance/pages/ReconciliationPage.tsx` — banner informativo.
 
----
+## Não faz parte (decisões a confirmar se quiseres)
 
-## 4. Componentes/ficheiros a criar
+- **Permitir adiantamentos** (cliente paga acima e fica como crédito): manter bloqueado sempre, ou abrir uma exceção via flag *"Aceitar adiantamento"* na venda?
+- **Override por admin**: permitir que `system_admin` force um excesso (ex: arredondamento manual)?
 
-- `src/modules/delivery/` (novo módulo completo)
-  - `pages/DeliveryHome.tsx`
-  - `pages/DeliveryBatch.tsx`
-  - `pages/DeliveryPicking.tsx`
-  - `pages/DeliveryCashbox.tsx`
-  - `DeliveryShell.tsx` (layout dedicado)
-- `src/modules/inventory/pages/VehiclesList.tsx` + `VehicleForm.tsx`
-- Editar: `BatchForm.tsx`, `App.tsx` (rotas), `core/modules/registry.ts` (novo módulo + entrada Vehicles), `AppShell` (filtragem por grupo).
-
----
-
-## 5. Pontos técnicos
-
-- Restrição de acesso do entregador: combina **grupo no DB** + **filtro no `MODULES` registry** baseado em `usePermissions().inGroup('delivery_driver')`.
-- Caixa do motorista: ao abrir sessão, usa o `cash_register` ligado ao `driver_id = auth.uid()`. Movimentos de cobrança usam `kind='cash_in'` com referência à SO.
-- Code de barras das carrinhas imprimível na folha de "Comandos" (já existente em `printBarcodes.ts`) — adiciono secção `printVehicleBarcodes()`.
-
----
-
-## Ordem de execução
-
-1. Migration (tabelas, grupo, funções, RLS).
-2. CRUD de Vehicles + impressão de barcodes.
-3. Atualização do BatchForm com atribuição.
-4. Módulo `/delivery` completo + filtragem de menu.
-5. Validação no preview.
+Confirmas estas duas decisões antes de implementar?
