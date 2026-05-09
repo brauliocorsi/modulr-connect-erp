@@ -51,6 +51,22 @@ export default function CashRegistersList() {
       setWarehouses(w ?? []);
       setJournals(j ?? []);
       setUsers(e ?? []);
+      // Se só existe 1 armazém, pré-selecciona
+      if ((w ?? []).length === 1) {
+        setForm((f) => ({ ...f, warehouse_id: f.warehouse_id || w![0].id }));
+      }
+      // Se só existe 1 loja, pré-selecciona (e herda armazém)
+      if ((s ?? []).length === 1) {
+        setForm((f) => ({
+          ...f,
+          store_id: f.store_id || s![0].id,
+          warehouse_id: f.warehouse_id || s![0].warehouse_id || ((w ?? []).length === 1 ? w![0].id : ""),
+        }));
+      }
+      // Se só existe 1 diário cash, pré-selecciona
+      if ((j ?? []).length === 1) {
+        setForm((f) => ({ ...f, journal_id: f.journal_id || j![0].id }));
+      }
     })();
   }, []);
 
