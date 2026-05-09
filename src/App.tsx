@@ -64,6 +64,7 @@ import BatchesList from "@/modules/inventory/pages/BatchesList";
 import BatchForm from "@/modules/inventory/pages/BatchForm";
 import WavesList from "@/modules/inventory/pages/WavesList";
 import WaveForm from "@/modules/inventory/pages/WaveForm";
+import BarcodeScanPage from "@/modules/inventory/pages/BarcodeScanPage";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
