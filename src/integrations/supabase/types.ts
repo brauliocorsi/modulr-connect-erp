@@ -2684,6 +2684,7 @@ export type Database = {
       stock_locations: {
         Row: {
           active: boolean
+          barcode: string | null
           created_at: string
           full_path: string | null
           id: string
@@ -2699,6 +2700,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          barcode?: string | null
           created_at?: string
           full_path?: string | null
           id?: string
@@ -2714,6 +2716,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          barcode?: string | null
           created_at?: string
           full_path?: string | null
           id?: string
