@@ -120,8 +120,34 @@ export default function TransferForm() {
     load();
   };
 
+  const tryReserve = async () => {
+    const { error } = await supabase.rpc("try_reserve_picking", { _picking: id! });
+    if (error) return toast.error(error.message);
+    toast.success("Disponibilidade verificada");
+    load();
+  };
+
   if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
+
+  // Compute availability summary for outgoing pickings
+  const isOutgoing = picking.kind === "outgoing";
+  const availSummary = (() => {
+    if (!isOutgoing || !moves.length) return null;
+    let needed = 0, available = 0, fullyAvailable = 0;
+    moves.forEach((m) => {
+      const need = Number(m.quantity || 0);
+      const got = Math.min(need, Number(availByProduct[m.product_id] ?? 0));
+      needed += need;
+      available += got;
+      if (got >= need) fullyAvailable += 1;
+    });
+    const readyMoves = moves.filter((m) => m.state === "ready").length;
+    const pct = needed > 0 ? Math.round((available / needed) * 100) : 0;
+    return { needed, available, fullyAvailable, readyMoves, pct, total: moves.length };
+  })();
+  const isPartial = !!availSummary && availSummary.readyMoves > 0 && availSummary.readyMoves < availSummary.total;
+  const isFullyShort = !!availSummary && availSummary.readyMoves === 0 && availSummary.available < availSummary.needed && !isLocked;
 
   return (
     <>
