@@ -12,8 +12,8 @@ export default function LocationLookup() {
     const v = raw.trim();
     const { data: l } = await supabase
       .from("stock_locations")
-      .select("id,name,full_path,type")
-      .or(`name.eq.${v},full_path.eq.${v}`)
+      .select("id,name,full_path,type,barcode")
+      .or(`barcode.eq.${v},name.eq.${v},full_path.eq.${v}`)
       .maybeSingle();
     if (!l) { setLoc(null); setQuants([]); return log(`Local "${v}" não encontrado`, "error"); }
     setLoc(l);

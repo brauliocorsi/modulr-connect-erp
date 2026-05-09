@@ -93,8 +93,8 @@ export default function PickingScan() {
     // Try location scan
     const { data: loc } = await supabase
       .from("stock_locations")
-      .select("id,name,full_path")
-      .or(`name.eq.${v},full_path.eq.${v}`)
+      .select("id,name,full_path,barcode")
+      .or(`barcode.eq.${v},name.eq.${v},full_path.eq.${v}`)
       .maybeSingle();
     if (loc) {
       const validLoc = moves.some((m) => m.source_location_id === loc.id || m.destination_location_id === loc.id);

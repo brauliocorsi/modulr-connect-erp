@@ -111,7 +111,7 @@ export function printCommandBarcodes() {
 export async function printLocationBarcodes(opts?: { warehouseId?: string }) {
   let q = supabase
     .from("stock_locations")
-    .select("id,name,full_path,type,warehouse_id,warehouses(name,code)")
+    .select("id,name,full_path,type,warehouse_id,barcode,warehouses(name,code)")
     .eq("active", true)
     .order("full_path", { ascending: true });
   if (opts?.warehouseId) q = q.eq("warehouse_id", opts.warehouseId);
@@ -137,7 +137,7 @@ export async function printLocationBarcodes(opts?: { warehouseId?: string }) {
         <div class="card">
           <div class="label">${esc(l.name)}</div>
           <div class="meta">${esc(l.full_path ?? "")}</div>
-          ${barcodeSvg(l.full_path ?? l.name, { height: 50, fontSize: 11 })}
+          ${barcodeSvg(l.barcode || l.full_path || l.name, { height: 50, fontSize: 11 })}
         </div>`,
         )
         .join("")}
