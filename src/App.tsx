@@ -190,6 +190,9 @@ const App = () => (
               <Route path="inventory/reordering" element={<ReorderingList />} />
               <Route path="inventory/reordering/new" element={<ReorderingForm />} />
               <Route path="inventory/reordering/:id" element={<ReorderingForm />} />
+              <Route path="inventory/vehicles" element={<VehiclesList />} />
+              <Route path="inventory/vehicles/new" element={<VehicleForm />} />
+              <Route path="inventory/vehicles/:id" element={<VehicleForm />} />
 
               {/* Settings */}
               <Route path="settings" element={<Navigate to="/settings/apps" replace />} />
