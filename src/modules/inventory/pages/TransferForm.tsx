@@ -205,6 +205,32 @@ export default function TransferForm() {
               <div><div className="o-section-title">Programado</div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-PT") : "—"}</div>
             </Card>
 
+            {availSummary && !isLocked && (
+              <Card className={`p-3 border ${
+                isFullyShort
+                  ? "bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900"
+                  : isPartial
+                    ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"
+                    : "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900"
+              }`}>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {isFullyShort ? (
+                      <><AlertTriangle className="h-4 w-4 text-rose-600" /> Sem stock disponível para entrega</>
+                    ) : isPartial ? (
+                      <><AlertTriangle className="h-4 w-4 text-amber-600" /> Disponibilidade parcial — apenas parte dos produtos pode ser entregue agora</>
+                    ) : (
+                      <><PackageCheck className="h-4 w-4 text-emerald-600" /> Stock totalmente disponível e reservado</>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {availSummary.fullyAvailable}/{availSummary.total} linhas · {availSummary.available}/{availSummary.needed} unid.
+                  </div>
+                </div>
+                <Progress value={availSummary.pct} className="h-2" />
+              </Card>
+            )}
+
             <Card>
               <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
               <table className="w-full text-sm">
@@ -212,6 +238,7 @@ export default function TransferForm() {
                   <tr>
                     <th className="text-left px-3 py-2">Produto</th>
                     <th className="text-left px-3 py-2 w-32">Demanda</th>
+                    {isOutgoing && <th className="text-left px-3 py-2 w-36">Disponível</th>}
                     <th className="text-left px-3 py-2 w-32">Feito</th>
                     <th className="text-left px-3 py-2 w-48">Lote/Série</th>
                     <th className="text-left px-3 py-2 w-32">Estado</th>
@@ -223,6 +250,10 @@ export default function TransferForm() {
                     const cat = m.products?.product_uom?.category;
                     const isInt = !cat || cat === "unit";
                     const lots = lotsByProduct[m.product_id] ?? [];
+                    const need = Number(m.quantity || 0);
+                    const avail = Number(availByProduct[m.product_id] ?? 0);
+                    const reserved = m.state === "ready" || m.state === "done";
+                    const shortage = Math.max(0, need - avail);
                     return (
                     <tr key={m.id} className="border-t">
                       <td className="px-3 py-2">{m.products?.name}</td>
