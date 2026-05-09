@@ -115,8 +115,10 @@ export default function TransferForm() {
   };
 
   const cancel = async () => {
-    await supabase.from("stock_pickings").update({ state: "cancelled" }).eq("id", id!);
-    toast.success("Cancelado");
+    if (!confirm("Cancelar transferência e todas as etapas seguintes da cadeia? As reservas serão libertadas.")) return;
+    const { error } = await supabase.rpc("cancel_picking", { _picking: id!, _cascade: true });
+    if (error) return toast.error(error.message);
+    toast.success("Transferência cancelada (cadeia + reservas libertadas)");
     load();
   };
 
@@ -124,6 +126,18 @@ export default function TransferForm() {
     const { error } = await supabase.rpc("try_reserve_picking", { _picking: id! });
     if (error) return toast.error(error.message);
     toast.success("Disponibilidade verificada");
+    load();
+  };
+
+  const replanChain = async () => {
+    const { data, error } = await supabase.rpc("replan_picking_chain", { _picking: id! });
+    if (error) return toast.error(error.message);
+    const r = (data as any) ?? {};
+    if ((r.shortage ?? 0) > 0) {
+      toast.warning(`Cadeia replaneada: ${r.reserved ?? 0} reservadas, ${r.shortage} em falta`);
+    } else {
+      toast.success(`Cadeia replaneada (${r.steps ?? 0} etapas, tudo reservado)`);
+    }
     load();
   };
 
