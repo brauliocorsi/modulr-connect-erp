@@ -65,6 +65,13 @@ import BatchForm from "@/modules/inventory/pages/BatchForm";
 import WavesList from "@/modules/inventory/pages/WavesList";
 import WaveForm from "@/modules/inventory/pages/WaveForm";
 import BarcodeScanPage from "@/modules/inventory/pages/BarcodeScanPage";
+import BarcodeShell from "@/modules/barcode/BarcodeShell";
+import BarcodeHome from "@/modules/barcode/BarcodeHome";
+import PickingScan from "@/modules/barcode/PickingScan";
+import BatchScan from "@/modules/barcode/BatchScan";
+import WaveScan from "@/modules/barcode/WaveScan";
+import ProductLookup from "@/modules/barcode/ProductLookup";
+import LocationLookup from "@/modules/barcode/LocationLookup";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
@@ -86,6 +93,17 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/barcode"
+              element={<RequireAuth><BarcodeShell /></RequireAuth>}
+            >
+              <Route index element={<BarcodeHome />} />
+              <Route path="op/:kind" element={<PickingScan />} />
+              <Route path="batches" element={<BatchScan />} />
+              <Route path="waves" element={<WaveScan />} />
+              <Route path="lookup/product" element={<ProductLookup />} />
+              <Route path="lookup/location" element={<LocationLookup />} />
+            </Route>
             <Route
               path="/"
               element={
