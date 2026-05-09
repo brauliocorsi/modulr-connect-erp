@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { MODULES } from "@/core/modules/registry";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ListView } from "@/core/layout/ListView";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
 
 export const AppsSettings = () => {
   const qc = useQueryClient();
@@ -62,12 +69,96 @@ export const AppsSettings = () => {
   );
 };
 
+function CreateUserDialog() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const { data: groups } = useQuery({
+    queryKey: ["groups-for-user-create"],
+    queryFn: async () => {
+      const { data } = await supabase.from("groups").select("code, name, module").order("module").order("name");
+      return data ?? [];
+    },
+  });
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email,
+          password,
+          full_name: fullName || email,
+          job_title: jobTitle || null,
+          group_codes: selected,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Utilizador criado");
+      qc.invalidateQueries({ queryKey: ["profiles"] });
+      setOpen(false);
+      setEmail(""); setPassword(""); setFullName(""); setJobTitle(""); setSelected([]);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao criar utilizador"),
+  });
+
+  const toggle = (code: string) =>
+    setSelected((p) => (p.includes(code) ? p.filter((c) => c !== code) : [...p, code]));
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Novo utilizador</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Novo utilizador</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>E-mail *</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div><Label>Password *</Label><Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+            <div><Label>Nome completo</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+            <div><Label>Cargo</Label><Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} /></div>
+          </div>
+          <div>
+            <Label>Grupos</Label>
+            <div className="mt-2 max-h-64 overflow-auto border rounded-md p-2 space-y-1">
+              {(groups ?? []).map((g: any) => (
+                <label key={g.code} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
+                  <Checkbox checked={selected.includes(g.code)} onCheckedChange={() => toggle(g.code)} />
+                  <span className="font-medium">{g.name}</span>
+                  <span className="text-xs text-muted-foreground">({g.module})</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Se não selecionar nenhum, serão atribuídos os grupos padrão.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={() => create.mutate()} disabled={!email || !password || create.isPending}>
+            {create.isPending ? "A criar…" : "Criar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export const UsersSettings = () => (
   <ListView
     title="Usuários"
     breadcrumb={[{ label: "Configurações" }, { label: "Usuários" }]}
     table="profiles"
     searchColumn="full_name"
+    actions={<CreateUserDialog />}
     columns={[
       { key: "full_name", header: "Nome" },
       { key: "email", header: "E-mail" },
