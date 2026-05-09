@@ -82,9 +82,9 @@ export default function DeliveryPicking() {
 
   return (
     <div className="p-4 space-y-3">
-      <Link to={-1 as any} className="inline-flex items-center text-sm text-slate-400 hover:text-slate-200">
+      <button onClick={() => nav(-1)} className="inline-flex items-center text-sm text-slate-400 hover:text-slate-200">
         <ChevronLeft className="h-4 w-4" /> Voltar
-      </Link>
+      </button>
 
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
         <div className="font-semibold">{pk.partners?.name}</div>
