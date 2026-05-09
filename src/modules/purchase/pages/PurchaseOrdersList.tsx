@@ -260,7 +260,7 @@ function ExpandedRow({ poId, poName, sos }: { poId: string; poName: string; sos:
     queryFn: async () => {
       const { data } = await supabase
         .from("purchase_order_lines")
-        .select("id, product_id, description, quantity, unit_price, subtotal, products(name, default_code)")
+        .select("id, product_id, description, quantity, unit_price, subtotal, products(name)")
         .eq("order_id", poId)
         .order("sequence");
       return data ?? [];
