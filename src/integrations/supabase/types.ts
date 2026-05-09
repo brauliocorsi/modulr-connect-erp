@@ -2815,6 +2815,7 @@ export type Database = {
           state: Database["public"]["Enums"]["picking_state"]
           uom_id: string | null
           variant_id: string | null
+          wave_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2830,6 +2831,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["picking_state"]
           uom_id?: string | null
           variant_id?: string | null
+          wave_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2845,6 +2847,7 @@ export type Database = {
           state?: Database["public"]["Enums"]["picking_state"]
           uom_id?: string | null
           variant_id?: string | null
+          wave_id?: string | null
         }
         Relationships: [
           {
@@ -2903,11 +2906,91 @@ export type Database = {
             referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stock_moves_wave_fk"
+            columns: ["wave_id"]
+            isOneToOne: false
+            referencedRelation: "stock_picking_waves"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      stock_picking_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          scheduled_at: string | null
+          state: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          scheduled_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          scheduled_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      stock_picking_waves: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          scheduled_at: string | null
+          state: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          scheduled_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          scheduled_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       stock_pickings: {
         Row: {
           backorder_id: string | null
+          batch_id: string | null
           created_at: string
           created_by: string | null
           destination_location_id: string | null
@@ -2917,14 +3000,17 @@ export type Database = {
           name: string
           origin: string | null
           partner_id: string | null
+          previous_picking_id: string | null
           scheduled_at: string | null
           source_location_id: string | null
           state: Database["public"]["Enums"]["picking_state"]
+          step_label: string | null
           updated_at: string
           warehouse_id: string | null
         }
         Insert: {
           backorder_id?: string | null
+          batch_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
@@ -2934,14 +3020,17 @@ export type Database = {
           name: string
           origin?: string | null
           partner_id?: string | null
+          previous_picking_id?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
+          step_label?: string | null
           updated_at?: string
           warehouse_id?: string | null
         }
         Update: {
           backorder_id?: string | null
+          batch_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
@@ -2951,9 +3040,11 @@ export type Database = {
           name?: string
           origin?: string | null
           partner_id?: string | null
+          previous_picking_id?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
+          step_label?: string | null
           updated_at?: string
           warehouse_id?: string | null
         }
@@ -2963,6 +3054,13 @@ export type Database = {
             columns: ["backorder_id"]
             isOneToOne: false
             referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_batch_fk"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "stock_picking_batches"
             referencedColumns: ["id"]
           },
           {
@@ -2977,6 +3075,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_previous_picking_id_fkey"
+            columns: ["previous_picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
             referencedColumns: ["id"]
           },
           {
@@ -3351,9 +3456,11 @@ export type Database = {
           code: string
           company_id: string | null
           created_at: string
+          delivery_steps: string
           id: string
           is_store: boolean
           name: string
+          reception_steps: string
         }
         Insert: {
           active?: boolean
@@ -3361,9 +3468,11 @@ export type Database = {
           code: string
           company_id?: string | null
           created_at?: string
+          delivery_steps?: string
           id?: string
           is_store?: boolean
           name: string
+          reception_steps?: string
         }
         Update: {
           active?: boolean
@@ -3371,9 +3480,11 @@ export type Database = {
           code?: string
           company_id?: string | null
           created_at?: string
+          delivery_steps?: string
           id?: string
           is_store?: boolean
           name?: string
+          reception_steps?: string
         }
         Relationships: [
           {
@@ -3498,6 +3609,7 @@ export type Database = {
       }
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
+      create_batch: { Args: { _pickings: string[] }; Returns: string }
       create_internal_transfer: {
         Args: {
           _destination: string
@@ -3508,6 +3620,8 @@ export type Database = {
         }
         Returns: string
       }
+      create_outgoing_chain: { Args: { _order: string }; Returns: string }
+      create_wave: { Args: { _moves: string[] }; Returns: string }
       customer_location_id: { Args: never; Returns: string }
       default_location: {
         Args: { _name: string; _warehouse: string }
@@ -3515,6 +3629,10 @@ export type Database = {
       }
       default_warehouse_id: { Args: never; Returns: string }
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
+      ensure_step_location: {
+        Args: { _name: string; _warehouse: string }
+        Returns: string
+      }
       generate_product_variants: { Args: { _product: string }; Returns: number }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
@@ -3586,7 +3704,9 @@ export type Database = {
       }
       supplier_location_id: { Args: never; Returns: string }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
+      validate_batch: { Args: { _batch: string }; Returns: undefined }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
+      validate_wave: { Args: { _wave: string }; Returns: undefined }
     }
     Enums: {
       app_module:

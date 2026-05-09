@@ -186,6 +186,21 @@ export default function TransferForm() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
+            {(picking.step_label || picking.batch_id || picking.previous_picking_id) && (
+              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-sky-50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-900">
+                {picking.step_label && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100 font-medium text-xs">
+                    Etapa: {picking.step_label}
+                  </span>
+                )}
+                {picking.previous_picking_id && (
+                  <span>← Etapa anterior: <a href={`/inventory/transfers/${picking.previous_picking_id}`} className="text-primary hover:underline">ver</a></span>
+                )}
+                {picking.batch_id && (
+                  <span>Lote: <a href={`/inventory/batches/${picking.batch_id}`} className="text-primary hover:underline">abrir</a></span>
+                )}
+              </Card>
+            )}
             {(original || backorder) && (
               <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
                 {original && (

@@ -75,27 +75,7 @@ export const InventoryDashboard = () => {
   );
 };
 
-export const TransfersList = () => (
-  <ListView
-    title="Transferências"
-    breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências" }]}
-    table="stock_pickings"
-    select="id, name, kind, state, scheduled_at, partners(name)"
-    searchColumn="name"
-    rowLink={(r: any) => `/inventory/transfers/${r.id}`}
-    columns={[
-      { key: "name", header: "Referência" },
-      { key: "kind", header: "Tipo" },
-      { key: "partner", header: "Parceiro", render: (r: any) => r.partners?.name ?? "—" },
-      { key: "state", header: "Estado", render: (r: any) => <span className="o-state-badge">{r.state}</span> },
-      {
-        key: "scheduled_at",
-        header: "Programado",
-        render: (r: any) => (r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"),
-      },
-    ]}
-  />
-);
+// TransfersList moved to ./TransfersList.tsx (custom page with batch selection)
 
 export const AdjustmentsList = () => (
   <ListView

@@ -52,7 +52,6 @@ import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
 import {
   InventoryDashboard,
-  TransfersList,
   AdjustmentsList,
   KardexList,
   LotsList,
@@ -60,6 +59,11 @@ import {
   LocationsList,
   ReorderingList,
 } from "@/modules/inventory/pages/InventoryPages";
+import TransfersList from "@/modules/inventory/pages/TransfersList";
+import BatchesList from "@/modules/inventory/pages/BatchesList";
+import BatchForm from "@/modules/inventory/pages/BatchForm";
+import WavesList from "@/modules/inventory/pages/WavesList";
+import WaveForm from "@/modules/inventory/pages/WaveForm";
 import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
@@ -133,6 +137,11 @@ const App = () => (
               <Route path="inventory" element={<InventoryDashboard />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
+              <Route path="inventory/batches" element={<BatchesList />} />
+              <Route path="inventory/batches/:id" element={<BatchForm />} />
+              <Route path="inventory/waves" element={<WavesList />} />
+              <Route path="inventory/waves/new" element={<WaveForm />} />
+              <Route path="inventory/waves/:id" element={<WaveForm />} />
               <Route path="inventory/schedule" element={<SchedulePage />} />
               <Route path="inventory/moves" element={<MovesPage />} />
               <Route path="inventory/receipts" element={<ReceiptsPage />} />
