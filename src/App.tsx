@@ -94,17 +94,6 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
-              path="/barcode"
-              element={<RequireAuth><BarcodeShell /></RequireAuth>}
-            >
-              <Route index element={<BarcodeHome />} />
-              <Route path="op/:kind" element={<PickingScan />} />
-              <Route path="batches" element={<BatchScan />} />
-              <Route path="waves" element={<WaveScan />} />
-              <Route path="lookup/product" element={<ProductLookup />} />
-              <Route path="lookup/location" element={<LocationLookup />} />
-            </Route>
-            <Route
               path="/"
               element={
                 <RequireAuth>
@@ -113,6 +102,16 @@ const App = () => (
               }
             >
               <Route index element={<Home />} />
+
+              {/* Barcode app (dentro do ERP) */}
+              <Route path="barcode" element={<BarcodeShell />}>
+                <Route index element={<BarcodeHome />} />
+                <Route path="op/:kind" element={<PickingScan />} />
+                <Route path="batches" element={<BatchScan />} />
+                <Route path="waves" element={<WaveScan />} />
+                <Route path="lookup/product" element={<ProductLookup />} />
+                <Route path="lookup/location" element={<LocationLookup />} />
+              </Route>
 
               {/* Products */}
               <Route path="products" element={<ProductsList />} />
