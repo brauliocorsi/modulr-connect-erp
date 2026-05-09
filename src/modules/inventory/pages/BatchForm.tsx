@@ -48,13 +48,23 @@ export default function BatchForm() {
     load();
   };
   const validate = async () => {
-    const { error } = await supabase.rpc("validate_batch", { _batch: id! });
+    const { data, error } = await supabase.rpc("validate_batch", { _batch: id! });
     if (error) return toast.error(error.message);
-    toast.success("Lote validado");
+    const r = (data as any) ?? {};
+    if ((r.failed ?? 0) > 0) {
+      toast.error(`${r.validated ?? 0} validadas, ${r.failed} com erro`, {
+        description: (r.errors ?? []).map((e: any) => `${e.picking}: ${e.error}`).join(" • ").slice(0, 300),
+      });
+    } else {
+      toast.success(`Lote validado (${r.validated ?? 0} transferências)`);
+    }
     load();
   };
   const cancel = async () => {
-    await supabase.from("stock_picking_batches").update({ state: "cancelled" }).eq("id", id!);
+    if (!confirm("Cancelar o lote e libertar todas as reservas das transferências não concluídas?")) return;
+    const { error } = await supabase.rpc("cancel_batch", { _batch: id! });
+    if (error) return toast.error(error.message);
+    toast.success("Lote cancelado e reservas libertadas");
     load();
   };
 

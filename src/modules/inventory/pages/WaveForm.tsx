@@ -59,7 +59,10 @@ export default function WaveForm() {
     load();
   };
   const cancel = async () => {
-    await supabase.from("stock_picking_waves").update({ state: "cancelled" }).eq("id", id!);
+    if (!confirm("Cancelar a onda e libertar reservas dos movimentos não concluídos?")) return;
+    const { error } = await supabase.rpc("cancel_wave", { _wave: id! });
+    if (error) return toast.error(error.message);
+    toast.success("Onda cancelada e reservas libertadas");
     load();
   };
 
