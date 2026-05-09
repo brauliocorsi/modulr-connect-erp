@@ -18,6 +18,11 @@ export default function BatchForm() {
   const [batch, setBatch] = useState<any>(null);
   const [pickings, setPickings] = useState<any[]>([]);
   const [aggMoves, setAggMoves] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [vehicleId, setVehicleId] = useState<string>("");
+  const [driverId, setDriverId] = useState<string>("");
+  const [delivDate, setDelivDate] = useState<string>("");
 
   const load = async () => {
     const { data: b } = await supabase.from("stock_picking_batches").select("*").eq("id", id!).maybeSingle();
