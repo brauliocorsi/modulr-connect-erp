@@ -159,7 +159,6 @@ export default function BarcodeScanPage() {
       <PageHeader
         title="Leitor de códigos"
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Códigos" }]}
-        icon={ScanLine}
       />
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
