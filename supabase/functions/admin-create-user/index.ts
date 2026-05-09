@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     }
     const admin = createClient(url, serviceKey);
     const { data: isAdmin } = await admin.rpc("has_group", {
-      _user_id: userData.user.id,
+      _uid: userData.user.id,
       _code: "system_admin",
     });
     if (!isAdmin) {
