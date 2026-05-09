@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChevronRight, ChevronDown, LayoutGrid, Merge } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
+import { Card } from "@/components/ui/card";
 
 const STATE_LABEL: Record<string, string> = {
   draft: "Rascunho",
