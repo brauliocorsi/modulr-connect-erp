@@ -3704,7 +3704,6 @@ export type Database = {
       }
       supplier_location_id: { Args: never; Returns: string }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
-      validate_batch: { Args: { _batch: string }; Returns: undefined }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
       validate_wave: { Args: { _wave: string }; Returns: undefined }
     }
