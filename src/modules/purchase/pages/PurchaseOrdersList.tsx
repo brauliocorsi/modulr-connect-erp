@@ -183,6 +183,20 @@ export const PurchaseOrdersList = () => {
             </Button>
           ))}
         </div>
+        <Card className="p-3 mb-3">
+          <AdvancedFilters
+            onChange={setFilters}
+            fields={[
+              { key: "partner_id", label: "Fornecedor", type: "select", options: (suppliers ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
+              { key: "warehouse_id", label: "Armazém", type: "select", options: (warehousesOpt ?? []).map((w: any) => ({ value: w.id, label: w.name })) },
+              { key: "from", label: "Data de", type: "date" },
+              { key: "to", label: "Data até", type: "date" },
+              { key: "expected_from", label: "Esperada de", type: "date" },
+              { key: "expected_to", label: "Esperada até", type: "date" },
+              { key: "min_total", label: "Total mínimo", type: "text" },
+            ]}
+          />
+        </Card>
 
         {orders.length === 0 ? (
           <EmptyState title="Sem pedidos" description="Nenhum pedido de compra encontrado." />
