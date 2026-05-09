@@ -2872,6 +2872,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_moves_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
             foreignKeyName: "stock_moves_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -3057,6 +3064,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_pickings_backorder_id_fkey"
+            columns: ["backorder_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
             foreignKeyName: "stock_pickings_batch_fk"
             columns: ["batch_id"]
             isOneToOne: false
@@ -3083,6 +3097,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stock_pickings"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_previous_picking_id_fkey"
+            columns: ["previous_picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
           },
           {
             foreignKeyName: "stock_pickings_source_location_id_fkey"
@@ -3583,6 +3604,68 @@ export type Database = {
         }
         Relationships: []
       }
+      v_picking_exceptions: {
+        Row: {
+          batch_id: string | null
+          kind: Database["public"]["Enums"]["picking_kind"] | null
+          name: string | null
+          overdue: boolean | null
+          partner_id: string | null
+          picking_id: string | null
+          previous_picking_id: string | null
+          scheduled_at: string | null
+          shortage_lines: number | null
+          state: Database["public"]["Enums"]["picking_state"] | null
+          step_label: string | null
+          total_shortage: number | null
+          waiting_previous: boolean | null
+          warehouse_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_pickings_batch_fk"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "stock_picking_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_previous_picking_id_fkey"
+            columns: ["previous_picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_previous_picking_id_fkey"
+            columns: ["previous_picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       allocate_payment_to_schedules: {
@@ -3597,8 +3680,14 @@ export type Database = {
           price: number
         }[]
       }
+      cancel_batch: { Args: { _batch: string }; Returns: undefined }
+      cancel_picking: {
+        Args: { _cascade?: boolean; _picking: string }
+        Returns: undefined
+      }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
+      cancel_wave: { Args: { _wave: string }; Returns: undefined }
       close_cash_session: {
         Args: { _counted: number; _session: string }
         Returns: undefined
@@ -3677,6 +3766,16 @@ export type Database = {
         Args: { _opening?: number; _register: string }
         Returns: string
       }
+      picking_shortages: {
+        Args: { _picking: string }
+        Returns: {
+          available: number
+          demand: number
+          product_id: string
+          product_name: string
+          shortage: number
+        }[]
+      }
       product_available_qty: {
         Args: { _product: string; _warehouse: string }
         Returns: number
@@ -3686,6 +3785,8 @@ export type Database = {
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
+      release_move_reservation: { Args: { _move: string }; Returns: undefined }
+      replan_picking_chain: { Args: { _picking: string }; Returns: Json }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       reserve_incoming_to_origin_so: {
         Args: { _picking: string }
@@ -3704,6 +3805,7 @@ export type Database = {
       }
       supplier_location_id: { Args: never; Returns: string }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
+      validate_batch: { Args: { _batch: string }; Returns: Json }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
       validate_wave: { Args: { _wave: string }; Returns: undefined }
     }
