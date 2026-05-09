@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, X, Printer } from "lucide-react";
+import { CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ export default function TransferForm() {
   const nav = useNavigate();
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
+  const [availByProduct, setAvailByProduct] = useState<Record<string, number>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
@@ -44,6 +46,22 @@ export default function TransferForm() {
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
     setMoves(m ?? []);
+    // load available stock at source location for each move's product
+    if (p?.source_location_id && (m ?? []).length) {
+      const prodIds = Array.from(new Set((m ?? []).map((x: any) => x.product_id)));
+      const { data: qs } = await supabase
+        .from("stock_quants")
+        .select("product_id, quantity, reserved_quantity")
+        .eq("location_id", p.source_location_id)
+        .in("product_id", prodIds);
+      const map: Record<string, number> = {};
+      (qs ?? []).forEach((q: any) => {
+        map[q.product_id] = (map[q.product_id] ?? 0) + (Number(q.quantity || 0) - Number(q.reserved_quantity || 0));
+      });
+      setAvailByProduct(map);
+    } else {
+      setAvailByProduct({});
+    }
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
     if (trackedIds.length) {
       const { data: lots } = await supabase.from("stock_lots").select("id,name,product_id").in("product_id", trackedIds);
@@ -102,8 +120,34 @@ export default function TransferForm() {
     load();
   };
 
+  const tryReserve = async () => {
+    const { error } = await supabase.rpc("try_reserve_picking", { _picking: id! });
+    if (error) return toast.error(error.message);
+    toast.success("Disponibilidade verificada");
+    load();
+  };
+
   if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
+
+  // Compute availability summary for outgoing pickings
+  const isOutgoing = picking.kind === "outgoing";
+  const availSummary = (() => {
+    if (!isOutgoing || !moves.length) return null;
+    let needed = 0, available = 0, fullyAvailable = 0;
+    moves.forEach((m) => {
+      const need = Number(m.quantity || 0);
+      const got = Math.min(need, Number(availByProduct[m.product_id] ?? 0));
+      needed += need;
+      available += got;
+      if (got >= need) fullyAvailable += 1;
+    });
+    const readyMoves = moves.filter((m) => m.state === "ready").length;
+    const pct = needed > 0 ? Math.round((available / needed) * 100) : 0;
+    return { needed, available, fullyAvailable, readyMoves, pct, total: moves.length };
+  })();
+  const isPartial = !!availSummary && availSummary.readyMoves > 0 && availSummary.readyMoves < availSummary.total;
+  const isFullyShort = !!availSummary && availSummary.readyMoves === 0 && availSummary.available < availSummary.needed && !isLocked;
 
   return (
     <>
@@ -111,12 +155,20 @@ export default function TransferForm() {
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{ label: stateLabel(picking.state), tone: TONE[picking.state] ?? "default" }}
+        state={{
+          label: isPartial ? "Parcialmente disponível" : stateLabel(picking.state),
+          tone: isPartial ? "warning" : (TONE[picking.state] ?? "default"),
+        }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
               <Printer className="h-4 w-4 mr-1" /> Imprimir picking
             </Button>
+            {isOutgoing && !isLocked && (
+              <Button size="sm" variant="outline" onClick={tryReserve}>
+                <RefreshCw className="h-4 w-4 mr-1" /> Verificar disponibilidade
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
@@ -153,6 +205,32 @@ export default function TransferForm() {
               <div><div className="o-section-title">Programado</div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-PT") : "—"}</div>
             </Card>
 
+            {availSummary && !isLocked && (
+              <Card className={`p-3 border ${
+                isFullyShort
+                  ? "bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900"
+                  : isPartial
+                    ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"
+                    : "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900"
+              }`}>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {isFullyShort ? (
+                      <><AlertTriangle className="h-4 w-4 text-rose-600" /> Sem stock disponível para entrega</>
+                    ) : isPartial ? (
+                      <><AlertTriangle className="h-4 w-4 text-amber-600" /> Disponibilidade parcial — apenas parte dos produtos pode ser entregue agora</>
+                    ) : (
+                      <><PackageCheck className="h-4 w-4 text-emerald-600" /> Stock totalmente disponível e reservado</>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {availSummary.fullyAvailable}/{availSummary.total} linhas · {availSummary.available}/{availSummary.needed} unid.
+                  </div>
+                </div>
+                <Progress value={availSummary.pct} className="h-2" />
+              </Card>
+            )}
+
             <Card>
               <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
               <table className="w-full text-sm">
@@ -160,6 +238,7 @@ export default function TransferForm() {
                   <tr>
                     <th className="text-left px-3 py-2">Produto</th>
                     <th className="text-left px-3 py-2 w-32">Demanda</th>
+                    {isOutgoing && <th className="text-left px-3 py-2 w-36">Disponível</th>}
                     <th className="text-left px-3 py-2 w-32">Feito</th>
                     <th className="text-left px-3 py-2 w-48">Lote/Série</th>
                     <th className="text-left px-3 py-2 w-32">Estado</th>
@@ -171,10 +250,33 @@ export default function TransferForm() {
                     const cat = m.products?.product_uom?.category;
                     const isInt = !cat || cat === "unit";
                     const lots = lotsByProduct[m.product_id] ?? [];
+                    const need = Number(m.quantity || 0);
+                    const avail = Number(availByProduct[m.product_id] ?? 0);
+                    const reserved = m.state === "ready" || m.state === "done";
+                    const shortage = Math.max(0, need - avail);
                     return (
                     <tr key={m.id} className="border-t">
                       <td className="px-3 py-2">{m.products?.name}</td>
                       <td className="px-3 py-2">{m.quantity}</td>
+                      {isOutgoing && (
+                        <td className="px-3 py-2">
+                          {reserved ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                              <PackageCheck className="h-3 w-3" /> Reservado
+                            </span>
+                          ) : avail >= need ? (
+                            <span className="text-emerald-700 dark:text-emerald-300 text-xs">{avail} disponível</span>
+                          ) : avail > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                              <AlertTriangle className="h-3 w-3" /> {avail}/{need} (faltam {shortage})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 text-xs font-medium">
+                              <AlertTriangle className="h-3 w-3" /> Sem stock
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-2 py-1">
                         <Input
                           className="h-8"
