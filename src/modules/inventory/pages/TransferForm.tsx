@@ -258,6 +258,25 @@ export default function TransferForm() {
                     <tr key={m.id} className="border-t">
                       <td className="px-3 py-2">{m.products?.name}</td>
                       <td className="px-3 py-2">{m.quantity}</td>
+                      {isOutgoing && (
+                        <td className="px-3 py-2">
+                          {reserved ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                              <PackageCheck className="h-3 w-3" /> Reservado
+                            </span>
+                          ) : avail >= need ? (
+                            <span className="text-emerald-700 dark:text-emerald-300 text-xs">{avail} disponível</span>
+                          ) : avail > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                              <AlertTriangle className="h-3 w-3" /> {avail}/{need} (faltam {shortage})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 text-xs font-medium">
+                              <AlertTriangle className="h-3 w-3" /> Sem stock
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-2 py-1">
                         <Input
                           className="h-8"
