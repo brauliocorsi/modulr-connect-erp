@@ -100,6 +100,15 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+
+            {/* Delivery app (layout próprio) */}
+            <Route path="/delivery" element={<RequireAuth><DeliveryShell /></RequireAuth>}>
+              <Route index element={<DeliveryHome />} />
+              <Route path="batch/:id" element={<DeliveryBatch />} />
+              <Route path="picking/:id" element={<DeliveryPicking />} />
+              <Route path="cashbox" element={<DeliveryCashbox />} />
+            </Route>
+
             <Route
               path="/"
               element={
