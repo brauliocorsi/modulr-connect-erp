@@ -27,6 +27,22 @@ export default function BatchForm() {
   const load = async () => {
     const { data: b } = await supabase.from("stock_picking_batches").select("*").eq("id", id!).maybeSingle();
     setBatch(b);
+    if (b) {
+      setVehicleId(b.vehicle_id ?? "");
+      setDriverId(b.driver_id ?? "");
+      setDelivDate(b.delivery_date ?? new Date().toISOString().slice(0, 10));
+    }
+    const { data: vs } = await supabase.from("vehicles").select("id,name,license_plate,driver_id").eq("active", true).order("name");
+    setVehicles(vs ?? []);
+    const { data: ug } = await supabase
+      .from("user_groups")
+      .select("user_id, groups!inner(code)")
+      .eq("groups.code", "delivery_driver");
+    const dids = (ug ?? []).map((r: any) => r.user_id);
+    if (dids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", dids);
+      setDrivers(profs ?? []);
+    } else setDrivers([]);
     const { data: ps } = await supabase
       .from("stock_pickings")
       .select("id,name,kind,state,step_label,partners(name)")
