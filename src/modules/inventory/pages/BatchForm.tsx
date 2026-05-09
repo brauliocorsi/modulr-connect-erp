@@ -6,8 +6,9 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Play, X } from "lucide-react";
+import { CheckCircle2, Play, X, Printer } from "lucide-react";
 import { stateLabel, kindLabel } from "@/lib/picking";
+import { printBatchBarcodes } from "@/modules/inventory/printBatchBarcodes";
 import { toast } from "sonner";
 
 export default function BatchForm() {
