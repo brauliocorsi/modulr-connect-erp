@@ -83,6 +83,9 @@ export default function BatchForm() {
         state={{ label: stateLabel(batch.state), tone: batch.state === "done" ? "success" : batch.state === "cancelled" ? "destructive" : "default" }}
         actions={
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => printBatchBarcodes(id!)}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir códigos
+            </Button>
             {!locked && batch.state === "draft" && (
               <Button size="sm" variant="outline" onClick={start}><Play className="h-4 w-4 mr-1" /> Iniciar separação</Button>
             )}
