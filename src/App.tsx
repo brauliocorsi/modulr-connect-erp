@@ -84,6 +84,7 @@ import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
 import Discuss from "@/modules/discuss/Discuss";
+import DemoFlowPage from "@/modules/demo/DemoFlowPage";
 import {
   EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
   LeavesList, LeaveForm, AttendanceClock, AttendancesList,
