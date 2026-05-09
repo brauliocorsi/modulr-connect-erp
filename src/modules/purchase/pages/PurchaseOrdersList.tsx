@@ -49,15 +49,22 @@ export const PurchaseOrdersList = () => {
   });
 
   const { data: orders = [], refetch } = useQuery({
-    queryKey: ["purchase-orders-list", search, stateFilter],
+    queryKey: ["purchase-orders-list", search, stateFilter, filters],
     queryFn: async () => {
       let q = supabase
         .from("purchase_orders")
         .select("id, name, state, date_order, expected_date, amount_total, partner_id, warehouse_id, created_by, created_at, partners(name), warehouses(name)")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(500);
       if (search) q = q.ilike("name", `%${search}%`);
       if (stateFilter !== "all") q = q.eq("state", stateFilter as any);
+      if (filters.partner_id) q = q.eq("partner_id", filters.partner_id);
+      if (filters.warehouse_id) q = q.eq("warehouse_id", filters.warehouse_id);
+      if (filters.from) q = q.gte("date_order", filters.from);
+      if (filters.to) q = q.lte("date_order", filters.to + "T23:59:59");
+      if (filters.expected_from) q = q.gte("expected_date", filters.expected_from);
+      if (filters.expected_to) q = q.lte("expected_date", filters.expected_to);
+      if (filters.min_total) q = q.gte("amount_total", Number(filters.min_total));
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
