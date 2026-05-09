@@ -27,6 +27,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { printSaleOrder } from "./printSaleOrder";
+import { NumberField } from "@/core/forms/NumberField";
 
 type Line = {
   id?: string;
