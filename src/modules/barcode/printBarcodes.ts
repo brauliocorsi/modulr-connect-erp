@@ -137,7 +137,7 @@ export async function printLocationBarcodes(opts?: { warehouseId?: string }) {
         <div class="card">
           <div class="label">${esc(l.name)}</div>
           <div class="meta">${esc(l.full_path ?? "")}</div>
-          ${barcodeSvg(l.full_path ?? l.name, { height: 50, fontSize: 11 })}
+          ${barcodeSvg(l.barcode || l.full_path || l.name, { height: 50, fontSize: 11 })}
         </div>`,
         )
         .join("")}
