@@ -3565,6 +3565,7 @@ export type Database = {
       }
       recalc_bill_state: { Args: { _bill: string }; Returns: undefined }
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
+      recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       reserve_for_move: { Args: { _move: string }; Returns: number }
@@ -3584,6 +3585,7 @@ export type Database = {
         Returns: number
       }
       supplier_location_id: { Args: never; Returns: string }
+      try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
     }
     Enums: {
