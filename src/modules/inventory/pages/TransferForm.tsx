@@ -155,12 +155,20 @@ export default function TransferForm() {
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{ label: stateLabel(picking.state), tone: TONE[picking.state] ?? "default" }}
+        state={{
+          label: isPartial ? "Parcialmente disponível" : stateLabel(picking.state),
+          tone: isPartial ? "warning" : (TONE[picking.state] ?? "default"),
+        }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
               <Printer className="h-4 w-4 mr-1" /> Imprimir picking
             </Button>
+            {isOutgoing && !isLocked && (
+              <Button size="sm" variant="outline" onClick={tryReserve}>
+                <RefreshCw className="h-4 w-4 mr-1" /> Verificar disponibilidade
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
