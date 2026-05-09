@@ -97,6 +97,12 @@ export default function DeliveryPicking() {
         <div className="px-3 py-2 border-b border-slate-800 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-400">
           <ScanLine className="h-3 w-3" /> Scaneia cada produto entregue
         </div>
+        <form className="p-2 border-b border-slate-800" onSubmit={(e) => { e.preventDefault(); scanner.submit(); }}>
+          <input ref={scanner.inputRef} value={scanner.code} onChange={(e) => scanner.setCode(e.target.value)}
+            autoFocus inputMode="none"
+            className="w-full bg-slate-800 text-slate-100 rounded px-3 py-2 text-sm outline-none border border-slate-700 focus:border-emerald-500"
+            placeholder="Aguarda scan…" />
+        </form>
         <div className="divide-y divide-slate-800">
           {moves.map((m: any) => {
             const done = scanned[m.id] ?? 0;
