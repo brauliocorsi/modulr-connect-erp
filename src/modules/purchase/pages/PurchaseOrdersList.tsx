@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChevronRight, ChevronDown, LayoutGrid, Merge } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
+import { Card } from "@/components/ui/card";
 
 const STATE_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -35,17 +37,34 @@ export const PurchaseOrdersList = () => {
   const [stateFilter, setStateFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<FilterValues>({});
+
+  const { data: suppliers } = useQuery({
+    queryKey: ["suppliers-min"],
+    queryFn: async () => (await supabase.from("partners").select("id,name").eq("is_supplier", true).order("name")).data ?? [],
+  });
+  const { data: warehousesOpt } = useQuery({
+    queryKey: ["warehouses-min"],
+    queryFn: async () => (await supabase.from("warehouses").select("id,name").order("name")).data ?? [],
+  });
 
   const { data: orders = [], refetch } = useQuery({
-    queryKey: ["purchase-orders-list", search, stateFilter],
+    queryKey: ["purchase-orders-list", search, stateFilter, filters],
     queryFn: async () => {
       let q = supabase
         .from("purchase_orders")
         .select("id, name, state, date_order, expected_date, amount_total, partner_id, warehouse_id, created_by, created_at, partners(name), warehouses(name)")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(500);
       if (search) q = q.ilike("name", `%${search}%`);
       if (stateFilter !== "all") q = q.eq("state", stateFilter as any);
+      if (filters.partner_id) q = q.eq("partner_id", filters.partner_id);
+      if (filters.warehouse_id) q = q.eq("warehouse_id", filters.warehouse_id);
+      if (filters.from) q = q.gte("date_order", filters.from);
+      if (filters.to) q = q.lte("date_order", filters.to + "T23:59:59");
+      if (filters.expected_from) q = q.gte("expected_date", filters.expected_from);
+      if (filters.expected_to) q = q.lte("expected_date", filters.expected_to);
+      if (filters.min_total) q = q.gte("amount_total", Number(filters.min_total));
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -164,6 +183,20 @@ export const PurchaseOrdersList = () => {
             </Button>
           ))}
         </div>
+        <Card className="p-3 mb-3">
+          <AdvancedFilters
+            onChange={setFilters}
+            fields={[
+              { key: "partner_id", label: "Fornecedor", type: "select", options: (suppliers ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
+              { key: "warehouse_id", label: "Armazém", type: "select", options: (warehousesOpt ?? []).map((w: any) => ({ value: w.id, label: w.name })) },
+              { key: "from", label: "Data de", type: "date" },
+              { key: "to", label: "Data até", type: "date" },
+              { key: "expected_from", label: "Esperada de", type: "date" },
+              { key: "expected_to", label: "Esperada até", type: "date" },
+              { key: "min_total", label: "Total mínimo", type: "text" },
+            ]}
+          />
+        </Card>
 
         {orders.length === 0 ? (
           <EmptyState title="Sem pedidos" description="Nenhum pedido de compra encontrado." />
