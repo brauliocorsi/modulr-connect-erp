@@ -37,6 +37,16 @@ export const PurchaseOrdersList = () => {
   const [stateFilter, setStateFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<FilterValues>({});
+
+  const { data: suppliers } = useQuery({
+    queryKey: ["suppliers-min"],
+    queryFn: async () => (await supabase.from("partners").select("id,name").eq("is_supplier", true).order("name")).data ?? [],
+  });
+  const { data: warehousesOpt } = useQuery({
+    queryKey: ["warehouses-min"],
+    queryFn: async () => (await supabase.from("warehouses").select("id,name").order("name")).data ?? [],
+  });
 
   const { data: orders = [], refetch } = useQuery({
     queryKey: ["purchase-orders-list", search, stateFilter],
