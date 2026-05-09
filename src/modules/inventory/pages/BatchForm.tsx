@@ -133,6 +133,48 @@ export default function BatchForm() {
       <PageBody>
         <div className="space-y-4">
           <Card className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Truck className="h-4 w-4 text-primary" />
+              <div className="text-sm font-medium">Atribuição à carrinha / motorista</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <Label className="text-xs">Carrinha</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={vehicleId}
+                  onChange={(e) => {
+                    setVehicleId(e.target.value);
+                    const v = vehicles.find((x: any) => x.id === e.target.value);
+                    if (v?.driver_id) setDriverId(v.driver_id);
+                  }} disabled={locked}>
+                  <option value="">—</option>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.name}{v.license_plate ? ` (${v.license_plate})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Motorista</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={driverId}
+                  onChange={(e) => setDriverId(e.target.value)} disabled={locked}>
+                  <option value="">—</option>
+                  {drivers.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.full_name || d.email}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Data de entrega</Label>
+                <Input type="date" value={delivDate} onChange={(e) => setDelivDate(e.target.value)} disabled={locked} />
+              </div>
+              <div className="flex items-end">
+                <Button size="sm" onClick={assign} disabled={locked} className="w-full">
+                  <Truck className="h-4 w-4 mr-1" /> Carregar na carrinha
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium">Progresso</div>
               <div className="text-xs text-muted-foreground">{done}/{pickings.length} transferências concluídas</div>
