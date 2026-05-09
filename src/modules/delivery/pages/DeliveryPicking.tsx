@@ -143,7 +143,13 @@ export default function DeliveryPicking() {
             </div>
             <div>
               <Label>Valor a cobrar</Label>
-              <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+              <div className="flex gap-2">
+                <Input type="number" step="0.01" max={openBalance} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                <Button type="button" variant="outline" size="sm" onClick={() => setAmount(openBalance)}>Tudo</Button>
+              </div>
+              {amount > openBalance + 0.01 && (
+                <div className="text-xs text-rose-500 mt-1">Excede o em aberto ({openBalance.toFixed(2)} €)</div>
+              )}
             </div>
             <div>
               <Label>Método</Label>
