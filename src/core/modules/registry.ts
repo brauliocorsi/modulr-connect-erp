@@ -142,6 +142,19 @@ export const MODULES: ModuleDef[] = [
     ],
   },
   {
+    id: "delivery" as any,
+    name: "Entregas",
+    shortName: "Entregas",
+    icon: Truck,
+    color: "bg-[hsl(150_70%_40%)]",
+    basePath: "/delivery",
+    description: "App do entregador: scan, entrega e cobrança",
+    menu: [
+      { section: "Entregas", label: "Hoje", to: "/delivery" },
+      { section: "Entregas", label: "Caixa", to: "/delivery/cashbox" },
+    ],
+  },
+  {
     id: "discuss" as any,
     name: "Conversas",
     shortName: "Chat",
