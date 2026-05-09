@@ -143,6 +143,7 @@ const App = () => (
               <Route path="inventory/waves" element={<WavesList />} />
               <Route path="inventory/waves/new" element={<WaveForm />} />
               <Route path="inventory/waves/:id" element={<WaveForm />} />
+              <Route path="inventory/barcode" element={<BarcodeScanPage />} />
               <Route path="inventory/schedule" element={<SchedulePage />} />
               <Route path="inventory/moves" element={<MovesPage />} />
               <Route path="inventory/receipts" element={<ReceiptsPage />} />
