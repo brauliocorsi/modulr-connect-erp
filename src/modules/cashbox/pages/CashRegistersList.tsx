@@ -80,7 +80,8 @@ export default function CashRegistersList() {
   // Ao escolher loja, herda armazém da loja se existir
   const onStoreChange = (v: string) => {
     const st = stores.find((s) => s.id === v);
-    setForm((f) => ({ ...f, store_id: v, warehouse_id: st?.warehouse_id ?? f.warehouse_id }));
+    const fallback = warehouses.length === 1 ? warehouses[0].id : "";
+    setForm((f) => ({ ...f, store_id: v, warehouse_id: st?.warehouse_id ?? f.warehouse_id ?? fallback }));
   };
 
   const create = async () => {
