@@ -183,6 +183,11 @@ export default function TransferForm() {
                 <RefreshCw className="h-4 w-4 mr-1" /> Verificar disponibilidade
               </Button>
             )}
+            {!isLocked && (picking.previous_picking_id || picking.step_label) && (
+              <Button size="sm" variant="outline" onClick={replanChain}>
+                <RefreshCw className="h-4 w-4 mr-1" /> Replanejar cadeia
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
