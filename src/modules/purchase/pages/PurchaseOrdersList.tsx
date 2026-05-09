@@ -242,7 +242,7 @@ export const PurchaseOrdersList = () => {
                         </TableCell>
                       </TableRow>
                       {isOpen && <ExpandedRow poId={o.id} poName={o.name} sos={sos} />}
-                    </>
+                    </Fragment>
                   );
                 })}
               </TableBody>
