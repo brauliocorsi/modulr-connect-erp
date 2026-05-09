@@ -137,6 +137,11 @@ const App = () => (
               <Route path="inventory" element={<InventoryDashboard />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
+              <Route path="inventory/batches" element={<BatchesList />} />
+              <Route path="inventory/batches/:id" element={<BatchForm />} />
+              <Route path="inventory/waves" element={<WavesList />} />
+              <Route path="inventory/waves/new" element={<WaveForm />} />
+              <Route path="inventory/waves/:id" element={<WaveForm />} />
               <Route path="inventory/schedule" element={<SchedulePage />} />
               <Route path="inventory/moves" element={<MovesPage />} />
               <Route path="inventory/receipts" element={<ReceiptsPage />} />
