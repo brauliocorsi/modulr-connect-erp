@@ -61,7 +61,7 @@ export default function DeliveryPicking() {
     setScanned({ ...scanned, [m.id]: cur + 1 });
     toast.success(`+1 ${m.products?.name}`);
   };
-  useScanner(handleScan);
+  const scanner = useScanner(handleScan);
 
   const allOk = moves.length > 0 && moves.every((m: any) => (scanned[m.id] ?? 0) >= Number(m.quantity));
 
