@@ -264,6 +264,9 @@ const App = () => (
               <Route path="discuss" element={<Discuss />} />
               <Route path="discuss/:channelId" element={<Discuss />} />
 
+              {/* Demo */}
+              <Route path="demo/flow" element={<DemoFlowPage />} />
+
 
               <Route path="*" element={<NotFound />} />
             </Route>
