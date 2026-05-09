@@ -188,8 +188,8 @@ export const PurchaseOrdersList = () => {
                   const isOpen = expanded.has(o.id);
                   const sos = originsByPo[o.id] ?? [];
                   return (
-                    <>
-                      <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50">
+                    <Fragment key={o.id}>
+                      <TableRow className="cursor-pointer hover:bg-muted/50">
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selected.has(o.id)}
