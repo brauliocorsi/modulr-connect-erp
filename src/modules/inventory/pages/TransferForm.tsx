@@ -22,6 +22,7 @@ export default function TransferForm() {
   const nav = useNavigate();
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
+  const [availByProduct, setAvailByProduct] = useState<Record<string, number>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
@@ -44,6 +45,22 @@ export default function TransferForm() {
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
     setMoves(m ?? []);
+    // load available stock at source location for each move's product
+    if (p?.source_location_id && (m ?? []).length) {
+      const prodIds = Array.from(new Set((m ?? []).map((x: any) => x.product_id)));
+      const { data: qs } = await supabase
+        .from("stock_quants")
+        .select("product_id, quantity, reserved_quantity")
+        .eq("location_id", p.source_location_id)
+        .in("product_id", prodIds);
+      const map: Record<string, number> = {};
+      (qs ?? []).forEach((q: any) => {
+        map[q.product_id] = (map[q.product_id] ?? 0) + (Number(q.quantity || 0) - Number(q.reserved_quantity || 0));
+      });
+      setAvailByProduct(map);
+    } else {
+      setAvailByProduct({});
+    }
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
     if (trackedIds.length) {
       const { data: lots } = await supabase.from("stock_lots").select("id,name,product_id").in("product_id", trackedIds);
