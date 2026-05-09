@@ -414,10 +414,10 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="text-left px-3 py-2">Produto</th>
-                      <th className="text-left px-3 py-2 w-28">Stock</th>
-                      <th className="text-left px-3 py-2 w-32">Qtd</th>
-                      <th className="text-left px-3 py-2 w-40">Preço unit.</th>
-                      {kind === "sale" && <th className="text-left px-3 py-2 w-24">Desc %</th>}
+                      <th className="text-left px-3 py-2 w-24">Stock</th>
+                      <th className="text-center px-3 py-2 w-36">Qtd</th>
+                      <th className="text-right px-3 py-2 w-40">Preço unit.</th>
+                      {kind === "sale" && <th className="text-right px-3 py-2 w-28">Desc</th>}
                       <th className="text-right px-3 py-2 w-32">Subtotal</th>
                       <th className="w-10"></th>
                     </tr>
