@@ -91,6 +91,15 @@ export default function BatchForm() {
     toast.success("Lote cancelado e reservas libertadas");
     load();
   };
+  const assign = async () => {
+    if (!vehicleId || !driverId) return toast.error("Escolhe carrinha e motorista");
+    const { error } = await supabase.rpc("driver_assign_batch", {
+      _batch: id!, _vehicle: vehicleId, _driver: driverId, _date: delivDate || new Date().toISOString().slice(0, 10),
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Lote atribuído à carrinha");
+    load();
+  };
 
   if (!batch) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const done = pickings.filter((p) => p.state === "done").length;
