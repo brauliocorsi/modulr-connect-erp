@@ -25,6 +25,7 @@ export default function TransferForm() {
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
   const [availByProduct, setAvailByProduct] = useState<Record<string, number>>({});
+  const [incomingByProduct, setIncomingByProduct] = useState<Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
