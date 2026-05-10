@@ -118,6 +118,48 @@ export default function TransfersList() {
         }
       />
       <PageBody>
+        <div className="grid gap-3 md:grid-cols-4 mb-3">
+          <Card className="p-3 border-l-4 border-l-warning">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Bloqueadas</div>
+                <div className="text-2xl font-semibold">{flowStats.waiting}</div>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-warning" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">A aguardar stock ou etapa anterior</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-success">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Prontas</div>
+                <div className="text-2xl font-semibold">{flowStats.ready}</div>
+              </div>
+              <PackageCheck className="h-5 w-5 text-success" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Disponíveis para validar agora</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-info">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">No cais</div>
+                <div className="text-2xl font-semibold">{flowStats.dock}</div>
+              </div>
+              <Clock className="h-5 w-5 text-info" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Separação e carga em progresso</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-primary">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Carrinha/Entrega</div>
+                <div className="text-2xl font-semibold">{flowStats.van}</div>
+              </div>
+              <Truck className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Carregamento ou entrega final</p>
+          </Card>
+        </div>
         <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +189,7 @@ export default function TransfersList() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
-                <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === rows.length} onCheckedChange={toggleAll} /></th>
+                 <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === visibleRows.length} onCheckedChange={toggleAll} /></th>
                 <SortHead k="name" label="Referência" />
                 <SortHead k="kind" label="Tipo" />
                 <th className="text-left px-3 py-2">Etapa</th>
@@ -158,19 +200,30 @@ export default function TransfersList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r: any) => (
-                <tr key={r.id} className="border-t hover:bg-accent/30">
+                {visibleRows.map((r: any) => (
+                <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
                   <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
                   <td className="px-3 py-2"><Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">{r.name}</Link></td>
                   <td className="px-3 py-2">{kindLabel(r.kind)}</td>
-                  <td className="px-3 py-2">{r.step_label ? <Badge variant="outline">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col gap-1">
+                      {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
+                      {r.origin && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
+                    </div>
+                  </td>
                   <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
-                  <td className="px-3 py-2"><StateBadge value={r.state} /></td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
+                      {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
+                      <StateBadge value={r.state} />
+                    </div>
+                  </td>
                   <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
                   <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {visibleRows.length === 0 && (
                 <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>
               )}
             </tbody>
