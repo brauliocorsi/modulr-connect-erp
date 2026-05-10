@@ -264,7 +264,25 @@ export default function TransferForm() {
     load();
   };
 
-  if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
+  const updateAssignment = async (patch: { vehicle_id?: string | null; carrier_id?: string | null; tracking_ref?: string | null }) => {
+    const { error } = await supabase.from("stock_pickings").update(patch as any).eq("id", id!);
+    if (error) return toast.error(error.message);
+    setPicking((p: any) => ({ ...p, ...patch }));
+  };
+
+  const submitReschedule = async () => {
+    if (!rescheduleDate) return toast.error("Indique a nova data");
+    const { error } = await supabase.rpc("reschedule_picking", {
+      _picking: id!,
+      _new_date: new Date(rescheduleDate).toISOString(),
+      _reason: rescheduleReason || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Transferência reagendada — produto devolvido ao Stock");
+    setRescheduleOpen(false);
+    setRescheduleReason("");
+    load();
+  };
   const isLocked = ["done", "cancelled"].includes(picking.state);
   const flowBlocked = flowDocs.pickings.some((pk) => pk.state === "waiting");
   const flowReady = flowDocs.pickings.some((pk) => pk.state === "ready");
