@@ -1,6 +1,6 @@
 import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
-import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
+import { FulfillmentBadge, FULFILLMENT_OPTIONS } from "@/core/orders/FulfillmentBadge";
 import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 import { StateBadge } from "@/core/layout/StateBadge";
@@ -58,9 +58,7 @@ export const SalesOrdersList = () => (
     filter={(q) => q.in("state", ["confirmed", "done"])}
     filters={[
       { key: "state", label: "Estado", type: "select", options: SALE_STATE_OPTS.filter((s) => ["confirmed","done"].includes(s.value)) },
-      { key: "fulfillment_status", label: "Fulfillment", type: "select", options: [
-        { value: "pending", label: "Pendente" }, { value: "partial", label: "Parcial" }, { value: "done", label: "Concluído" },
-      ]},
+      { key: "fulfillment_status", label: "Fulfillment", type: "select", options: FULFILLMENT_OPTIONS },
       { key: "payment_status", label: "Pagamento", type: "select", options: [
         { value: "pending", label: "Pendente" }, { value: "partial", label: "Parcial" }, { value: "paid", label: "Pago" },
       ]},
