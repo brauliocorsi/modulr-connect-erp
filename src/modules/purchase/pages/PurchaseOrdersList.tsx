@@ -73,6 +73,16 @@ export const PurchaseOrdersList = () => {
 
   const orderIds = useMemo(() => orders.map((o: any) => o.id), [orders]);
 
+  const sortedOrders = useMemo(() => {
+    const isPending = (s: string) => s === "draft" || s === "rfq_sent";
+    return [...orders].sort((a: any, b: any) => {
+      const ap = isPending(a.state) ? 0 : 1;
+      const bp = isPending(b.state) ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [orders]);
+
   const { data: origins = [] } = useQuery({
     enabled: orderIds.length > 0,
     queryKey: ["po-origins", orderIds],
