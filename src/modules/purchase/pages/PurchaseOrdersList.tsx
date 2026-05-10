@@ -227,22 +227,34 @@ export const PurchaseOrdersList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((o: any) => {
-                  const isOpen = expanded.has(o.id);
-                  const sos = originsByPo[o.id] ?? [];
-                  return (
-                    <Fragment key={o.id}>
-                      <TableRow className="cursor-pointer hover:bg-muted/50">
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selected.has(o.id)}
-                            onCheckedChange={() => toggleSelect(o.id)}
-                          />
-                        </TableCell>
-                        <TableCell onClick={() => toggleExpand(o.id)}>
-                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="font-medium">{o.name}</TableCell>
+                {sortedOrders.map((o: any) => {
+                   const isOpen = expanded.has(o.id);
+                   const sos = originsByPo[o.id] ?? [];
+                   const isPending = o.state === "draft" || o.state === "rfq_sent";
+                   const fromSale = sos.length > 0;
+                   return (
+                     <Fragment key={o.id}>
+                       <TableRow className={"cursor-pointer hover:bg-muted/50 " + (isPending ? "bg-amber-50/50 dark:bg-amber-950/20 border-l-4 border-l-amber-500" : "")}>
+                         <TableCell onClick={(e) => e.stopPropagation()}>
+                           <Checkbox
+                             checked={selected.has(o.id)}
+                             onCheckedChange={() => toggleSelect(o.id)}
+                           />
+                         </TableCell>
+                         <TableCell onClick={() => toggleExpand(o.id)}>
+                           {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                         </TableCell>
+                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="font-medium">
+                           <div className="flex items-center gap-2">
+                             {o.name}
+                             {isPending && fromSale && (
+                               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-xs">Pendente · Venda</Badge>
+                             )}
+                             {isPending && !fromSale && (
+                               <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                             )}
+                           </div>
+                         </TableCell>
                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>{o.partners?.name ?? "—"}</TableCell>
                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>
                           <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
