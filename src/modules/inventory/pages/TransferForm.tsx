@@ -402,6 +402,13 @@ export default function TransferForm() {
                   </div>
                 </div>
                 <Progress value={availSummary.pct} className="h-2" />
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"><PackageCheck className="h-3 w-3" /> Reservado</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200"><PackageCheck className="h-3 w-3" /> Disponível</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"><AlertTriangle className="h-3 w-3" /> Parcial</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200"><Truck className="h-3 w-3" /> Em receção</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200"><AlertTriangle className="h-3 w-3" /> Pendente</span>
+                </div>
               </Card>
             )}
 
