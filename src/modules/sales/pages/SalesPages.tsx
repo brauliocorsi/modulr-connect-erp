@@ -58,9 +58,7 @@ export const SalesOrdersList = () => (
     filter={(q) => q.in("state", ["confirmed", "done"])}
     filters={[
       { key: "state", label: "Estado", type: "select", options: SALE_STATE_OPTS.filter((s) => ["confirmed","done"].includes(s.value)) },
-      { key: "fulfillment_status", label: "Fulfillment", type: "select", options: [
-        { value: "pending", label: "Pendente" }, { value: "partial", label: "Parcial" }, { value: "done", label: "Concluído" },
-      ]},
+      { key: "fulfillment_status", label: "Fulfillment", type: "select", options: FULFILLMENT_OPTIONS },
       { key: "payment_status", label: "Pagamento", type: "select", options: [
         { value: "pending", label: "Pendente" }, { value: "partial", label: "Parcial" }, { value: "paid", label: "Pago" },
       ]},
