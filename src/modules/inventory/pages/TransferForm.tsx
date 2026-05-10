@@ -34,6 +34,23 @@ export default function TransferForm() {
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
   const [flowDocs, setFlowDocs] = useState<{ sale: any | null; purchases: any[]; pickings: any[] }>({ sale: null, purchases: [], pickings: [] });
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [carriers, setCarriers] = useState<any[]>([]);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const [v, c] = await Promise.all([
+        supabase.from("vehicles").select("id,name,license_plate").eq("active", true).order("name"),
+        supabase.from("delivery_carriers").select("id,name").eq("active", true).order("name"),
+      ]);
+      setVehicles(v.data ?? []);
+      setCarriers(c.data ?? []);
+    })();
+  }, []);
+
 
   const load = async () => {
     const { data: p } = await supabase
