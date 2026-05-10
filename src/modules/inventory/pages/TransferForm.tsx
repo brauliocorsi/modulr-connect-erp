@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { StateBadge } from "@/core/layout/StateBadge";
 import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
@@ -183,7 +184,6 @@ export default function TransferForm() {
 
   if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
-  const activeStepIndex = Math.max(0, flowDocs.pickings.findIndex((pk) => pk.id === picking.id));
   const flowBlocked = flowDocs.pickings.some((pk) => pk.state === "waiting");
   const flowReady = flowDocs.pickings.some((pk) => pk.state === "ready");
 
