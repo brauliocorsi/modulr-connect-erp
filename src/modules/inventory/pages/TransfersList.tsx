@@ -207,7 +207,12 @@ export default function TransfersList() {
                   <td className="px-3 py-2">{kindLabel(r.kind)}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col gap-1">
-                      {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
+                        {r.reschedule_count > 0 && <Badge variant="secondary" className="bg-orange-200 text-orange-900 text-[10px]">🔄 {r.reschedule_count}x</Badge>}
+                        {r.vehicles && <Badge variant="secondary" className="text-[10px]"><Truck className="h-3 w-3 mr-1" />{r.vehicles.name}</Badge>}
+                        {r.delivery_carriers && <Badge variant="secondary" className="text-[10px]">📦 {r.delivery_carriers.name}</Badge>}
+                      </div>
                       {r.origin && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
                     </div>
                   </td>
