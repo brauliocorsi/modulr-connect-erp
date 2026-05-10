@@ -435,18 +435,34 @@ export default function TransferForm() {
                       {isOutgoing && (
                         <td className="px-3 py-2">
                           {reserved ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
-                              <PackageCheck className="h-3 w-3" /> Reservado
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" title="Stock reservado para esta linha">
+                              <PackageCheck className="h-3 w-3" /> Reservado · {need}
                             </span>
                           ) : avail >= need ? (
-                            <span className="text-emerald-700 dark:text-emerald-300 text-xs">{avail} disponível</span>
-                          ) : avail > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 text-xs font-medium">
-                              <AlertTriangle className="h-3 w-3" /> {avail}/{need} (faltam {shortage})
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200" title="Há stock livre suficiente — clique em Verificar disponibilidade para reservar">
+                              <PackageCheck className="h-3 w-3" /> Disponível · {avail}
                             </span>
+                          ) : avail > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                                <AlertTriangle className="h-3 w-3" /> Parcial · {avail}/{need}
+                              </span>
+                              {(incomingByProduct[m.product_id]?.qty ?? 0) > 0 && (
+                                <span className="text-[11px] text-info">Em receção: {incomingByProduct[m.product_id].qty}</span>
+                              )}
+                            </div>
+                          ) : (incomingByProduct[m.product_id]?.qty ?? 0) > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200" title="Aguarda recebimento de compra">
+                                <Truck className="h-3 w-3" /> Em receção · {incomingByProduct[m.product_id].qty}
+                              </span>
+                              {incomingByProduct[m.product_id].pickings.slice(0, 2).map((pk) => (
+                                <a key={pk.id} href={`/inventory/transfers/${pk.id}`} className="text-[11px] text-primary hover:underline">{pk.name} ({stateLabel(pk.state)})</a>
+                              ))}
+                            </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 text-xs font-medium">
-                              <AlertTriangle className="h-3 w-3" /> Sem stock
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" title="Sem stock e sem compra em curso">
+                              <AlertTriangle className="h-3 w-3" /> Pendente · 0/{need}
                             </span>
                           )}
                         </td>
