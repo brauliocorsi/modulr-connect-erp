@@ -109,9 +109,12 @@ export const CustomersList = () => (
     filter={(q) => q.eq("is_customer", true)}
     columns={[
       { key: "name", header: "Nome", sortable: true },
+      { key: "tax_id", header: "NIF" },
       { key: "email", header: "E-mail" },
       { key: "phone", header: "Telefone" },
-      { key: "city", header: "Cidade" },
+      { key: "zip", header: "Cód. Postal" },
+      { key: "city", header: "Localidade" },
+      { key: "state", header: "Distrito" },
     ]}
   />
 );

@@ -24,6 +24,7 @@ export default function PartnerForm({ defaultKind }: { defaultKind: "customer" |
     kind: "company",
     is_customer: defaultKind === "customer",
     is_supplier: defaultKind === "supplier",
+    country: "PT",
   });
 
   useEffect(() => {
@@ -81,16 +82,46 @@ export default function PartnerForm({ defaultKind }: { defaultKind: "customer" |
                 <Input value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>CNPJ/CPF</Label>
-                <Input value={form.tax_id ?? ""} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+                <Label>Contribuinte (NIF)</Label>
+                <Input
+                  value={form.tax_id ?? ""}
+                  onChange={(e) => setForm({ ...form, tax_id: e.target.value })}
+                  placeholder="9 dígitos"
+                  inputMode="numeric"
+                  maxLength={9}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Cidade</Label>
+                <Label>País</Label>
+                <Input value={form.country ?? "PT"} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+              </div>
+              <div className="sm:col-span-2 space-y-2">
+                <Label>Morada</Label>
+                <Input value={form.street ?? ""} onChange={(e) => setForm({ ...form, street: e.target.value })} placeholder="Rua, número, andar" />
+              </div>
+              <div className="space-y-2">
+                <Label>Código Postal</Label>
+                <Input
+                  value={form.zip ?? ""}
+                  onChange={(e) => setForm({ ...form, zip: e.target.value })}
+                  placeholder="0000-000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Localidade</Label>
                 <Input value={form.city ?? ""} onChange={(e) => setForm({ ...form, city: e.target.value })} />
               </div>
               <div className="sm:col-span-2 space-y-2">
-                <Label>Endereço</Label>
-                <Input value={form.street ?? ""} onChange={(e) => setForm({ ...form, street: e.target.value })} />
+                <Label>Distrito</Label>
+                <Input
+                  value={form.state ?? ""}
+                  onChange={(e) => setForm({ ...form, state: e.target.value })}
+                  placeholder="Ex.: Lisboa, Porto, Setúbal…"
+                  list="pt-distritos"
+                />
+                <datalist id="pt-distritos">
+                  {["Aveiro","Beja","Braga","Bragança","Castelo Branco","Coimbra","Évora","Faro","Guarda","Leiria","Lisboa","Portalegre","Porto","Santarém","Setúbal","Viana do Castelo","Vila Real","Viseu","Madeira","Açores"].map(d => <option key={d} value={d} />)}
+                </datalist>
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <Label>Notas</Label>
