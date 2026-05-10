@@ -283,6 +283,8 @@ export default function TransferForm() {
     setRescheduleReason("");
     load();
   };
+
+  if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
   const flowBlocked = flowDocs.pickings.some((pk) => pk.state === "waiting");
   const flowReady = flowDocs.pickings.some((pk) => pk.state === "ready");
