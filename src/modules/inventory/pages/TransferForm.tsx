@@ -183,6 +183,15 @@ export default function TransferForm() {
   };
 
   const validate = async () => {
+    const zeroMoves = moves.filter((m) => {
+      const qd = Number(m.quantity_done);
+      return !(Number.isFinite(qd) && qd > 0);
+    });
+    if (zeroMoves.length === moves.length) {
+      if (!confirm(`Atenção: todas as ${moves.length} linha(s) estão com quantidade movida = 0.\n\nSe continuar, será assumida a quantidade pedida em cada linha.\n\nDeseja prosseguir?`)) return;
+    } else if (zeroMoves.length > 0) {
+      if (!confirm(`Atenção: ${zeroMoves.length} de ${moves.length} linha(s) estão com 0.\n\nEssas linhas serão validadas com a quantidade pedida (não geram backorder).\n\nDeseja prosseguir?`)) return;
+    }
     for (const m of moves) {
       const qd = Number(m.quantity_done);
       const finalQty = Number.isFinite(qd) && qd > 0 ? qd : Number(m.quantity);
