@@ -482,6 +482,7 @@ export default function TransferForm() {
                 <p className="text-xs text-muted-foreground">Selecione carrinha própria <em>ou</em> uma transportadora externa antes de validar a saída.</p>
               </Card>
             )}
+            {(original || backorder) && (
               <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
                 {original && (
                   <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
