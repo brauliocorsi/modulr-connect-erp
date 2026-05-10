@@ -651,6 +651,26 @@ export default function TransferForm() {
           <aside />
         </div>
       </PageBody>
+      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reagendar transferência</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">O produto será devolvido fisicamente ao Stock, mas continuará reservado para esta venda. Será notificada uma nova data ao vendedor.</p>
+            <div>
+              <Label className="text-xs">Nova data programada</Label>
+              <Input type="datetime-local" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Motivo</Label>
+              <Textarea rows={3} value={rescheduleReason} onChange={(e) => setRescheduleReason(e.target.value)} placeholder="Ex.: cliente não compareceu no cais; ausente na entrega…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRescheduleOpen(false)}>Cancelar</Button>
+            <Button onClick={submitReschedule}><CalendarClock className="h-4 w-4 mr-1" /> Reagendar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
