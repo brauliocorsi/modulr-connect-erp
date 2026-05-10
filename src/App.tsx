@@ -34,6 +34,7 @@ import InternalTransfersPage from "@/modules/inventory/pages/InternalTransfersPa
 import BackordersPage from "@/modules/inventory/pages/BackordersPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
+import SalesStockPage from "@/modules/sales/pages/SalesStockPage";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
@@ -159,6 +160,7 @@ const App = () => (
               <Route path="sales/pricelists/new" element={<PricelistForm />} />
               <Route path="sales/pricelists/:id" element={<PricelistForm />} />
               <Route path="sales/delivery-rules" element={<DeliveryRulesPage />} />
+              <Route path="sales/stock" element={<SalesStockPage />} />
 
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
