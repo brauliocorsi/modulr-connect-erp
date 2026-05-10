@@ -641,6 +641,39 @@ export type Database = {
           },
         ]
       }
+      delivery_carriers: {
+        Row: {
+          active: boolean
+          contact: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          tracking_url_template: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          tracking_url_template?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          tracking_url_template?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_region_rules: {
         Row: {
           active: boolean
@@ -2445,6 +2478,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_order: string
+          delivery_mode: string
           delivery_region_rule_id: string | null
           delivery_zip_rule_id: string | null
           delivery_zone_label: string | null
@@ -2477,6 +2511,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_mode?: string
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
@@ -2509,6 +2544,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          delivery_mode?: string
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
@@ -3021,61 +3057,79 @@ export type Database = {
         Row: {
           backorder_id: string | null
           batch_id: string | null
+          carrier_id: string | null
           created_at: string
           created_by: string | null
           destination_location_id: string | null
           done_at: string | null
           id: string
+          is_reschedule: boolean
           kind: Database["public"]["Enums"]["picking_kind"]
           name: string
           origin: string | null
           partner_id: string | null
           previous_picking_id: string | null
+          reschedule_count: number
+          reschedule_reason: string | null
           scheduled_at: string | null
           source_location_id: string | null
           state: Database["public"]["Enums"]["picking_state"]
           step_label: string | null
+          tracking_ref: string | null
           updated_at: string
+          vehicle_id: string | null
           warehouse_id: string | null
         }
         Insert: {
           backorder_id?: string | null
           batch_id?: string | null
+          carrier_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
           done_at?: string | null
           id?: string
+          is_reschedule?: boolean
           kind: Database["public"]["Enums"]["picking_kind"]
           name: string
           origin?: string | null
           partner_id?: string | null
           previous_picking_id?: string | null
+          reschedule_count?: number
+          reschedule_reason?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
           step_label?: string | null
+          tracking_ref?: string | null
           updated_at?: string
+          vehicle_id?: string | null
           warehouse_id?: string | null
         }
         Update: {
           backorder_id?: string | null
           batch_id?: string | null
+          carrier_id?: string | null
           created_at?: string
           created_by?: string | null
           destination_location_id?: string | null
           done_at?: string | null
           id?: string
+          is_reschedule?: boolean
           kind?: Database["public"]["Enums"]["picking_kind"]
           name?: string
           origin?: string | null
           partner_id?: string | null
           previous_picking_id?: string | null
+          reschedule_count?: number
+          reschedule_reason?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
           step_label?: string | null
+          tracking_ref?: string | null
           updated_at?: string
+          vehicle_id?: string | null
           warehouse_id?: string | null
         }
         Relationships: [
@@ -3098,6 +3152,13 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "stock_picking_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_carriers"
             referencedColumns: ["id"]
           },
           {
@@ -3133,6 +3194,13 @@ export type Database = {
             columns: ["source_location_id"]
             isOneToOne: false
             referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
           {
@@ -3878,6 +3946,10 @@ export type Database = {
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       replan_picking_chain: { Args: { _picking: string }; Returns: Json }
+      reschedule_picking: {
+        Args: { _new_date: string; _picking: string; _reason: string }
+        Returns: string
+      }
       reserve_for_move: { Args: { _move: string }; Returns: number }
       reserve_incoming_to_origin_so: {
         Args: { _picking: string }
