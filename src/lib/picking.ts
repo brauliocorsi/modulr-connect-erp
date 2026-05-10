@@ -3,7 +3,7 @@ export const STATE_PT: Record<string, string> = {
   draft: "Rascunho",
   waiting: "A aguardar",
   ready: "Pronto",
-  done: "Concluído",
+  done: "Realizado",
   cancelled: "Cancelado",
   confirmed: "Confirmado",
   partial: "Parcial",
