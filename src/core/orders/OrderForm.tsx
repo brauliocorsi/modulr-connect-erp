@@ -186,6 +186,13 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     await refreshServices(id!);
   };
 
+  const setDeliveryMode = async (mode: "delivery" | "pickup" | "direct") => {
+    if (isNew) return toast.error("Salve o pedido primeiro");
+    setOrder((o: any) => ({ ...o, delivery_mode: mode }));
+    const { error } = await supabase.from("sale_orders").update({ delivery_mode: mode } as any).eq("id", id!);
+    if (error) toast.error(error.message);
+  };
+
   const setDeliveryZone = async (value: string) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     // value format: "zip:<id>" | "region:<id>" | "auto"
@@ -642,6 +649,18 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
             {kind === "sale" && !isNew && (
               <Card className="p-4 space-y-3">
                 <div className="font-semibold">Serviços</div>
+                <div className="p-3 rounded border space-y-2">
+                  <Label className="text-sm font-medium">Modo de entrega</Label>
+                  <Select value={order.delivery_mode ?? "delivery"} onValueChange={(v: any) => setDeliveryMode(v)} disabled={isLocked}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="delivery">Entrega ao cliente (Stock → Cais → Em Entrega → Cliente)</SelectItem>
+                      <SelectItem value="pickup">Levantamento no cais (Stock → Cais → Cliente)</SelectItem>
+                      <SelectItem value="direct">Direto (Stock → Cliente)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Define a cadeia de transferências criada ao confirmar a venda.</p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="flex items-start gap-3 p-3 rounded border">
                     <Switch

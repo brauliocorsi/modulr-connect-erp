@@ -7,8 +7,12 @@ import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck, CalendarClock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { StateBadge } from "@/core/layout/StateBadge";
@@ -30,6 +34,23 @@ export default function TransferForm() {
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
   const [flowDocs, setFlowDocs] = useState<{ sale: any | null; purchases: any[]; pickings: any[] }>({ sale: null, purchases: [], pickings: [] });
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [carriers, setCarriers] = useState<any[]>([]);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const [v, c] = await Promise.all([
+        supabase.from("vehicles").select("id,name,license_plate").eq("active", true).order("name"),
+        supabase.from("delivery_carriers").select("id,name").eq("active", true).order("name"),
+      ]);
+      setVehicles(v.data ?? []);
+      setCarriers(c.data ?? []);
+    })();
+  }, []);
+
 
   const load = async () => {
     const { data: p } = await supabase
@@ -243,6 +264,26 @@ export default function TransferForm() {
     load();
   };
 
+  const updateAssignment = async (patch: { vehicle_id?: string | null; carrier_id?: string | null; tracking_ref?: string | null }) => {
+    const { error } = await supabase.from("stock_pickings").update(patch as any).eq("id", id!);
+    if (error) return toast.error(error.message);
+    setPicking((p: any) => ({ ...p, ...patch }));
+  };
+
+  const submitReschedule = async () => {
+    if (!rescheduleDate) return toast.error("Indique a nova data");
+    const { error } = await supabase.rpc("reschedule_picking", {
+      _picking: id!,
+      _new_date: new Date(rescheduleDate).toISOString(),
+      _reason: rescheduleReason || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Transferência reagendada — produto devolvido ao Stock");
+    setRescheduleOpen(false);
+    setRescheduleReason("");
+    load();
+  };
+
   if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
   const flowBlocked = flowDocs.pickings.some((pk) => pk.state === "waiting");
@@ -290,6 +331,11 @@ export default function TransferForm() {
             {!isLocked && (picking.previous_picking_id || picking.step_label) && (
               <Button size="sm" variant="outline" onClick={replanChain}>
                 <RefreshCw className="h-4 w-4 mr-1" /> Replanejar cadeia
+              </Button>
+            )}
+            {isOutgoing && !isLocked && picking.source_location_id && picking.source?.name !== "Stock" && (
+              <Button size="sm" variant="outline" onClick={() => { setRescheduleDate(""); setRescheduleReason(""); setRescheduleOpen(true); }}>
+                <CalendarClock className="h-4 w-4 mr-1" /> Reagendar
               </Button>
             )}
             {!isLocked && (
@@ -394,6 +440,46 @@ export default function TransferForm() {
                 {picking.batch_id && (
                   <span>Lote: <a href={`/inventory/batches/${picking.batch_id}`} className="text-primary hover:underline">abrir</a></span>
                 )}
+              </Card>
+            )}
+            {picking.reschedule_count > 0 && (
+              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900">
+                <Badge variant="secondary" className="bg-orange-200 text-orange-900">🔄 Reagendado · {picking.reschedule_count}x</Badge>
+                {picking.reschedule_reason && <span className="text-xs">Motivo: {picking.reschedule_reason}</span>}
+              </Card>
+            )}
+            {isOutgoing && !isLocked && (
+              <Card className="p-4 space-y-3">
+                <div className="font-semibold text-sm flex items-center gap-2"><Truck className="h-4 w-4" /> Atribuição de transporte</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Carrinha própria</Label>
+                    <Select value={picking.vehicle_id ?? "none"} onValueChange={(v) => updateAssignment({ vehicle_id: v === "none" ? null : v, carrier_id: v === "none" ? picking.carrier_id : null })}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhuma —</SelectItem>
+                        {vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.name} {v.license_plate ? `(${v.license_plate})` : ""}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Transportadora externa</Label>
+                    <Select value={picking.carrier_id ?? "none"} onValueChange={(v) => updateAssignment({ carrier_id: v === "none" ? null : v, vehicle_id: v === "none" ? picking.vehicle_id : null })}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhuma —</SelectItem>
+                        {carriers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {picking.carrier_id && (
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs">Código de seguimento</Label>
+                      <Input className="h-9" value={picking.tracking_ref ?? ""} onChange={(e) => setPicking((p: any) => ({ ...p, tracking_ref: e.target.value }))} onBlur={(e) => updateAssignment({ tracking_ref: e.target.value || null })} placeholder="Tracking ref…" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Selecione carrinha própria <em>ou</em> uma transportadora externa antes de validar a saída.</p>
               </Card>
             )}
             {(original || backorder) && (
@@ -565,6 +651,26 @@ export default function TransferForm() {
           <aside />
         </div>
       </PageBody>
+      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reagendar transferência</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">O produto será devolvido fisicamente ao Stock, mas continuará reservado para esta venda. Será notificada uma nova data ao vendedor.</p>
+            <div>
+              <Label className="text-xs">Nova data programada</Label>
+              <Input type="datetime-local" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Motivo</Label>
+              <Textarea rows={3} value={rescheduleReason} onChange={(e) => setRescheduleReason(e.target.value)} placeholder="Ex.: cliente não compareceu no cais; ausente na entrega…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRescheduleOpen(false)}>Cancelar</Button>
+            <Button onClick={submitReschedule}><CalendarClock className="h-4 w-4 mr-1" /> Reagendar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

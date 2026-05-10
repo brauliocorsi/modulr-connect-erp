@@ -74,6 +74,8 @@ import ProductLookup from "@/modules/barcode/ProductLookup";
 import LocationLookup from "@/modules/barcode/LocationLookup";
 import VehiclesList from "@/modules/inventory/pages/VehiclesList";
 import VehicleForm from "@/modules/inventory/pages/VehicleForm";
+import CarriersList from "@/modules/inventory/pages/CarriersList";
+import CarrierForm from "@/modules/inventory/pages/CarrierForm";
 import DeliveryShell from "@/modules/delivery/DeliveryShell";
 import DeliveryHome from "@/modules/delivery/pages/DeliveryHome";
 import DeliveryBatch from "@/modules/delivery/pages/DeliveryBatch";
@@ -203,6 +205,10 @@ const App = () => (
               <Route path="inventory/vehicles" element={<VehiclesList />} />
               <Route path="inventory/vehicles/new" element={<VehicleForm />} />
               <Route path="inventory/vehicles/:id" element={<VehicleForm />} />
+
+              <Route path="inventory/carriers" element={<CarriersList />} />
+              <Route path="inventory/carriers/new" element={<CarrierForm />} />
+              <Route path="inventory/carriers/:id" element={<CarrierForm />} />
 
               {/* Settings */}
               <Route path="settings" element={<Navigate to="/settings/apps" replace />} />
