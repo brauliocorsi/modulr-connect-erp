@@ -184,7 +184,9 @@ export default function TransferForm() {
 
   const validate = async () => {
     for (const m of moves) {
-      await supabase.from("stock_moves").update({ quantity_done: m.quantity_done ?? m.quantity, lot_id: m.lot_id ?? null }).eq("id", m.id);
+      const qd = Number(m.quantity_done);
+      const finalQty = Number.isFinite(qd) && qd > 0 ? qd : Number(m.quantity);
+      await supabase.from("stock_moves").update({ quantity_done: finalQty, lot_id: m.lot_id ?? null }).eq("id", m.id);
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
     if (error) return toast.error(error.message);
