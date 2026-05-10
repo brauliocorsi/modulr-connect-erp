@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
 import { StateBadge } from "@/core/layout/StateBadge";
-import { Layers, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp } from "lucide-react";
 import { kindLabel } from "@/lib/picking";
 import { toast } from "sonner";
 
@@ -36,7 +36,7 @@ export default function TransfersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("stock_pickings")
-        .select("id,name,kind,state,scheduled_at,created_at,step_label,batch_id,warehouse_id,partners(name)")
+        .select("id,name,kind,state,scheduled_at,created_at,step_label,batch_id,warehouse_id,origin,partners(name)")
         .order(sort.key, { ascending: sort.asc })
         .limit(500);
       if (q) query = query.ilike("name", `%${q}%`);
@@ -65,8 +65,27 @@ export default function TransfersList() {
     },
   });
 
+  const visibleRows = useMemo(() => {
+    const priority: Record<string, number> = { waiting: 0, draft: 1, ready: 2, done: 3, cancelled: 4 };
+    return [...rows].sort((a: any, b: any) => {
+      const pa = priority[a.state] ?? 9;
+      const pb = priority[b.state] ?? 9;
+      if (pa !== pb) return pa - pb;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [rows]);
+
+  const flowStats = useMemo(() => {
+    const active = rows.filter((r: any) => !["done", "cancelled"].includes(r.state));
+    const waiting = active.filter((r: any) => r.state === "waiting").length;
+    const ready = active.filter((r: any) => r.state === "ready").length;
+    const dock = active.filter((r: any) => (r.step_label ?? "").toLowerCase().includes("cais")).length;
+    const van = active.filter((r: any) => (r.step_label ?? "").toLowerCase().includes("carrinha")).length;
+    return { active: active.length, waiting, ready, dock, van };
+  }, [rows]);
+
   const toggle = (id: string) => setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleAll = () => setSelected((p) => p.size === rows.length ? new Set() : new Set(rows.map((r: any) => r.id)));
+  const toggleAll = () => setSelected((p) => p.size === visibleRows.length ? new Set() : new Set(visibleRows.map((r: any) => r.id)));
 
   const createBatch = async () => {
     if (selected.size === 0) return;
@@ -99,6 +118,48 @@ export default function TransfersList() {
         }
       />
       <PageBody>
+        <div className="grid gap-3 md:grid-cols-4 mb-3">
+          <Card className="p-3 border-l-4 border-l-warning">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Bloqueadas</div>
+                <div className="text-2xl font-semibold">{flowStats.waiting}</div>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-warning" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">A aguardar stock ou etapa anterior</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-success">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Prontas</div>
+                <div className="text-2xl font-semibold">{flowStats.ready}</div>
+              </div>
+              <PackageCheck className="h-5 w-5 text-success" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Disponíveis para validar agora</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-info">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">No cais</div>
+                <div className="text-2xl font-semibold">{flowStats.dock}</div>
+              </div>
+              <Clock className="h-5 w-5 text-info" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Separação e carga em progresso</p>
+          </Card>
+          <Card className="p-3 border-l-4 border-l-primary">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="o-section-title">Carrinha/Entrega</div>
+                <div className="text-2xl font-semibold">{flowStats.van}</div>
+              </div>
+              <Truck className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Carregamento ou entrega final</p>
+          </Card>
+        </div>
         <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -128,7 +189,7 @@ export default function TransfersList() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
-                <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === rows.length} onCheckedChange={toggleAll} /></th>
+                 <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === visibleRows.length} onCheckedChange={toggleAll} /></th>
                 <SortHead k="name" label="Referência" />
                 <SortHead k="kind" label="Tipo" />
                 <th className="text-left px-3 py-2">Etapa</th>
@@ -139,19 +200,30 @@ export default function TransfersList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r: any) => (
-                <tr key={r.id} className="border-t hover:bg-accent/30">
+                {visibleRows.map((r: any) => (
+                <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
                   <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
                   <td className="px-3 py-2"><Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">{r.name}</Link></td>
                   <td className="px-3 py-2">{kindLabel(r.kind)}</td>
-                  <td className="px-3 py-2">{r.step_label ? <Badge variant="outline">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-col gap-1">
+                      {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
+                      {r.origin && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
+                    </div>
+                  </td>
                   <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
-                  <td className="px-3 py-2"><StateBadge value={r.state} /></td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
+                      {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
+                      <StateBadge value={r.state} />
+                    </div>
+                  </td>
                   <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
                   <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {visibleRows.length === 0 && (
                 <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>
               )}
             </tbody>

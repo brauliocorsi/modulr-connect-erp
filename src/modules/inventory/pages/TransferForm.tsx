@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { StateBadge } from "@/core/layout/StateBadge";
 import { printPickingList } from "@/modules/inventory/printPickingList";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ export default function TransferForm() {
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
+  const [flowDocs, setFlowDocs] = useState<{ sale: any | null; purchases: any[]; pickings: any[] }>({ sale: null, purchases: [], pickings: [] });
 
   const load = async () => {
     const { data: p } = await supabase
@@ -46,6 +48,45 @@ export default function TransferForm() {
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
     setMoves(m ?? []);
+    let sale: any = null;
+    let purchases: any[] = [];
+    if (p?.origin) {
+      const { data: directSale } = await supabase.from("sale_orders").select("id,name,state,fulfillment_status").eq("name", p.origin).maybeSingle();
+      sale = directSale;
+      if (!sale) {
+        const { data: po } = await supabase.from("purchase_orders").select("id,name,state,origin,created_at").eq("name", p.origin).maybeSingle();
+        if (po) purchases = [po];
+        if (po?.origin) {
+          const { data: poSale } = await supabase.from("sale_orders").select("id,name,state,fulfillment_status").eq("name", po.origin).maybeSingle();
+          sale = poSale;
+        }
+      }
+      if (sale?.id) {
+        const { data: links } = await supabase.from("purchase_order_origins").select("po_id").eq("sale_order_id", sale.id);
+        const poIds = (links ?? []).map((x: any) => x.po_id);
+        const [byOrigin, byLink] = await Promise.all([
+          supabase.from("purchase_orders").select("id,name,state,origin,created_at").eq("origin", sale.name),
+          poIds.length ? supabase.from("purchase_orders").select("id,name,state,origin,created_at").in("id", poIds) : Promise.resolve({ data: [] as any[] }),
+        ]);
+        const byId = new Map<string, any>();
+        [...(purchases ?? []), ...(byOrigin.data ?? []), ...(byLink.data ?? [])].forEach((po: any) => byId.set(po.id, po));
+        purchases = Array.from(byId.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      }
+      const purchaseNames = purchases.map((po: any) => po.name);
+      const [salePickings, receiptPickings] = await Promise.all([
+        sale?.name
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").eq("origin", sale.name)
+          : Promise.resolve({ data: [] as any[] }),
+        purchaseNames.length
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").in("origin", purchaseNames)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const byPick = new Map<string, any>();
+      [...(receiptPickings.data ?? []), ...(salePickings.data ?? [])].forEach((pk: any) => byPick.set(pk.id, pk));
+      setFlowDocs({ sale, purchases, pickings: Array.from(byPick.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) });
+    } else {
+      setFlowDocs({ sale: null, purchases: [], pickings: [] });
+    }
     // load available stock at source location for each move's product
     if (p?.source_location_id && (m ?? []).length) {
       const prodIds = Array.from(new Set((m ?? []).map((x: any) => x.product_id)));
@@ -143,6 +184,8 @@ export default function TransferForm() {
 
   if (!picking) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isLocked = ["done", "cancelled"].includes(picking.state);
+  const flowBlocked = flowDocs.pickings.some((pk) => pk.state === "waiting");
+  const flowReady = flowDocs.pickings.some((pk) => pk.state === "ready");
 
   // Compute availability summary for outgoing pickings
   const isOutgoing = picking.kind === "outgoing";
@@ -205,6 +248,78 @@ export default function TransferForm() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
+            {(flowDocs.sale || flowDocs.purchases.length > 0 || flowDocs.pickings.length > 1) && (
+              <Card className="p-4 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="o-section-title">Fluxo da venda ao inventário</div>
+                    <div className="font-semibold">
+                      {flowDocs.sale ? (
+                        <a href={`/sales/orders/${flowDocs.sale.id}`} className="text-primary hover:underline">{flowDocs.sale.name}</a>
+                      ) : picking.origin ? picking.origin : "Documento sem venda ligada"}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {flowBlocked && <span className="inline-flex items-center gap-1 text-xs font-medium text-warning"><AlertTriangle className="h-3 w-3" /> Há etapa bloqueada</span>}
+                    {flowReady && <span className="inline-flex items-center gap-1 text-xs font-medium text-success"><PackageCheck className="h-3 w-3" /> Há etapa pronta</span>}
+                  </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-md border p-3 bg-muted/20">
+                    <div className="flex items-center gap-2 text-sm font-medium"><ShoppingCart className="h-4 w-4 text-primary" /> Venda</div>
+                    <div className="mt-2 text-sm">
+                      {flowDocs.sale ? (
+                        <>
+                          <a href={`/sales/orders/${flowDocs.sale.id}`} className="font-medium text-primary hover:underline">{flowDocs.sale.name}</a>
+                          <div className="text-xs text-muted-foreground">Estado: {stateLabel(flowDocs.sale.state)} · Preparação: {stateLabel(flowDocs.sale.fulfillment_status)}</div>
+                        </>
+                      ) : <span className="text-muted-foreground">Sem venda ligada</span>}
+                    </div>
+                  </div>
+                  <div className="rounded-md border p-3 bg-muted/20">
+                    <div className="flex items-center gap-2 text-sm font-medium"><ShoppingBag className="h-4 w-4 text-primary" /> Compra / Recebimento</div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      {flowDocs.purchases.length ? flowDocs.purchases.map((po) => (
+                        <div key={po.id} className="flex items-center justify-between gap-2">
+                          <a href={`/purchase/orders/${po.id}`} className="font-medium text-primary hover:underline">{po.name}</a>
+                          <span className="text-xs text-muted-foreground">{stateLabel(po.state)}</span>
+                        </div>
+                      )) : <span className="text-muted-foreground">Sem compra pendente</span>}
+                    </div>
+                  </div>
+                  <div className="rounded-md border p-3 bg-muted/20">
+                    <div className="flex items-center gap-2 text-sm font-medium"><Truck className="h-4 w-4 text-primary" /> Armazém / Entrega</div>
+                    <div className="mt-2 text-sm">
+                      <div className="font-medium">{flowDocs.pickings.length} etapa(s)</div>
+                      <div className="text-xs text-muted-foreground">Atual: {picking.step_label ?? kindLabel(picking.kind)}</div>
+                    </div>
+                  </div>
+                </div>
+                {flowDocs.pickings.length > 0 && (
+                  <div className="overflow-x-auto pb-1">
+                    <div className="flex min-w-max items-stretch gap-2">
+                      {flowDocs.pickings.map((pk, index) => (
+                        <div key={pk.id} className="flex items-center gap-2">
+                          <a
+                            href={`/inventory/transfers/${pk.id}`}
+                            className={`block w-56 rounded-md border p-3 transition-colors ${pk.id === picking.id ? "border-primary bg-accent" : pk.state === "ready" ? "border-success bg-success/10" : pk.state === "waiting" ? "border-warning bg-warning/10" : "bg-card hover:bg-muted/40"}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-medium text-muted-foreground">Passo {index + 1}</span>
+                              <StateBadge value={pk.state} />
+                            </div>
+                            <div className="mt-1 font-medium text-sm">{pk.step_label ?? kindLabel(pk.kind)}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{pk.source?.name ?? "?"} → {pk.dest?.name ?? "?"}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{pk.name}</div>
+                          </a>
+                          {index < flowDocs.pickings.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
             {(picking.step_label || picking.batch_id || picking.previous_picking_id) && (
               <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-sky-50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-900">
                 {picking.step_label && (
