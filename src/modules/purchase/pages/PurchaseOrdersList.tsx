@@ -73,6 +73,16 @@ export const PurchaseOrdersList = () => {
 
   const orderIds = useMemo(() => orders.map((o: any) => o.id), [orders]);
 
+  const sortedOrders = useMemo(() => {
+    const isPending = (s: string) => s === "draft" || s === "rfq_sent";
+    return [...orders].sort((a: any, b: any) => {
+      const ap = isPending(a.state) ? 0 : 1;
+      const bp = isPending(b.state) ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [orders]);
+
   const { data: origins = [] } = useQuery({
     enabled: orderIds.length > 0,
     queryKey: ["po-origins", orderIds],
@@ -198,6 +208,17 @@ export const PurchaseOrdersList = () => {
           />
         </Card>
 
+        {(() => {
+          const pendingCount = sortedOrders.filter((o: any) => o.state === "draft" || o.state === "rfq_sent").length;
+          const fromSaleCount = sortedOrders.filter((o: any) => (originsByPo[o.id]?.length ?? 0) > 0 && (o.state === "draft" || o.state === "rfq_sent")).length;
+          return pendingCount > 0 ? (
+            <div className="mb-3 p-3 rounded-lg border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 text-sm flex items-center gap-3">
+              <Badge className="bg-amber-500 hover:bg-amber-600">{pendingCount} pendente(s)</Badge>
+              {fromSaleCount > 0 && <span className="text-muted-foreground">{fromSaleCount} originada(s) por venda — exibidas no topo</span>}
+            </div>
+          ) : null;
+        })()}
+
         {orders.length === 0 ? (
           <EmptyState title="Sem pedidos" description="Nenhum pedido de compra encontrado." />
         ) : (
@@ -217,22 +238,34 @@ export const PurchaseOrdersList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((o: any) => {
-                  const isOpen = expanded.has(o.id);
-                  const sos = originsByPo[o.id] ?? [];
-                  return (
-                    <Fragment key={o.id}>
-                      <TableRow className="cursor-pointer hover:bg-muted/50">
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selected.has(o.id)}
-                            onCheckedChange={() => toggleSelect(o.id)}
-                          />
-                        </TableCell>
-                        <TableCell onClick={() => toggleExpand(o.id)}>
-                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="font-medium">{o.name}</TableCell>
+                {sortedOrders.map((o: any) => {
+                   const isOpen = expanded.has(o.id);
+                   const sos = originsByPo[o.id] ?? [];
+                   const isPending = o.state === "draft" || o.state === "rfq_sent";
+                   const fromSale = sos.length > 0;
+                   return (
+                     <Fragment key={o.id}>
+                       <TableRow className={"cursor-pointer hover:bg-muted/50 " + (isPending ? "bg-amber-50/50 dark:bg-amber-950/20 border-l-4 border-l-amber-500" : "")}>
+                         <TableCell onClick={(e) => e.stopPropagation()}>
+                           <Checkbox
+                             checked={selected.has(o.id)}
+                             onCheckedChange={() => toggleSelect(o.id)}
+                           />
+                         </TableCell>
+                         <TableCell onClick={() => toggleExpand(o.id)}>
+                           {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                         </TableCell>
+                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="font-medium">
+                           <div className="flex items-center gap-2">
+                             {o.name}
+                             {isPending && fromSale && (
+                               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-xs">Pendente · Venda</Badge>
+                             )}
+                             {isPending && !fromSale && (
+                               <Badge variant="secondary" className="text-xs">Pendente</Badge>
+                             )}
+                           </div>
+                         </TableCell>
                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>{o.partners?.name ?? "—"}</TableCell>
                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>
                           <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
