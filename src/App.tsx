@@ -74,6 +74,8 @@ import ProductLookup from "@/modules/barcode/ProductLookup";
 import LocationLookup from "@/modules/barcode/LocationLookup";
 import VehiclesList from "@/modules/inventory/pages/VehiclesList";
 import VehicleForm from "@/modules/inventory/pages/VehicleForm";
+import CarriersList from "@/modules/inventory/pages/CarriersList";
+import CarrierForm from "@/modules/inventory/pages/CarrierForm";
 import DeliveryShell from "@/modules/delivery/DeliveryShell";
 import DeliveryHome from "@/modules/delivery/pages/DeliveryHome";
 import DeliveryBatch from "@/modules/delivery/pages/DeliveryBatch";
