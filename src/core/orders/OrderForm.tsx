@@ -186,6 +186,13 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     await refreshServices(id!);
   };
 
+  const setDeliveryMode = async (mode: "delivery" | "pickup" | "direct") => {
+    if (isNew) return toast.error("Salve o pedido primeiro");
+    setOrder((o: any) => ({ ...o, delivery_mode: mode }));
+    const { error } = await supabase.from("sale_orders").update({ delivery_mode: mode } as any).eq("id", id!);
+    if (error) toast.error(error.message);
+  };
+
   const setDeliveryZone = async (value: string) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     // value format: "zip:<id>" | "region:<id>" | "auto"
