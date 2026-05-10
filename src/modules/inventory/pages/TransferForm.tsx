@@ -25,6 +25,7 @@ export default function TransferForm() {
   const [picking, setPicking] = useState<any>(null);
   const [moves, setMoves] = useState<any[]>([]);
   const [availByProduct, setAvailByProduct] = useState<Record<string, number>>({});
+  const [incomingByProduct, setIncomingByProduct] = useState<Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
@@ -102,6 +103,30 @@ export default function TransferForm() {
       setAvailByProduct(map);
     } else {
       setAvailByProduct({});
+    }
+    // load incoming pipeline for outgoing pickings (PO recebimentos a chegar ao source location)
+    if (p?.kind === "outgoing" && p?.source_location_id && (m ?? []).length) {
+      const prodIds = Array.from(new Set((m ?? []).map((x: any) => x.product_id)));
+      const { data: inMoves } = await supabase
+        .from("stock_moves")
+        .select("product_id, quantity, quantity_done, state, picking_id, stock_pickings!inner(id,name,state,kind,destination_location_id)")
+        .in("product_id", prodIds)
+        .in("state", ["draft", "waiting", "ready"])
+        .eq("stock_pickings.kind", "incoming")
+        .eq("stock_pickings.destination_location_id", p.source_location_id);
+      const map: Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }> = {};
+      (inMoves ?? []).forEach((mv: any) => {
+        const remaining = Math.max(0, Number(mv.quantity || 0) - Number(mv.quantity_done || 0));
+        if (remaining <= 0) return;
+        const e = (map[mv.product_id] ||= { qty: 0, pickings: [] });
+        e.qty += remaining;
+        if (!e.pickings.find((x) => x.id === mv.stock_pickings.id)) {
+          e.pickings.push({ id: mv.stock_pickings.id, name: mv.stock_pickings.name, state: mv.stock_pickings.state });
+        }
+      });
+      setIncomingByProduct(map);
+    } else {
+      setIncomingByProduct({});
     }
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
     if (trackedIds.length) {
@@ -377,6 +402,13 @@ export default function TransferForm() {
                   </div>
                 </div>
                 <Progress value={availSummary.pct} className="h-2" />
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"><PackageCheck className="h-3 w-3" /> Reservado</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200"><PackageCheck className="h-3 w-3" /> Disponível</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"><AlertTriangle className="h-3 w-3" /> Parcial</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200"><Truck className="h-3 w-3" /> Em receção</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200"><AlertTriangle className="h-3 w-3" /> Pendente</span>
+                </div>
               </Card>
             )}
 
@@ -410,18 +442,34 @@ export default function TransferForm() {
                       {isOutgoing && (
                         <td className="px-3 py-2">
                           {reserved ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
-                              <PackageCheck className="h-3 w-3" /> Reservado
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" title="Stock reservado para esta linha">
+                              <PackageCheck className="h-3 w-3" /> Reservado · {need}
                             </span>
                           ) : avail >= need ? (
-                            <span className="text-emerald-700 dark:text-emerald-300 text-xs">{avail} disponível</span>
-                          ) : avail > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 text-xs font-medium">
-                              <AlertTriangle className="h-3 w-3" /> {avail}/{need} (faltam {shortage})
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200" title="Há stock livre suficiente — clique em Verificar disponibilidade para reservar">
+                              <PackageCheck className="h-3 w-3" /> Disponível · {avail}
                             </span>
+                          ) : avail > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                                <AlertTriangle className="h-3 w-3" /> Parcial · {avail}/{need}
+                              </span>
+                              {(incomingByProduct[m.product_id]?.qty ?? 0) > 0 && (
+                                <span className="text-[11px] text-info">Em receção: {incomingByProduct[m.product_id].qty}</span>
+                              )}
+                            </div>
+                          ) : (incomingByProduct[m.product_id]?.qty ?? 0) > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200" title="Aguarda recebimento de compra">
+                                <Truck className="h-3 w-3" /> Em receção · {incomingByProduct[m.product_id].qty}
+                              </span>
+                              {incomingByProduct[m.product_id].pickings.slice(0, 2).map((pk) => (
+                                <a key={pk.id} href={`/inventory/transfers/${pk.id}`} className="text-[11px] text-primary hover:underline">{pk.name} ({stateLabel(pk.state)})</a>
+                              ))}
+                            </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 text-xs font-medium">
-                              <AlertTriangle className="h-3 w-3" /> Sem stock
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" title="Sem stock e sem compra em curso">
+                              <AlertTriangle className="h-3 w-3" /> Pendente · 0/{need}
                             </span>
                           )}
                         </td>
