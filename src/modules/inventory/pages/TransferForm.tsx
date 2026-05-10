@@ -148,7 +148,18 @@ export default function TransferForm() {
     }
   };
   useEffect(() => {
-    if (id) load();
+    if (!id) return;
+    load();
+    let timer: any;
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(load, 300); };
+    const channel = supabase
+      .channel(`picking-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_pickings" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_moves" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sale_orders" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "purchase_orders" }, debounced)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
   }, [id]);
 
   const setMoveDone = (idx: number, v: number) => {

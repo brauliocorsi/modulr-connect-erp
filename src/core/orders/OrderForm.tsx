@@ -144,12 +144,23 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   useEffect(() => {
     if (isNew) return;
-    (async () => {
+    const reload = async () => {
       const { data: o } = await supabase.from(ordersTable as any).select("*").eq("id", id!).maybeSingle();
       if (o) setOrder(o);
       const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", id!).order("sequence");
       setLines((ls ?? []) as unknown as Line[]);
-    })();
+    };
+    reload();
+    let timer: any;
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(reload, 300); };
+    const channel = supabase
+      .channel(`order-${ordersTable}-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: ordersTable, filter: `id=eq.${id}` }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: linesTable, filter: `order_id=eq.${id}` }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_pickings" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_moves" }, debounced)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
   }, [id, isNew, ordersTable, linesTable]);
 
   const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
