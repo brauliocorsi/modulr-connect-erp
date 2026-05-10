@@ -208,6 +208,17 @@ export const PurchaseOrdersList = () => {
           />
         </Card>
 
+        {(() => {
+          const pendingCount = sortedOrders.filter((o: any) => o.state === "draft" || o.state === "rfq_sent").length;
+          const fromSaleCount = sortedOrders.filter((o: any) => (originsByPo[o.id]?.length ?? 0) > 0 && (o.state === "draft" || o.state === "rfq_sent")).length;
+          return pendingCount > 0 ? (
+            <div className="mb-3 p-3 rounded-lg border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 text-sm flex items-center gap-3">
+              <Badge className="bg-amber-500 hover:bg-amber-600">{pendingCount} pendente(s)</Badge>
+              {fromSaleCount > 0 && <span className="text-muted-foreground">{fromSaleCount} originada(s) por venda — exibidas no topo</span>}
+            </div>
+          ) : null;
+        })()}
+
         {orders.length === 0 ? (
           <EmptyState title="Sem pedidos" description="Nenhum pedido de compra encontrado." />
         ) : (
