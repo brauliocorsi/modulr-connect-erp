@@ -333,6 +333,11 @@ export default function TransferForm() {
                 <RefreshCw className="h-4 w-4 mr-1" /> Replanejar cadeia
               </Button>
             )}
+            {isOutgoing && !isLocked && picking.source_location_id && picking.source?.name !== "Stock" && (
+              <Button size="sm" variant="outline" onClick={() => { setRescheduleDate(""); setRescheduleReason(""); setRescheduleOpen(true); }}>
+                <CalendarClock className="h-4 w-4 mr-1" /> Reagendar
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
