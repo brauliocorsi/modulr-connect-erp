@@ -104,6 +104,30 @@ export default function TransferForm() {
     } else {
       setAvailByProduct({});
     }
+    // load incoming pipeline for outgoing pickings (PO recebimentos a chegar ao source location)
+    if (p?.kind === "outgoing" && p?.source_location_id && (m ?? []).length) {
+      const prodIds = Array.from(new Set((m ?? []).map((x: any) => x.product_id)));
+      const { data: inMoves } = await supabase
+        .from("stock_moves")
+        .select("product_id, quantity, quantity_done, state, picking_id, stock_pickings!inner(id,name,state,kind,destination_location_id)")
+        .in("product_id", prodIds)
+        .in("state", ["draft", "waiting", "ready"])
+        .eq("stock_pickings.kind", "incoming")
+        .eq("stock_pickings.destination_location_id", p.source_location_id);
+      const map: Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }> = {};
+      (inMoves ?? []).forEach((mv: any) => {
+        const remaining = Math.max(0, Number(mv.quantity || 0) - Number(mv.quantity_done || 0));
+        if (remaining <= 0) return;
+        const e = (map[mv.product_id] ||= { qty: 0, pickings: [] });
+        e.qty += remaining;
+        if (!e.pickings.find((x) => x.id === mv.stock_pickings.id)) {
+          e.pickings.push({ id: mv.stock_pickings.id, name: mv.stock_pickings.name, state: mv.stock_pickings.state });
+        }
+      });
+      setIncomingByProduct(map);
+    } else {
+      setIncomingByProduct({});
+    }
     const trackedIds = (m ?? []).filter((x: any) => x.products?.tracking && x.products.tracking !== "none").map((x: any) => x.product_id);
     if (trackedIds.length) {
       const { data: lots } = await supabase.from("stock_lots").select("id,name,product_id").in("product_id", trackedIds);
