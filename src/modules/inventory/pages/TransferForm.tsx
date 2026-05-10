@@ -442,7 +442,46 @@ export default function TransferForm() {
                 )}
               </Card>
             )}
-            {(original || backorder) && (
+            {picking.reschedule_count > 0 && (
+              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900">
+                <Badge variant="secondary" className="bg-orange-200 text-orange-900">🔄 Reagendado · {picking.reschedule_count}x</Badge>
+                {picking.reschedule_reason && <span className="text-xs">Motivo: {picking.reschedule_reason}</span>}
+              </Card>
+            )}
+            {isOutgoing && !isLocked && (
+              <Card className="p-4 space-y-3">
+                <div className="font-semibold text-sm flex items-center gap-2"><Truck className="h-4 w-4" /> Atribuição de transporte</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Carrinha própria</Label>
+                    <Select value={picking.vehicle_id ?? "none"} onValueChange={(v) => updateAssignment({ vehicle_id: v === "none" ? null : v, carrier_id: v === "none" ? picking.carrier_id : null })}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhuma —</SelectItem>
+                        {vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.name} {v.license_plate ? `(${v.license_plate})` : ""}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Transportadora externa</Label>
+                    <Select value={picking.carrier_id ?? "none"} onValueChange={(v) => updateAssignment({ carrier_id: v === "none" ? null : v, vehicle_id: v === "none" ? picking.vehicle_id : null })}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhuma —</SelectItem>
+                        {carriers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {picking.carrier_id && (
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs">Código de seguimento</Label>
+                      <Input className="h-9" value={picking.tracking_ref ?? ""} onChange={(e) => setPicking((p: any) => ({ ...p, tracking_ref: e.target.value }))} onBlur={(e) => updateAssignment({ tracking_ref: e.target.value || null })} placeholder="Tracking ref…" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Selecione carrinha própria <em>ou</em> uma transportadora externa antes de validar a saída.</p>
+              </Card>
+            )}
               <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
                 {original && (
                   <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
