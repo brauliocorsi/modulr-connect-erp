@@ -3867,6 +3867,10 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      reallocate_freed_stock: {
+        Args: { _exclude_so?: string; _product: string; _warehouse: string }
+        Returns: Json
+      }
       recalc_bill_state: { Args: { _bill: string }; Returns: undefined }
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
@@ -3890,6 +3894,9 @@ export type Database = {
         }
         Returns: number
       }
+      so_has_active_backorder: { Args: { _so: string }; Returns: boolean }
+      so_is_scheduled: { Args: { _so: string }; Returns: boolean }
+      so_is_settled: { Args: { _so: string }; Returns: boolean }
       supplier_location_id: { Args: never; Returns: string }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
       validate_batch: { Args: { _batch: string }; Returns: Json }
