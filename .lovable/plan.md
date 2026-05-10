@@ -1,91 +1,120 @@
-# Fluxo de Status da Venda (Fase 1)
 
-## Novos estados de `fulfillment_status`
+# Fluxo Stock → Cais → Carrinha → Cliente
 
-Substituir/expandir o conjunto atual (`pending, backordered, purchased, partial, ready, delivered, cancelled`) por:
+## Objetivo
 
-| Status | Quando aplica |
+Modelar o fluxo de saída completo, suportando:
+- Entrega normal em **3 passos** (Stock → Cais → Carrinha → Cliente)
+- **Levantamento** pelo cliente (apenas Cais → Cliente, salta Carrinha)
+- **Reagendamento** quando o cliente falta no cais ou na entrega (produto volta para Stock mas continua reservado)
+- **Cancelamento** que liberta o stock e realoca a outro cliente em espera (data mais antiga primeiro), notificando os utilizadores
+- Atribuição de **carrinha própria ou transportadora terceirizada** com visibilidade clara em cada passo
+
+---
+
+## 1. Modo de entrega ao confirmar a venda
+
+Adicionar campo `delivery_mode` à `sale_orders` com 3 opções:
+
+| Modo | Cadeia gerada |
 |---|---|
-| `pending` | Venda confirmada, sem PO ainda e sem stock |
-| `ordered` (**Encomendado**) | Existe PO em rascunho ligada à venda |
-| `purchased` (**Encomenda efetuada**) | PO confirmada — produto a caminho |
-| `partial_available` (**Disponível parcial**) | Parte do stock reservado, parte ainda em receção |
-| `available` (**Disponível p/ agendar**) | Tudo reservado e pronto, sem agendamento |
-| `scheduled` (**Agendado**) | Picking outgoing tem `scheduled_at` futuro definido pelo utilizador OU está num batch com data |
-| `delivered_partial` (**Entregue parcial**) | Picking outgoing concluído com backorder gerada |
-| `delivered` (**Entregue**) | Todos os pickings outgoing `done`, mas sem prestação de contas no caixa |
-| `settled` (**Entregue & prestado**) | Entregue + cash_movements/payment do motorista reconciliados na sessão de caixa |
-| `cancelled` | Venda cancelada |
+| `delivery` (default) | Stock → Cais → Carrinha → Cliente (3 passos) |
+| `pickup` (levantamento) | Stock → Cais → Cliente (2 passos, sem Carrinha) |
+| `direct` | Stock → Cliente (1 passo, mantém comportamento atual) |
 
-## Regras
+Na tela da venda, o vendedor escolhe o modo; o `confirm_sale_order` decide a cadeia em vez de depender só de `warehouses.delivery_steps`.
 
-### 1. Confirmação de PO → "Encomenda efetuada"
-- Em `confirm_purchase_order`: para cada SO ligada via `purchase_order_origins` ou `origin`, chamar `recalc_so_fulfillment`.
-- `recalc_so_fulfillment` passa a distinguir:
-  - PO draft → `ordered`
-  - PO confirmada (não recebida) → `purchased`
+---
 
-### 2. Recebimento da PO → "Disponível"/"Disponível parcial"
-- Já feito por `reserve_incoming_to_origin_so`. Ajustar `recalc_so_fulfillment`:
-  - Tudo reservado → `available`
-  - Parte reservada + parte ainda incoming → `partial_available`
+## 2. Reagendamento (cliente não veio buscar / não estava em casa)
 
-### 3. Agendamento da entrega → "Agendado"
-- Quando o utilizador define `scheduled_at` no picking outgoing OU adiciona o picking a um `stock_picking_batch` com `delivery_date`, marcar `scheduled` (se ainda `available`).
-- Trigger em `stock_pickings` (update de `scheduled_at` ou `batch_id`) chama `recalc_so_fulfillment`.
+Novo botão **"Reagendar"** disponível no picking quando o produto já saiu do Stock mas a entrega/levantamento falhou (estado `ready`, localização atual = Cais ou Carrinha).
 
-### 4. Entrega → "Entregue" / "Entregue parcial"
-- `validate_picking` já gera backorder. Em `recalc_so_fulfillment`:
-  - Pickings done com backorder ativa → `delivered_partial`
-  - Todos pickings done sem backorder → `delivered`
+Comportamento:
+1. Cria um picking de retorno automático: localização atual → Stock, marcado com `is_reschedule=true`.
+2. Validação imediata desse retorno (move o stock fisicamente de volta).
+3. **Mantém** os movimentos da venda original com `state='waiting'` e a quantidade **continua reservada** em Stock (não fica disponível para outros clientes).
+4. Pede ao utilizador uma nova `scheduled_at` e uma `reschedule_reason` (motivo).
+5. Picking ganha flag visual **"Reagendado"** + contador `reschedule_count`.
+6. Notifica vendedor + motorista da nova data.
 
-### 5. Prestação de contas → "Entregue & prestado" (`settled`)
-- Após `driver_deliver_picking` E quando a `cash_session` do motorista é fechada (ou o `cash_movement` ligado ao payment está reconciliado), promover para `settled`.
-- Trigger em `cash_sessions` (update state→closed) e em `cash_movements` (insert) recalcula SOs envolvidas.
+A reserva permanece porque o pedido continua válido — só "voltou para o armazém à espera de novo agendamento".
 
-### 6. Cancelamento com realocação automática
-- Novo `cancel_sale_order` (e cancelamento de picking outgoing):
-  1. Liberta reservas (`release_move_reservation`).
-  2. Procura outras SOs `confirmed` em estado `pending`/`backordered`/`purchased`/`partial_available` que precisem do mesmo produto, ordenadas por `created_at`.
-  3. Para cada move pendente dessas SOs, chama `reserve_for_move`.
-  4. Se reserva > 0, envia `notify_user` ao salesperson da SO beneficiada: *"Reserva libertada da venda X foi atribuída à sua venda Y"*.
-  5. Recalcula fulfillment das SOs afetadas.
+---
+
+## 3. Cancelamento → realocação por antiguidade
+
+Já existe `cancel_picking` + `reallocate_freed_stock`. A acrescentar:
+- Garantir que a realocação **prioriza vendas com `date_order` mais antiga** que estão à espera de stock.
+- Após realocar, **notificar o vendedor da SO destinatária** ("Stock disponibilizado para a venda SO/00045 a partir do cancelamento de SO/00012").
+- Notificar também o vendedor da SO cancelada com o resumo do que foi libertado.
+
+---
+
+## 4. Carrinha / Transportadora
+
+### Localização "Em Entrega"
+Renomear a zona `Zona Carrinha` para **"Em Entrega"** (uma única localização interna, conforme escolhido).
+
+### Tabela nova: `delivery_carriers`
+Transportadoras terceirizadas (Chronopost, CTT, etc.) com nome, contacto, ref. de tracking opcional.
+
+### Campos novos em `stock_pickings` (apenas na etapa "Em Entrega" e "Cliente")
+- `vehicle_id` — carrinha própria (FK `vehicles`)
+- `carrier_id` — transportadora externa (FK `delivery_carriers`)
+- `tracking_ref` — código de seguimento da transportadora
+- exatamente um de `vehicle_id`/`carrier_id` deve estar preenchido antes de validar a saída do Cais
+
+### UX
+No passo **"Pack (Cais → Em Entrega)"** o utilizador escolhe:
+- ☐ Carrinha própria → seleciona viatura + motorista
+- ☐ Transportadora externa → seleciona transportadora + introduz tracking
+
+Essa info propaga-se para o picking seguinte (Em Entrega → Cliente) e fica visível em todas as listas (`TransfersList`, `ShipmentsPage`, detalhe da venda).
+
+---
+
+## 5. Visibilidade do fluxo
+
+### `TransferForm` (detalhe do picking)
+Adicionar **stepper** no topo a mostrar a cadeia completa da venda:
+```
+[✓] Pick (Stock→Cais)  →  [●] Pack (Cais→Carrinha)  →  [ ] Ship (Carrinha→Cliente)
+```
+Cada passo mostra: estado, data, responsável, viatura/transportadora se aplicável.
+
+### Etiquetas de estado já existentes
+Reutilizar `stateLabel` ("Pronto"/"Realizado") e adicionar badges:
+- 🔄 **Reagendado** (quando `reschedule_count > 0`)
+- 🚚 nome da carrinha **ou** 📦 nome da transportadora
+- 🛒 **Levantamento** (quando `delivery_mode='pickup'`)
+
+---
 
 ## Detalhes técnicos
 
-### Backend (migration única)
-1. **Função `recalc_so_fulfillment`** — reescrever lógica:
-   ```
-   se cancelled → cancelled
-   se draft/sent → pending
-   se todos outgoing done:
-       se backorder ativa → delivered_partial
-       else se cash settled → settled
-       else → delivered
-   se algum outgoing tem batch_id ou scheduled_at futuro definido manualmente → scheduled
-   se qty_reserved >= qty_total → available
-   se qty_reserved>0 e qty_incoming>0 → partial_available
-   se qty_incoming>0 e PO confirmada → purchased
-   se qty_incoming>0 e PO draft → ordered
-   senão → pending
-   ```
-2. **Helper `so_is_settled(_so)`** — true quando todos os `customer_payments` ligados aos pickings estão em `cash_movements` cuja `cash_session` está `closed`.
-3. **Trigger novo `tg_picking_schedule_change`** em `stock_pickings` (UPDATE de `scheduled_at`, `batch_id`) → `recalc_so_fulfillment`.
-4. **Trigger novo em `cash_sessions`** (state → closed) → recalcula todas as SOs com pickings done cujo motorista pertence a esta sessão.
-5. **Função nova `reallocate_freed_stock(_product, _warehouse)`** — chamada por `cancel_sale_order` e por `cancel_picking` outgoing; faz a realocação + notificação descrita em §6.
-6. **Atualizar `confirm_purchase_order`** para fazer `recalc_so_fulfillment` em todas as SOs ligadas (não só na criação).
+### Migrações
+1. `ALTER TABLE sale_orders ADD COLUMN delivery_mode text DEFAULT 'delivery' CHECK (delivery_mode IN ('delivery','pickup','direct'))`
+2. `ALTER TABLE stock_pickings ADD COLUMN vehicle_id uuid REFERENCES vehicles, ADD COLUMN carrier_id uuid REFERENCES delivery_carriers, ADD COLUMN tracking_ref text, ADD COLUMN reschedule_count int DEFAULT 0, ADD COLUMN reschedule_reason text, ADD COLUMN is_reschedule boolean DEFAULT false`
+3. `CREATE TABLE delivery_carriers (id, name, contact, tracking_url_template, active, ...)` + RLS
+4. `UPDATE stock_locations SET name='Em Entrega' WHERE name='Zona Carrinha'` (mantém id para não quebrar dados)
+5. Reescrever `create_outgoing_chain(_order)` para receber `delivery_mode` da SO em vez de `warehouses.delivery_steps`.
+6. Nova função `reschedule_picking(_picking, _new_date, _reason)`:
+   - Cria picking de retorno (loc atual → Stock), valida-o.
+   - Repõe o picking original em `waiting`, mantém `reserved_quantity`.
+   - Incrementa `reschedule_count`, guarda `reschedule_reason`, atualiza `scheduled_at`.
+7. Ajustar `reallocate_freed_stock` para `ORDER BY sale_orders.date_order ASC` e notificar os vendedores envolvidos.
+8. Ajustar `tg_chain_advance_on_done` para não avançar se `is_reschedule=true`.
 
 ### Frontend
-- `src/core/orders/FulfillmentBadge.tsx`: adicionar entradas para `ordered`, `purchased`, `partial_available`, `available`, `scheduled`, `delivered_partial`, `settled` com cores distintas (slate→amber→blue→sky→emerald→green→teal). Manter `partial`, `ready`, `delivered`, `backordered` como aliases retrocompatíveis durante transição.
-- `src/modules/sales/pages/SalesPages.tsx`: atualizar opções do filtro `fulfillment_status` da `SalesOrdersList`.
-- `src/modules/inventory/pages/ShipmentsPage.tsx` e `TransfersList.tsx`: usar nova badge.
-- Detalhe da venda: card "Estado de fulfillment" com timeline horizontal dos estados (Encomendado → Encomenda efetuada → Disponível → Agendado → Entregue → Prestado), highlight do estado atual e razão (ex.: "PO00001 confirmada, ETA 2026-05-20").
+- `src/modules/sales/...` — selector de `delivery_mode` no formulário da venda.
+- `src/modules/inventory/pages/TransferForm.tsx` — stepper, botão **Reagendar** com diálogo (data + motivo), seletor de viatura/transportadora no passo Pack.
+- `src/modules/inventory/pages/TransfersList.tsx` + `ShipmentsPage.tsx` — colunas viatura/transportadora + badge reagendado.
+- Nova página simples `src/modules/inventory/pages/CarriersList.tsx` para CRUD de transportadoras.
+- Notificações já usam `notify_user`, basta acrescentar as novas chamadas no SQL.
 
-## Fora desta fase (a tratar depois)
-- Reagendamentos, falha de entrega, entrega parcial paga parcialmente, expiração de reservas — conforme indicado pelo utilizador.
-
-## Ficheiros a alterar
-- Migration nova: `recalc_so_fulfillment`, triggers de scheduling/cash, `reallocate_freed_stock`, atualização de `cancel_sale_order` / `cancel_picking` / `confirm_purchase_order`.
-- `src/core/orders/FulfillmentBadge.tsx`
-- `src/modules/sales/pages/SalesPages.tsx` (opções de filtro)
-- `src/core/orders/OrderForm.tsx` ou painel da venda: timeline visual do fulfillment.
+### Comportamento esperado
+- Confirmar venda em `pickup` → cria 2 pickings: Stock→Cais e Cais→Cliente. O segundo só fica `ready` quando o cliente vier (validado manualmente no balcão).
+- Confirmar venda em `delivery` → 3 pickings encadeados; o passo "Em Entrega" exige viatura ou transportadora.
+- "Reagendar" no Cais → produto volta a Stock reservado, picking marcado 🔄.
+- Cancelar venda → stock libertado é oferecido ao SO mais antigo em espera, notificando vendedor.
