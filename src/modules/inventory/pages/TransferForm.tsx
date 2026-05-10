@@ -48,7 +48,10 @@ export default function TransferForm() {
       .from("stock_moves")
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
       .eq("picking_id", id!);
-    setMoves(m ?? []);
+    setMoves((m ?? []).map((mv: any) => {
+      const doneQty = Number(mv.quantity_done);
+      return Number.isFinite(doneQty) && doneQty > 0 ? mv : { ...mv, quantity_done: Number(mv.quantity || 0) };
+    }));
     let sale: any = null;
     let purchases: any[] = [];
     if (p?.origin) {
