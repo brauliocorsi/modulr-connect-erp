@@ -84,7 +84,18 @@ export default function TransferForm() {
       ]);
       const byPick = new Map<string, any>();
       [...(receiptPickings.data ?? []), ...(salePickings.data ?? [])].forEach((pk: any) => byPick.set(pk.id, pk));
-      setFlowDocs({ sale, purchases, pickings: Array.from(byPick.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) });
+      // Logical flow order: Fornecedor → Stock (incoming) → transferências internas → Stock → Cliente (outgoing)
+      const kindRank: Record<string, number> = { incoming: 0, internal: 1, manufacturing: 2, outgoing: 3 };
+      setFlowDocs({
+        sale,
+        purchases,
+        pickings: Array.from(byPick.values()).sort((a, b) => {
+          const ra = kindRank[a.kind] ?? 9;
+          const rb = kindRank[b.kind] ?? 9;
+          if (ra !== rb) return ra - rb;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        }),
+      });
     } else {
       setFlowDocs({ sale: null, purchases: [], pickings: [] });
     }
