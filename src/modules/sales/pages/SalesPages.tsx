@@ -1,6 +1,6 @@
 import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
-import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
+import { FulfillmentBadge, FULFILLMENT_OPTIONS } from "@/core/orders/FulfillmentBadge";
 import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 import { StateBadge } from "@/core/layout/StateBadge";
