@@ -505,7 +505,7 @@ export default function TransferForm() {
                           step={isInt ? 1 : 0.01}
                           min={0}
                           max={m.quantity}
-                          value={m.quantity_done ?? m.quantity}
+                          value={Number(m.quantity_done) > 0 ? m.quantity_done : m.quantity}
                           disabled={isLocked}
                           onChange={(e) => {
                             const v = Number(e.target.value);
