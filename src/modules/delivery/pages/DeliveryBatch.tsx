@@ -17,7 +17,7 @@ export default function DeliveryBatch() {
     setBatch(b);
     const { data: ps } = await supabase
       .from("stock_pickings")
-      .select("id, name, state, origin, partners(name, address, city)")
+      .select("id, name, state, origin, partners(name, street, city)")
       .eq("batch_id", id!)
       .eq("kind", "outgoing")
       .order("name");
@@ -53,7 +53,7 @@ export default function DeliveryBatch() {
                   {p.partners?.name ?? "Cliente"}
                 </div>
                 <div className="text-xs text-slate-400 truncate flex items-center gap-1 mt-1">
-                  <MapPin className="h-3 w-3" /> {p.partners?.address ?? "—"} {p.partners?.city ? `· ${p.partners.city}` : ""}
+                  <MapPin className="h-3 w-3" /> {p.partners?.street ?? "—"} {p.partners?.city ? `· ${p.partners.city}` : ""}
                 </div>
                 <div className="text-xs text-slate-500 mt-1">{p.name} · {p.origin ?? ""}</div>
               </div>

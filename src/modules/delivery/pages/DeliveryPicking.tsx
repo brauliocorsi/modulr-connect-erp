@@ -24,12 +24,12 @@ export default function DeliveryPicking() {
   const load = async () => {
     const { data: p } = await supabase
       .from("stock_pickings")
-      .select("id, name, state, origin, partners(name, address, city, phone)")
+      .select("id, name, state, origin, partners(name, street, city, phone)")
       .eq("id", id!).maybeSingle();
     setPk(p);
     const { data: ms } = await supabase
       .from("stock_moves")
-      .select("id, quantity, quantity_done, products(id, name, barcode, default_code)")
+      .select("id, quantity, quantity_done, products(id, name, barcode, internal_ref)")
       .eq("picking_id", id!);
     setMoves(ms ?? []);
     if (p?.origin) {
@@ -47,7 +47,7 @@ export default function DeliveryPicking() {
   useEffect(() => { if (id) load(); }, [id]);
 
   const handleScan = (code: string) => {
-    const m = moves.find((x: any) => x.products?.barcode === code || x.products?.default_code === code);
+    const m = moves.find((x: any) => x.products?.barcode === code || x.products?.internal_ref === code);
     if (!m) {
       toast.error("Produto não pertence a esta entrega", { description: code });
       try { navigator.vibrate?.(400); } catch {}
@@ -91,7 +91,7 @@ export default function DeliveryPicking() {
 
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
         <div className="font-semibold">{pk.partners?.name}</div>
-        <div className="text-xs text-slate-400">{pk.partners?.address} · {pk.partners?.city}</div>
+        <div className="text-xs text-slate-400">{pk.partners?.street} · {pk.partners?.city}</div>
         {pk.partners?.phone && <div className="text-xs text-slate-400">📞 {pk.partners.phone}</div>}
         <div className="text-xs text-slate-500 mt-1">{pk.name} · {pk.origin}</div>
       </div>
@@ -114,7 +114,7 @@ export default function DeliveryPicking() {
               <div key={m.id} className={`p-3 flex items-center justify-between ${ok ? "bg-emerald-950/30" : ""}`}>
                 <div className="min-w-0">
                   <div className="font-medium truncate">{m.products?.name}</div>
-                  <div className="text-xs text-slate-500">{m.products?.barcode ?? m.products?.default_code ?? "—"}</div>
+                  <div className="text-xs text-slate-500">{m.products?.barcode ?? m.products?.internal_ref ?? "—"}</div>
                 </div>
                 <div className={`text-sm font-mono ${ok ? "text-emerald-400" : "text-slate-300"}`}>
                   {done} / {Number(m.quantity)}
