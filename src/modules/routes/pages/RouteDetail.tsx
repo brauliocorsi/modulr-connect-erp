@@ -84,8 +84,8 @@ export default function RouteDetail() {
     qc.invalidateQueries({ queryKey: ["routes-schedule"] });
   };
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const remove = async () => {
-    if (!confirm("Apagar esta rota? As entregas atribuídas ficarão sem rota.")) return;
     const { error } = await supabase.from("delivery_routes").delete().eq("id", id!);
     if (error) return toast.error(error.message);
     toast.success("Rota apagada");
