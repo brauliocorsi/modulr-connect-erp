@@ -202,6 +202,22 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
   const serviceLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") !== "product"), [lines]);
+
+  // For purchase orders: resolve names for source sale orders referenced by lines
+  const sourceSoIds = useMemo(
+    () => Array.from(new Set(lines.map((l) => l.source_sale_order_id).filter(Boolean) as string[])),
+    [lines]
+  );
+  const { data: sourceSoMap } = useQuery({
+    enabled: kind === "purchase" && sourceSoIds.length > 0,
+    queryKey: ["po-line-source-sos", sourceSoIds.sort().join(",")],
+    queryFn: async () => {
+      const { data } = await supabase.from("sale_orders").select("id,name").in("id", sourceSoIds);
+      const m: Record<string, string> = {};
+      (data ?? []).forEach((s: any) => { m[s.id] = s.name; });
+      return m;
+    },
+  });
   const totals = useMemo(() => {
     const untaxed = lines.reduce((s, l) => s + Number(l.subtotal || 0), 0);
     return { untaxed, tax: 0, total: untaxed };
