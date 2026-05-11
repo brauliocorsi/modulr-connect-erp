@@ -1,116 +1,81 @@
+## Objetivo
 
-# Agendamento de entregas por Rotas (app dedicada "Rotas")
+Transformar a atribuição de rota num **fluxo por botão** (em vez de cartão sempre visível), disponível tanto na **transferência (inventário)** como na **venda (sales)**, e mostrar de forma clara o **estado da entrega** (`Não agendada` / `Agendada`) com a rota associada nos dois lados.
 
-## Como funciona hoje (resumo)
-- Vendas confirmadas geram cadeia de transferências (Pick → Carga → Entrega).
-- A última etapa é colocada num **Lote** (`stock_picking_batches`) com data + motorista + carrinha; o app de entregas mostra esse lote.
-- Já existem `delivery_zip_rules`, `partners.zip`, `sale_orders.commitment_date / include_assembly / include_delivery`. O produto tem `assembly_fee` mas **não tem tempo de montagem**.
+## Mudanças propostas
 
-## O que muda
-Introduzimos **Zonas** (faixas de CP com motorista/carrinha/capacidade padrão) e **Rotas** (instância diária de uma zona). As entregas confirmadas com cliente passam a ser sugeridas para a rota da zona/dia. Os vendedores e o app de entregas usam o **novo módulo Rotas** como hub central.
+### 1. RouteAssignmentCard → modal/dialog reutilizável
+Refatorar `src/modules/inventory/components/RouteAssignmentCard.tsx` em dois componentes:
+- `ScheduleDeliveryDialog` — modal com a UI atual (date picker, sugestões por CP, lista de rotas abertas, capacidade/avisos, confirmar/remover/trocar).
+- `DeliveryStatusBadge` — badge compacto que mostra:
+  - **Não agendada** (cinzento) quando `picking.route_id` é nulo
+  - **Agendada** (verde) com nome da rota + data + cor da zona quando há rota
+  - Botão "Agendar" / "Trocar rota" que abre o dialog
+  - Botão "Remover" quando já agendada
 
-Lotes existentes ficam preservados em modo leitura (legado).
+O dialog continua a usar `suggest_route` e `schedule_picking_to_route` e a permitir trocar a data (reagendar).
 
----
+### 2. TransferForm (inventário)
+Em `src/modules/inventory/pages/TransferForm.tsx` (linha 561-563):
+- Substituir o `<RouteAssignmentCard …>` sempre visível por uma linha compacta:
+  - `DeliveryStatusBadge` + botão `Agendar entrega` / `Trocar rota`
+- Manter `onChanged={load}` para refrescar.
 
-## 1. Modelo de dados
+### 3. OrderForm (vendas)
+Em `src/core/orders/OrderForm.tsx` (bloco `kind === "sale" && shipment`, linha 503-515):
+- Substituir o cartão verde estático por um cartão com:
+  - `DeliveryStatusBadge` (mesmo componente)
+  - Botão **Agendar entrega** quando `shipment.route_id` é nulo → abre o `ScheduleDeliveryDialog` passando o picking
+  - Botão **Trocar rota** quando já agendada
+  - Link "Abrir transferência" mantido
+- Atualizar o `select` da query `sale-shipment` para incluir `route_id` e ao agendar, juntar o nome/data da rota (via join `delivery_routes(route_date, delivery_zones(name,color))`).
 
-**`delivery_zones`**
-- `name`, `zip_from`, `zip_to`, `color`, `active`
-- `default_driver_id`, `default_vehicle_id`
-- `max_deliveries_per_day` (int), `max_assembly_minutes_per_day` (int)
-- `weekdays` (array 0–6)
+### 4. Estado de entrega derivado
+Sem alterações de schema — o estado é calculado a partir de `stock_pickings.route_id`:
+- `route_id IS NULL` → **Não agendada**
+- `route_id IS NOT NULL` e `state != 'done'` → **Agendada** (mostrar rota + data)
+- `state = 'done'` → **Entregue** (mantém comportamento atual)
 
-**`delivery_routes`** — 1 por zona/dia
-- `zone_id`, `route_date`, `driver_id`, `vehicle_id`
-- `max_deliveries`, `max_assembly_minutes` (copiados, editáveis)
-- `state` (`planned` | `in_progress` | `done` | `cancelled`)
-- `notes`
-- Único `(zone_id, route_date)`
+### 5. Listas (opcional, mesmo PR)
+Adicionar coluna/badge "Entrega" em:
+- `TransfersList.tsx` (já lista pickings) — mostra `DeliveryStatusBadge` em modo read-only.
+- Lista de vendas (em `SalesPages.tsx`) — idem, derivado do shipment associado.
 
-**`stock_pickings`**: + `route_id` (FK nullable). `batch_id` mantém-se (legado).
+## Detalhes técnicos
 
-**`products`**: + `assembly_minutes` (numeric, default 0) — minutos por unidade.
+- O dialog usa `Dialog` de `@/components/ui/dialog` com `DialogContent` largo (`max-w-2xl`).
+- `DeliveryStatusBadge` aceita `picking: { route_id, scheduled_at }` + `route?: { route_date, delivery_zones }` opcional para evitar nova query quando o pai já tem a info.
+- Reagendamento: o dialog já permite escolher outra data e outra rota → chama `schedule_picking_to_route` (substitui `route_id` e `scheduled_at`).
+- Realtime: `OrderForm` já tem subscription a `stock_pickings`, então o badge atualiza sozinho ao agendar pelo inventário, e vice-versa.
+- Sem alterações de migração/RLS.
 
-## 2. Lógica (Postgres)
-
-- `suggest_route(_so uuid, _from_date date)` — devolve as próximas 15 datas/rotas candidatas para a zona do CP do cliente, com `remaining_deliveries`, `remaining_minutes`, flag `would_exceed`.
-- Minutos da venda = `Σ assembly_minutes × quantity` (apenas linhas de produto, e só se `include_assembly = true`).
-- Aplica-se apenas a vendas com `include_delivery = true`.
-- `schedule_picking_to_route(_picking, _route)` — define `route_id`, `scheduled_at`, `commitment_date`. Se exceder limite → não bloqueia, mas devolve `warning` + 3 próximas rotas com folga (opção "Sugerir próxima data").
-- `validate_route(_route)` — valida todas as entregas da rota (reusa `validate_picking`).
-- `generate_routes(_horizon_days int default 15)` — para cada zona ativa cria as `delivery_routes` em falta nos próximos 15 dias (respeitando `weekdays`).
-
-## 3. Novo módulo "Rotas" (item de topo no menu principal)
-
-Ícone Truck, entre "Inventário" e "Entregas". Aceita `inventory_user`, `sales_user`, `delivery_driver` em leitura; gestão para `inventory_manager`/`system_admin`.
-
+```text
+[Venda SO00010]                          [Transferência OUT/00007]
+ ┌───────────────────────────┐            ┌───────────────────────────┐
+ │ Entrega: ● Não agendada   │            │ Entrega: ● Não agendada   │
+ │ [ Agendar entrega ]       │            │ [ Agendar entrega ]       │
+ └─────────────┬─────────────┘            └─────────────┬─────────────┘
+               │  abre Dialog                           │
+               ▼                                        ▼
+   ┌────────────────────────────────┐      (mesmo Dialog reutilizado)
+   │ Data: [11/05/2026]             │
+   │ Rotas sugeridas (por CP)       │
+   │ ─ Norte 11/05 · 3/10 · 90 min  │
+   │ ─ Norte 13/05 · 1/10 · 200 min │
+   │ [Confirmar]                    │
+   └────────────────────────────────┘
+               │ confirma
+               ▼
+ ┌───────────────────────────┐            ┌───────────────────────────┐
+ │ Entrega: ● Agendada       │            │ Entrega: ● Agendada       │
+ │ Rota Norte · 11/05        │            │ Rota Norte · 11/05        │
+ │ [ Trocar rota ] [Remover] │            │ [ Trocar rota ] [Remover] │
+ └───────────────────────────┘            └───────────────────────────┘
 ```
-/routes
-├── /routes                    Cronograma (default)
-├── /routes/list               Lista de rotas
-├── /routes/:id                Detalhe da rota
-├── /routes/zones              Zonas (CRUD)
-└── /routes/zones/:id          Editor de zona
-```
 
-**Cronograma (`/routes`)** — vista calendário/Kanban
-- Eixo X = próximos 15 dias; eixo Y = zonas. Cada cartão mostra a rota com barras de capacidade (X/Y entregas, Z/W min) coloridas por zona.
-- Clique → abre detalhe.
-- Botão "Gerar próximos 15 dias" + filtro por motorista/zona.
-- Pesquisa por cliente / nº venda → realça rotas onde aparece.
+## Ficheiros tocados
 
-**Detalhe da rota (`/routes/:id`)**
-- Cabeçalho: zona, data, motorista, carrinha, estado, capacidade.
-- Lista de entregas (drag-to-reorder), mini-mapa opcional (fora deste plano).
-- Vendedores podem **adicionar venda** a esta rota (selector com filtro por CP).
-- Botões "Iniciar", "Validar todas", "Cancelar".
-
-**Zonas (`/routes/zones`)** — CRUD: nome, CP de/até, dias da semana, motorista/carrinha padrão, capacidades.
-
-## 4. Inventário — vínculo na lista de transferências
-
-A lista existente de Transferências ganha:
-- Nova **coluna "Rota"** mostrando `zona · data` (clicável → `/routes/:id`).
-- Filtro lateral "Rota" (select).
-- Na ficha da transferência (`TransferForm`) bloco "Rota atribuída" com botões **Atribuir / Reagendar** (abre `RouteScheduler`).
-
-## 5. Vendas
-
-**Formulário da Venda** (secção entrega, quando `include_delivery` on e CP preenchido)
-- Mostra a zona detetada e date picker "Data desejada".
-- Ao escolher → chama `suggest_route` e mostra cartão da rota (motorista, carrinha, capacidade restante).
-- Aviso amarelo se exceder + 3 próximas datas livres com botão "Usar esta".
-- Confirmar → `schedule_picking_to_route`.
-
-**Vendedores no app Rotas**: leitura completa do cronograma para apoiar a marcação ao telefone com o cliente.
-
-## 6. Cadastro de Produto
-Campo "Minutos de montagem por unidade" no separador principal (perto de `assembly_fee`).
-
-## 7. App de Entregas (`/delivery`)
-- "Os meus lotes" passa a "**As minhas rotas**": lê `delivery_routes` onde `driver_id = auth.uid()` e `route_date >= hoje`.
-- Detalhe da rota reusa a UI atual (pickings, scan, cobrança).
-- Sub-secção "Lotes antigos" enquanto existirem lotes legados pendentes.
-
-## 8. Geração automática (15 dias)
-- Botão manual em `/routes` (chama `generate_routes`).
-- Edge function `routes-generator` invocada por cron diário (pg_cron + pg_net) às 01:00.
-
-## 9. Migração de dados
-- Cada `stock_picking_batches` em `draft`/`in_progress` com `delivery_date` futura → cria `delivery_route` correspondente (zona inferida pelo CP do primeiro cliente; `NULL` se não bater) e move `route_id` dos pickings.
-- Lotes `done`/`cancelled` ficam intactos no separador legado.
-
-## 10. RLS
-- `delivery_zones`, `delivery_routes`: leitura para `inventory_user`, `sales_user`, `delivery_driver` (este só vê onde é `driver_id`); escrita para `inventory_manager`/`system_admin`.
-- `stock_pickings.route_id`: regras existentes.
-
-## 11. Entregáveis técnicos
-- Migração SQL (tabelas + colunas + índices + RLS + funções).
-- Edge function `routes-generator` + cron.
-- Novo módulo `src/modules/routes/`: `RoutesShell`, `RoutesSchedule` (calendário), `RoutesList`, `RouteForm`, `ZonesList`, `ZoneForm`, componente partilhado `RouteScheduler` (modal usado por Vendas e Inventário).
-- Atualizar: `AppShell` (item "Rotas" no menu), `core/modules/registry.ts`, `OrderForm` (bloco agendamento), `ProductForm` (minutos), `TransfersList` + `TransferForm` (coluna/bloco rota), `DeliveryHome`/`DeliveryBatch` (passar a rotas).
-
-## Fora deste plano
-- Otimização do trajeto em mapa.
-- Notificação automática ao cliente (SMS/email) da data agendada.
+- `src/modules/inventory/components/RouteAssignmentCard.tsx` → renomear/repartir em `ScheduleDeliveryDialog.tsx` + `DeliveryStatusBadge.tsx`
+- `src/modules/inventory/pages/TransferForm.tsx` → usar badge + dialog
+- `src/core/orders/OrderForm.tsx` → substituir cartão estático
+- (opcional) `src/modules/inventory/pages/TransfersList.tsx`, `src/modules/sales/pages/SalesPages.tsx` → badge na listagem
