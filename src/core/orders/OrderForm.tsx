@@ -141,6 +141,24 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       return m;
     },
   });
+  const { data: variantStockMap } = useQuery({
+    queryKey: ["variants-stock-agg"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stock_quants")
+        .select("variant_id,quantity,reserved_quantity,stock_locations!inner(type)")
+        .eq("stock_locations.type", "internal")
+        .not("variant_id", "is", null);
+      const m: Record<string, { available: number; on_hand: number }> = {};
+      (data ?? []).forEach((r: any) => {
+        const k = r.variant_id as string;
+        if (!m[k]) m[k] = { available: 0, on_hand: 0 };
+        m[k].on_hand += Number(r.quantity || 0);
+        m[k].available += Number(r.quantity || 0) - Number(r.reserved_quantity || 0);
+      });
+      return m;
+    },
+  });
 
   useEffect(() => {
     if (isNew) return;
