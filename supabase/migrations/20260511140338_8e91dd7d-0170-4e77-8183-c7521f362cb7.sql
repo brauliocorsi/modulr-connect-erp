@@ -1,0 +1,2 @@
+ALTER TABLE public.products ALTER COLUMN auto_purchase SET DEFAULT true;
+UPDATE public.products SET auto_purchase = true WHERE auto_purchase = false AND can_be_purchased = true AND can_be_manufactured = false;

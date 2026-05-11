@@ -27,6 +27,7 @@ export function VariantsTab({ productId }: { productId: string }) {
   const [attrs, setAttrs] = useState<any[]>([]);
   const [allAttrs, setAllAttrs] = useState<any[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [stockByVariant, setStockByVariant] = useState<Record<string, { qty: number; reserved: number }>>({});
   const [filters, setFilters] = useState<Record<string, string>>({}); // attribute_id -> value_id | "all"
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPrice, setBulkPrice] = useState<string>("");
@@ -75,6 +76,19 @@ export function VariantsTab({ productId }: { productId: string }) {
       .select("id, sku, barcode, price_extra, active, weight, image_url, product_variant_values(value_id, product_attribute_values(name))")
       .eq("product_id", productId);
     setVariants((vs as any) ?? []);
+
+    const { data: qs } = await supabase
+      .from("stock_quants")
+      .select("variant_id, quantity, reserved_quantity")
+      .eq("product_id", productId);
+    const agg: Record<string, { qty: number; reserved: number }> = {};
+    (qs ?? []).forEach((q: any) => {
+      const vid = q.variant_id || "_no_variant";
+      agg[vid] ??= { qty: 0, reserved: 0 };
+      agg[vid].qty += Number(q.quantity || 0);
+      agg[vid].reserved += Number(q.reserved_quantity || 0);
+    });
+    setStockByVariant(agg);
   };
 
   useEffect(() => { load(); }, [productId]);
@@ -422,13 +436,14 @@ export function VariantsTab({ productId }: { productId: string }) {
                 <th className="text-left p-2 w-32">Cód. barras</th>
                 <th className="text-left p-2 w-28">Preço extra</th>
                 <th className="text-left p-2 w-24">Peso</th>
+                <th className="text-right p-2 w-28">Stock</th>
                 <th className="text-left p-2 w-16">Ativo</th>
                 <th className="w-10" />
               </tr>
             </thead>
             <tbody>
               {filteredVariants.length === 0 ? (
-                <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Sem variantes</td></tr>
+                <tr><td colSpan={10} className="text-center text-muted-foreground py-6">Sem variantes</td></tr>
               ) : filteredVariants.map((v) => (
                 <tr key={v.id} className={`border-t ${!v.active ? "opacity-50" : ""}`}>
                   <td className="p-2 text-center"><Checkbox checked={selected.has(v.id)} onCheckedChange={() => toggleOne(v.id)} /></td>
@@ -477,6 +492,18 @@ export function VariantsTab({ productId }: { productId: string }) {
                   </td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.01" defaultValue={v.price_extra} key={`px-${v.id}-${v.price_extra}`} onBlur={(e) => Number(e.target.value) !== Number(v.price_extra) && updateVariant(v, { price_extra: Number(e.target.value) })} /></td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.001" defaultValue={v.weight ?? 0} key={`w-${v.id}-${v.weight}`} onBlur={(e) => Number(e.target.value) !== Number(v.weight ?? 0) && updateVariant(v, { weight: Number(e.target.value) })} /></td>
+                  <td className="p-2 text-right">
+                    {(() => {
+                      const s = stockByVariant[v.id] || { qty: 0, reserved: 0 };
+                      const avail = s.qty - s.reserved;
+                      return (
+                        <div className="flex flex-col items-end leading-tight">
+                          <span className={`font-semibold ${avail > 0 ? "text-emerald-600" : avail < 0 ? "text-rose-600" : "text-muted-foreground"}`}>{avail}</span>
+                          <span className="text-[10px] text-muted-foreground">em mão {s.qty}{s.reserved ? ` · res ${s.reserved}` : ""}</span>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="p-2 text-center"><input type="checkbox" checked={v.active} onChange={(e) => updateVariant(v, { active: e.target.checked })} /></td>
                   <td><Button variant="ghost" size="icon" onClick={() => removeVariant(v.id)}><Trash2 className="h-4 w-4" /></Button></td>
                 </tr>
