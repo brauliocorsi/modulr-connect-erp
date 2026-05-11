@@ -370,8 +370,21 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
     });
   }, [dirScopedMoves, variantFilter]);
 
-  const renderVariantBadges = (vid: string | null) => {
-    if (!vid) return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
+  const hasVariants = (variants ?? []).length > 0;
+
+  const renderVariantBadges = (vid: string | null, inferred?: boolean) => {
+    if (!vid) {
+      if (hasVariants) {
+        return (
+          <div className="inline-flex items-center gap-1 text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded px-1.5 py-0.5">
+            <AlertCircle className="h-3 w-3" />
+            <span className="font-medium">Variante não definida</span>
+            <span className="text-muted-foreground">— {(variants ?? []).length} disponíveis</span>
+          </div>
+        );
+      }
+      return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
+    }
     const v = variantById[vid];
     if (!v) return <span className="text-muted-foreground">{vid.slice(0, 6)}</span>;
     const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
@@ -380,10 +393,13 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
         <div className="w-6 h-6 border rounded bg-muted/30 overflow-hidden flex-shrink-0">
           {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
         </div>
-        <div className="flex flex-wrap gap-0.5">
+        <div className="flex flex-wrap gap-0.5 items-center">
           {attrs.length > 0 ? attrs.map((a, i) => (
             <Badge key={i} variant="secondary" className="text-[9px] px-1 py-0 h-4">{a}</Badge>
           )) : v.sku ? <span className="font-mono text-[10px]">{v.sku}</span> : <span className="text-muted-foreground">—</span>}
+          {inferred && (
+            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-500 text-amber-700 dark:text-amber-400" title="Variante inferida a partir da linha do pedido de origem">inferido</Badge>
+          )}
         </div>
       </div>
     );
