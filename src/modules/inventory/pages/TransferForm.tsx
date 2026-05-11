@@ -69,7 +69,7 @@ export default function TransferForm() {
     setBackorder(bo);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
+      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
     setMoves((m ?? []).map((mv: any) => {
       const doneQty = Number(mv.quantity_done);
