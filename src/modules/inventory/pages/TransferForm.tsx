@@ -340,6 +340,11 @@ export default function TransferForm() {
                 <CalendarClock className="h-4 w-4 mr-1" /> Reagendar
               </Button>
             )}
+            {isOutgoing && !isLocked && moves.some((m) => Number(m.reserved_quantity || 0) > 0) && (
+              <Button size="sm" variant="outline" onClick={() => setTransferOpen(true)}>
+                <Send className="h-4 w-4 mr-1" /> Transferir reserva
+              </Button>
+            )}
             {!isLocked && (
               <Button size="sm" onClick={validate}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
