@@ -611,6 +611,18 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                                     </PopoverContent>
                                   </Popover>
 
+                                  {kind === "purchase" && l.source_sale_order_id && (
+                                    <a
+                                      href={`/sales/orders/${l.source_sale_order_id}`}
+                                      onClick={(e) => { e.preventDefault(); nav(`/sales/orders/${l.source_sale_order_id}`); }}
+                                      className="inline-flex"
+                                    >
+                                      <Badge variant="outline" className="text-[10px] hover:bg-accent cursor-pointer">
+                                        Venda: {sourceSoMap?.[l.source_sale_order_id] ?? "…"}
+                                      </Badge>
+                                    </a>
+                                  )}
+
                                   {variants.length > 0 && (
                                     <div className="space-y-1">
                                       <Select
