@@ -3817,6 +3817,10 @@ export type Database = {
         Returns: undefined
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
+      assert_lines_have_variant: {
+        Args: { _order: string; _table: string }
+        Returns: undefined
+      }
       assert_so_has_lines: { Args: { _order: string }; Returns: undefined }
       calc_delivery_price: {
         Args: { _order: string }
