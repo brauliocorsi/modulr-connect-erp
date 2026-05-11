@@ -30,6 +30,10 @@ export default function TransfersList() {
     queryKey: ["batches-min"],
     queryFn: async () => (await supabase.from("stock_picking_batches").select("id,name").order("created_at", { ascending: false }).limit(100)).data ?? [],
   });
+  const { data: carriers } = useQuery({
+    queryKey: ["carriers-min"],
+    queryFn: async () => (await supabase.from("delivery_carriers").select("id,name").eq("active", true).order("name")).data ?? [],
+  });
 
   const { data: rows = [] } = useQuery({
     queryKey: ["transfers-list", q, filters, sort],
