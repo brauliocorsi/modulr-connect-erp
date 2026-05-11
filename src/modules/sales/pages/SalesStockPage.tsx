@@ -292,6 +292,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const [variantFilter, setVariantFilter] = useState<string>("all");
   const [variantView, setVariantView] = useState<"grid" | "matrix">("grid");
   const [dirFilter, setDirFilter] = useState<"all" | "incoming" | "outgoing">("all");
+  const [onlyWithStock, setOnlyWithStock] = useState(false);
 
   const lowStock = s.available <= 0;
 
@@ -495,21 +496,35 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                 <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
                   <Package className="h-3.5 w-3.5" /> Stock por variante ({variants.length})
                 </div>
-                <div className="flex items-center gap-1 border rounded-md p-0.5 bg-background">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setVariantView("grid")}
-                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                  ><LayoutGrid className="h-3 w-3" /> Grade</button>
-                  <button
-                    onClick={() => setVariantView("matrix")}
-                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "matrix" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                  ><ListIcon className="h-3 w-3" /> Matriz</button>
+                    onClick={() => setOnlyWithStock((v) => !v)}
+                    className={`text-[11px] px-2 py-1 rounded border transition-colors ${onlyWithStock ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                  >
+                    {onlyWithStock ? "Mostrar todas" : "Só com stock"}
+                  </button>
+                  <div className="flex items-center gap-1 border rounded-md p-0.5 bg-background">
+                    <button
+                      onClick={() => setVariantView("grid")}
+                      className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    ><LayoutGrid className="h-3 w-3" /> Grade</button>
+                    <button
+                      onClick={() => setVariantView("matrix")}
+                      className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "matrix" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    ><ListIcon className="h-3 w-3" /> Matriz</button>
+                  </div>
                 </div>
               </div>
 
-              {variantView === "grid" ? (
-                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {variants.map((v) => {
+              {(() => {
+                const displayedVariants = onlyWithStock
+                  ? variants.filter((v) => (variantTotals[v.id]?.qty ?? 0) > 0 || (variantTotals[v.id]?.reserved ?? 0) > 0)
+                  : variants;
+                return variantView === "grid" ? (
+                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {displayedVariants.length === 0 ? (
+                      <div className="col-span-full text-xs text-muted-foreground italic py-4 text-center">Nenhuma variante com stock.</div>
+                    ) : displayedVariants.map((v) => {
                     const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
                     const cells = matrix[v.id] || {};
                     const isActive = variantFilter === v.id;
@@ -599,7 +614,9 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                       </tr>
                     </thead>
                     <tbody>
-                      {variants.map((v) => {
+                      {displayedVariants.length === 0 ? (
+                        <tr><td colSpan={3 + visibleWarehouses.length + 2} className="p-4 text-center text-muted-foreground italic text-xs">Nenhuma variante com stock.</td></tr>
+                      ) : displayedVariants.map((v) => {
                         const cells = matrix[v.id] || {};
                         const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
                         const isActive = variantFilter === v.id;
@@ -653,7 +670,8 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                     </tbody>
                   </table>
                 </div>
-              )}
+              );
+              })()}
             </div>
           )}
 
