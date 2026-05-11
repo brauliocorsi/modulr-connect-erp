@@ -102,10 +102,10 @@ export default function TransferForm() {
       const purchaseNames = purchases.map((po: any) => po.name);
       const [salePickings, receiptPickings] = await Promise.all([
         sale?.name
-          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").eq("origin", sale.name)
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,previous_picking_id,source:source_location_id(name),dest:destination_location_id(name)").eq("origin", sale.name)
           : Promise.resolve({ data: [] as any[] }),
         purchaseNames.length
-          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").in("origin", purchaseNames)
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,previous_picking_id,source:source_location_id(name),dest:destination_location_id(name)").in("origin", purchaseNames)
           : Promise.resolve({ data: [] as any[] }),
       ]);
       const byPick = new Map<string, any>();
