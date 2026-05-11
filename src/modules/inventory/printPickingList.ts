@@ -122,6 +122,7 @@ export async function printPickingList(pickingId: string) {
   .barcode { width: 200px; }
   .barcode svg { width: 100%; height: 50px; }
   .prod-name { font-weight: 600; }
+  .variant { font-size: 11px; font-weight: 600; color: #222; margin-top: 2px; }
   .muted { color: #666; font-size: 11px; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #eef; font-size: 11px; font-weight: 600; }
   .footer { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
