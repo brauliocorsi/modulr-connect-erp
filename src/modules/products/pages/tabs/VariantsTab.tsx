@@ -436,13 +436,14 @@ export function VariantsTab({ productId }: { productId: string }) {
                 <th className="text-left p-2 w-32">Cód. barras</th>
                 <th className="text-left p-2 w-28">Preço extra</th>
                 <th className="text-left p-2 w-24">Peso</th>
+                <th className="text-right p-2 w-28">Stock</th>
                 <th className="text-left p-2 w-16">Ativo</th>
                 <th className="w-10" />
               </tr>
             </thead>
             <tbody>
               {filteredVariants.length === 0 ? (
-                <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Sem variantes</td></tr>
+                <tr><td colSpan={10} className="text-center text-muted-foreground py-6">Sem variantes</td></tr>
               ) : filteredVariants.map((v) => (
                 <tr key={v.id} className={`border-t ${!v.active ? "opacity-50" : ""}`}>
                   <td className="p-2 text-center"><Checkbox checked={selected.has(v.id)} onCheckedChange={() => toggleOne(v.id)} /></td>
