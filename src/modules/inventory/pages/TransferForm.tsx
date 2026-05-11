@@ -40,6 +40,7 @@ export default function TransferForm() {
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleReason, setRescheduleReason] = useState("");
+  const [transferOpen, setTransferOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
