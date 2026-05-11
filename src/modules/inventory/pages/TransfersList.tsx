@@ -46,7 +46,7 @@ export default function TransfersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("stock_pickings")
-        .select("id,name,kind,state,scheduled_at,created_at,step_label,batch_id,warehouse_id,origin,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
+        .select("id,name,kind,state,scheduled_at,created_at,done_at,step_label,batch_id,warehouse_id,origin,source_location_id,destination_location_id,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
         .order(sort.key, { ascending: sort.asc })
         .limit(500);
       if (q) query = query.ilike("name", `%${q}%`);
