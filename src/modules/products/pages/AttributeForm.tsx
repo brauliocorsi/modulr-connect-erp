@@ -102,7 +102,40 @@ export default function AttributeForm() {
                 ) : values.map((v, i) => (
                   <tr key={v.id} className="border-t">
                     <td className="px-2 py-1"><Input className="h-8" value={v.name} onChange={(e) => setValue(i, { name: e.target.value })} /></td>
-                    <td className="px-2 py-1"><Input className="h-8" placeholder="#000" value={v.color ?? ""} onChange={(e) => setValue(i, { color: e.target.value })} /></td>
+                    <td className="px-2 py-1">
+                      {attr.display_type === "color" ? (
+                        <div className="flex items-center gap-2">
+                          <label
+                            className="relative h-8 w-8 rounded-md border cursor-pointer overflow-hidden flex-shrink-0"
+                            style={{ background: v.color || "transparent" }}
+                            title="Escolher cor"
+                          >
+                            {!v.color && (
+                              <span className="absolute inset-0 flex items-center justify-center text-[10px] text-muted-foreground">+</span>
+                            )}
+                            <input
+                              type="color"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              value={v.color || "#000000"}
+                              onChange={(e) => setValue(i, { color: e.target.value })}
+                            />
+                          </label>
+                          <Input
+                            className="h-8 font-mono"
+                            placeholder="#000000"
+                            value={v.color ?? ""}
+                            onChange={(e) => setValue(i, { color: e.target.value })}
+                          />
+                          {v.color && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setValue(i, { color: "" })} title="Limpar">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">— (defina exibição como "Cor" para usar)</span>
+                      )}
+                    </td>
                     <td><Button variant="ghost" size="icon" onClick={() => removeValue(i)}><Trash2 className="h-4 w-4" /></Button></td>
                   </tr>
                 ))}
