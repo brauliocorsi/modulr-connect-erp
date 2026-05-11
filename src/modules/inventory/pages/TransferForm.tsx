@@ -259,11 +259,30 @@ export default function TransferForm() {
   const validate = async () => {
     // Internal chain step (Stock→Cais, Cais→Em Entrega): skip quantity prompt and validate full quantity automatically.
     const chainNames = new Set(["Cais de Carga", "Em Entrega"]);
+    const srcName = picking?.source?.name ?? "";
+    const dstName = picking?.dest?.name ?? "";
     const isInternalChainStep =
-      picking?.kind === "outgoing" &&
-      (chainNames.has(picking?.source?.name ?? "") || chainNames.has(picking?.dest?.name ?? ""));
+      picking?.kind === "outgoing" && (chainNames.has(srcName) || chainNames.has(dstName));
+    const isFinalToCustomer =
+      picking?.kind === "outgoing" && chainNames.has(srcName) && !chainNames.has(dstName);
 
-    if (isInternalChainStep) {
+    // Block delivery to customer when there is an outstanding balance on the sale order.
+    if (isFinalToCustomer && picking?.origin) {
+      const { data: so } = await supabase.from("sale_orders").select("id, amount_total").eq("name", picking.origin).maybeSingle();
+      if (so?.id) {
+        const { data: pays } = await supabase.from("customer_payments").select("amount").eq("order_id", so.id).eq("state", "posted");
+        const paid = (pays ?? []).reduce((a: number, x: any) => a + Number(x.amount || 0), 0);
+        const balance = Number(so.amount_total ?? 0) - paid;
+        if (balance > 0.01) {
+          toast.error("Não é possível concluir a entrega: saldo em aberto", {
+            description: `Existem ${balance.toFixed(2)} € por liquidar nesta venda. Registe o pagamento antes de entregar ao cliente.`,
+          });
+          return;
+        }
+      }
+    }
+
+    if (isInternalChainStep && !isFinalToCustomer) {
       // Auto-fill full quantities, no confirmation needed.
       for (const m of moves) {
         await supabase.from("stock_moves").update({ quantity_done: Number(m.quantity), lot_id: m.lot_id ?? null }).eq("id", m.id);
