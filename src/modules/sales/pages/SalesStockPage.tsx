@@ -263,6 +263,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
 }) {
   const [variantFilter, setVariantFilter] = useState<string>("all");
   const [variantView, setVariantView] = useState<"grid" | "matrix">("grid");
+  const [dirFilter, setDirFilter] = useState<"all" | "incoming" | "outgoing">("all");
 
   const lowStock = s.available <= 0;
 
@@ -309,31 +310,37 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
     return Math.max(1, ...Object.values(variantTotals).map((t) => t.available));
   }, [variantTotals]);
 
+  const movesByDir = useMemo(() => {
+    const all = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    return {
+      all,
+      incoming: all.filter((m) => m.stock_pickings?.kind === "incoming"),
+      outgoing: all.filter((m) => m.stock_pickings?.kind === "outgoing"),
+    };
+  }, [moves, filterWh]);
+
+  const dirScopedMoves = dirFilter === "all" ? movesByDir.all : movesByDir[dirFilter];
+
   const variantMoveCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (moves ?? []).forEach((m) => {
-      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return;
+    dirScopedMoves.forEach((m) => {
       const k = m.variant_id ?? "_no_variant";
       c[k] = (c[k] ?? 0) + 1;
     });
     return c;
-  }, [moves, filterWh]);
+  }, [dirScopedMoves]);
 
-  const totalMovesCount = useMemo(
-    () => (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh).length,
-    [moves, filterWh],
-  );
+  const totalMovesCount = dirScopedMoves.length;
 
   const filteredMoves = useMemo(() => {
-    return (moves ?? []).filter((m) => {
-      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return false;
+    return dirScopedMoves.filter((m) => {
       if (variantFilter !== "all") {
         if (variantFilter === "_no_variant") { if (m.variant_id) return false; }
         else if (m.variant_id !== variantFilter) return false;
       }
       return true;
     });
-  }, [moves, filterWh, variantFilter]);
+  }, [dirScopedMoves, variantFilter]);
 
   const renderVariantBadges = (vid: string | null) => {
     if (!vid) return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
@@ -605,9 +612,30 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
           {!loadingDetails && (
             <div>
               <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
-                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
-                  <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
+                    <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                  </div>
+                  <div className="inline-flex border rounded-md p-0.5 bg-background">
+                    {([
+                      { k: "all", label: `Todas (${movesByDir.all.length})`, cls: "" },
+                      { k: "incoming", label: `Entradas (${movesByDir.incoming.length})`, cls: "text-emerald-600", Icon: TrendingUp },
+                      { k: "outgoing", label: `Saídas (${movesByDir.outgoing.length})`, cls: "text-rose-600", Icon: TrendingDown },
+                    ] as const).map((opt) => {
+                      const Icon = (opt as any).Icon;
+                      const active = dirFilter === opt.k;
+                      return (
+                        <button
+                          key={opt.k}
+                          onClick={() => setDirFilter(opt.k as any)}
+                          className={`text-[11px] px-2 py-1 rounded inline-flex items-center gap-1 transition-colors ${active ? "bg-primary text-primary-foreground" : `hover:bg-muted ${opt.cls}`}`}
+                        >
+                          {Icon && <Icon className="h-3 w-3" />}{opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-1 items-center">
                   <button
