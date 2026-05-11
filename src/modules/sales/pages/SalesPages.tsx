@@ -55,9 +55,9 @@ export const SalesOrdersList = () => (
     searchColumn="name"
     createTo="/sales/orders/new"
     rowLink={(r: any) => `/sales/orders/${r.id}`}
-    filter={(q) => q.in("state", ["confirmed", "done"])}
+    filter={(q) => q.in("state", ["confirmed", "done", "cancelled"])}
     filters={[
-      { key: "state", label: "Estado", type: "select", options: SALE_STATE_OPTS.filter((s) => ["confirmed","done"].includes(s.value)) },
+      { key: "state", label: "Estado", type: "select", options: SALE_STATE_OPTS.filter((s) => ["confirmed","done","cancelled"].includes(s.value)) },
       { key: "fulfillment_status", label: "Fulfillment", type: "select", options: FULFILLMENT_OPTIONS },
       { key: "payment_status", label: "Pagamento", type: "select", options: [
         { value: "pending", label: "Pendente" }, { value: "partial", label: "Parcial" }, { value: "paid", label: "Pago" },
