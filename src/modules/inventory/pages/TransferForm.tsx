@@ -112,15 +112,38 @@ export default function TransferForm() {
       [...(receiptPickings.data ?? []), ...(salePickings.data ?? [])].forEach((pk: any) => byPick.set(pk.id, pk));
       // Logical flow order: Fornecedor → Stock (incoming) → transferências internas → Stock → Cliente (outgoing)
       const kindRank: Record<string, number> = { incoming: 0, internal: 1, manufacturing: 2, outgoing: 3 };
+      // Within each kind, order outgoing pickings by chain (previous_picking_id) so that
+      // step 1 (no previous) comes first, then its child, etc.
+      const orderByChain = (group: any[]) => {
+        const ids = new Set(group.map((g) => g.id));
+        const roots = group.filter((g) => !g.previous_picking_id || !ids.has(g.previous_picking_id));
+        const childOf: Record<string, any[]> = {};
+        group.forEach((g) => {
+          if (g.previous_picking_id && ids.has(g.previous_picking_id)) {
+            (childOf[g.previous_picking_id] ??= []).push(g);
+          }
+        });
+        const out: any[] = [];
+        const walk = (n: any) => {
+          out.push(n);
+          (childOf[n.id] || []).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(walk);
+        };
+        roots.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(walk);
+        // Append any leftovers (cycles, etc.)
+        group.forEach((g) => { if (!out.includes(g)) out.push(g); });
+        return out;
+      };
+      const all = Array.from(byPick.values());
+      const grouped: Record<string, any[]> = {};
+      all.forEach((p) => { (grouped[p.kind] ??= []).push(p); });
+      const ordered: any[] = [];
+      Object.keys(grouped)
+        .sort((a, b) => (kindRank[a] ?? 9) - (kindRank[b] ?? 9))
+        .forEach((k) => ordered.push(...orderByChain(grouped[k])));
       setFlowDocs({
         sale,
         purchases,
-        pickings: Array.from(byPick.values()).sort((a, b) => {
-          const ra = kindRank[a.kind] ?? 9;
-          const rb = kindRank[b.kind] ?? 9;
-          if (ra !== rb) return ra - rb;
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        }),
+        pickings: ordered,
       });
     } else {
       setFlowDocs({ sale: null, purchases: [], pickings: [] });
