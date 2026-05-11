@@ -27,12 +27,19 @@ export default function CashSessionDetail() {
   const [closeDlg, setCloseDlg] = useState(false);
   const [counted, setCounted] = useState<string>("");
 
+  const [openerName, setOpenerName] = useState<string>("");
+
   const load = async () => {
     const { data: s } = await supabase
       .from("cash_sessions")
       .select("*, cash_registers(name, warehouses(name))")
       .eq("id", id!).maybeSingle();
     setSess(s);
+    if (s?.opened_by) {
+      const { data: prof } = await supabase
+        .from("profiles").select("full_name, email").eq("id", s.opened_by).maybeSingle();
+      setOpenerName(prof?.full_name || prof?.email || "");
+    } else setOpenerName("");
     const { data: m } = await supabase
       .from("cash_movements")
       .select("*")
