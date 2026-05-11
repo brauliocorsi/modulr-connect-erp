@@ -167,9 +167,37 @@ export default function SalesStockPage() {
         .order("created_at", { ascending: false })
         .limit(100),
     ]);
+
+    // Enrich moves missing variant_id by looking up the source order line via origin (e.g. SO00001 / PO00001)
+    const moves = (mv as Move[]) ?? [];
+    const orphanOrigins = Array.from(new Set(
+      moves.filter((m) => !m.variant_id && m.stock_pickings?.origin).map((m) => m.stock_pickings!.origin as string)
+    ));
+    const inferred: Record<string, string> = {}; // origin -> variant_id
+    if (orphanOrigins.length > 0) {
+      const saleOrigins = orphanOrigins.filter((o) => o.startsWith("SO"));
+      const purchaseOrigins = orphanOrigins.filter((o) => o.startsWith("PO"));
+      const [soRes, poRes] = await Promise.all([
+        saleOrigins.length
+          ? supabase.from("sale_order_lines").select("variant_id, sale_orders!inner(name)").eq("product_id", productId).in("sale_orders.name", saleOrigins).not("variant_id", "is", null)
+          : Promise.resolve({ data: [] as any[] }),
+        purchaseOrigins.length
+          ? supabase.from("purchase_order_lines").select("variant_id, purchase_orders!inner(name)").eq("product_id", productId).in("purchase_orders.name", purchaseOrigins).not("variant_id", "is", null)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      ((soRes.data as any[]) || []).forEach((r) => { if (r.sale_orders?.name && r.variant_id) inferred[r.sale_orders.name] = r.variant_id; });
+      ((poRes.data as any[]) || []).forEach((r) => { if (r.purchase_orders?.name && r.variant_id) inferred[r.purchase_orders.name] = r.variant_id; });
+    }
+    const enriched = moves.map((m) => {
+      if (m.variant_id) return m;
+      const origin = m.stock_pickings?.origin;
+      const inf = origin ? inferred[origin] : undefined;
+      return inf ? { ...m, variant_id: inf, _inferred: true } as any : m;
+    });
+
     setVariantsByProduct((p) => ({ ...p, [productId]: (vs as Variant[]) ?? [] }));
     setQuantsByProduct((p) => ({ ...p, [productId]: (qs as Quant[]) ?? [] }));
-    setMovesByProduct((p) => ({ ...p, [productId]: (mv as any) ?? [] }));
+    setMovesByProduct((p) => ({ ...p, [productId]: enriched }));
     setLoadingDetails((p) => ({ ...p, [productId]: false }));
   };
 
