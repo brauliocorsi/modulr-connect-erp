@@ -85,12 +85,34 @@ export default function CashRegistersList() {
   };
 
   const create = async () => {
-    if (!form.name || !form.store_id) return toast.error("Preencha nome e loja");
+    if (!form.name.trim()) return toast.error("Indique o nome do caixa");
+    if (!form.store_id) return toast.error("Selecione a loja");
+
+    let journalId = form.journal_id;
+    // Cria diário automaticamente se não foi escolhido
+    if (!journalId) {
+      const code = `CASH-${form.name.trim().toUpperCase().replace(/\s+/g, "-").slice(0, 20)}`;
+      const { data: j, error: jErr } = await supabase
+        .from("account_journals")
+        .insert({ name: `Caixa ${form.name.trim()}`, code, type: "cash", currency: "EUR", active: true })
+        .select("id")
+        .single();
+      if (jErr) return toast.error("Erro ao criar diário: " + jErr.message);
+      journalId = j.id;
+    }
+
+    // Armazém: herda da loja se vazio
+    let warehouseId = form.warehouse_id;
+    if (!warehouseId) {
+      const st = stores.find((s) => s.id === form.store_id);
+      warehouseId = st?.warehouse_id || (warehouses[0]?.id ?? null);
+    }
+
     const { error } = await supabase.from("cash_registers").insert({
-      name: form.name,
+      name: form.name.trim(),
       store_id: form.store_id,
-      warehouse_id: form.warehouse_id || null,
-      journal_id: form.journal_id || null,
+      warehouse_id: warehouseId || null,
+      journal_id: journalId,
       user_id: form.user_id || user?.id || null,
     });
     if (error) return toast.error(error.message);
