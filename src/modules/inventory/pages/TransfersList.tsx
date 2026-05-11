@@ -98,6 +98,16 @@ export default function TransfersList() {
     });
   }, [rows]);
 
+  const grouped = useMemo(() => {
+    if (!groupMode) return { groups: [] as Group<any>[], singletons: visibleRows as any[] };
+    const { groups, singletons } = groupByOrigin(rows as any[]);
+    // Apply state filter against consolidated state when grouping
+    const stFilter = filters.state;
+    const fGroups = stFilter ? groups.filter((g) => g.state === stFilter) : groups;
+    const fSing = stFilter ? singletons.filter((s: any) => s.state === stFilter) : singletons;
+    return { groups: fGroups, singletons: fSing };
+  }, [rows, visibleRows, groupMode, filters.state]);
+
   const flowStats = useMemo(() => {
     const active = rows.filter((r: any) => !["done", "cancelled"].includes(r.state));
     const waiting = active.filter((r: any) => r.state === "waiting").length;
