@@ -506,7 +506,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                 <DeliveryStatusBadge
                   picking={shipment as any}
                   onChanged={() => queryClient.invalidateQueries({ queryKey: ["sale-shipment", order.name] })}
-                  showActions={!isLocked && shipment.state !== "done"}
+                  showActions={!["done", "cancelled"].includes(shipment.state ?? "")}
                 />
                 <div className="ml-auto text-xs text-muted-foreground">
                   Transferência {shipment.name}
