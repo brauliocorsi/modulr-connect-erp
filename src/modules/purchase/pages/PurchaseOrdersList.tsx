@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, ChevronDown, LayoutGrid, Merge } from "lucide-react";
+import { ChevronRight, ChevronDown, LayoutGrid, Merge, Layers } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
@@ -38,6 +38,20 @@ export const PurchaseOrdersList = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterValues>({});
+  const [groupDrafts, setGroupDrafts] = useState<boolean>(() => {
+    try { return localStorage.getItem("po-group-drafts") !== "0"; } catch { return true; }
+  });
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const toggleGroupDrafts = () => {
+    setGroupDrafts((v) => {
+      const n = !v;
+      try { localStorage.setItem("po-group-drafts", n ? "1" : "0"); } catch {}
+      return n;
+    });
+  };
+  const toggleGroup = (k: string) => setOpenGroups((p) => {
+    const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n;
+  });
 
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers-min"],
@@ -158,6 +172,47 @@ export const PurchaseOrdersList = () => {
     refetch();
   };
 
+  const mergeGroup = async (ids: string[]) => {
+    if (ids.length < 2) return;
+    const target = ids[0];
+    const sources = ids.slice(1);
+    const { error } = await (supabase.rpc as any)("merge_purchase_orders", { _target: target, _sources: sources });
+    if (error) return toast.error(error.message);
+    toast.success(`${sources.length} rascunho(s) agrupado(s)`);
+    qc.invalidateQueries({ queryKey: ["purchase-orders-list"] });
+    refetch();
+  };
+
+  // Group draft orders by supplier+warehouse for the master/expand view
+  const draftGroups = useMemo(() => {
+    if (!groupDrafts) return [];
+    const map: Record<string, { key: string; partner_id: string; partner_name: string; warehouse_id: string | null; warehouse_name: string; orders: any[]; total: number }> = {};
+    for (const o of sortedOrders as any[]) {
+      if (o.state !== "draft") continue;
+      const key = `${o.partner_id}|${o.warehouse_id ?? "_"}`;
+      if (!map[key]) {
+        map[key] = {
+          key,
+          partner_id: o.partner_id,
+          partner_name: o.partners?.name ?? "—",
+          warehouse_id: o.warehouse_id ?? null,
+          warehouse_name: o.warehouses?.name ?? "—",
+          orders: [],
+          total: 0,
+        };
+      }
+      map[key].orders.push(o);
+      map[key].total += Number(o.amount_total || 0);
+    }
+    return Object.values(map).filter((g) => g.orders.length >= 2);
+  }, [sortedOrders, groupDrafts]);
+
+  const groupedDraftIds = useMemo(() => new Set(draftGroups.flatMap((g) => g.orders.map((o: any) => o.id))), [draftGroups]);
+  const ungroupedOrders = useMemo(
+    () => sortedOrders.filter((o: any) => !groupedDraftIds.has(o.id)),
+    [sortedOrders, groupedDraftIds]
+  );
+
   const states = ["all", "draft", "rfq_sent", "confirmed", "done", "cancelled"];
 
   return (
@@ -174,6 +229,9 @@ export const PurchaseOrdersList = () => {
                 <Merge className="h-4 w-4 mr-1" /> Agrupar {selected.size}
               </Button>
             )}
+            <Button size="sm" variant={groupDrafts ? "default" : "outline"} onClick={toggleGroupDrafts} title="Agrupar rascunhos por fornecedor">
+              <Layers className="h-4 w-4 mr-1" /> Agrupar rascunhos
+            </Button>
             <Button asChild size="sm" variant="outline">
               <Link to="/purchase/kanban"><LayoutGrid className="h-4 w-4 mr-1" /> Kanban</Link>
             </Button>
@@ -238,7 +296,75 @@ export const PurchaseOrdersList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedOrders.map((o: any) => {
+                {draftGroups.map((g) => {
+                  const isOpen = openGroups.has(g.key);
+                  const ids = g.orders.map((o: any) => o.id);
+                  return (
+                    <Fragment key={`grp-${g.key}`}>
+                      <TableRow className="bg-amber-100/60 dark:bg-amber-950/40 border-l-4 border-l-amber-500 hover:bg-amber-100">
+                        <TableCell></TableCell>
+                        <TableCell onClick={() => toggleGroup(g.key)} className="cursor-pointer">
+                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-amber-600" />
+                            <span>{g.orders.length} rascunhos</span>
+                            <Badge variant="secondary" className="text-xs">{g.warehouse_name}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{g.partner_name}</TableCell>
+                        <TableCell colSpan={3} className="text-xs text-muted-foreground">
+                          Mesmo fornecedor e armazém — podem ser fundidos num único pedido
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="default" onClick={() => mergeGroup(ids)}>
+                            <Merge className="h-3 w-3 mr-1" /> Fundir todos
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">{fmtMoney(g.total)}</TableCell>
+                      </TableRow>
+                      {isOpen && g.orders.map((o: any) => {
+                        const sos = originsByPo[o.id] ?? [];
+                        return (
+                          <TableRow key={o.id} className="bg-muted/30 hover:bg-muted/50">
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Checkbox checked={selected.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
+                            </TableCell>
+                            <TableCell></TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer pl-8 font-medium">
+                              {o.name}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">↳ {g.partner_name}</TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
+                              <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
+                              <div className="text-xs text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleString("pt-PT") : ""}</div>
+                            </TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer text-sm">
+                              {o.date_order ? new Date(o.date_order).toLocaleDateString("pt-PT") : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1 flex-wrap">
+                                {sos.slice(0, 2).map((s) => (
+                                  <Link key={s.id} to={`/sales/orders/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                                    <Badge variant="outline" className="hover:bg-accent">{s.name}</Badge>
+                                  </Link>
+                                ))}
+                                {sos.length > 2 && <Badge variant="secondary">+{sos.length - 2}</Badge>}
+                                {sos.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                              </div>
+                            </TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
+                              <Badge variant={STATE_VARIANT[o.state] ?? "secondary"}>{STATE_LABEL[o.state] ?? o.state}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium" onClick={() => nav(`/purchase/orders/${o.id}`)}>{fmtMoney(o.amount_total)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+                {ungroupedOrders.map((o: any) => {
                    const isOpen = expanded.has(o.id);
                    const sos = originsByPo[o.id] ?? [];
                    const isPending = o.state === "draft" || o.state === "rfq_sent";
