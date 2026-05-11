@@ -42,11 +42,21 @@ export default function CashSessionDetail() {
     } else setOpenerName("");
     const { data: m } = await supabase
       .from("cash_movements")
-      .select("*")
+      .select("*, customer_payments(method_id, payment_methods(name))")
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
   };
+
+  const methodTotals = (() => {
+    const map = new Map<string, number>();
+    for (const m of moves) {
+      const name = m.customer_payments?.payment_methods?.name
+        ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
+      map.set(name, (map.get(name) ?? 0) + Number(m.amount || 0));
+    }
+    return Array.from(map.entries()).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  })();
   useEffect(() => { if (id) load(); }, [id]);
 
   const balance = moves.reduce((s, m) => s + Number(m.amount || 0), 0);
@@ -97,6 +107,24 @@ export default function CashSessionDetail() {
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
 
+        <Card className="p-4 mb-4">
+          <div className="text-sm font-semibold mb-3">Por forma de pagamento</div>
+          {methodTotals.length === 0 ? (
+            <div className="text-sm text-muted-foreground">Sem movimentos</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {methodTotals.map(([name, total]) => (
+                <div key={name} className="rounded-md border bg-muted/30 px-3 py-2 min-w-[140px]">
+                  <div className="text-xs text-muted-foreground">{name}</div>
+                  <div className={`text-base font-semibold tabular-nums ${total < 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                    {fmtMoney(total)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         <Card>
           <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
           <div className="overflow-x-auto">
@@ -105,6 +133,7 @@ export default function CashSessionDetail() {
                 <tr>
                   <th className="text-left px-3 py-2">Data</th>
                   <th className="text-left px-3 py-2">Tipo</th>
+                  <th className="text-left px-3 py-2">Forma</th>
                   <th className="text-left px-3 py-2">Referência</th>
                   <th className="text-left px-3 py-2">Notas</th>
                   <th className="text-right px-3 py-2">Valor</th>
@@ -112,11 +141,12 @@ export default function CashSessionDetail() {
               </thead>
               <tbody>
                 {moves.length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                  <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
                 ) : moves.map((m) => (
                   <tr key={m.id} className="border-t">
                     <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
                     <td className="px-3 py-2">{KIND_LABEL[m.kind] ?? m.kind}</td>
+                    <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
                     <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{m.notes ?? ""}</td>
                     <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
