@@ -310,31 +310,37 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
     return Math.max(1, ...Object.values(variantTotals).map((t) => t.available));
   }, [variantTotals]);
 
+  const movesByDir = useMemo(() => {
+    const all = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    return {
+      all,
+      incoming: all.filter((m) => m.stock_pickings?.kind === "incoming"),
+      outgoing: all.filter((m) => m.stock_pickings?.kind === "outgoing"),
+    };
+  }, [moves, filterWh]);
+
+  const dirScopedMoves = dirFilter === "all" ? movesByDir.all : movesByDir[dirFilter];
+
   const variantMoveCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (moves ?? []).forEach((m) => {
-      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return;
+    dirScopedMoves.forEach((m) => {
       const k = m.variant_id ?? "_no_variant";
       c[k] = (c[k] ?? 0) + 1;
     });
     return c;
-  }, [moves, filterWh]);
+  }, [dirScopedMoves]);
 
-  const totalMovesCount = useMemo(
-    () => (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh).length,
-    [moves, filterWh],
-  );
+  const totalMovesCount = dirScopedMoves.length;
 
   const filteredMoves = useMemo(() => {
-    return (moves ?? []).filter((m) => {
-      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return false;
+    return dirScopedMoves.filter((m) => {
       if (variantFilter !== "all") {
         if (variantFilter === "_no_variant") { if (m.variant_id) return false; }
         else if (m.variant_id !== variantFilter) return false;
       }
       return true;
     });
-  }, [moves, filterWh, variantFilter]);
+  }, [dirScopedMoves, variantFilter]);
 
   const renderVariantBadges = (vid: string | null) => {
     if (!vid) return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
