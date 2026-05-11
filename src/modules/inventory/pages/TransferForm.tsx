@@ -69,7 +69,7 @@ export default function TransferForm() {
     setBackorder(bo);
     const { data: m } = await supabase
       .from("stock_moves")
-      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category))")
+      .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
     setMoves((m ?? []).map((mv: any) => {
       const doneQty = Number(mv.quantity_done);
@@ -102,25 +102,48 @@ export default function TransferForm() {
       const purchaseNames = purchases.map((po: any) => po.name);
       const [salePickings, receiptPickings] = await Promise.all([
         sale?.name
-          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").eq("origin", sale.name)
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,previous_picking_id,source:source_location_id(name),dest:destination_location_id(name)").eq("origin", sale.name)
           : Promise.resolve({ data: [] as any[] }),
         purchaseNames.length
-          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,source:source_location_id(name),dest:destination_location_id(name)").in("origin", purchaseNames)
+          ? supabase.from("stock_pickings").select("id,name,kind,state,step_label,origin,created_at,previous_picking_id,source:source_location_id(name),dest:destination_location_id(name)").in("origin", purchaseNames)
           : Promise.resolve({ data: [] as any[] }),
       ]);
       const byPick = new Map<string, any>();
       [...(receiptPickings.data ?? []), ...(salePickings.data ?? [])].forEach((pk: any) => byPick.set(pk.id, pk));
       // Logical flow order: Fornecedor → Stock (incoming) → transferências internas → Stock → Cliente (outgoing)
       const kindRank: Record<string, number> = { incoming: 0, internal: 1, manufacturing: 2, outgoing: 3 };
+      // Within each kind, order outgoing pickings by chain (previous_picking_id) so that
+      // step 1 (no previous) comes first, then its child, etc.
+      const orderByChain = (group: any[]) => {
+        const ids = new Set(group.map((g) => g.id));
+        const roots = group.filter((g) => !g.previous_picking_id || !ids.has(g.previous_picking_id));
+        const childOf: Record<string, any[]> = {};
+        group.forEach((g) => {
+          if (g.previous_picking_id && ids.has(g.previous_picking_id)) {
+            (childOf[g.previous_picking_id] ??= []).push(g);
+          }
+        });
+        const out: any[] = [];
+        const walk = (n: any) => {
+          out.push(n);
+          (childOf[n.id] || []).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(walk);
+        };
+        roots.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(walk);
+        // Append any leftovers (cycles, etc.)
+        group.forEach((g) => { if (!out.includes(g)) out.push(g); });
+        return out;
+      };
+      const all = Array.from(byPick.values());
+      const grouped: Record<string, any[]> = {};
+      all.forEach((p) => { (grouped[p.kind] ??= []).push(p); });
+      const ordered: any[] = [];
+      Object.keys(grouped)
+        .sort((a, b) => (kindRank[a] ?? 9) - (kindRank[b] ?? 9))
+        .forEach((k) => ordered.push(...orderByChain(grouped[k])));
       setFlowDocs({
         sale,
         purchases,
-        pickings: Array.from(byPick.values()).sort((a, b) => {
-          const ra = kindRank[a.kind] ?? 9;
-          const rb = kindRank[b.kind] ?? 9;
-          if (ra !== rb) return ra - rb;
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        }),
+        pickings: ordered,
       });
     } else {
       setFlowDocs({ sale: null, purchases: [], pickings: [] });
@@ -566,7 +589,22 @@ export default function TransferForm() {
                     const shortage = Math.max(0, need - avail);
                     return (
                     <tr key={m.id} className="border-t">
-                      <td className="px-3 py-2">{m.products?.name}</td>
+                       <td className="px-3 py-2">
+                         <div className="font-medium">{m.products?.name}</div>
+                         {(() => {
+                           const vals = (m.product_variants?.product_variant_values || [])
+                             .map((x: any) => x.product_attribute_values?.name)
+                             .filter(Boolean)
+                             .join(" / ");
+                           const sku = m.product_variants?.sku;
+                           if (!vals && !sku) return null;
+                           return (
+                             <div className="text-xs text-muted-foreground">
+                               {vals}{vals && sku ? " · " : ""}{sku ? <span className="font-mono">{sku}</span> : null}
+                             </div>
+                           );
+                         })()}
+                       </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
                         <td className="px-3 py-2">
