@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, AlertCircle } from "lucide-react";
+import { Search, Package, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, AlertCircle, ArrowRightLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { stateLabel, kindLabel } from "@/lib/picking";
 
 type ForecastRow = {
   product_id: string;
