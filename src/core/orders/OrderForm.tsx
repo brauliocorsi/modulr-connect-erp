@@ -228,6 +228,16 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const save = async () => {
     if (!order.partner_id) return toast.error(kind === "sale" ? "Selecione um cliente" : "Selecione um fornecedor");
+    // Require variant when product has variants
+    for (const l of lines) {
+      if ((l.line_kind ?? "product") !== "product") continue;
+      if (!l.product_id) continue;
+      const vs = (variantsByProduct?.[l.product_id] ?? []).filter((v: any) => v.active !== false);
+      if (vs.length > 0 && !l.variant_id) {
+        const p = products?.find((x: any) => x.id === l.product_id);
+        return toast.error(`Selecione a variante para "${p?.name ?? "produto"}"`);
+      }
+    }
     let oid = id as string | undefined;
     const payload: any = {
       partner_id: order.partner_id,
