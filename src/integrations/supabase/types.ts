@@ -3957,6 +3957,7 @@ export type Database = {
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
+      recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       release_move_reservation_partial: {
