@@ -261,7 +261,7 @@ export default function TransferForm() {
     const chainNames = new Set(["Cais de Carga", "Em Entrega"]);
     const isInternalChainStep =
       picking?.kind === "outgoing" &&
-      (chainNames.has(picking?.source?.name ?? "") || chainNames.has(picking?.destination?.name ?? ""));
+      (chainNames.has(picking?.source?.name ?? "") || chainNames.has(picking?.dest?.name ?? ""));
 
     if (isInternalChainStep) {
       // Auto-fill full quantities, no confirmation needed.
