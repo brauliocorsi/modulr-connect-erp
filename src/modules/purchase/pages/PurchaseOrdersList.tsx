@@ -296,7 +296,75 @@ export const PurchaseOrdersList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedOrders.map((o: any) => {
+                {draftGroups.map((g) => {
+                  const isOpen = openGroups.has(g.key);
+                  const ids = g.orders.map((o: any) => o.id);
+                  return (
+                    <Fragment key={`grp-${g.key}`}>
+                      <TableRow className="bg-amber-100/60 dark:bg-amber-950/40 border-l-4 border-l-amber-500 hover:bg-amber-100">
+                        <TableCell></TableCell>
+                        <TableCell onClick={() => toggleGroup(g.key)} className="cursor-pointer">
+                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-amber-600" />
+                            <span>{g.orders.length} rascunhos</span>
+                            <Badge variant="secondary" className="text-xs">{g.warehouse_name}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{g.partner_name}</TableCell>
+                        <TableCell colSpan={3} className="text-xs text-muted-foreground">
+                          Mesmo fornecedor e armazém — podem ser fundidos num único pedido
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="default" onClick={() => mergeGroup(ids)}>
+                            <Merge className="h-3 w-3 mr-1" /> Fundir todos
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">{fmtMoney(g.total)}</TableCell>
+                      </TableRow>
+                      {isOpen && g.orders.map((o: any) => {
+                        const sos = originsByPo[o.id] ?? [];
+                        return (
+                          <TableRow key={o.id} className="bg-muted/30 hover:bg-muted/50">
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Checkbox checked={selected.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
+                            </TableCell>
+                            <TableCell></TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer pl-8 font-medium">
+                              {o.name}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">↳ {g.partner_name}</TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
+                              <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
+                              <div className="text-xs text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleString("pt-PT") : ""}</div>
+                            </TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer text-sm">
+                              {o.date_order ? new Date(o.date_order).toLocaleDateString("pt-PT") : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1 flex-wrap">
+                                {sos.slice(0, 2).map((s) => (
+                                  <Link key={s.id} to={`/sales/orders/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                                    <Badge variant="outline" className="hover:bg-accent">{s.name}</Badge>
+                                  </Link>
+                                ))}
+                                {sos.length > 2 && <Badge variant="secondary">+{sos.length - 2}</Badge>}
+                                {sos.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                              </div>
+                            </TableCell>
+                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
+                              <Badge variant={STATE_VARIANT[o.state] ?? "secondary"}>{STATE_LABEL[o.state] ?? o.state}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium" onClick={() => nav(`/purchase/orders/${o.id}`)}>{fmtMoney(o.amount_total)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+                {ungroupedOrders.map((o: any) => {
                    const isOpen = expanded.has(o.id);
                    const sos = originsByPo[o.id] ?? [];
                    const isPending = o.state === "draft" || o.state === "rfq_sent";
