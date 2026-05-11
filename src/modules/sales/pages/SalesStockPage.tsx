@@ -670,7 +670,8 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                     </tbody>
                   </table>
                 </div>
-              )}
+              );
+              })()}
             </div>
           )}
 
