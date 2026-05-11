@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
 import { StateBadge } from "@/core/layout/StateBadge";
-import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { kindLabel } from "@/lib/picking";
+import { groupByOrigin, readToggle, writeToggle, type Group } from "@/modules/inventory/lib/groupChain";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export default function TransfersList() {
