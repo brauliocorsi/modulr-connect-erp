@@ -87,15 +87,15 @@ export const InventoryDashboard = () => {
       />
       <PageBody>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {cards.map((c) => (
             <Link key={c.title} to={c.to}>
-              <Card className="p-5 hover:shadow-md hover:bg-accent/30 transition-all cursor-pointer">
+              <Card className="p-5 hover:shadow-md hover:bg-accent/30 transition-all cursor-pointer h-full">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-muted-foreground">{c.title}</div>
                     <div className="text-3xl font-bold mt-1">{c.count}</div>
-                    <div className="text-xs text-muted-foreground mt-1">Aguardando processamento</div>
+                    <div className="text-xs text-muted-foreground mt-1">{(c as any).hint ?? "Aguardando processamento"}</div>
                   </div>
                   <c.icon className={"h-8 w-8 " + c.color} />
                 </div>
