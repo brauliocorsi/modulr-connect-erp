@@ -704,6 +704,70 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_routes: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          id: string
+          max_assembly_minutes: number
+          max_deliveries: number
+          notes: string | null
+          route_date: string
+          state: string
+          updated_at: string
+          vehicle_id: string | null
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          max_assembly_minutes?: number
+          max_deliveries?: number
+          notes?: string | null
+          route_date: string
+          state?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          max_assembly_minutes?: number
+          max_deliveries?: number
+          notes?: string | null
+          route_date?: string
+          state?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_routes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_routes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_routes_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_zip_rules: {
         Row: {
           active: boolean
@@ -736,6 +800,72 @@ export type Database = {
           zip_to?: string
         }
         Relationships: []
+      }
+      delivery_zones: {
+        Row: {
+          active: boolean
+          color: string | null
+          created_at: string
+          default_driver_id: string | null
+          default_vehicle_id: string | null
+          id: string
+          max_assembly_minutes_per_day: number
+          max_deliveries_per_day: number
+          name: string
+          notes: string | null
+          updated_at: string
+          weekdays: number[]
+          zip_from: string
+          zip_to: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          default_driver_id?: string | null
+          default_vehicle_id?: string | null
+          id?: string
+          max_assembly_minutes_per_day?: number
+          max_deliveries_per_day?: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+          weekdays?: number[]
+          zip_from: string
+          zip_to: string
+        }
+        Update: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          default_driver_id?: string | null
+          default_vehicle_id?: string | null
+          id?: string
+          max_assembly_minutes_per_day?: number
+          max_deliveries_per_day?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          weekdays?: number[]
+          zip_from?: string
+          zip_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_zones_default_driver_id_fkey"
+            columns: ["default_driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_zones_default_vehicle_id_fkey"
+            columns: ["default_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_permissions: {
         Row: {
@@ -1739,6 +1869,7 @@ export type Database = {
         Row: {
           active: boolean
           assembly_fee: number
+          assembly_minutes: number
           auto_purchase: boolean
           barcode: string | null
           can_be_manufactured: boolean
@@ -1780,6 +1911,7 @@ export type Database = {
         Insert: {
           active?: boolean
           assembly_fee?: number
+          assembly_minutes?: number
           auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
@@ -1821,6 +1953,7 @@ export type Database = {
         Update: {
           active?: boolean
           assembly_fee?: number
+          assembly_minutes?: number
           auto_purchase?: boolean
           barcode?: string | null
           can_be_manufactured?: boolean
@@ -3104,6 +3237,7 @@ export type Database = {
           reschedule_count: number
           reschedule_reason: string | null
           reservation_transfer_count: number
+          route_id: string | null
           scheduled_at: string | null
           source_location_id: string | null
           state: Database["public"]["Enums"]["picking_state"]
@@ -3131,6 +3265,7 @@ export type Database = {
           reschedule_count?: number
           reschedule_reason?: string | null
           reservation_transfer_count?: number
+          route_id?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
@@ -3158,6 +3293,7 @@ export type Database = {
           reschedule_count?: number
           reschedule_reason?: string | null
           reservation_transfer_count?: number
+          route_id?: string | null
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
@@ -3223,6 +3359,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_picking_exceptions"
             referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "stock_pickings_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stock_pickings_source_location_id_fkey"
@@ -3944,7 +4087,9 @@ export type Database = {
         Args: { _name: string; _warehouse: string }
         Returns: string
       }
+      find_zone_for_zip: { Args: { _zip: string }; Returns: string }
       generate_product_variants: { Args: { _product: string }; Returns: number }
+      generate_routes: { Args: { _horizon_days?: number }; Returns: number }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
         Args: {
@@ -4028,7 +4173,18 @@ export type Database = {
         Args: { _picking: string }
         Returns: undefined
       }
+      route_capacity_used: {
+        Args: { _route: string }
+        Returns: {
+          assembly_minutes: number
+          deliveries: number
+        }[]
+      }
       run_reordering_rules: { Args: never; Returns: number }
+      schedule_picking_to_route: {
+        Args: { _picking: string; _route: string }
+        Returns: undefined
+      }
       seed_default_schedule: { Args: { _so: string }; Returns: undefined }
       set_product_stock: {
         Args: {
@@ -4042,6 +4198,22 @@ export type Database = {
       so_has_active_backorder: { Args: { _so: string }; Returns: boolean }
       so_is_scheduled: { Args: { _so: string }; Returns: boolean }
       so_is_settled: { Args: { _so: string }; Returns: boolean }
+      suggest_route: {
+        Args: { _from_date?: string; _so: string }
+        Returns: {
+          driver_id: string
+          max_assembly_minutes: number
+          max_deliveries: number
+          route_date: string
+          route_id: string
+          used_assembly_minutes: number
+          used_deliveries: number
+          vehicle_id: string
+          would_exceed: boolean
+          zone_id: string
+          zone_name: string
+        }[]
+      }
       supplier_location_id: { Args: never; Returns: string }
       transfer_reservation: {
         Args: {
