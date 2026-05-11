@@ -678,6 +678,13 @@ export default function TransferForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TransferReservationDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        moves={moves as any}
+        warehouseId={picking?.warehouse_id ?? null}
+        onDone={load}
+      />
     </>
   );
 }
