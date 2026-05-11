@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
 import { StateBadge } from "@/core/layout/StateBadge";
-import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { kindLabel } from "@/lib/picking";
+import { groupByOrigin, readToggle, writeToggle, type Group } from "@/modules/inventory/lib/groupChain";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export default function TransfersList() {
@@ -21,6 +24,10 @@ export default function TransfersList() {
   const [filters, setFilters] = useState<FilterValues>({});
   const [sort, setSort] = useState<{ key: string; asc: boolean }>({ key: "created_at", asc: false });
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [groupMode, setGroupMode] = useState<boolean>(() => readToggle("transfers-group-by-origin", true));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  useEffect(() => { writeToggle("transfers-group-by-origin", groupMode); }, [groupMode]);
+  const toggleExpand = (key: string) => setExpanded((p) => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses-min"],
@@ -36,16 +43,17 @@ export default function TransfersList() {
   });
 
   const { data: rows = [] } = useQuery({
-    queryKey: ["transfers-list", q, filters, sort],
+    queryKey: ["transfers-list", q, filters, sort, groupMode],
     queryFn: async () => {
       let query: any = supabase
         .from("stock_pickings")
-        .select("id,name,kind,state,scheduled_at,created_at,step_label,batch_id,warehouse_id,origin,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
+        .select("id,name,kind,state,scheduled_at,created_at,done_at,step_label,batch_id,warehouse_id,origin,source_location_id,destination_location_id,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
         .order(sort.key, { ascending: sort.asc })
-        .limit(500);
+        .limit(1000);
       if (q) query = query.ilike("name", `%${q}%`);
       if (filters.kind) query = query.eq("kind", filters.kind);
-      if (filters.state) query = query.eq("state", filters.state);
+      // When grouping, state filter is applied to the consolidated state client-side so we keep all chain steps.
+      if (filters.state && !groupMode) query = query.eq("state", filters.state);
       if (filters.warehouse_id) query = query.eq("warehouse_id", filters.warehouse_id);
       if (filters.batch_id) query = query.eq("batch_id", filters.batch_id);
       if (filters.carrier_id) query = query.eq("carrier_id", filters.carrier_id);
@@ -90,6 +98,16 @@ export default function TransfersList() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [rows]);
+
+  const grouped = useMemo(() => {
+    if (!groupMode) return { groups: [] as Group<any>[], singletons: visibleRows as any[] };
+    const { groups, singletons } = groupByOrigin(rows as any[]);
+    // Apply state filter against consolidated state when grouping
+    const stFilter = filters.state;
+    const fGroups = stFilter ? groups.filter((g) => g.state === stFilter) : groups;
+    const fSing = stFilter ? singletons.filter((s: any) => s.state === stFilter) : singletons;
+    return { groups: fGroups, singletons: fSing };
+  }, [rows, visibleRows, groupMode, filters.state]);
 
   const flowStats = useMemo(() => {
     const active = rows.filter((r: any) => !["done", "cancelled"].includes(r.state));
@@ -207,6 +225,10 @@ export default function TransfersList() {
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
+          <div className="ml-auto flex items-center gap-2 text-sm">
+            <Switch id="group-origin" checked={groupMode} onCheckedChange={setGroupMode} />
+            <Label htmlFor="group-origin" className="cursor-pointer">Agrupar por origem (SO/PO)</Label>
+          </div>
         </Card>
         <Card>
           <table className="w-full text-sm">
@@ -223,37 +245,88 @@ export default function TransfersList() {
               </tr>
             </thead>
             <tbody>
-                {visibleRows.map((r: any) => (
-                <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
-                  <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
-                  <td className="px-3 py-2"><Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">{r.name}</Link></td>
-                  <td className="px-3 py-2">{kindLabel(r.kind)}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex flex-wrap gap-1 items-center">
-                        {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
-                        {r.reschedule_count > 0 && <Badge variant="secondary" className="bg-orange-200 text-orange-900 text-[10px]">🔄 {r.reschedule_count}x</Badge>}
-                        {r.vehicles && <Badge variant="secondary" className="text-[10px]"><Truck className="h-3 w-3 mr-1" />{r.vehicles.name}</Badge>}
-                        {r.delivery_carriers && <Badge variant="secondary" className="text-[10px]">📦 {r.delivery_carriers.name}</Badge>}
+              {(() => {
+                const renderRow = (r: any, opts?: { indent?: boolean; stepIdx?: number; stepTotal?: number }) => (
+                  <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
+                    <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
+                    <td className="px-3 py-2" style={opts?.indent ? { paddingLeft: 36 } : undefined}>
+                      <Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">
+                        {opts?.indent ? "↳ " : ""}{r.name}
+                      </Link>
+                      {opts?.stepIdx ? <span className="text-[10px] text-muted-foreground ml-2">Etapa {opts.stepIdx}/{opts.stepTotal}</span> : null}
+                    </td>
+                    <td className="px-3 py-2">{kindLabel(r.kind)}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap gap-1 items-center">
+                          {r.step_label ? <Badge variant="outline" className="w-fit">{r.step_label}</Badge> : <span className="text-muted-foreground">—</span>}
+                          {r.reschedule_count > 0 && <Badge variant="secondary" className="bg-orange-200 text-orange-900 text-[10px]">🔄 {r.reschedule_count}x</Badge>}
+                          {r.vehicles && <Badge variant="secondary" className="text-[10px]"><Truck className="h-3 w-3 mr-1" />{r.vehicles.name}</Badge>}
+                          {r.delivery_carriers && <Badge variant="secondary" className="text-[10px]">📦 {r.delivery_carriers.name}</Badge>}
+                        </div>
+                        {r.origin && !opts?.indent && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
                       </div>
-                      {r.origin && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
-                      {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
-                      <StateBadge value={r.state} />
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
-                  <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
-                </tr>
-              ))}
-              {visibleRows.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>
-              )}
+                    </td>
+                    <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
+                        {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
+                        <StateBadge value={r.state} />
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
+                    <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
+                  </tr>
+                );
+
+                if (!groupMode) {
+                  if (visibleRows.length === 0) {
+                    return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                  }
+                  return visibleRows.map((r: any) => renderRow(r));
+                }
+
+                const { groups, singletons } = grouped;
+                if (groups.length === 0 && singletons.length === 0) {
+                  return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                }
+                const out: JSX.Element[] = [];
+                for (const g of groups) {
+                  const isOpen = expanded.has(g.origin);
+                  out.push(
+                    <tr key={`g-${g.origin}`} className={`border-t bg-muted/20 hover:bg-accent/30 cursor-pointer ${g.state === "ready" ? "border-l-4 border-l-success" : g.state === "waiting" ? "border-l-4 border-l-warning" : ""}`} onClick={() => toggleExpand(g.origin)}>
+                      <td className="px-3 py-2">
+                        <button className="text-muted-foreground" onClick={(e) => { e.stopPropagation(); toggleExpand(g.origin); }}>
+                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                      </td>
+                      <td className="px-3 py-2 font-semibold">{g.origin}</td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">Cadeia · {g.totalSteps} etapas</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline">{g.currentStep ? `Etapa ${g.currentStep}/${g.totalSteps}` : "Concluído"}</Badge>
+                      </td>
+                      <td className="px-3 py-2">{g.partner ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          {g.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
+                          {g.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
+                          <StateBadge value={g.state} />
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
+                      <td className="px-3 py-2 text-xs">{g.scheduledAt ? new Date(g.scheduledAt).toLocaleString("pt-PT") : "—"}</td>
+                    </tr>
+                  );
+                  if (isOpen) {
+                    g.steps.forEach((s: any, idx: number) => {
+                      out.push(renderRow(s, { indent: true, stepIdx: idx + 1, stepTotal: g.totalSteps }));
+                    });
+                  }
+                }
+                for (const r of singletons) out.push(renderRow(r));
+                return out;
+              })()}
             </tbody>
           </table>
         </Card>
