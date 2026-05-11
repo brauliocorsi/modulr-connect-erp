@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, Star, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/core/auth/AuthProvider";
 
 export type FilterField =
   | { key: string; label: string; type: "text" }
@@ -23,11 +25,12 @@ export function AdvancedFilters({
 }: {
   fields: FilterField[];
   onChange?: (values: FilterValues) => void;
-  /** When set, the chosen filters are persisted in localStorage and re-applied on mount. */
+  /** When set, the chosen filters are persisted (DB per-user + localStorage fallback) and re-applied on mount. */
   storageKey?: string;
   /** Built-in defaults applied when there are no URL params and no saved preference. */
   defaults?: FilterValues;
 }) {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const initRef = useRef(false);
 
@@ -72,6 +75,37 @@ export function AdvancedFilters({
     // eslint-disable-next-line
   }, []);
 
+  // Load per-user saved preference from DB once user is known.
+  useEffect(() => {
+    if (!storageKey || !user) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("user_filter_preferences")
+        .select("values")
+        .eq("user_id", user.id)
+        .eq("storage_key", storageKey)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      const dbVals = (data.values || {}) as FilterValues;
+      // Mirror to localStorage for offline/next-load
+      try { localStorage.setItem(`adv-filters:${storageKey}`, JSON.stringify(dbVals)); } catch {}
+      // Only apply if user hasn't changed anything via URL
+      const urlHas = fields.some((f) => params.get(f.key));
+      if (urlHas) return;
+      setValues(dbVals);
+      setDraft(dbVals);
+      const np = new URLSearchParams(params);
+      fields.forEach((f) => {
+        if (dbVals[f.key]) np.set(f.key, dbVals[f.key]);
+        else np.delete(f.key);
+      });
+      setParams(np, { replace: true });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line
+  }, [user?.id, storageKey]);
+
   useEffect(() => {
     onChange?.(values);
   }, [values]); // eslint-disable-line
@@ -86,19 +120,30 @@ export function AdvancedFilters({
     setParams(np, { replace: true });
   };
 
-  const saveAsDefault = () => {
+  const saveAsDefault = async () => {
     if (!storageKey) return;
-    try {
-      localStorage.setItem(`adv-filters:${storageKey}`, JSON.stringify(draft));
-      toast.success("Filtros guardados como padrão");
-    } catch {
-      toast.error("Não foi possível guardar");
+    try { localStorage.setItem(`adv-filters:${storageKey}`, JSON.stringify(draft)); } catch {}
+    if (!user) {
+      toast.success("Filtros guardados como padrão (neste dispositivo)");
+      return;
     }
+    const { error } = await supabase
+      .from("user_filter_preferences")
+      .upsert({ user_id: user.id, storage_key: storageKey, values: draft }, { onConflict: "user_id,storage_key" });
+    if (error) toast.error("Não foi possível guardar na conta");
+    else toast.success("Filtros guardados como padrão na sua conta");
   };
 
-  const clearSavedDefault = () => {
+  const clearSavedDefault = async () => {
     if (!storageKey) return;
     try { localStorage.removeItem(`adv-filters:${storageKey}`); } catch {}
+    if (user) {
+      await supabase
+        .from("user_filter_preferences")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("storage_key", storageKey);
+    }
     toast.success("Padrão removido");
   };
 
@@ -158,7 +203,7 @@ export function AdvancedFilters({
             <Button size="sm" variant="ghost" onClick={() => setDraft({})}>Limpar</Button>
             {storageKey && (
               <>
-                <Button size="sm" variant="outline" onClick={saveAsDefault} title="Guarda os filtros atuais como padrão para esta página">
+                <Button size="sm" variant="outline" onClick={saveAsDefault} title="Guarda os filtros atuais como padrão na sua conta (sincroniza entre dispositivos)">
                   <Star className="h-3 w-3 mr-1" /> Guardar como padrão
                 </Button>
                 <Button size="sm" variant="ghost" onClick={clearSavedDefault}>Apagar padrão</Button>
