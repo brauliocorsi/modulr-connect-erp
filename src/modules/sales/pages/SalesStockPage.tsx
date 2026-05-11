@@ -496,17 +496,28 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                 <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
                   <Package className="h-3.5 w-3.5" /> Stock por variante ({variants.length})
                 </div>
-                <div className="flex items-center gap-1 border rounded-md p-0.5 bg-background">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setVariantView("grid")}
-                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                  ><LayoutGrid className="h-3 w-3" /> Grade</button>
-                  <button
-                    onClick={() => setVariantView("matrix")}
-                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "matrix" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                  ><ListIcon className="h-3 w-3" /> Matriz</button>
+                    onClick={() => setOnlyWithStock((v) => !v)}
+                    className={`text-[11px] px-2 py-1 rounded border transition-colors ${onlyWithStock ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                  >
+                    {onlyWithStock ? "Mostrar todas" : "Só com stock"}
+                  </button>
+                  <div className="flex items-center gap-1 border rounded-md p-0.5 bg-background">
+                    <button
+                      onClick={() => setVariantView("grid")}
+                      className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    ><LayoutGrid className="h-3 w-3" /> Grade</button>
+                    <button
+                      onClick={() => setVariantView("matrix")}
+                      className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "matrix" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    ><ListIcon className="h-3 w-3" /> Matriz</button>
+                  </div>
                 </div>
               </div>
+
+              {(() => { return null; })()}
+              {/* Apply filter to variants list */}
 
               {variantView === "grid" ? (
                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
