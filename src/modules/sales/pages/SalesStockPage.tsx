@@ -273,17 +273,45 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
   moves?: Move[];
   loadingDetails: boolean;
 }) {
-  const variantLabel = (vid: string | null) => {
-    if (!vid) return "—";
-    const v = variants?.find((x) => x.id === vid);
-    if (!v) return "—";
-    const attrs = v.product_variant_values.map((p) => p.product_attribute_values?.name).filter(Boolean).join(" / ");
-    return attrs || v.sku || vid.slice(0, 6);
+  const [variantFilter, setVariantFilter] = useState<string>("all");
+
+  const variantById = useMemo(() => {
+    const m: Record<string, Variant> = {};
+    (variants ?? []).forEach((v) => { m[v.id] = v; });
+    return m;
+  }, [variants]);
+
+  const renderVariantBadges = (vid: string | null) => {
+    if (!vid) return <span className="text-muted-foreground italic">Sem variante</span>;
+    const v = variantById[vid];
+    if (!v) return <span className="text-muted-foreground">{vid.slice(0, 6)}</span>;
+    const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="w-6 h-6 border rounded bg-muted/30 overflow-hidden flex-shrink-0">
+          {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[8px] text-muted-foreground">—</div>}
+        </div>
+        <div className="flex flex-wrap gap-0.5">
+          {attrs.length > 0 ? attrs.map((a, i) => (
+            <Badge key={i} variant="secondary" className="text-[9px] px-1 py-0 h-4">{a}</Badge>
+          )) : v.sku ? <span className="font-mono text-[10px]">{v.sku}</span> : <span className="text-muted-foreground">—</span>}
+        </div>
+      </div>
+    );
   };
+
   const whName = (wid: string | null) => warehouses.find((w) => w.id === wid)?.name ?? "—";
+
   const filteredMoves = useMemo(() => {
-    return (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
-  }, [moves, filterWh]);
+    return (moves ?? []).filter((m) => {
+      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return false;
+      if (variantFilter !== "all") {
+        if (variantFilter === "_no_variant") { if (m.variant_id) return false; }
+        else if (m.variant_id !== variantFilter) return false;
+      }
+      return true;
+    });
+  }, [moves, filterWh, variantFilter]);
 
   // Per-variant-warehouse matrix
   const matrix = useMemo(() => {
@@ -306,6 +334,22 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
     (quants ?? []).forEach((q) => q.stock_locations?.warehouse_id && present.add(q.stock_locations.warehouse_id));
     return warehouses.filter((w) => present.has(w.id));
   }, [warehouses, quants, filterWh]);
+
+  // Per-variant move counts (for filter chips)
+  const variantMoveCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    (moves ?? []).forEach((m) => {
+      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return;
+      const k = m.variant_id ?? "_no_variant";
+      c[k] = (c[k] ?? 0) + 1;
+    });
+    return c;
+  }, [moves, filterWh]);
+
+  const totalMovesCount = useMemo(
+    () => (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh).length,
+    [moves, filterWh],
+  );
 
   return (
     <>
@@ -361,26 +405,34 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
                       <th className="text-left p-2 w-28">SKU</th>
                       {visibleWarehouses.map((w) => <th key={w.id} className="text-right p-2 w-24">{w.name}</th>)}
                       <th className="text-right p-2 w-24 bg-muted/60">Total vendável</th>
+                      <th className="text-right p-2 w-16">Mov.</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visibleWarehouses.length === 0 ? (
-                      <tr><td colSpan={4} className="p-3 text-center text-muted-foreground">Sem stock para os filtros aplicados</td></tr>
+                      <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Sem stock para os filtros aplicados</td></tr>
                     ) : variants.map((v) => {
                       const cells = matrix[v.id] || {};
                       const total = Object.values(cells).reduce((a, x) => ({ qty: a.qty + x.qty, reserved: a.reserved + x.reserved }), { qty: 0, reserved: 0 });
+                      const isActive = variantFilter === v.id;
+                      const moveCount = variantMoveCounts[v.id] ?? 0;
                       return (
-                        <tr key={v.id} className={`border-t ${!v.active ? "opacity-50" : ""}`}>
+                        <tr
+                          key={v.id}
+                          onClick={() => setVariantFilter(isActive ? "all" : v.id)}
+                          className={`border-t cursor-pointer transition-colors ${!v.active ? "opacity-50" : ""} ${isActive ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted/40"}`}
+                        >
                           <td className="p-1">
                             <div className="w-8 h-8 border rounded bg-muted/30 overflow-hidden">
                               {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
                             </div>
                           </td>
                           <td className="p-2">
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-1 items-center">
                               {v.product_variant_values.map((pvv, i) => (
                                 <Badge key={i} variant="outline" className="text-[10px]">{pvv.product_attribute_values?.name}</Badge>
                               ))}
+                              {isActive && <Badge variant="default" className="text-[9px] px-1 h-4">Filtrado</Badge>}
                             </div>
                           </td>
                           <td className="p-2 font-mono text-muted-foreground">{v.sku || "—"}</td>
@@ -404,6 +456,9 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
                             {fmtNumber(total.qty - total.reserved)}
                             {total.reserved > 0 && <div className="text-[9px] text-muted-foreground font-normal">de {fmtNumber(total.qty)}</div>}
                           </td>
+                          <td className="p-2 text-right">
+                            {moveCount > 0 ? <Badge variant="outline" className="text-[10px]">{moveCount}</Badge> : <span className="text-muted-foreground/40">—</span>}
+                          </td>
                         </tr>
                       );
                     })}
@@ -415,20 +470,46 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
             {/* Movements (incl. variants) */}
             {!loadingDetails && (
               <div className="mt-3">
-                <div className="text-xs font-semibold flex items-center gap-1 mb-1 text-muted-foreground">
-                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações {filteredMoves.length > 0 && <span className="font-normal">({filteredMoves.length})</span>}
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+                  <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
+                    <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <button
+                      onClick={() => setVariantFilter("all")}
+                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${variantFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                    >Todas ({totalMovesCount})</button>
+                    {(variants ?? []).filter((v) => (variantMoveCounts[v.id] ?? 0) > 0).map((v) => {
+                      const active = variantFilter === v.id;
+                      const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean).join(" / ") || v.sku || v.id.slice(0, 6);
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setVariantFilter(active ? "all" : v.id)}
+                          className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                        >{attrs} ({variantMoveCounts[v.id]})</button>
+                      );
+                    })}
+                    {(variantMoveCounts["_no_variant"] ?? 0) > 0 && (
+                      <button
+                        onClick={() => setVariantFilter(variantFilter === "_no_variant" ? "all" : "_no_variant")}
+                        className={`text-[10px] px-2 py-0.5 rounded border italic transition-colors ${variantFilter === "_no_variant" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                      >Sem variante ({variantMoveCounts["_no_variant"]})</button>
+                    )}
+                  </div>
                 </div>
                 {filteredMoves.length === 0 ? (
                   <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
                 ) : (
-                  <div className="overflow-x-auto border rounded max-h-72">
+                  <div className="overflow-x-auto border rounded max-h-80">
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50 sticky top-0">
                         <tr>
                           <th className="text-left p-2">Data</th>
                           <th className="text-left p-2">Documento</th>
                           <th className="text-left p-2">Tipo</th>
-                          <th className="text-left p-2">Variante</th>
+                          <th className="text-left p-2 min-w-[180px]">Variante</th>
                           <th className="text-left p-2">Armazém</th>
                           <th className="text-left p-2">Parceiro</th>
                           <th className="text-right p-2">Qtd</th>
@@ -439,25 +520,32 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredMoves.map((m) => (
-                          <tr key={m.id} className="border-t">
-                            <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
-                            <td className="p-2">
-                              {m.stock_pickings?.id ? (
-                                <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline">{m.stock_pickings.name}</Link>
-                              ) : "—"}
-                            </td>
-                            <td className="p-2">{kindLabel(m.stock_pickings?.kind)}</td>
-                            <td className="p-2">{variantLabel(m.variant_id)}</td>
-                            <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
-                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
-                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity)}</td>
-                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
-                            <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
-                            <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
-                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
-                          </tr>
-                        ))}
+                        {filteredMoves.map((m) => {
+                          const k = m.stock_pickings?.kind;
+                          const dirTone = k === "incoming" ? "text-emerald-600" : k === "outgoing" ? "text-rose-600" : "text-muted-foreground";
+                          const dirSign = k === "incoming" ? "+" : k === "outgoing" ? "−" : "";
+                          return (
+                            <tr key={m.id} className="border-t hover:bg-muted/30">
+                              <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                              <td className="p-2">
+                                {m.stock_pickings?.id ? (
+                                  <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline font-medium">{m.stock_pickings.name}</Link>
+                                ) : "—"}
+                              </td>
+                              <td className={`p-2 ${dirTone}`}>
+                                <span className="inline-flex items-center gap-1">{dirSign}{kindLabel(k)}</span>
+                              </td>
+                              <td className="p-2">{renderVariantBadges(m.variant_id)}</td>
+                              <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
+                              <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
+                              <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
+                              <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
+                              <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
+                              <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
+                              <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -470,3 +558,4 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
     </>
   );
 }
+
