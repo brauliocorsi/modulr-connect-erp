@@ -234,18 +234,16 @@ export default function TransferForm() {
   };
 
   const validate = async () => {
-    const zeroMoves = moves.filter((m) => {
-      const qd = Number(m.quantity_done);
-      return !(Number.isFinite(qd) && qd > 0);
-    });
+    const partialMoves = moves.filter((m) => Number(m.quantity_done) < Number(m.quantity));
+    const zeroMoves = moves.filter((m) => Number(m.quantity_done) === 0);
     if (zeroMoves.length === moves.length) {
-      if (!confirm(`Atenção: todas as ${moves.length} linha(s) estão com quantidade movida = 0.\n\nSe continuar, será assumida a quantidade pedida em cada linha.\n\nDeseja prosseguir?`)) return;
-    } else if (zeroMoves.length > 0) {
-      if (!confirm(`Atenção: ${zeroMoves.length} de ${moves.length} linha(s) estão com 0.\n\nEssas linhas serão validadas com a quantidade pedida (não geram backorder).\n\nDeseja prosseguir?`)) return;
+      if (!confirm(`Atenção: nenhuma quantidade foi recebida.\n\nA transferência ficará vazia e será criada uma nova transferência (backorder) com todos os itens em falta.\n\nDeseja prosseguir?`)) return;
+    } else if (partialMoves.length > 0) {
+      if (!confirm(`Será criada uma transferência de backorder com as quantidades em falta de ${partialMoves.length} linha(s).\n\nDeseja prosseguir?`)) return;
     }
     for (const m of moves) {
       const qd = Number(m.quantity_done);
-      const finalQty = Number.isFinite(qd) && qd > 0 ? qd : Number(m.quantity);
+      const finalQty = Number.isFinite(qd) ? Math.max(0, qd) : Number(m.quantity);
       await supabase.from("stock_moves").update({ quantity_done: finalQty, lot_id: m.lot_id ?? null }).eq("id", m.id);
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
