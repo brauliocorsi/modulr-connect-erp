@@ -482,6 +482,17 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   />
                 </div>
               )}
+              {kind === "purchase" && (
+                <div className="space-y-2">
+                  <Label>Data de entrega prevista</Label>
+                  <Input
+                    type="date"
+                    value={order.expected_date ?? ""}
+                    onChange={(e) => setOrder({ ...order, expected_date: e.target.value || null })}
+                    disabled={isLocked}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Notas</Label>
                 <Input value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} disabled={isLocked} />
