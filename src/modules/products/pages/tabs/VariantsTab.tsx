@@ -27,6 +27,7 @@ export function VariantsTab({ productId }: { productId: string }) {
   const [attrs, setAttrs] = useState<any[]>([]);
   const [allAttrs, setAllAttrs] = useState<any[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [stockByVariant, setStockByVariant] = useState<Record<string, { qty: number; reserved: number }>>({});
   const [filters, setFilters] = useState<Record<string, string>>({}); // attribute_id -> value_id | "all"
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPrice, setBulkPrice] = useState<string>("");
