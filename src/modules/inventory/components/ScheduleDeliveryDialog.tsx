@@ -24,12 +24,14 @@ export function ScheduleDeliveryDialog({
   onChanged,
   open: controlledOpen,
   onOpenChange,
+  pickupMode = false,
 }: {
   picking: Picking;
   trigger?: ReactNode;
   onChanged?: () => void;
   open?: boolean;
   onOpenChange?: (o: boolean) => void;
+  pickupMode?: boolean;
 }) {
   const qc = useQueryClient();
   const [innerOpen, setInnerOpen] = useState(false);
@@ -112,18 +114,47 @@ export function ScheduleDeliveryDialog({
   const fromSuggestions = (suggestions as any[]) ?? [];
   const hasSuggestions = fromSuggestions.length > 0;
 
+  const savePickup = async () => {
+    setBusy(true);
+    const iso = new Date(`${fromDate}T12:00:00`).toISOString();
+    const { error } = await supabase
+      .from("stock_pickings")
+      .update({ scheduled_at: iso, route_id: null })
+      .eq("id", picking.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Levantamento agendado");
+    refreshAll();
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" /> {picking.route_id ? "Trocar rota" : "Agendar entrega"}
+            <CalendarDays className="h-4 w-4" /> {pickupMode ? (picking.scheduled_at ? "Alterar agendamento de levantamento" : "Agendar levantamento") : (picking.route_id ? "Trocar rota" : "Agendar entrega")}
           </DialogTitle>
           <DialogDescription>
-            Escolha a data combinada com o cliente e selecione uma rota disponível.
+            {pickupMode ? "Defina a data combinada com o cliente para o levantamento. Não é necessária rota." : "Escolha a data combinada com o cliente e selecione uma rota disponível."}
           </DialogDescription>
         </DialogHeader>
+
+        {pickupMode ? (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Data combinada</Label>
+              <Input type="date" value={fromDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setFromDate(e.target.value)} className="h-9 max-w-[220px]" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancelar</Button>
+              <Button onClick={savePickup} disabled={busy}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar agendamento
+              </Button>
+            </div>
+          </div>
+        ) : (
 
         <div className="space-y-3">
           {currentRoute && (
@@ -199,6 +230,7 @@ export function ScheduleDeliveryDialog({
             </div>
           )}
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
