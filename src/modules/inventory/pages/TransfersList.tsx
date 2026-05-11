@@ -23,6 +23,10 @@ export default function TransfersList() {
   const [filters, setFilters] = useState<FilterValues>({});
   const [sort, setSort] = useState<{ key: string; asc: boolean }>({ key: "created_at", asc: false });
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [groupMode, setGroupMode] = useState<boolean>(() => readToggle("transfers-group-by-origin", true));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  useEffect(() => { writeToggle("transfers-group-by-origin", groupMode); }, [groupMode]);
+  const toggleExpand = (key: string) => setExpanded((p) => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses-min"],
