@@ -3547,6 +3547,33 @@ export type Database = {
           },
         ]
       }
+      user_filter_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          storage_key: string
+          updated_at: string
+          user_id: string
+          values: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          storage_key: string
+          updated_at?: string
+          user_id: string
+          values?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          storage_key?: string
+          updated_at?: string
+          user_id?: string
+          values?: Json
+        }
+        Relationships: []
+      }
       user_groups: {
         Row: {
           group_id: string
