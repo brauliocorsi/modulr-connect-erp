@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, X } from "lucide-react";
+import { Filter, Star, X } from "lucide-react";
+import { toast } from "sonner";
 
 export type FilterField =
   | { key: string; label: string; type: "text" }
@@ -17,18 +18,59 @@ export type FilterValues = Record<string, string>;
 export function AdvancedFilters({
   fields,
   onChange,
+  storageKey,
+  defaults,
 }: {
   fields: FilterField[];
   onChange?: (values: FilterValues) => void;
+  /** When set, the chosen filters are persisted in localStorage and re-applied on mount. */
+  storageKey?: string;
+  /** Built-in defaults applied when there are no URL params and no saved preference. */
+  defaults?: FilterValues;
 }) {
   const [params, setParams] = useSearchParams();
-  const initial: FilterValues = {};
-  fields.forEach((f) => {
-    const v = params.get(f.key);
-    if (v) initial[f.key] = v;
-  });
-  const [values, setValues] = useState<FilterValues>(initial);
-  const [draft, setDraft] = useState<FilterValues>(initial);
+  const initRef = useRef(false);
+
+  const readInitial = (): FilterValues => {
+    const fromUrl: FilterValues = {};
+    let hasUrl = false;
+    fields.forEach((f) => {
+      const v = params.get(f.key);
+      if (v) { fromUrl[f.key] = v; hasUrl = true; }
+    });
+    if (hasUrl) return fromUrl;
+    if (storageKey) {
+      try {
+        const raw = localStorage.getItem(`adv-filters:${storageKey}`);
+        if (raw) {
+          const parsed = JSON.parse(raw) as FilterValues;
+          if (parsed && typeof parsed === "object") return parsed;
+        }
+      } catch {}
+    }
+    return { ...(defaults ?? {}) };
+  };
+
+  const [values, setValues] = useState<FilterValues>(readInitial);
+  const [draft, setDraft] = useState<FilterValues>(values);
+
+  // Sync URL with initial values once
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+    const np = new URLSearchParams(params);
+    let changed = false;
+    fields.forEach((f) => {
+      const cur = np.get(f.key) ?? "";
+      const next = values[f.key] ?? "";
+      if (cur !== next) {
+        if (next) np.set(f.key, next); else np.delete(f.key);
+        changed = true;
+      }
+    });
+    if (changed) setParams(np, { replace: true });
+    // eslint-disable-next-line
+  }, []);
 
   useEffect(() => {
     onChange?.(values);
@@ -42,6 +84,22 @@ export function AdvancedFilters({
       else np.delete(f.key);
     });
     setParams(np, { replace: true });
+  };
+
+  const saveAsDefault = () => {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(`adv-filters:${storageKey}`, JSON.stringify(draft));
+      toast.success("Filtros guardados como padrão");
+    } catch {
+      toast.error("Não foi possível guardar");
+    }
+  };
+
+  const clearSavedDefault = () => {
+    if (!storageKey) return;
+    try { localStorage.removeItem(`adv-filters:${storageKey}`); } catch {}
+    toast.success("Padrão removido");
   };
 
   const clearOne = (key: string) => {
@@ -68,9 +126,12 @@ export function AdvancedFilters({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm">
             <Filter className="h-4 w-4 mr-1" /> Filtros
+            {Object.keys(values).length > 0 && (
+              <span className="ml-1 text-[10px] bg-primary text-primary-foreground rounded-full px-1.5">{Object.keys(values).length}</span>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 space-y-3">
+        <PopoverContent className="w-96 space-y-3 max-h-[70vh] overflow-y-auto">
           {fields.map((f) => (
             <div key={f.key} className="space-y-1">
               <Label className="text-xs">{f.label}</Label>
@@ -92,9 +153,17 @@ export function AdvancedFilters({
               )}
             </div>
           ))}
-          <div className="flex gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1 border-t">
             <Button size="sm" onClick={apply}>Aplicar</Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft({})}>Limpar</Button>
+            {storageKey && (
+              <>
+                <Button size="sm" variant="outline" onClick={saveAsDefault} title="Guarda os filtros atuais como padrão para esta página">
+                  <Star className="h-3 w-3 mr-1" /> Guardar como padrão
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSavedDefault}>Apagar padrão</Button>
+              </>
+            )}
           </div>
         </PopoverContent>
       </Popover>
