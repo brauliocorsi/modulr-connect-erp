@@ -1,0 +1,1 @@
+CREATE POLICY drivers_view_products ON public.products FOR SELECT TO authenticated USING (has_group(auth.uid(), 'delivery_driver'::text));
