@@ -1943,6 +1943,7 @@ export type Database = {
       purchase_order_lines: {
         Row: {
           description: string | null
+          discount_pct: number
           id: string
           order_id: string
           product_id: string
@@ -1956,6 +1957,7 @@ export type Database = {
         }
         Insert: {
           description?: string | null
+          discount_pct?: number
           id?: string
           order_id: string
           product_id: string
@@ -1969,6 +1971,7 @@ export type Database = {
         }
         Update: {
           description?: string | null
+          discount_pct?: number
           id?: string
           order_id?: string
           product_id?: string
