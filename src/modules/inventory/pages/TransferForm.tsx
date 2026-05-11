@@ -558,6 +558,9 @@ export default function TransferForm() {
                 <p className="text-xs text-muted-foreground">Selecione carrinha própria <em>ou</em> uma transportadora externa antes de validar a saída.</p>
               </Card>
             )}
+            {isOutgoing && !isLocked && (
+              <RouteAssignmentCard picking={picking} onChanged={load} />
+            )}
             {(original || backorder || (isDone && receiptSummary)) && (
               <Card className={`p-3 text-sm flex flex-wrap items-center gap-3 ${isPartialReceipt ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900" : isDone ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900" : "bg-amber-50 border-amber-200"}`}>
                 {isDone && receiptSummary && (
