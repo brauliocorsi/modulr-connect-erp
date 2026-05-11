@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Truck, User2, Calendar } from "lucide-react";
+import { Truck, User2, Calendar, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function RouteDetail() {
   const { id } = useParams();
