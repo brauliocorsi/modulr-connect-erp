@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck, CalendarClock } from "lucide-react";
+import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck, CalendarClock, Send } from "lucide-react";
+import { TransferReservationDialog } from "@/modules/inventory/components/TransferReservationDialog";
 import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { StateBadge } from "@/core/layout/StateBadge";
@@ -39,6 +40,7 @@ export default function TransferForm() {
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleReason, setRescheduleReason] = useState("");
+  const [transferOpen, setTransferOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -336,6 +338,11 @@ export default function TransferForm() {
             {isOutgoing && !isLocked && picking.source_location_id && picking.source?.name !== "Stock" && (
               <Button size="sm" variant="outline" onClick={() => { setRescheduleDate(""); setRescheduleReason(""); setRescheduleOpen(true); }}>
                 <CalendarClock className="h-4 w-4 mr-1" /> Reagendar
+              </Button>
+            )}
+            {isOutgoing && !isLocked && moves.some((m) => Number(m.reserved_quantity || 0) > 0) && (
+              <Button size="sm" variant="outline" onClick={() => setTransferOpen(true)}>
+                <Send className="h-4 w-4 mr-1" /> Transferir reserva
               </Button>
             )}
             {!isLocked && (
@@ -671,6 +678,13 @@ export default function TransferForm() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TransferReservationDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        moves={moves as any}
+        warehouseId={picking?.warehouse_id ?? null}
+        onDone={load}
+      />
     </>
   );
 }

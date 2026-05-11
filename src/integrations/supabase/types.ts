@@ -3071,6 +3071,7 @@ export type Database = {
           previous_picking_id: string | null
           reschedule_count: number
           reschedule_reason: string | null
+          reservation_transfer_count: number
           scheduled_at: string | null
           source_location_id: string | null
           state: Database["public"]["Enums"]["picking_state"]
@@ -3097,6 +3098,7 @@ export type Database = {
           previous_picking_id?: string | null
           reschedule_count?: number
           reschedule_reason?: string | null
+          reservation_transfer_count?: number
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
@@ -3123,6 +3125,7 @@ export type Database = {
           previous_picking_id?: string | null
           reschedule_count?: number
           reschedule_reason?: string | null
+          reservation_transfer_count?: number
           scheduled_at?: string | null
           source_location_id?: string | null
           state?: Database["public"]["Enums"]["picking_state"]
@@ -3945,6 +3948,10 @@ export type Database = {
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
+      release_move_reservation_partial: {
+        Args: { _move: string; _qty: number }
+        Returns: number
+      }
       replan_picking_chain: { Args: { _picking: string }; Returns: Json }
       reschedule_picking: {
         Args: { _new_date: string; _picking: string; _reason: string }
@@ -3970,6 +3977,15 @@ export type Database = {
       so_is_scheduled: { Args: { _so: string }; Returns: boolean }
       so_is_settled: { Args: { _so: string }; Returns: boolean }
       supplier_location_id: { Args: never; Returns: string }
+      transfer_reservation: {
+        Args: {
+          _from_move: string
+          _qty: number
+          _reason?: string
+          _to_so: string
+        }
+        Returns: Json
+      }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
       validate_batch: { Args: { _batch: string }; Returns: Json }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
