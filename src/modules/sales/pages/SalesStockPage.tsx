@@ -307,6 +307,8 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const matrix = useMemo(() => {
     const m: Record<string, Record<string, { qty: number; reserved: number }>> = {};
     (quants ?? []).forEach((q) => {
+      // Apenas localizações internas contam para "vendável"
+      if ((q.stock_locations as any)?.type !== "internal") return;
       const vid = q.variant_id || "_no_variant";
       const wid = q.stock_locations?.warehouse_id || "_unknown";
       if (filterWh !== "all" && wid !== filterWh) return;
@@ -321,7 +323,10 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const visibleWarehouses = useMemo(() => {
     if (filterWh !== "all") return warehouses.filter((w) => w.id === filterWh);
     const present = new Set<string>();
-    (quants ?? []).forEach((q) => q.stock_locations?.warehouse_id && present.add(q.stock_locations.warehouse_id));
+    (quants ?? []).forEach((q) => {
+      if ((q.stock_locations as any)?.type !== "internal") return;
+      if (q.stock_locations?.warehouse_id) present.add(q.stock_locations.warehouse_id);
+    });
     return warehouses.filter((w) => present.has(w.id));
   }, [warehouses, quants, filterWh]);
 
