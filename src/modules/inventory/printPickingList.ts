@@ -51,7 +51,7 @@ export async function printPickingList(pickingId: string) {
 
   const { data: moves } = await supabase
     .from("stock_moves")
-    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), stock_lots(name)")
+    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
     .eq("picking_id", pickingId);
 
   const { data: company } = await supabase
@@ -65,13 +65,20 @@ export async function printPickingList(pickingId: string) {
 
   const rowsHtml = movesList
     .map((m: any, i: number) => {
-      const code = m.products?.barcode || m.products?.internal_ref || "";
+      const variant = m.product_variants;
+      const attrs = (variant?.product_variant_values ?? [])
+        .map((pvv: any) => pvv?.product_attribute_values?.name)
+        .filter(Boolean)
+        .join(" · ");
+      const sku = variant?.sku || m.products?.internal_ref || "";
+      const code = variant?.barcode || m.products?.barcode || variant?.sku || m.products?.internal_ref || "";
       return `
       <tr>
         <td class="num">${i + 1}</td>
         <td>
           <div class="prod-name">${esc(m.products?.name ?? "—")}</div>
-          ${m.products?.internal_ref ? `<div class="muted">SKU: ${esc(m.products.internal_ref)}</div>` : ""}
+          ${attrs ? `<div class="variant">${esc(attrs)}</div>` : ""}
+          ${sku ? `<div class="muted">SKU: ${esc(sku)}</div>` : ""}
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
         </td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
@@ -115,6 +122,7 @@ export async function printPickingList(pickingId: string) {
   .barcode { width: 200px; }
   .barcode svg { width: 100%; height: 50px; }
   .prod-name { font-weight: 600; }
+  .variant { font-size: 11px; font-weight: 600; color: #222; margin-top: 2px; }
   .muted { color: #666; font-size: 11px; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #eef; font-size: 11px; font-weight: 600; }
   .footer { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
