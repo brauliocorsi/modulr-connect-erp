@@ -411,6 +411,59 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
                 </table>
               </div>
             )}
+
+            {/* Movements (incl. variants) */}
+            {!loadingDetails && (
+              <div className="mt-3">
+                <div className="text-xs font-semibold flex items-center gap-1 mb-1 text-muted-foreground">
+                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações {filteredMoves.length > 0 && <span className="font-normal">({filteredMoves.length})</span>}
+                </div>
+                {filteredMoves.length === 0 ? (
+                  <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
+                ) : (
+                  <div className="overflow-x-auto border rounded max-h-72">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2">Data</th>
+                          <th className="text-left p-2">Documento</th>
+                          <th className="text-left p-2">Tipo</th>
+                          <th className="text-left p-2">Variante</th>
+                          <th className="text-left p-2">Armazém</th>
+                          <th className="text-left p-2">Parceiro</th>
+                          <th className="text-right p-2">Qtd</th>
+                          <th className="text-right p-2">Feito</th>
+                          <th className="text-right p-2">Reservado</th>
+                          <th className="text-left p-2">Estado</th>
+                          <th className="text-left p-2">Origem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMoves.map((m) => (
+                          <tr key={m.id} className="border-t">
+                            <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                            <td className="p-2">
+                              {m.stock_pickings?.id ? (
+                                <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline">{m.stock_pickings.name}</Link>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2">{kindLabel(m.stock_pickings?.kind)}</td>
+                            <td className="p-2">{variantLabel(m.variant_id)}</td>
+                            <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity)}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
+                            <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
+                            <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </td>
         </tr>
       )}
