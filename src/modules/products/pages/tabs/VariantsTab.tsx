@@ -492,6 +492,18 @@ export function VariantsTab({ productId }: { productId: string }) {
                   </td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.01" defaultValue={v.price_extra} key={`px-${v.id}-${v.price_extra}`} onBlur={(e) => Number(e.target.value) !== Number(v.price_extra) && updateVariant(v, { price_extra: Number(e.target.value) })} /></td>
                   <td className="p-1"><Input className="h-8" type="number" step="0.001" defaultValue={v.weight ?? 0} key={`w-${v.id}-${v.weight}`} onBlur={(e) => Number(e.target.value) !== Number(v.weight ?? 0) && updateVariant(v, { weight: Number(e.target.value) })} /></td>
+                  <td className="p-2 text-right">
+                    {(() => {
+                      const s = stockByVariant[v.id] || { qty: 0, reserved: 0 };
+                      const avail = s.qty - s.reserved;
+                      return (
+                        <div className="flex flex-col items-end leading-tight">
+                          <span className={`font-semibold ${avail > 0 ? "text-emerald-600" : avail < 0 ? "text-rose-600" : "text-muted-foreground"}`}>{avail}</span>
+                          <span className="text-[10px] text-muted-foreground">em mão {s.qty}{s.reserved ? ` · res ${s.reserved}` : ""}</span>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="p-2 text-center"><input type="checkbox" checked={v.active} onChange={(e) => updateVariant(v, { active: e.target.checked })} /></td>
                   <td><Button variant="ghost" size="icon" onClick={() => removeVariant(v.id)}><Trash2 className="h-4 w-4" /></Button></td>
                 </tr>
