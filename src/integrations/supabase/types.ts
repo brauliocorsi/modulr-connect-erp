@@ -2853,6 +2853,7 @@ export type Database = {
           quantity: number
           quantity_done: number
           reference: string | null
+          reserved_quantity: number
           source_location_id: string
           state: Database["public"]["Enums"]["picking_state"]
           uom_id: string | null
@@ -2869,6 +2870,7 @@ export type Database = {
           quantity?: number
           quantity_done?: number
           reference?: string | null
+          reserved_quantity?: number
           source_location_id: string
           state?: Database["public"]["Enums"]["picking_state"]
           uom_id?: string | null
@@ -2885,6 +2887,7 @@ export type Database = {
           quantity?: number
           quantity_done?: number
           reference?: string | null
+          reserved_quantity?: number
           source_location_id?: string
           state?: Database["public"]["Enums"]["picking_state"]
           uom_id?: string | null
@@ -3814,6 +3817,7 @@ export type Database = {
         Returns: undefined
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
+      assert_so_has_lines: { Args: { _order: string }; Returns: undefined }
       calc_delivery_price: {
         Args: { _order: string }
         Returns: {
