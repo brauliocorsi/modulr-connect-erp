@@ -160,7 +160,7 @@ export default function SalesStockPage() {
     setLoadingDetails((p) => ({ ...p, [productId]: true }));
     const [{ data: vs }, { data: qs }, { data: mv }] = await Promise.all([
       supabase.from("product_variants").select("id,product_id,sku,image_url,active,product_variant_values(product_attribute_values(name))").eq("product_id", productId),
-      supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name)").eq("product_id", productId),
+      supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name,type)").eq("product_id", productId),
       supabase.from("stock_moves")
         .select("id,created_at,variant_id,quantity,quantity_done,reserved_quantity,state,reference,stock_pickings!inner(id,name,kind,warehouse_id,origin,partners(name))")
         .eq("product_id", productId)
