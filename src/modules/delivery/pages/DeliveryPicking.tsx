@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, CheckCircle2, ScanLine, AlertTriangle, Banknote } from "lucide-react";
+import { ChevronLeft, CheckCircle2, ScanLine, AlertTriangle, Banknote, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,15 +109,30 @@ export default function DeliveryPicking() {
         <div className="divide-y divide-slate-800">
           {moves.map((m: any) => {
             const done = scanned[m.id] ?? 0;
-            const ok = done >= Number(m.quantity);
+            const need = Number(m.quantity);
+            const ok = done >= need;
+            const dec = () => setScanned((s) => ({ ...s, [m.id]: Math.max(0, (s[m.id] ?? 0) - 1) }));
+            const inc = () => {
+              const cur = scanned[m.id] ?? 0;
+              if (cur >= need) { toast.warning("Quantidade já atingida", { description: m.products?.name }); return; }
+              setScanned((s) => ({ ...s, [m.id]: cur + 1 }));
+            };
             return (
-              <div key={m.id} className={`p-3 flex items-center justify-between ${ok ? "bg-emerald-950/30" : ""}`}>
-                <div className="min-w-0">
+              <div key={m.id} className={`p-3 flex items-center justify-between gap-3 ${ok ? "bg-emerald-950/30" : ""}`}>
+                <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{m.products?.name}</div>
                   <div className="text-xs text-slate-500">{m.products?.barcode ?? m.products?.internal_ref ?? "—"}</div>
                 </div>
                 <div className={`text-sm font-mono ${ok ? "text-emerald-400" : "text-slate-300"}`}>
-                  {done} / {Number(m.quantity)}
+                  {done} / {need}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button type="button" size="icon" variant="outline" className="h-10 w-10" onClick={dec} disabled={done <= 0}>
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" className="h-10 w-10 bg-emerald-500 hover:bg-emerald-600" onClick={inc} disabled={ok}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             );
