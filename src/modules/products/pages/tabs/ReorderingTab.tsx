@@ -16,9 +16,24 @@ type Rule = {
   max_qty: number;
   multiple_qty: number;
   active: boolean;
+  check_interval_minutes: number;
+  last_run_at?: string | null;
+  next_run_at?: string | null;
   _new?: boolean;
   _dirty?: boolean;
 };
+
+const INTERVAL_PRESETS = [
+  { label: "A cada 15 min", value: 15 },
+  { label: "A cada 30 min", value: 30 },
+  { label: "A cada hora", value: 60 },
+  { label: "A cada 4 horas", value: 240 },
+  { label: "A cada 12 horas", value: 720 },
+  { label: "Diariamente", value: 1440 },
+  { label: "Semanalmente", value: 10080 },
+];
+
+const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
 export function ReorderingTab({ productId }: { productId: string }) {
   const [rules, setRules] = useState<Rule[]>([]);
@@ -65,6 +80,7 @@ export function ReorderingTab({ productId }: { productId: string }) {
         max_qty: 5,
         multiple_qty: 1,
         active: true,
+        check_interval_minutes: 60,
         _new: true,
         _dirty: true,
       },
@@ -99,6 +115,7 @@ export function ReorderingTab({ productId }: { productId: string }) {
         max_qty: Number(r.max_qty) || 0,
         multiple_qty: Number(r.multiple_qty) || 1,
         active: r.active,
+        check_interval_minutes: Number(r.check_interval_minutes) || 60,
       };
       if (r._new) {
         const { error } = await supabase.from("reordering_rules").insert(payload);
@@ -162,15 +179,17 @@ export function ReorderingTab({ productId }: { productId: string }) {
               <th className="text-right px-3 py-2 w-24">Mínimo</th>
               <th className="text-right px-3 py-2 w-24">Máximo</th>
               <th className="text-right px-3 py-2 w-24">Múltiplo</th>
+              <th className="text-left px-3 py-2 w-44">Frequência</th>
+              <th className="text-left px-3 py-2 w-40">Última / Próxima</th>
               <th className="text-center px-3 py-2 w-20">Ativo</th>
               <th className="w-10" />
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center text-muted-foreground py-6">Carregando…</td></tr>
+              <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Carregando…</td></tr>
             ) : rules.length === 0 ? (
-              <tr><td colSpan={7} className="text-center text-muted-foreground py-6">Nenhuma regra cadastrada</td></tr>
+              <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Nenhuma regra cadastrada</td></tr>
             ) : (
               rules.map((r, i) => (
                 <tr key={r.id ?? `new-${i}`} className="border-t">
@@ -202,6 +221,28 @@ export function ReorderingTab({ productId }: { productId: string }) {
                   <td className="px-2 py-1">
                     <Input className="h-8 text-right" type="number" step="1" value={r.multiple_qty} onChange={(e) => setRule(i, { multiple_qty: Number(e.target.value) })} />
                   </td>
+                  <td className="px-2 py-1">
+                    <Select
+                      value={String(r.check_interval_minutes ?? 60)}
+                      onValueChange={(v) => setRule(i, { check_interval_minutes: Number(v) })}
+                    >
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {INTERVAL_PRESETS.map((p) => (
+                          <SelectItem key={p.value} value={String(p.value)}>{p.label}</SelectItem>
+                        ))}
+                        {!INTERVAL_PRESETS.some((p) => p.value === r.check_interval_minutes) && (
+                          <SelectItem value={String(r.check_interval_minutes)}>
+                            Personalizado ({r.check_interval_minutes} min)
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-1 text-xs text-muted-foreground">
+                    <div>Última: {fmtDate(r.last_run_at)}</div>
+                    <div>Próxima: {fmtDate(r.next_run_at)}</div>
+                  </td>
                   <td className="px-2 py-1 text-center">
                     <Switch checked={r.active} onCheckedChange={(v) => setRule(i, { active: v })} />
                   </td>
@@ -216,7 +257,8 @@ export function ReorderingTab({ productId }: { productId: string }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        O cron <code>reordering-cron</code> executa periodicamente. Use "Executar agora" para forçar manualmente.
+        O cron <code>reordering-cron</code> roda a cada 15 min e processa apenas as regras cuja "Próxima" execução já chegou.
+        Cada regra respeita sua própria frequência. Use "Executar agora" para forçar manualmente.
       </p>
     </div>
   );
