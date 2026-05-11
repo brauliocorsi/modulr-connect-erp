@@ -742,7 +742,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                             <td className={`p-2 ${dirTone}`}>
                               <span className="inline-flex items-center gap-1"><DirIcon className="h-3 w-3" />{kindLabel(k)}</span>
                             </td>
-                            <td className="p-2">{renderVariantBadges(m.variant_id)}</td>
+                            <td className="p-2">{renderVariantBadges(m.variant_id, (m as any)._inferred)}</td>
                             <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
                             <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
                             <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
