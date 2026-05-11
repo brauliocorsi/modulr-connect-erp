@@ -614,7 +614,9 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                       </tr>
                     </thead>
                     <tbody>
-                      {variants.map((v) => {
+                      {displayedVariants.length === 0 ? (
+                        <tr><td colSpan={3 + visibleWarehouses.length + 2} className="p-4 text-center text-muted-foreground italic text-xs">Nenhuma variante com stock.</td></tr>
+                      ) : displayedVariants.map((v) => {
                         const cells = matrix[v.id] || {};
                         const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
                         const isActive = variantFilter === v.id;
