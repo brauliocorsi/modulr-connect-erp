@@ -612,9 +612,30 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
           {!loadingDetails && (
             <div>
               <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
-                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
-                  <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
+                    <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                  </div>
+                  <div className="inline-flex border rounded-md p-0.5 bg-background">
+                    {([
+                      { k: "all", label: `Todas (${movesByDir.all.length})`, cls: "" },
+                      { k: "incoming", label: `Entradas (${movesByDir.incoming.length})`, cls: "text-emerald-600", Icon: TrendingUp },
+                      { k: "outgoing", label: `Saídas (${movesByDir.outgoing.length})`, cls: "text-rose-600", Icon: TrendingDown },
+                    ] as const).map((opt) => {
+                      const Icon = (opt as any).Icon;
+                      const active = dirFilter === opt.k;
+                      return (
+                        <button
+                          key={opt.k}
+                          onClick={() => setDirFilter(opt.k as any)}
+                          className={`text-[11px] px-2 py-1 rounded inline-flex items-center gap-1 transition-colors ${active ? "bg-primary text-primary-foreground" : `hover:bg-muted ${opt.cls}`}`}
+                        >
+                          {Icon && <Icon className="h-3 w-3" />}{opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-1 items-center">
                   <button
