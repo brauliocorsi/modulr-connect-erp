@@ -52,6 +52,18 @@ type Variant = {
   product_variant_values: { product_attribute_values: { name: string } | null }[];
 };
 
+type Move = {
+  id: string;
+  created_at: string;
+  variant_id: string | null;
+  quantity: number;
+  quantity_done: number;
+  reserved_quantity: number;
+  state: string;
+  reference: string | null;
+  stock_pickings: { id: string; name: string; kind: string; warehouse_id: string | null; origin: string | null; partners: { name: string } | null } | null;
+};
+
 export default function SalesStockPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [forecast, setForecast] = useState<ForecastRow[]>([]);
