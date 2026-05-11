@@ -30,6 +30,10 @@ export default function TransfersList() {
     queryKey: ["batches-min"],
     queryFn: async () => (await supabase.from("stock_picking_batches").select("id,name").order("created_at", { ascending: false }).limit(100)).data ?? [],
   });
+  const { data: carriers } = useQuery({
+    queryKey: ["carriers-min"],
+    queryFn: async () => (await supabase.from("delivery_carriers").select("id,name").eq("active", true).order("name")).data ?? [],
+  });
 
   const { data: rows = [] } = useQuery({
     queryKey: ["transfers-list", q, filters, sort],
@@ -44,24 +48,36 @@ export default function TransfersList() {
       if (filters.state) query = query.eq("state", filters.state);
       if (filters.warehouse_id) query = query.eq("warehouse_id", filters.warehouse_id);
       if (filters.batch_id) query = query.eq("batch_id", filters.batch_id);
+      if (filters.carrier_id) query = query.eq("carrier_id", filters.carrier_id);
+      if (filters.tracking_ref) query = query.ilike("tracking_ref", `%${filters.tracking_ref}%`);
       if (filters.step) query = query.ilike("step_label", `%${filters.step}%`);
       if (filters.from) query = query.gte("scheduled_at", filters.from);
       if (filters.to) query = query.lte("scheduled_at", filters.to + "T23:59:59");
+      if (filters.done_from) query = query.gte("done_at", filters.done_from);
+      if (filters.done_to) query = query.lte("done_at", filters.done_to + "T23:59:59");
       if (filters.origin) query = query.ilike("origin", `%${filters.origin}%`);
       const { data } = await query;
 
+      let result = data ?? [];
+
+      // optional partner filter (post-fetch since partner is joined)
+      if (filters.partner_search) {
+        const needle = filters.partner_search.toLowerCase();
+        result = result.filter((r: any) => (r.partners?.name ?? "").toLowerCase().includes(needle));
+      }
+
       // optional product filter via stock_moves
-      if (filters.product_search && data?.length) {
-        const ids = data.map((r: any) => r.id);
+      if (filters.product_search && result.length) {
+        const ids = result.map((r: any) => r.id);
         const { data: mv } = await supabase
           .from("stock_moves")
           .select("picking_id, products!inner(name)")
           .in("picking_id", ids)
           .ilike("products.name", `%${filters.product_search}%`);
         const ok = new Set((mv ?? []).map((m: any) => m.picking_id));
-        return (data ?? []).filter((r: any) => ok.has(r.id));
+        result = result.filter((r: any) => ok.has(r.id));
       }
-      return data ?? [];
+      return result;
     },
   });
 
@@ -167,20 +183,27 @@ export default function TransfersList() {
           </div>
           <AdvancedFilters
             onChange={setFilters}
+            storageKey="transfers-list"
+            defaults={{ state: "ready" }}
             fields={[
-              { key: "kind", label: "Tipo", type: "select", options: [
-                { value: "incoming", label: "Entrada" }, { value: "outgoing", label: "Saída" }, { value: "internal", label: "Interna" },
-              ]},
               { key: "state", label: "Estado", type: "select", options: [
                 { value: "draft", label: "Rascunho" }, { value: "waiting", label: "A aguardar" },
                 { value: "ready", label: "Pronto" }, { value: "done", label: "Concluído" }, { value: "cancelled", label: "Cancelado" },
               ]},
+              { key: "kind", label: "Tipo de operação", type: "select", options: [
+                { value: "incoming", label: "Entrada" }, { value: "outgoing", label: "Saída" }, { value: "internal", label: "Interna" },
+              ]},
               { key: "warehouse_id", label: "Armazém", type: "select", options: (warehouses ?? []).map((w: any) => ({ value: w.id, label: w.name })) },
               { key: "step", label: "Etapa (texto)", type: "text" },
               { key: "batch_id", label: "Lote", type: "select", options: (batches ?? []).map((b: any) => ({ value: b.id, label: b.name })) },
+              { key: "carrier_id", label: "Transportadora", type: "select", options: (carriers ?? []).map((c: any) => ({ value: c.id, label: c.name })) },
               { key: "from", label: "Programado de", type: "date" },
               { key: "to", label: "Programado até", type: "date" },
-              { key: "origin", label: "Origem doc", type: "text" },
+              { key: "done_from", label: "Entregue de", type: "date" },
+              { key: "done_to", label: "Entregue até", type: "date" },
+              { key: "origin", label: "Documento origem", type: "text" },
+              { key: "tracking_ref", label: "Tracking", type: "text" },
+              { key: "partner_search", label: "Parceiro contém", type: "text" },
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
