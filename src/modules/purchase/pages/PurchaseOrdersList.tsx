@@ -38,6 +38,20 @@ export const PurchaseOrdersList = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterValues>({});
+  const [groupDrafts, setGroupDrafts] = useState<boolean>(() => {
+    try { return localStorage.getItem("po-group-drafts") !== "0"; } catch { return true; }
+  });
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const toggleGroupDrafts = () => {
+    setGroupDrafts((v) => {
+      const n = !v;
+      try { localStorage.setItem("po-group-drafts", n ? "1" : "0"); } catch {}
+      return n;
+    });
+  };
+  const toggleGroup = (k: string) => setOpenGroups((p) => {
+    const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n;
+  });
 
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers-min"],
