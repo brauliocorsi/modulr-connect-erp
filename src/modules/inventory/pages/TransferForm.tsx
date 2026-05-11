@@ -711,7 +711,27 @@ export default function TransferForm() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2">{stateLabel(m.state)}</td>
+                      <td className="px-3 py-2">
+                        {m.state === "done" ? (
+                          Number(m.quantity_done) >= Number(m.quantity) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                              <CheckCircle2 className="h-3 w-3" /> Recebido · {m.quantity_done}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                              <AlertTriangle className="h-3 w-3" /> Parcial · {m.quantity_done}/{m.quantity}
+                            </span>
+                          )
+                        ) : m.state === "cancelled" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200">
+                            <X className="h-3 w-3" /> Não recebido · 0/{m.quantity}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+                            <Truck className="h-3 w-3" /> {stateLabel(m.state)} · 0/{m.quantity}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );})}
                 </tbody>
