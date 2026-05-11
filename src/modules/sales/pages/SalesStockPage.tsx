@@ -160,7 +160,7 @@ export default function SalesStockPage() {
     setLoadingDetails((p) => ({ ...p, [productId]: true }));
     const [{ data: vs }, { data: qs }, { data: mv }] = await Promise.all([
       supabase.from("product_variants").select("id,product_id,sku,image_url,active,product_variant_values(product_attribute_values(name))").eq("product_id", productId),
-      supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name)").eq("product_id", productId),
+      supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name,type)").eq("product_id", productId),
       supabase.from("stock_moves")
         .select("id,created_at,variant_id,quantity,quantity_done,reserved_quantity,state,reference,stock_pickings!inner(id,name,kind,warehouse_id,origin,partners(name))")
         .eq("product_id", productId)
@@ -307,6 +307,8 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const matrix = useMemo(() => {
     const m: Record<string, Record<string, { qty: number; reserved: number }>> = {};
     (quants ?? []).forEach((q) => {
+      // Apenas localizações internas contam para "vendável"
+      if ((q.stock_locations as any)?.type !== "internal") return;
       const vid = q.variant_id || "_no_variant";
       const wid = q.stock_locations?.warehouse_id || "_unknown";
       if (filterWh !== "all" && wid !== filterWh) return;
@@ -321,7 +323,10 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const visibleWarehouses = useMemo(() => {
     if (filterWh !== "all") return warehouses.filter((w) => w.id === filterWh);
     const present = new Set<string>();
-    (quants ?? []).forEach((q) => q.stock_locations?.warehouse_id && present.add(q.stock_locations.warehouse_id));
+    (quants ?? []).forEach((q) => {
+      if ((q.stock_locations as any)?.type !== "internal") return;
+      if (q.stock_locations?.warehouse_id) present.add(q.stock_locations.warehouse_id);
+    });
     return warehouses.filter((w) => present.has(w.id));
   }, [warehouses, quants, filterWh]);
 
