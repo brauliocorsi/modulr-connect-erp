@@ -104,7 +104,10 @@ export default function RouteDetail() {
               <Button size="sm" onClick={save}>Guardar</Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
+            <>
+              <Button size="sm" variant="destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
+            </>
           )
         }
       />
