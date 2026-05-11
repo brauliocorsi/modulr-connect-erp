@@ -183,20 +183,27 @@ export default function TransfersList() {
           </div>
           <AdvancedFilters
             onChange={setFilters}
+            storageKey="transfers-list"
+            defaults={{ state: "ready" }}
             fields={[
-              { key: "kind", label: "Tipo", type: "select", options: [
-                { value: "incoming", label: "Entrada" }, { value: "outgoing", label: "Saída" }, { value: "internal", label: "Interna" },
-              ]},
               { key: "state", label: "Estado", type: "select", options: [
                 { value: "draft", label: "Rascunho" }, { value: "waiting", label: "A aguardar" },
                 { value: "ready", label: "Pronto" }, { value: "done", label: "Concluído" }, { value: "cancelled", label: "Cancelado" },
               ]},
+              { key: "kind", label: "Tipo de operação", type: "select", options: [
+                { value: "incoming", label: "Entrada" }, { value: "outgoing", label: "Saída" }, { value: "internal", label: "Interna" },
+              ]},
               { key: "warehouse_id", label: "Armazém", type: "select", options: (warehouses ?? []).map((w: any) => ({ value: w.id, label: w.name })) },
               { key: "step", label: "Etapa (texto)", type: "text" },
               { key: "batch_id", label: "Lote", type: "select", options: (batches ?? []).map((b: any) => ({ value: b.id, label: b.name })) },
+              { key: "carrier_id", label: "Transportadora", type: "select", options: (carriers ?? []).map((c: any) => ({ value: c.id, label: c.name })) },
               { key: "from", label: "Programado de", type: "date" },
               { key: "to", label: "Programado até", type: "date" },
-              { key: "origin", label: "Origem doc", type: "text" },
+              { key: "done_from", label: "Entregue de", type: "date" },
+              { key: "done_to", label: "Entregue até", type: "date" },
+              { key: "origin", label: "Documento origem", type: "text" },
+              { key: "tracking_ref", label: "Tracking", type: "text" },
+              { key: "partner_search", label: "Parceiro contém", type: "text" },
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
