@@ -65,13 +65,20 @@ export async function printPickingList(pickingId: string) {
 
   const rowsHtml = movesList
     .map((m: any, i: number) => {
-      const code = m.products?.barcode || m.products?.internal_ref || "";
+      const variant = m.product_variants;
+      const attrs = (variant?.product_variant_values ?? [])
+        .map((pvv: any) => pvv?.product_attribute_values?.name)
+        .filter(Boolean)
+        .join(" · ");
+      const sku = variant?.sku || m.products?.internal_ref || "";
+      const code = variant?.barcode || m.products?.barcode || variant?.sku || m.products?.internal_ref || "";
       return `
       <tr>
         <td class="num">${i + 1}</td>
         <td>
           <div class="prod-name">${esc(m.products?.name ?? "—")}</div>
-          ${m.products?.internal_ref ? `<div class="muted">SKU: ${esc(m.products.internal_ref)}</div>` : ""}
+          ${attrs ? `<div class="variant">${esc(attrs)}</div>` : ""}
+          ${sku ? `<div class="muted">SKU: ${esc(sku)}</div>` : ""}
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
         </td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
