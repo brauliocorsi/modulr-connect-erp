@@ -1,62 +1,116 @@
-## Objetivo
 
-Hoje, uma venda (ex.: SO00004) gera 3 pickings físicos: WH/OUT/00008, 00009, 00010 — cada um aparece como linha separada nas Transferências e como N movimentos soltos em Movimentos de Stock. Isto polui a UI.
+# Agendamento de entregas por Rotas (app dedicada "Rotas")
 
-A cadeia física continua a existir (necessária para rastreio), mas a interface passa a apresentá-la **agrupada por origem (SO/PO/transferência interna)** numa única linha-mestre expansível com as etapas dentro.
+## Como funciona hoje (resumo)
+- Vendas confirmadas geram cadeia de transferências (Pick → Carga → Entrega).
+- A última etapa é colocada num **Lote** (`stock_picking_batches`) com data + motorista + carrinha; o app de entregas mostra esse lote.
+- Já existem `delivery_zip_rules`, `partners.zip`, `sale_orders.commitment_date / include_assembly / include_delivery`. O produto tem `assembly_fee` mas **não tem tempo de montagem**.
 
-## Mudanças (apenas frontend, sem alterar schema nem fluxo)
+## O que muda
+Introduzimos **Zonas** (faixas de CP com motorista/carrinha/capacidade padrão) e **Rotas** (instância diária de uma zona). As entregas confirmadas com cliente passam a ser sugeridas para a rota da zona/dia. Os vendedores e o app de entregas usam o **novo módulo Rotas** como hub central.
 
-### 1. `src/modules/inventory/pages/TransfersList.tsx`
-- Após carregar os pickings (com os filtros já existentes), agrupar pelo campo `origin` (`SO00004`, `PO00002`, etc.). Pickings sem `origin` ficam como linhas individuais (comportamento atual).
-- Render em duas formas, com toggle "Agrupar por origem" (default ON, persistido em `user_filter_preferences` com a chave `transfers-group-by-origin`):
-  - **Linha-mestre** por origem: mostra origem, parceiro, nº de etapas, estado consolidado (ver regra abaixo), data programada mais cedo, data feita mais tarde.
-  - Click expande mostrando as etapas (sub-linhas indentadas) ordenadas pelo fluxo físico (source→destination encadeado), cada uma com o seu nome (`WH/OUT/00008`…), estado individual e link para o detalhe.
-- **Estado consolidado** (espelha o que o utilizador já vê hoje em "ordem"):
-  - `cancelled` se todos cancelados
-  - `done` se todos done
-  - `ready` se a primeira etapa pendente está ready
-  - `waiting` caso contrário
-  - badge mostra também "Etapa X de Y" para dar contexto
-- Ordenação interna das etapas por dependência: a etapa cujo `source_location_id` não é destino de nenhuma outra etapa do grupo é a primeira; as seguintes encadeiam por `destination_location_id == próxima.source_location_id`. Fallback: ordenar por `created_at`.
-- Filtro de estado existente passa a aplicar-se ao **estado consolidado** quando o agrupamento está ativo (filtrar "Pronto" mostra grupos cuja próxima etapa pendente está pronta — exatamente o que o utilizador pediu antes).
+Lotes existentes ficam preservados em modo leitura (legado).
 
-### 2. `src/modules/inventory/pages/MovesPage.tsx`
-- Mesmo padrão: agrupar movimentos por `stock_pickings.origin`. Linha-mestre por SO/PO, expansível mostrando os movimentos individuais (com produto/variante, quantidade, etapa).
-- Toggle "Agrupar por origem" (default ON, mesma persistência por utilizador).
-- Quando o filtro Produto está ativo, o grupo só aparece se contiver pelo menos um movimento desse produto, e ao expandir só lista os movimentos relevantes.
+---
 
-### 3. `src/modules/inventory/pages/InternalTransfersPage.tsx`
-- Mesmo agrupamento opcional para transferências internas que partilhem `origin` (raras hoje, mas consistente).
+## 1. Modelo de dados
 
-### 4. Detalhe do picking (`TransferForm.tsx`)
-- No topo, quando o picking pertence a uma cadeia (existem outros pickings com o mesmo `origin`), mostrar uma faixa "Cadeia da venda SO00004" com os passos clicáveis em ordem e um indicador "Esta etapa: X de Y". Já existe algo parecido (passos 1/2/3) — apenas garantir que reaproveita esta lógica de ordenação por dependência e fica consistente com a lista.
+**`delivery_zones`**
+- `name`, `zip_from`, `zip_to`, `color`, `active`
+- `default_driver_id`, `default_vehicle_id`
+- `max_deliveries_per_day` (int), `max_assembly_minutes_per_day` (int)
+- `weekdays` (array 0–6)
 
-## Diagrama do agrupamento
+**`delivery_routes`** — 1 por zona/dia
+- `zone_id`, `route_date`, `driver_id`, `vehicle_id`
+- `max_deliveries`, `max_assembly_minutes` (copiados, editáveis)
+- `state` (`planned` | `in_progress` | `done` | `cancelled`)
+- `notes`
+- Único `(zone_id, route_date)`
 
-```text
-Antes (lista plana):
-  WH/OUT/00008  Pronto       SO00004
-  WH/OUT/00009  A aguardar   SO00004
-  WH/OUT/00010  A aguardar   SO00004
+**`stock_pickings`**: + `route_id` (FK nullable). `batch_id` mantém-se (legado).
 
-Depois (agrupado, expandível):
-  ▸ SO00004  Cliente X  Pronto · Etapa 1 de 3   3 etapas
-       └─ WH/OUT/00008  Stock → Cais        Pronto
-       └─ WH/OUT/00009  Cais → Carrinha     A aguardar
-       └─ WH/OUT/00010  Carrinha → Cliente  A aguardar
+**`products`**: + `assembly_minutes` (numeric, default 0) — minutos por unidade.
+
+## 2. Lógica (Postgres)
+
+- `suggest_route(_so uuid, _from_date date)` — devolve as próximas 15 datas/rotas candidatas para a zona do CP do cliente, com `remaining_deliveries`, `remaining_minutes`, flag `would_exceed`.
+- Minutos da venda = `Σ assembly_minutes × quantity` (apenas linhas de produto, e só se `include_assembly = true`).
+- Aplica-se apenas a vendas com `include_delivery = true`.
+- `schedule_picking_to_route(_picking, _route)` — define `route_id`, `scheduled_at`, `commitment_date`. Se exceder limite → não bloqueia, mas devolve `warning` + 3 próximas rotas com folga (opção "Sugerir próxima data").
+- `validate_route(_route)` — valida todas as entregas da rota (reusa `validate_picking`).
+- `generate_routes(_horizon_days int default 15)` — para cada zona ativa cria as `delivery_routes` em falta nos próximos 15 dias (respeitando `weekdays`).
+
+## 3. Novo módulo "Rotas" (item de topo no menu principal)
+
+Ícone Truck, entre "Inventário" e "Entregas". Aceita `inventory_user`, `sales_user`, `delivery_driver` em leitura; gestão para `inventory_manager`/`system_admin`.
+
+```
+/routes
+├── /routes                    Cronograma (default)
+├── /routes/list               Lista de rotas
+├── /routes/:id                Detalhe da rota
+├── /routes/zones              Zonas (CRUD)
+└── /routes/zones/:id          Editor de zona
 ```
 
-## O que NÃO muda
+**Cronograma (`/routes`)** — vista calendário/Kanban
+- Eixo X = próximos 15 dias; eixo Y = zonas. Cada cartão mostra a rota com barras de capacidade (X/Y entregas, Z/W min) coloridas por zona.
+- Clique → abre detalhe.
+- Botão "Gerar próximos 15 dias" + filtro por motorista/zona.
+- Pesquisa por cliente / nº venda → realça rotas onde aparece.
 
-- Schema da BD, triggers, funções RPC, fluxo de validação, reservas, backorders.
-- Rotas e detalhe de cada picking — continuam acessíveis individualmente.
-- Impressão de picking, scan, waves.
+**Detalhe da rota (`/routes/:id`)**
+- Cabeçalho: zona, data, motorista, carrinha, estado, capacidade.
+- Lista de entregas (drag-to-reorder), mini-mapa opcional (fora deste plano).
+- Vendedores podem **adicionar venda** a esta rota (selector com filtro por CP).
+- Botões "Iniciar", "Validar todas", "Cancelar".
 
-## Verificação
+**Zonas (`/routes/zones`)** — CRUD: nome, CP de/até, dias da semana, motorista/carrinha padrão, capacidades.
 
-1. SO00004 aparece como **uma linha** em Transferências e em Movimentos.
-2. Filtro "Pronto" mostra a SO00004 (porque a próxima etapa pendente é Pronta).
-3. Expandir mostra as 3 etapas na ordem física Stock → Cais → Carrinha → Cliente.
-4. Validar a etapa Pronta avança a cadeia e o estado consolidado da linha-mestre passa a "Etapa 2 de 3 · Pronto" (ou "A aguardar" se ainda não houver stock).
-5. Toggle "Agrupar" desligado volta ao comportamento atual.
-6. Preferência de agrupamento persiste por utilizador (entre dispositivos).
+## 4. Inventário — vínculo na lista de transferências
+
+A lista existente de Transferências ganha:
+- Nova **coluna "Rota"** mostrando `zona · data` (clicável → `/routes/:id`).
+- Filtro lateral "Rota" (select).
+- Na ficha da transferência (`TransferForm`) bloco "Rota atribuída" com botões **Atribuir / Reagendar** (abre `RouteScheduler`).
+
+## 5. Vendas
+
+**Formulário da Venda** (secção entrega, quando `include_delivery` on e CP preenchido)
+- Mostra a zona detetada e date picker "Data desejada".
+- Ao escolher → chama `suggest_route` e mostra cartão da rota (motorista, carrinha, capacidade restante).
+- Aviso amarelo se exceder + 3 próximas datas livres com botão "Usar esta".
+- Confirmar → `schedule_picking_to_route`.
+
+**Vendedores no app Rotas**: leitura completa do cronograma para apoiar a marcação ao telefone com o cliente.
+
+## 6. Cadastro de Produto
+Campo "Minutos de montagem por unidade" no separador principal (perto de `assembly_fee`).
+
+## 7. App de Entregas (`/delivery`)
+- "Os meus lotes" passa a "**As minhas rotas**": lê `delivery_routes` onde `driver_id = auth.uid()` e `route_date >= hoje`.
+- Detalhe da rota reusa a UI atual (pickings, scan, cobrança).
+- Sub-secção "Lotes antigos" enquanto existirem lotes legados pendentes.
+
+## 8. Geração automática (15 dias)
+- Botão manual em `/routes` (chama `generate_routes`).
+- Edge function `routes-generator` invocada por cron diário (pg_cron + pg_net) às 01:00.
+
+## 9. Migração de dados
+- Cada `stock_picking_batches` em `draft`/`in_progress` com `delivery_date` futura → cria `delivery_route` correspondente (zona inferida pelo CP do primeiro cliente; `NULL` se não bater) e move `route_id` dos pickings.
+- Lotes `done`/`cancelled` ficam intactos no separador legado.
+
+## 10. RLS
+- `delivery_zones`, `delivery_routes`: leitura para `inventory_user`, `sales_user`, `delivery_driver` (este só vê onde é `driver_id`); escrita para `inventory_manager`/`system_admin`.
+- `stock_pickings.route_id`: regras existentes.
+
+## 11. Entregáveis técnicos
+- Migração SQL (tabelas + colunas + índices + RLS + funções).
+- Edge function `routes-generator` + cron.
+- Novo módulo `src/modules/routes/`: `RoutesShell`, `RoutesSchedule` (calendário), `RoutesList`, `RouteForm`, `ZonesList`, `ZoneForm`, componente partilhado `RouteScheduler` (modal usado por Vendas e Inventário).
+- Atualizar: `AppShell` (item "Rotas" no menu), `core/modules/registry.ts`, `OrderForm` (bloco agendamento), `ProductForm` (minutos), `TransfersList` + `TransferForm` (coluna/bloco rota), `DeliveryHome`/`DeliveryBatch` (passar a rotas).
+
+## Fora deste plano
+- Otimização do trajeto em mapa.
+- Notificação automática ao cliente (SMS/email) da data agendada.
