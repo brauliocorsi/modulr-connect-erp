@@ -228,6 +228,16 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const save = async () => {
     if (!order.partner_id) return toast.error(kind === "sale" ? "Selecione um cliente" : "Selecione um fornecedor");
+    // Require variant when product has variants
+    for (const l of lines) {
+      if ((l.line_kind ?? "product") !== "product") continue;
+      if (!l.product_id) continue;
+      const vs = (variantsByProduct?.[l.product_id] ?? []).filter((v: any) => v.active !== false);
+      if (vs.length > 0 && !l.variant_id) {
+        const p = products?.find((x: any) => x.id === l.product_id);
+        return toast.error(`Selecione a variante para "${p?.name ?? "produto"}"`);
+      }
+    }
     let oid = id as string | undefined;
     const payload: any = {
       partner_id: order.partner_id,
@@ -490,11 +500,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                                                 key={p.id}
                                                 value={`${p.name} ${p.barcode ?? ""}`}
                                                 onSelect={() => {
+                                                  const pvs = (variantsByProduct?.[p.id] ?? []).filter((v: any) => v.active !== false);
+                                                  const onlyV = pvs.length === 1 ? pvs[0] : null;
+                                                  const base = kind === "sale" ? Number(p.list_price ?? 0) : Number(p.standard_cost ?? 0);
                                                   setLine(i, {
                                                     product_id: p.id,
-                                                    variant_id: null,
-                                                    unit_price: kind === "sale" ? Number(p.list_price ?? 0) : Number(p.standard_cost ?? 0),
-                                                    description: p.name ?? "",
+                                                    variant_id: onlyV?.id ?? null,
+                                                    unit_price: base + Number(onlyV?.price_extra ?? 0),
+                                                    description: `${p.name ?? ""}${onlyV ? ` — ${onlyV.label}` : ""}`,
                                                   });
                                                   (document.activeElement as HTMLElement)?.blur();
                                                 }}
