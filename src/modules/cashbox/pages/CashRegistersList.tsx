@@ -164,42 +164,51 @@ export default function CashRegistersList() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Novo Caixa</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Novo Caixa</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">Apenas o nome e a loja são obrigatórios. Os restantes campos têm valores por defeito.</p>
+          </DialogHeader>
           <div className="grid gap-3">
-            <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div>
-              <Label>Loja</Label>
-              <Select value={form.store_id} onValueChange={onStoreChange}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{stores.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>Nome <span className="text-destructive">*</span></Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex.: Caixa Loja Centro" />
             </div>
-            <div>
-              <Label>Armazém</Label>
-              <Select value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{warehouses.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Loja <span className="text-destructive">*</span></Label>
+                <Select value={form.store_id} onValueChange={onStoreChange}>
+                  <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+                  <SelectContent>{stores.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Armazém</Label>
+                <Select value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Herda da loja" /></SelectTrigger>
+                  <SelectContent>{warehouses.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Utilizador responsável</Label>
-              <Select value={form.user_id} onValueChange={(v) => setForm({ ...form, user_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.full_name}</SelectItem>)}</SelectContent>
-              </Select>
-              <div className="text-xs text-muted-foreground mt-1">Por defeito é o utilizador autenticado.</div>
-            </div>
-            <div>
-              <Label>Diário (cash)</Label>
-              <Select value={form.journal_id} onValueChange={(v) => setForm({ ...form, journal_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                <SelectContent>{journals.map((j) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Responsável</Label>
+                <Select value={form.user_id} onValueChange={(v) => setForm({ ...form, user_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Eu próprio" /></SelectTrigger>
+                  <SelectContent>{users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.full_name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Diário (cash)</Label>
+                <Select value={form.journal_id} onValueChange={(v) => setForm({ ...form, journal_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Criar automaticamente" /></SelectTrigger>
+                  <SelectContent>{journals.map((j) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={create}>Criar</Button>
+            <Button onClick={create}>Criar Caixa</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
