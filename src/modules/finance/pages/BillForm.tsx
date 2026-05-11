@@ -61,9 +61,27 @@ export default function BillForm() {
       setPartners(pp ?? []);
       setCenters(cc ?? []);
       setPos(pp2 ?? []);
+      // Prefill from ?po=<id>
+      if (prefillPoId) {
+        const { data: po } = await supabase
+          .from("purchase_orders")
+          .select("id, partner_id, amount_total, name, expected_date")
+          .eq("id", prefillPoId)
+          .maybeSingle();
+        if (po) {
+          setBill((b: any) => ({
+            ...b,
+            partner_id: po.partner_id,
+            purchase_order_id: po.id,
+            amount_total: Number(po.amount_total || 0),
+            reference: po.name,
+            due_date: po.expected_date ?? b.due_date,
+          }));
+        }
+      }
     })();
     load();
-  }, [id]);
+  }, [id, prefillPoId]);
 
   const save = async () => {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");
