@@ -108,14 +108,28 @@ export function SmartButtons({
           .from("stock_pickings")
           .select("id,name,state,kind")
           .eq("origin", orderName);
-        // Source SO (if PO origin matches a SO)
-        const { data: po } = await supabase.from("purchase_orders").select("origin").eq("name", orderName).maybeSingle();
-        let so: any = null;
-        if (po?.origin) {
+        // Source SOs — primary via purchase_order_origins (multiple, supports merged POs), fallback to po.origin
+        const { data: po } = await supabase
+          .from("purchase_orders")
+          .select("id,origin")
+          .eq("name", orderName)
+          .maybeSingle();
+        let sos: { id: string; name: string; state: string }[] = [];
+        if (po?.id) {
+          const { data: origins } = await supabase
+            .from("purchase_order_origins")
+            .select("sale_order_id, sale_orders(id,name,state)")
+            .eq("po_id", po.id);
+          sos = (origins ?? [])
+            .map((o: any) => o.sale_orders)
+            .filter(Boolean);
+        }
+        if (sos.length === 0 && po?.origin) {
           const r = await supabase.from("sale_orders").select("id,name,state").eq("name", po.origin).maybeSingle();
-          so = r.data;
+          if (r.data) sos = [r.data];
         }
         const doneRecv = (recv ?? []).filter((p) => p.state === "done").length;
+        const firstSo = sos[0];
         setStats([
           {
             label: "Recebimentos",
@@ -126,12 +140,16 @@ export function SmartButtons({
             hint: recv?.length ? `${doneRecv}/${recv.length} recebidos` : "—",
           },
           {
-            label: "Venda de origem",
-            count: so ? 1 : 0,
-            to: so ? `/sales/orders/${so.id}` : undefined,
+            label: sos.length > 1 ? "Vendas de origem" : "Venda de origem",
+            count: sos.length,
+            to: firstSo ? `/sales/orders/${firstSo.id}` : undefined,
             icon: ShoppingCart,
             tone: "info",
-            hint: so ? `${so.name} (${so.state})` : "Nenhuma",
+            hint: sos.length === 0
+              ? "Nenhuma"
+              : sos.length === 1
+                ? `${firstSo.name} (${firstSo.state})`
+                : sos.map((s) => s.name).join(", "),
           },
         ]);
       } else {
