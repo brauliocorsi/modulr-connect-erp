@@ -546,7 +546,11 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                                         }}
                                         disabled={isLocked}
                                       >
-                                        <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Escolher variante…" /></SelectTrigger>
+                                        <SelectTrigger
+                                          className={`h-7 text-xs ${!l.variant_id ? "border-destructive ring-1 ring-destructive/40 bg-destructive/5" : ""}`}
+                                        >
+                                          <SelectValue placeholder="⚠ Escolher variante (obrigatório)…" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                           {variants.map((v) => (
                                             <SelectItem key={v.id} value={v.id}>
@@ -555,7 +559,11 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                                           ))}
                                         </SelectContent>
                                       </Select>
-                                      {variant && (
+                                      {!l.variant_id ? (
+                                        <div className="flex items-center gap-1 text-[10px] text-destructive font-medium">
+                                          <span>⚠ Este produto tem {variants.length} variante(s). Selecione uma para continuar.</span>
+                                        </div>
+                                      ) : variant && (
                                         <div className="flex flex-wrap gap-1">
                                           {variant.label.split(" / ").map((t, k) => (
                                             <Badge key={k} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
