@@ -260,7 +260,7 @@ export default function SalesStockPage() {
   );
 }
 
-function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, variants, quants, loadingDetails }: {
+function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, variants, quants, moves, loadingDetails }: {
   p: Product;
   s: { on_hand: number; reserved: number; available: number; forecasted: number; incoming: number; outgoing: number; sold_30d: number };
   isOpen: boolean;
@@ -270,8 +270,21 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
   filterWh: string;
   variants?: Variant[];
   quants?: Quant[];
+  moves?: Move[];
   loadingDetails: boolean;
 }) {
+  const variantLabel = (vid: string | null) => {
+    if (!vid) return "—";
+    const v = variants?.find((x) => x.id === vid);
+    if (!v) return "—";
+    const attrs = v.product_variant_values.map((p) => p.product_attribute_values?.name).filter(Boolean).join(" / ");
+    return attrs || v.sku || vid.slice(0, 6);
+  };
+  const whName = (wid: string | null) => warehouses.find((w) => w.id === wid)?.name ?? "—";
+  const filteredMoves = useMemo(() => {
+    return (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+  }, [moves, filterWh]);
+
   // Per-variant-warehouse matrix
   const matrix = useMemo(() => {
     const m: Record<string, Record<string, { qty: number; reserved: number }>> = {};
