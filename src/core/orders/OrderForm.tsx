@@ -292,6 +292,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const confirmOrder = async () => {
     if (isNew) return toast.error("Salve antes");
+    // Auto-save pending edits (e.g. newly added lines) before confirming
+    await save();
     // Re-check current state to avoid double-confirm with stale UI
     const { data: cur } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
     const curState = (cur as any)?.state;
