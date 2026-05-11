@@ -247,6 +247,7 @@ export default function SalesStockPage() {
                     filterWh={filterWh}
                     variants={variantsByProduct[p.id]}
                     quants={quantsByProduct[p.id]}
+                    moves={movesByProduct[p.id]}
                     loadingDetails={!!loadingDetails[p.id]}
                   />
                 );
