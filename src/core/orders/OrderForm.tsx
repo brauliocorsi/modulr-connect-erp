@@ -78,10 +78,11 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () =>
       (await supabase.from("partners").select("id,name").eq(partnerFlag, true).order("name")).data ?? [],
   });
+  const productFlag = kind === "sale" ? "can_be_sold" : "can_be_purchased";
   const { data: products } = useQuery({
-    queryKey: ["products-list"],
+    queryKey: ["products-list", productFlag],
     queryFn: async () =>
-      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge,uom_id, product_uom!products_uom_id_fkey(category)").order("name")).data ?? [],
+      (await supabase.from("products").select("id,name,list_price,standard_cost,image_url,barcode,assembly_fee,delivery_surcharge,uom_id, product_uom!products_uom_id_fkey(category)").eq(productFlag, true).eq("active", true).order("name")).data ?? [],
   });
   const { data: zipRules } = useQuery({
     queryKey: ["delivery_zip_rules_active"],
