@@ -25,7 +25,7 @@ export default function DeliveryHome() {
           .from("stock_pickings")
           .select("id, name, state, scheduled_at, origin, partners(name, city)")
           .like("step_label", "Entrega (Em Entrega%")
-          .in("state", ["waiting", "ready"] as any)
+          .eq("state", "ready")
           .is("batch_id", null)
           .order("scheduled_at", { ascending: true }),
       ]);
