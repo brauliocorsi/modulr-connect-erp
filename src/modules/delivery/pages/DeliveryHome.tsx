@@ -8,11 +8,45 @@ export default function DeliveryHome() {
   const { user } = useAuth();
   const [batches, setBatches] = useState<any[]>([]);
   const [pickings, setPickings] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
+      // 1) routes assigned to this driver (today and future)
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: rts } = await supabase
+        .from("delivery_routes")
+        .select("id, route_date, state, max_deliveries, vehicles(name, license_plate), delivery_zones(name, color)")
+        .eq("driver_id", user.id)
+        .gte("route_date", today)
+        .neq("state", "done")
+        .neq("state", "cancelled")
+        .order("route_date", { ascending: true });
+
+      const routeIds = (rts ?? []).map((r: any) => r.id);
+      // 2) pickings linked to those routes
+      let routePks: any[] = [];
+      if (routeIds.length) {
+        const { data } = await supabase
+          .from("stock_pickings")
+          .select("id, name, state, scheduled_at, origin, route_id, partners(name, city, street, zip)")
+          .in("route_id", routeIds)
+          .neq("state", "done")
+          .neq("state", "cancelled")
+          .order("scheduled_at", { ascending: true });
+        routePks = data ?? [];
+      }
+      const pksByRoute = new Map<string, any[]>();
+      routePks.forEach((p) => {
+        const arr = pksByRoute.get(p.route_id) ?? [];
+        arr.push(p);
+        pksByRoute.set(p.route_id, arr);
+      });
+      const enriched = (rts ?? []).map((r: any) => ({ ...r, pickings: pksByRoute.get(r.id) ?? [] }));
+
+      // 3) legacy batches + standalone pickings
       const [{ data: bs }, { data: pks }] = await Promise.all([
         supabase
           .from("stock_picking_batches")
@@ -27,8 +61,10 @@ export default function DeliveryHome() {
           .like("step_label", "Entrega (Em Entrega%")
           .eq("state", "ready")
           .is("batch_id", null)
+          .is("route_id", null)
           .order("scheduled_at", { ascending: true }),
       ]);
+      setRoutes(enriched);
       setBatches(bs ?? []);
       setPickings(pks ?? []);
       setLoading(false);
