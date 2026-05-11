@@ -4241,6 +4241,7 @@ export type Database = {
         | "cashbox"
         | "discuss"
         | "delivery"
+        | "routes"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -4402,6 +4403,7 @@ export const Constants = {
         "cashbox",
         "discuss",
         "delivery",
+        "routes",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
