@@ -172,6 +172,47 @@ export const PurchaseOrdersList = () => {
     refetch();
   };
 
+  const mergeGroup = async (ids: string[]) => {
+    if (ids.length < 2) return;
+    const target = ids[0];
+    const sources = ids.slice(1);
+    const { error } = await (supabase.rpc as any)("merge_purchase_orders", { _target: target, _sources: sources });
+    if (error) return toast.error(error.message);
+    toast.success(`${sources.length} rascunho(s) agrupado(s)`);
+    qc.invalidateQueries({ queryKey: ["purchase-orders-list"] });
+    refetch();
+  };
+
+  // Group draft orders by supplier+warehouse for the master/expand view
+  const draftGroups = useMemo(() => {
+    if (!groupDrafts) return [];
+    const map: Record<string, { key: string; partner_id: string; partner_name: string; warehouse_id: string | null; warehouse_name: string; orders: any[]; total: number }> = {};
+    for (const o of sortedOrders as any[]) {
+      if (o.state !== "draft") continue;
+      const key = `${o.partner_id}|${o.warehouse_id ?? "_"}`;
+      if (!map[key]) {
+        map[key] = {
+          key,
+          partner_id: o.partner_id,
+          partner_name: o.partners?.name ?? "—",
+          warehouse_id: o.warehouse_id ?? null,
+          warehouse_name: o.warehouses?.name ?? "—",
+          orders: [],
+          total: 0,
+        };
+      }
+      map[key].orders.push(o);
+      map[key].total += Number(o.amount_total || 0);
+    }
+    return Object.values(map).filter((g) => g.orders.length >= 2);
+  }, [sortedOrders, groupDrafts]);
+
+  const groupedDraftIds = useMemo(() => new Set(draftGroups.flatMap((g) => g.orders.map((o: any) => o.id))), [draftGroups]);
+  const ungroupedOrders = useMemo(
+    () => sortedOrders.filter((o: any) => !groupedDraftIds.has(o.id)),
+    [sortedOrders, groupedDraftIds]
+  );
+
   const states = ["all", "draft", "rfq_sent", "confirmed", "done", "cancelled"];
 
   return (
