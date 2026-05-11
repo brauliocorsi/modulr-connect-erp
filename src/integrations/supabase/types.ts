@@ -3964,6 +3964,7 @@ export type Database = {
         Args: { _move: string; _qty: number }
         Returns: number
       }
+      release_orphan_reservations: { Args: never; Returns: number }
       replan_picking_chain: { Args: { _picking: string }; Returns: Json }
       reschedule_picking: {
         Args: { _new_date: string; _picking: string; _reason: string }
