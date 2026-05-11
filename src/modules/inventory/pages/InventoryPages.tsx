@@ -4,35 +4,68 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, ClipboardList, Zap } from "lucide-react";
+import { ArrowDownToLine, PackageCheck, Truck, RefreshCw, ClipboardList, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 
 export const InventoryDashboard = () => {
   const { data } = useQuery({
-    queryKey: ["pickings-counts"],
+    queryKey: ["pickings-counts-v2"],
     queryFn: async () => {
-      const kinds = ["incoming", "outgoing", "internal"] as const;
-      const out: Record<string, number> = {};
-      for (const k of kinds) {
-        const { count } = await supabase
-          .from("stock_pickings")
-          .select("id", { count: "exact", head: true })
-          .eq("kind", k)
-          .neq("state", "done")
-          .neq("state", "cancelled");
-        out[k] = count ?? 0;
-      }
-      return out;
+      // Resolve key location ids by name
+      const { data: locs } = await supabase
+        .from("stock_locations")
+        .select("id,name")
+        .in("name", ["Cais de Carga", "Em Entrega"]);
+      const cais = locs?.find((l: any) => l.name === "Cais de Carga")?.id ?? null;
+      const enroute = locs?.find((l: any) => l.name === "Em Entrega")?.id ?? null;
+
+      const baseOpen = (q: any) => q.neq("state", "done").neq("state", "cancelled");
+
+      const incomingP = baseOpen(
+        supabase.from("stock_pickings").select("id", { count: "exact", head: true }).eq("kind", "incoming")
+      );
+      const internalP = baseOpen(
+        supabase.from("stock_pickings").select("id", { count: "exact", head: true }).eq("kind", "internal")
+      );
+      // Cais de Carga: outgoing pickings whose destination is Cais de Carga (waiting to be loaded)
+      const caisP = cais
+        ? baseOpen(
+            supabase
+              .from("stock_pickings")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "outgoing")
+              .eq("destination_location_id", cais)
+          )
+        : Promise.resolve({ count: 0 } as any);
+      // Em Entrega: outgoing pickings already at/leaving Em Entrega (in transit to customer)
+      const enrouteP = enroute
+        ? baseOpen(
+            supabase
+              .from("stock_pickings")
+              .select("id", { count: "exact", head: true })
+              .eq("kind", "outgoing")
+              .eq("source_location_id", enroute)
+          )
+        : Promise.resolve({ count: 0 } as any);
+
+      const [inc, intl, c, en] = await Promise.all([incomingP, internalP, caisP, enrouteP]);
+      return {
+        incoming: inc.count ?? 0,
+        internal: intl.count ?? 0,
+        cais: c.count ?? 0,
+        enroute: en.count ?? 0,
+      };
     },
   });
 
   const cards = [
-    { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success", to: "/inventory/receipts" },
-    { title: "Expedições", icon: ArrowUpFromLine, count: data?.outgoing ?? 0, color: "text-info", to: "/inventory/shipments" },
-    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-warning", to: "/inventory/internal-transfers" },
-    { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-primary", to: "/inventory/adjustments" },
+    { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success", to: "/inventory/receipts", hint: "Aguardando processamento" },
+    { title: "Cais de Carga", icon: PackageCheck, count: data?.cais ?? 0, color: "text-warning", to: "/inventory/shipments?stage=cais", hint: "Separados, aguardando carga" },
+    { title: "Em Entrega", icon: Truck, count: data?.enroute ?? 0, color: "text-info", to: "/inventory/shipments?stage=enroute", hint: "Em rota até ao cliente" },
+    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-primary", to: "/inventory/internal-transfers", hint: "Movimentações entre locais" },
+    { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-muted-foreground", to: "/inventory/adjustments", hint: "Inventários a confirmar" },
   ];
 
   const runReorder = async () => {
