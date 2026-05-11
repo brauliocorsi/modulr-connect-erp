@@ -484,8 +484,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                       <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
                     ) : productLines.map((l) => {
                       const i = lines.indexOf(l);
-                      const s = l.product_id ? stockMap?.[l.product_id] : undefined;
-                      const avail = s?.available ?? 0;
+                      const ps = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const vs = l.variant_id ? variantStockMap?.[l.variant_id] : undefined;
+                      const avail = vs ? vs.available : (ps?.available ?? 0);
                       const qty = Number(l.quantity || 0);
                       const tone = !l.product_id ? "text-muted-foreground"
                         : avail >= qty ? "text-emerald-600"
