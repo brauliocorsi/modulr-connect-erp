@@ -87,7 +87,9 @@ export default function CashSessionDetail() {
         }
       />
       <PageBody>
-        <Card className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
+        <Card className="p-4 grid grid-cols-2 sm:grid-cols-6 gap-4 mb-4">
+          <Stat label="Aberta por" value={openerName || "—"} />
+          <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
           <Stat label="Abertura" value={fmtMoney(sess.opening_balance)} />
           <Stat label="Entradas" value={fmtMoney(totalIn)} tone="emerald" />
           <Stat label="Saídas" value={fmtMoney(totalOut)} tone="rose" />
