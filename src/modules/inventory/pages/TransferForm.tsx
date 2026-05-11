@@ -257,17 +257,30 @@ export default function TransferForm() {
   };
 
   const validate = async () => {
-    const partialMoves = moves.filter((m) => Number(m.quantity_done) < Number(m.quantity));
-    const zeroMoves = moves.filter((m) => Number(m.quantity_done) === 0);
-    if (zeroMoves.length === moves.length) {
-      if (!confirm(`Atenção: nenhuma quantidade foi recebida.\n\nA transferência ficará vazia e será criada uma nova transferência (backorder) com todos os itens em falta.\n\nDeseja prosseguir?`)) return;
-    } else if (partialMoves.length > 0) {
-      if (!confirm(`Será criada uma transferência de backorder com as quantidades em falta de ${partialMoves.length} linha(s).\n\nDeseja prosseguir?`)) return;
-    }
-    for (const m of moves) {
-      const qd = Number(m.quantity_done);
-      const finalQty = Number.isFinite(qd) ? Math.max(0, qd) : Number(m.quantity);
-      await supabase.from("stock_moves").update({ quantity_done: finalQty, lot_id: m.lot_id ?? null }).eq("id", m.id);
+    // Internal chain step (Stock→Cais, Cais→Em Entrega): skip quantity prompt and validate full quantity automatically.
+    const chainNames = new Set(["Cais de Carga", "Em Entrega"]);
+    const isInternalChainStep =
+      picking?.kind === "outgoing" &&
+      (chainNames.has(picking?.source?.name ?? "") || chainNames.has(picking?.destination?.name ?? ""));
+
+    if (isInternalChainStep) {
+      // Auto-fill full quantities, no confirmation needed.
+      for (const m of moves) {
+        await supabase.from("stock_moves").update({ quantity_done: Number(m.quantity), lot_id: m.lot_id ?? null }).eq("id", m.id);
+      }
+    } else {
+      const partialMoves = moves.filter((m) => Number(m.quantity_done) < Number(m.quantity));
+      const zeroMoves = moves.filter((m) => Number(m.quantity_done) === 0);
+      if (zeroMoves.length === moves.length) {
+        if (!confirm(`Atenção: nenhuma quantidade foi recebida.\n\nA transferência ficará vazia e será criada uma nova transferência (backorder) com todos os itens em falta.\n\nDeseja prosseguir?`)) return;
+      } else if (partialMoves.length > 0) {
+        if (!confirm(`Será criada uma transferência de backorder com as quantidades em falta de ${partialMoves.length} linha(s).\n\nDeseja prosseguir?`)) return;
+      }
+      for (const m of moves) {
+        const qd = Number(m.quantity_done);
+        const finalQty = Number.isFinite(qd) ? Math.max(0, qd) : Number(m.quantity);
+        await supabase.from("stock_moves").update({ quantity_done: finalQty, lot_id: m.lot_id ?? null }).eq("id", m.id);
+      }
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
     if (error) return toast.error(error.message);
