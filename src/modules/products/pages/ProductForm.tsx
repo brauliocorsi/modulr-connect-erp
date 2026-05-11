@@ -21,6 +21,7 @@ import { VariantsTab } from "./tabs/VariantsTab";
 import { BomTab } from "./tabs/BomTab";
 import { StockTab } from "./tabs/StockTab";
 import { WooTab } from "./tabs/WooTab";
+import { ReorderingTab } from "./tabs/ReorderingTab";
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -149,6 +150,7 @@ export default function ProductForm() {
                 <TabsTrigger value="variants" disabled={isNew}>Variantes</TabsTrigger>
                 <TabsTrigger value="bom" disabled={isNew}>BOM/Kit</TabsTrigger>
                 <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
+                <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
               </TabsList>
 
@@ -237,6 +239,7 @@ export default function ProductForm() {
               {!isNew && <TabsContent value="variants" className="pt-4"><Card className="p-6"><VariantsTab productId={id!} /></Card></TabsContent>}
               {!isNew && <TabsContent value="bom" className="pt-4"><Card className="p-6"><BomTab productId={id!} /></Card></TabsContent>}
               {!isNew && <TabsContent value="stock" className="pt-4"><Card className="p-6"><StockTab productId={id!} /></Card></TabsContent>}
+              {!isNew && <TabsContent value="reordering" className="pt-4"><Card className="p-6"><ReorderingTab productId={id!} /></Card></TabsContent>}
               <TabsContent value="woo" className="pt-4"><Card className="p-6"><WooTab form={form} setForm={setForm} /></Card></TabsContent>
             </Tabs>
 
