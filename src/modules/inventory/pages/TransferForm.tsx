@@ -333,16 +333,39 @@ export default function TransferForm() {
   const isPartial = !!availSummary && availSummary.readyMoves > 0 && availSummary.readyMoves < availSummary.total;
   const isFullyShort = !!availSummary && availSummary.readyMoves === 0 && availSummary.available < availSummary.needed && !isLocked;
 
+  // Receipt summary (after validation)
+  const receiptSummary = (() => {
+    if (!moves.length) return null;
+    const doneCount = moves.filter((m) => m.state === "done").length;
+    const cancelledCount = moves.filter((m) => m.state === "cancelled").length;
+    const totalQty = moves.reduce((s, m) => s + Number(m.quantity || 0), 0);
+    const doneQty = moves.reduce((s, m) => s + (m.state === "done" ? Number(m.quantity_done || 0) : 0), 0);
+    return { doneCount, cancelledCount, total: moves.length, totalQty, doneQty };
+  })();
+  const isDone = picking.state === "done";
+  const isPartialReceipt = isDone && (!!backorder || (receiptSummary && receiptSummary.doneQty < receiptSummary.totalQty));
+  const headerLabel = isPartialReceipt
+    ? "Recebido parcialmente"
+    : isDone
+      ? "Recebido completo"
+      : isPartial
+        ? "Parcialmente disponível"
+        : stateLabel(picking.state);
+  const headerTone: any = isPartialReceipt
+    ? "warning"
+    : isDone
+      ? "success"
+      : isPartial
+        ? "warning"
+        : (TONE[picking.state] ?? "default");
+
   return (
     <>
       <FormHeader
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{
-          label: isPartial ? "Parcialmente disponível" : stateLabel(picking.state),
-          tone: isPartial ? "warning" : (TONE[picking.state] ?? "default"),
-        }}
+        state={{ label: headerLabel, tone: headerTone }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
