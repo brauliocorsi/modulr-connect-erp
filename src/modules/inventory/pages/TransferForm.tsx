@@ -734,11 +734,29 @@ export default function TransferForm() {
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200">
                             <X className="h-3 w-3" /> Não recebido · 0/{m.quantity}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
-                            <Truck className="h-3 w-3" /> {stateLabel(m.state)} · 0/{m.quantity}
-                          </span>
-                        )}
+                        ) : (() => {
+                          const qd = Number(m.quantity_done || 0);
+                          const need = Number(m.quantity || 0);
+                          if (qd === 0) {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" title="Ao validar, esta linha será marcada como não recebida e gerará backorder">
+                                <X className="h-3 w-3" /> Não recebido · 0/{need}
+                              </span>
+                            );
+                          }
+                          if (qd >= need) {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" title="Pronto para validar como recebido completo">
+                                <CheckCircle2 className="h-3 w-3" /> A receber · {qd}/{need}
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" title="Recebimento parcial — o restante irá para backorder">
+                              <AlertTriangle className="h-3 w-3" /> Parcial · {qd}/{need}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );})}
