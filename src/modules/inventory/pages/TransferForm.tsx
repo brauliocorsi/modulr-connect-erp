@@ -566,7 +566,22 @@ export default function TransferForm() {
                     const shortage = Math.max(0, need - avail);
                     return (
                     <tr key={m.id} className="border-t">
-                      <td className="px-3 py-2">{m.products?.name}</td>
+                       <td className="px-3 py-2">
+                         <div className="font-medium">{m.products?.name}</div>
+                         {(() => {
+                           const vals = (m.product_variants?.product_variant_values || [])
+                             .map((x: any) => x.product_attribute_values?.name)
+                             .filter(Boolean)
+                             .join(" / ");
+                           const sku = m.product_variants?.sku;
+                           if (!vals && !sku) return null;
+                           return (
+                             <div className="text-xs text-muted-foreground">
+                               {vals}{vals && sku ? " · " : ""}{sku ? <span className="font-mono">{sku}</span> : null}
+                             </div>
+                           );
+                         })()}
+                       </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
                         <td className="px-3 py-2">
