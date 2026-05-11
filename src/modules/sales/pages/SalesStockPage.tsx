@@ -346,13 +346,14 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   }, [variantTotals]);
 
   const movesByDir = useMemo(() => {
-    const all = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    const base = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    const all = onlyDone ? base.filter((m) => m.state === "done") : base;
     return {
       all,
       incoming: all.filter((m) => m.stock_pickings?.kind === "incoming"),
       outgoing: all.filter((m) => m.stock_pickings?.kind === "outgoing"),
     };
-  }, [moves, filterWh]);
+  }, [moves, filterWh, onlyDone]);
 
   const dirScopedMoves = dirFilter === "all" ? movesByDir.all : movesByDir[dirFilter];
 
