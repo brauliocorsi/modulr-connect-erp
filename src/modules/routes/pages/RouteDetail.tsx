@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Truck, User2, Calendar } from "lucide-react";
+import { Truck, User2, Calendar, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function RouteDetail() {
   const { id } = useParams();
   const qc = useQueryClient();
+  const nav = useNavigate();
 
   const { data: route } = useQuery({
     queryKey: ["route-detail", id],
@@ -53,6 +55,11 @@ export default function RouteDetail() {
     queryFn: async () => (await supabase.from("vehicles").select("id,name,license_plate").eq("active", true).order("name")).data ?? [],
   });
 
+  const { data: zones = [] } = useQuery({
+    queryKey: ["zones-route-edit"],
+    queryFn: async () => (await supabase.from("delivery_zones").select("id,name,zip_from,zip_to").eq("active", true).order("name")).data ?? [],
+  });
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   useEffect(() => {
@@ -60,6 +67,7 @@ export default function RouteDetail() {
       driver_id: route.driver_id, vehicle_id: route.vehicle_id,
       max_deliveries: route.max_deliveries, max_assembly_minutes: route.max_assembly_minutes,
       state: route.state, notes: route.notes,
+      route_date: route.route_date, zone_id: route.zone_id,
     });
   }, [route]);
 
@@ -69,6 +77,16 @@ export default function RouteDetail() {
     toast.success("Rota atualizada");
     setEditing(false);
     qc.invalidateQueries({ queryKey: ["route-detail", id] });
+    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
+  };
+
+  const remove = async () => {
+    if (!confirm("Apagar esta rota? As entregas atribuídas ficarão sem rota.")) return;
+    const { error } = await supabase.from("delivery_routes").delete().eq("id", id!);
+    if (error) return toast.error(error.message);
+    toast.success("Rota apagada");
+    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
+    nav("/routes");
   };
 
   if (!route) return <PageBody>Carregando…</PageBody>;
@@ -86,7 +104,10 @@ export default function RouteDetail() {
               <Button size="sm" onClick={save}>Guardar</Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
+            <>
+              <Button size="sm" variant="destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
+            </>
           )
         }
       />
@@ -143,11 +164,34 @@ export default function RouteDetail() {
               </div>
             )}
           </Card>
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data</div>
+            {editing ? (
+              <Input type="date" className="mt-1" value={form.route_date ?? ""} onChange={(e) => setForm({ ...form, route_date: e.target.value })} />
+            ) : <div className="mt-1 text-sm">{r.route_date}</div>}
+          </Card>
           <Card className="p-3 md:col-span-2">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Zona</div>
-            <div className="mt-1 text-sm">
-              {r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}
-            </div>
+            <div className="text-xs text-muted-foreground">Zona</div>
+            {editing ? (
+              <Select value={form.zone_id} onValueChange={(v) => setForm({ ...form, zone_id: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(zones as any[]).map((z) => (
+                    <SelectItem key={z.id} value={z.id}>{z.name} · {z.zip_from}–{z.zip_to}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="mt-1 text-sm">
+                {r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}
+              </div>
+            )}
+          </Card>
+          <Card className="p-3 md:col-span-3">
+            <Label className="text-xs text-muted-foreground">Notas</Label>
+            {editing ? (
+              <Input className="mt-1" value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            ) : <div className="mt-1 text-sm">{r.notes || "—"}</div>}
           </Card>
         </div>
 
