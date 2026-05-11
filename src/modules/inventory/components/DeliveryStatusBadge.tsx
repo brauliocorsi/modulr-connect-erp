@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck } from "lucide-react";
+import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck, X } from "lucide-react";
+import { toast } from "sonner";
 import { ScheduleDeliveryDialog } from "./ScheduleDeliveryDialog";
 
 type Picking = {
@@ -25,8 +26,21 @@ export function DeliveryStatusBadge({
   showActions?: boolean;
   compact?: boolean;
 }) {
+  const qc = useQueryClient();
   const isDone = picking.state === "done";
   const hasRoute = !!picking.route_id;
+
+  const cancelPickup = async () => {
+    const { error } = await supabase
+      .from("stock_pickings")
+      .update({ scheduled_at: null, route_id: null })
+      .eq("id", picking.id);
+    if (error) return toast.error(error.message);
+    toast.success("Agendamento cancelado");
+    qc.invalidateQueries({ queryKey: ["sale-shipment"] });
+    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
+    onChanged?.();
+  };
 
   const { data: so } = useQuery({
     queryKey: ["delivery-status-so", picking.origin],
@@ -91,16 +105,21 @@ export function DeliveryStatusBadge({
               <CalendarCheck2 className="h-3 w-3" /> Confirmado agendamento · {fmtDate(picking.scheduled_at)}
             </Badge>
             {showActions && (
-              <ScheduleDeliveryDialog
-                picking={picking}
-                onChanged={onChanged}
-                pickupMode
-                trigger={
-                  <Button size="sm" variant="outline" className="h-8">
-                    Alterar data
-                  </Button>
-                }
-              />
+              <>
+                <ScheduleDeliveryDialog
+                  picking={picking}
+                  onChanged={onChanged}
+                  pickupMode
+                  trigger={
+                    <Button size="sm" variant="outline" className="h-8">
+                      Alterar data
+                    </Button>
+                  }
+                />
+                <Button size="sm" variant="ghost" className="h-8 text-destructive hover:text-destructive" onClick={cancelPickup}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Cancelar agendamento
+                </Button>
+              </>
             )}
           </>
         )}
