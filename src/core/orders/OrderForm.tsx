@@ -120,15 +120,16 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     enabled: kind === "sale" && !!order.name && order.name !== "Rascunho",
     queryKey: ["sale-shipment", order.name],
     queryFn: async () => {
-      const { data } = await supabase
+      // Prefer the latest still-pending shipment (after backorders, the active one is the unfinished picking)
+      const { data: rows } = await supabase
         .from("stock_pickings")
         .select("id,name,state,scheduled_at,done_at,route_id,origin")
         .eq("kind", "outgoing")
         .eq("origin", order.name)
-        .order("scheduled_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
+        .order("scheduled_at", { ascending: false });
+      const list = rows ?? [];
+      const pending = list.find((p: any) => !["done", "cancelled"].includes(p.state));
+      return pending ?? list[0] ?? null;
     },
   });
   const { data: stockMap } = useQuery({
