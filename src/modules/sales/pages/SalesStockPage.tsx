@@ -519,9 +519,15 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
               {(() => { return null; })()}
               {/* Apply filter to variants list */}
 
-              {variantView === "grid" ? (
-                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {variants.map((v) => {
+              {(() => {
+                const displayedVariants = onlyWithStock
+                  ? variants.filter((v) => (variantTotals[v.id]?.qty ?? 0) > 0 || (variantTotals[v.id]?.reserved ?? 0) > 0)
+                  : variants;
+                return variantView === "grid" ? (
+                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {displayedVariants.length === 0 ? (
+                      <div className="col-span-full text-xs text-muted-foreground italic py-4 text-center">Nenhuma variante com stock.</div>
+                    ) : displayedVariants.map((v) => {
                     const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
                     const cells = matrix[v.id] || {};
                     const isActive = variantFilter === v.id;
