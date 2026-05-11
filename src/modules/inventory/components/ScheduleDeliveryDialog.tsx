@@ -24,12 +24,14 @@ export function ScheduleDeliveryDialog({
   onChanged,
   open: controlledOpen,
   onOpenChange,
+  pickupMode = false,
 }: {
   picking: Picking;
   trigger?: ReactNode;
   onChanged?: () => void;
   open?: boolean;
   onOpenChange?: (o: boolean) => void;
+  pickupMode?: boolean;
 }) {
   const qc = useQueryClient();
   const [innerOpen, setInnerOpen] = useState(false);
