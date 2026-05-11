@@ -17,7 +17,9 @@ import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/Regi
 export default function BillForm() {
   const { id } = useParams();
   const nav = useNavigate();
+  const [sp] = useSearchParams();
   const isNew = !id || id === "new";
+  const prefillPoId = isNew ? sp.get("po") : null;
 
   const [bill, setBill] = useState<any>({
     bill_date: new Date().toISOString().slice(0, 10),
