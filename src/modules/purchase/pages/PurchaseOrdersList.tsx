@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, ChevronDown, LayoutGrid, Merge } from "lucide-react";
+import { ChevronRight, ChevronDown, LayoutGrid, Merge, Layers } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
