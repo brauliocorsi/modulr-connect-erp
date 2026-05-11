@@ -7,7 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, AlertCircle, ArrowRightLeft } from "lucide-react";
+import {
+  Search,
+  Package,
+  ChevronDown,
+  ChevronRight,
+  Warehouse as WarehouseIcon,
+  AlertCircle,
+  ArrowRightLeft,
+  LayoutGrid,
+  List as ListIcon,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { stateLabel, kindLabel } from "@/lib/picking";
 
@@ -94,7 +106,6 @@ export default function SalesStockPage() {
     })();
   }, []);
 
-  // Aggregate forecast by product (filtered by warehouse if applicable)
   const productStock = useMemo(() => {
     const m: Record<string, { on_hand: number; reserved: number; available: number; forecasted: number; incoming: number; outgoing: number; sold_30d: number }> = {};
     for (const r of forecast) {
@@ -167,7 +178,7 @@ export default function SalesStockPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Package className="h-6 w-6" /> Stock de Vendas</h1>
-          <p className="text-sm text-muted-foreground">Consulta rápida de stock interno, previsto e vendável por produto e variante.</p>
+          <p className="text-sm text-muted-foreground">Visualize stock por produto, variante e armazém em tempo real.</p>
         </div>
       </div>
 
@@ -207,64 +218,41 @@ export default function SalesStockPage() {
         </div>
       </Card>
 
-      {/* Products table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 sticky top-0">
-              <tr>
-                <th className="w-8 p-2"></th>
-                <th className="text-left p-2 w-12">Foto</th>
-                <th className="text-left p-2">Produto</th>
-                <th className="text-left p-2 w-32">Referência</th>
-                <th className="text-right p-2 w-24">Em mão</th>
-                <th className="text-right p-2 w-24">Reservado</th>
-                <th className="text-right p-2 w-28">Vendável</th>
-                <th className="text-right p-2 w-24">A receber</th>
-                <th className="text-right p-2 w-24">A entregar</th>
-                <th className="text-right p-2 w-24">Previsto</th>
-                <th className="text-right p-2 w-24">Vendido 30d</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={11} className="text-center text-muted-foreground py-8">A carregar…</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={11} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</td></tr>
-              ) : filtered.map((p) => {
-                const s = productStock[p.id] ?? { on_hand: 0, reserved: 0, available: 0, forecasted: 0, incoming: 0, outgoing: 0, sold_30d: 0 };
-                const isOpen = !!expanded[p.id];
-                const lowStock = s.available <= 0;
-                return (
-                  <ProductRow
-                    key={p.id}
-                    p={p}
-                    s={s}
-                    isOpen={isOpen}
-                    lowStock={lowStock}
-                    onToggle={() => toggleExpand(p.id)}
-                    warehouses={warehouses}
-                    filterWh={filterWh}
-                    variants={variantsByProduct[p.id]}
-                    quants={quantsByProduct[p.id]}
-                    moves={movesByProduct[p.id]}
-                    loadingDetails={!!loadingDetails[p.id]}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Products list */}
+      {loading ? (
+        <Card className="p-8 text-center text-muted-foreground">A carregar…</Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-8 text-center text-muted-foreground">Nenhum produto encontrado</Card>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((p) => {
+            const s = productStock[p.id] ?? { on_hand: 0, reserved: 0, available: 0, forecasted: 0, incoming: 0, outgoing: 0, sold_30d: 0 };
+            return (
+              <ProductCard
+                key={p.id}
+                p={p}
+                s={s}
+                isOpen={!!expanded[p.id]}
+                onToggle={() => toggleExpand(p.id)}
+                warehouses={warehouses}
+                filterWh={filterWh}
+                variants={variantsByProduct[p.id]}
+                quants={quantsByProduct[p.id]}
+                moves={movesByProduct[p.id]}
+                loadingDetails={!!loadingDetails[p.id]}
+              />
+            );
+          })}
         </div>
-      </Card>
+      )}
     </div>
   );
 }
 
-function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, variants, quants, moves, loadingDetails }: {
+function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, quants, moves, loadingDetails }: {
   p: Product;
   s: { on_hand: number; reserved: number; available: number; forecasted: number; incoming: number; outgoing: number; sold_30d: number };
   isOpen: boolean;
-  lowStock: boolean;
   onToggle: () => void;
   warehouses: Warehouse[];
   filterWh: string;
@@ -274,6 +262,9 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
   loadingDetails: boolean;
 }) {
   const [variantFilter, setVariantFilter] = useState<string>("all");
+  const [variantView, setVariantView] = useState<"grid" | "matrix">("grid");
+
+  const lowStock = s.available <= 0;
 
   const variantById = useMemo(() => {
     const m: Record<string, Variant> = {};
@@ -281,37 +272,7 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
     return m;
   }, [variants]);
 
-  const renderVariantBadges = (vid: string | null) => {
-    if (!vid) return <span className="text-muted-foreground italic">Sem variante</span>;
-    const v = variantById[vid];
-    if (!v) return <span className="text-muted-foreground">{vid.slice(0, 6)}</span>;
-    const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
-    return (
-      <div className="flex items-center gap-1.5">
-        <div className="w-6 h-6 border rounded bg-muted/30 overflow-hidden flex-shrink-0">
-          {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[8px] text-muted-foreground">—</div>}
-        </div>
-        <div className="flex flex-wrap gap-0.5">
-          {attrs.length > 0 ? attrs.map((a, i) => (
-            <Badge key={i} variant="secondary" className="text-[9px] px-1 py-0 h-4">{a}</Badge>
-          )) : v.sku ? <span className="font-mono text-[10px]">{v.sku}</span> : <span className="text-muted-foreground">—</span>}
-        </div>
-      </div>
-    );
-  };
-
   const whName = (wid: string | null) => warehouses.find((w) => w.id === wid)?.name ?? "—";
-
-  const filteredMoves = useMemo(() => {
-    return (moves ?? []).filter((m) => {
-      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return false;
-      if (variantFilter !== "all") {
-        if (variantFilter === "_no_variant") { if (m.variant_id) return false; }
-        else if (m.variant_id !== variantFilter) return false;
-      }
-      return true;
-    });
-  }, [moves, filterWh, variantFilter]);
 
   // Per-variant-warehouse matrix
   const matrix = useMemo(() => {
@@ -335,7 +296,19 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
     return warehouses.filter((w) => present.has(w.id));
   }, [warehouses, quants, filterWh]);
 
-  // Per-variant move counts (for filter chips)
+  const variantTotals = useMemo(() => {
+    const m: Record<string, { qty: number; reserved: number; available: number }> = {};
+    Object.entries(matrix).forEach(([vid, whMap]) => {
+      const t = Object.values(whMap).reduce((a, x) => ({ qty: a.qty + x.qty, reserved: a.reserved + x.reserved }), { qty: 0, reserved: 0 });
+      m[vid] = { ...t, available: t.qty - t.reserved };
+    });
+    return m;
+  }, [matrix]);
+
+  const maxAvailable = useMemo(() => {
+    return Math.max(1, ...Object.values(variantTotals).map((t) => t.available));
+  }, [variantTotals]);
+
   const variantMoveCounts = useMemo(() => {
     const c: Record<string, number> = {};
     (moves ?? []).forEach((m) => {
@@ -351,211 +324,401 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
     [moves, filterWh],
   );
 
+  const filteredMoves = useMemo(() => {
+    return (moves ?? []).filter((m) => {
+      if (filterWh !== "all" && m.stock_pickings?.warehouse_id !== filterWh) return false;
+      if (variantFilter !== "all") {
+        if (variantFilter === "_no_variant") { if (m.variant_id) return false; }
+        else if (m.variant_id !== variantFilter) return false;
+      }
+      return true;
+    });
+  }, [moves, filterWh, variantFilter]);
+
+  const renderVariantBadges = (vid: string | null) => {
+    if (!vid) return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
+    const v = variantById[vid];
+    if (!v) return <span className="text-muted-foreground">{vid.slice(0, 6)}</span>;
+    const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="w-6 h-6 border rounded bg-muted/30 overflow-hidden flex-shrink-0">
+          {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
+        </div>
+        <div className="flex flex-wrap gap-0.5">
+          {attrs.length > 0 ? attrs.map((a, i) => (
+            <Badge key={i} variant="secondary" className="text-[9px] px-1 py-0 h-4">{a}</Badge>
+          )) : v.sku ? <span className="font-mono text-[10px]">{v.sku}</span> : <span className="text-muted-foreground">—</span>}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <>
-      <tr className={`border-t hover:bg-muted/30 ${lowStock ? "bg-rose-50/40 dark:bg-rose-950/10" : ""}`}>
-        <td className="p-2">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onToggle}>
-            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-        </td>
-        <td className="p-1">
-          <div className="w-9 h-9 border rounded bg-muted/30 overflow-hidden">
-            {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover" /> : null}
+    <Card className={`overflow-hidden transition-shadow ${isOpen ? "shadow-md" : "hover:shadow-sm"}`}>
+      {/* Header */}
+      <button
+        onClick={onToggle}
+        className={`w-full text-left p-3 flex items-center gap-3 transition-colors ${lowStock ? "bg-rose-50/40 dark:bg-rose-950/10" : ""} hover:bg-muted/40`}
+      >
+        <div className="w-7 h-7 flex items-center justify-center text-muted-foreground">
+          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </div>
+        <div className="w-12 h-12 border rounded-md bg-muted/30 overflow-hidden flex-shrink-0">
+          {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-5 w-5 text-muted-foreground/40" /></div>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link to={`/products/${p.id}`} className="font-medium hover:underline truncate" onClick={(e) => e.stopPropagation()}>{p.name}</Link>
+            {lowStock && <Badge variant="destructive" className="text-[10px]"><AlertCircle className="h-3 w-3 mr-1" />Sem stock</Badge>}
           </div>
-        </td>
-        <td className="p-2">
-          <Link to={`/products/${p.id}`} className="font-medium hover:underline">{p.name}</Link>
-          {lowStock && <Badge variant="destructive" className="ml-2 text-[10px]"><AlertCircle className="h-3 w-3 mr-1" />Sem stock</Badge>}
-        </td>
-        <td className="p-2 font-mono text-xs text-muted-foreground">{p.internal_ref || "—"}</td>
-        <td className="p-2 text-right">{fmtNumber(s.on_hand)}</td>
-        <td className="p-2 text-right text-amber-600">{s.reserved > 0 ? fmtNumber(s.reserved) : "—"}</td>
-        <td className={`p-2 text-right font-semibold ${lowStock ? "text-destructive" : "text-emerald-600"}`}>{fmtNumber(s.available)}</td>
-        <td className="p-2 text-right text-emerald-600">{s.incoming > 0 ? `+${fmtNumber(s.incoming)}` : "—"}</td>
-        <td className="p-2 text-right text-rose-600">{s.outgoing > 0 ? `−${fmtNumber(s.outgoing)}` : "—"}</td>
-        <td className="p-2 text-right font-semibold text-primary">{fmtNumber(s.forecasted)}</td>
-        <td className="p-2 text-right text-muted-foreground">{fmtNumber(s.sold_30d)}</td>
-      </tr>
+          {p.internal_ref && <div className="font-mono text-[11px] text-muted-foreground">{p.internal_ref}</div>}
+        </div>
+        {/* Inline KPIs */}
+        <div className="hidden md:grid grid-cols-5 gap-3 items-center text-right">
+          <Stat label="Em mão" value={s.on_hand} />
+          <Stat label="Reservado" value={s.reserved} tone={s.reserved > 0 ? "amber" : undefined} />
+          <Stat label="Vendável" value={s.available} tone={lowStock ? "destructive" : "emerald"} bold />
+          <Stat label="Previsto" value={s.forecasted} tone="primary" />
+          <Stat label="Vendido 30d" value={s.sold_30d} muted />
+        </div>
+        <div className="md:hidden text-right">
+          <div className={`text-lg font-bold ${lowStock ? "text-destructive" : "text-emerald-600"}`}>{fmtNumber(s.available)}</div>
+          <div className="text-[10px] text-muted-foreground">Vendável</div>
+        </div>
+      </button>
+
+      {/* Expanded */}
       {isOpen && (
-        <tr className="bg-muted/10">
-          <td></td>
-          <td colSpan={10} className="p-3">
-            {loadingDetails ? (
-              <div className="text-xs text-muted-foreground py-3">A carregar variantes…</div>
-            ) : !variants || variants.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-2 flex items-center gap-2">
-                <WarehouseIcon className="h-3.5 w-3.5" />
-                Sem variantes. Stock interno por armazém:
-                <div className="flex gap-2 ml-2 flex-wrap">
-                  {visibleWarehouses.length === 0 ? <span>Sem stock registado</span> : visibleWarehouses.map((w) => {
-                    const cell = matrix["_no_variant"]?.[w.id];
-                    if (!cell) return null;
-                    return <Badge key={w.id} variant="outline">{w.name}: {fmtNumber(cell.qty - cell.reserved)} {cell.reserved > 0 && `/ ${fmtNumber(cell.qty)}`}</Badge>;
+        <div className="border-t bg-muted/10 p-4 space-y-4">
+          {/* Mobile inline KPIs */}
+          <div className="md:hidden grid grid-cols-3 gap-2">
+            <KpiMini label="Em mão" value={s.on_hand} />
+            <KpiMini label="Reservado" value={s.reserved} tone={s.reserved > 0 ? "amber" : undefined} />
+            <KpiMini label="Vendável" value={s.available} tone={lowStock ? "destructive" : "emerald"} />
+            <KpiMini label="A receber" value={s.incoming} tone="emerald" sign="+" />
+            <KpiMini label="A entregar" value={s.outgoing} tone="rose" sign="−" />
+            <KpiMini label="Previsto" value={s.forecasted} tone="primary" />
+          </div>
+
+          {/* Per-warehouse strip */}
+          {visibleWarehouses.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground mb-2">
+                <WarehouseIcon className="h-3.5 w-3.5" /> Stock por armazém
+              </div>
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                {visibleWarehouses.map((w) => {
+                  const totalsForWh = (quants ?? [])
+                    .filter((q) => q.stock_locations?.warehouse_id === w.id)
+                    .reduce((a, q) => ({ qty: a.qty + Number(q.quantity || 0), res: a.res + Number(q.reserved_quantity || 0) }), { qty: 0, res: 0 });
+                  const avail = totalsForWh.qty - totalsForWh.res;
+                  return (
+                    <div key={w.id} className="border rounded-md p-2 bg-background">
+                      <div className="text-[11px] font-medium text-muted-foreground truncate">{w.name}</div>
+                      <div className="flex items-baseline justify-between mt-0.5">
+                        <span className={`text-lg font-semibold ${avail <= 0 ? "text-destructive" : "text-emerald-600"}`}>{fmtNumber(avail)}</span>
+                        <span className="text-[10px] text-muted-foreground">de {fmtNumber(totalsForWh.qty)}</span>
+                      </div>
+                      {totalsForWh.res > 0 && <div className="text-[10px] text-amber-600">{fmtNumber(totalsForWh.res)} reservado</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Variants section */}
+          {loadingDetails ? (
+            <div className="text-xs text-muted-foreground py-3">A carregar variantes…</div>
+          ) : !variants || variants.length === 0 ? (
+            <div className="text-xs text-muted-foreground italic">Este produto não possui variantes.</div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                  <Package className="h-3.5 w-3.5" /> Stock por variante ({variants.length})
+                </div>
+                <div className="flex items-center gap-1 border rounded-md p-0.5 bg-background">
+                  <button
+                    onClick={() => setVariantView("grid")}
+                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                  ><LayoutGrid className="h-3 w-3" /> Grade</button>
+                  <button
+                    onClick={() => setVariantView("matrix")}
+                    className={`text-[11px] px-2 py-1 rounded flex items-center gap-1 transition-colors ${variantView === "matrix" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                  ><ListIcon className="h-3 w-3" /> Matriz</button>
+                </div>
+              </div>
+
+              {variantView === "grid" ? (
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {variants.map((v) => {
+                    const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
+                    const cells = matrix[v.id] || {};
+                    const isActive = variantFilter === v.id;
+                    const moveCount = variantMoveCounts[v.id] ?? 0;
+                    const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
+                    const pct = Math.min(100, Math.round((Math.max(0, t.available) / maxAvailable) * 100));
+                    const empty = t.qty === 0 && t.reserved === 0;
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => setVariantFilter(isActive ? "all" : v.id)}
+                        className={`text-left border rounded-lg p-3 bg-background transition-all ${
+                          isActive ? "ring-2 ring-primary border-primary" : "hover:border-primary/40 hover:shadow-sm"
+                        } ${!v.active ? "opacity-50" : ""} ${empty ? "border-dashed" : ""}`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-14 h-14 border rounded-md bg-muted/30 overflow-hidden flex-shrink-0">
+                            {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> :
+                              <div className="w-full h-full flex items-center justify-center"><Package className="h-5 w-5 text-muted-foreground/40" /></div>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap gap-1 mb-1">
+                              {attrs.length > 0 ? attrs.map((a, i) => (
+                                <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{a}</Badge>
+                              )) : <span className="text-[11px] text-muted-foreground italic">Sem atributos</span>}
+                            </div>
+                            {v.sku && <div className="font-mono text-[10px] text-muted-foreground truncate">{v.sku}</div>}
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex items-baseline justify-between">
+                          <div>
+                            <div className={`text-2xl font-bold leading-none ${t.available <= 0 ? "text-destructive" : "text-emerald-600"}`}>
+                              {fmtNumber(t.available)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5">vendável</div>
+                          </div>
+                          <div className="text-right text-[10px] text-muted-foreground">
+                            <div>Em mão: <span className="font-medium text-foreground">{fmtNumber(t.qty)}</span></div>
+                            {t.reserved > 0 && <div className="text-amber-600">Res.: {fmtNumber(t.reserved)}</div>}
+                          </div>
+                        </div>
+
+                        {/* Bar */}
+                        <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${t.available <= 0 ? "bg-destructive/40" : "bg-emerald-500"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+
+                        {/* Per-warehouse mini chips */}
+                        {Object.keys(cells).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {visibleWarehouses.map((w) => {
+                              const c = cells[w.id];
+                              if (!c) return null;
+                              const a = c.qty - c.reserved;
+                              return (
+                                <span key={w.id} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/60 border" title={`${w.name}: ${a} disponível${c.reserved ? ` (${c.reserved} reserv.)` : ""}`}>
+                                  {w.name}: <span className={`font-semibold ${a <= 0 ? "text-destructive" : "text-emerald-700 dark:text-emerald-400"}`}>{fmtNumber(a)}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>{moveCount > 0 ? `${moveCount} movimento(s)` : "Sem movimentos"}</span>
+                          {isActive && <Badge variant="default" className="text-[9px] px-1 h-4">Filtrado</Badge>}
+                        </div>
+                      </button>
+                    );
                   })}
                 </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto border rounded">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-2 w-10">Foto</th>
-                      <th className="text-left p-2">Variante</th>
-                      <th className="text-left p-2 w-28">SKU</th>
-                      {visibleWarehouses.map((w) => <th key={w.id} className="text-right p-2 w-24">{w.name}</th>)}
-                      <th className="text-right p-2 w-24 bg-muted/60">Total vendável</th>
-                      <th className="text-right p-2 w-16">Mov.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleWarehouses.length === 0 ? (
-                      <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Sem stock para os filtros aplicados</td></tr>
-                    ) : variants.map((v) => {
-                      const cells = matrix[v.id] || {};
-                      const total = Object.values(cells).reduce((a, x) => ({ qty: a.qty + x.qty, reserved: a.reserved + x.reserved }), { qty: 0, reserved: 0 });
-                      const isActive = variantFilter === v.id;
-                      const moveCount = variantMoveCounts[v.id] ?? 0;
-                      return (
-                        <tr
-                          key={v.id}
-                          onClick={() => setVariantFilter(isActive ? "all" : v.id)}
-                          className={`border-t cursor-pointer transition-colors ${!v.active ? "opacity-50" : ""} ${isActive ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted/40"}`}
-                        >
-                          <td className="p-1">
-                            <div className="w-8 h-8 border rounded bg-muted/30 overflow-hidden">
-                              {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex flex-wrap gap-1 items-center">
-                              {v.product_variant_values.map((pvv, i) => (
-                                <Badge key={i} variant="outline" className="text-[10px]">{pvv.product_attribute_values?.name}</Badge>
-                              ))}
-                              {isActive && <Badge variant="default" className="text-[9px] px-1 h-4">Filtrado</Badge>}
-                            </div>
-                          </td>
-                          <td className="p-2 font-mono text-muted-foreground">{v.sku || "—"}</td>
-                          {visibleWarehouses.map((w) => {
-                            const cell = cells[w.id];
-                            const q = cell?.qty || 0;
-                            const r = cell?.reserved || 0;
-                            const avail = q - r;
-                            return (
-                              <td key={w.id} className="p-2 text-right">
-                                {q === 0 && r === 0 ? <span className="text-muted-foreground/40">—</span> : (
-                                  <div>
-                                    <div className={`font-medium ${avail <= 0 ? "text-destructive" : ""}`}>{fmtNumber(avail)}</div>
-                                    {r > 0 && <div className="text-[9px] text-muted-foreground">{fmtNumber(q)} − {fmtNumber(r)} res.</div>}
-                                  </div>
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className="p-2 text-right bg-muted/30 font-semibold">
-                            {fmtNumber(total.qty - total.reserved)}
-                            {total.reserved > 0 && <div className="text-[9px] text-muted-foreground font-normal">de {fmtNumber(total.qty)}</div>}
-                          </td>
-                          <td className="p-2 text-right">
-                            {moveCount > 0 ? <Badge variant="outline" className="text-[10px]">{moveCount}</Badge> : <span className="text-muted-foreground/40">—</span>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Movements (incl. variants) */}
-            {!loadingDetails && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
-                  <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
-                    <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
-                    <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 items-center">
-                    <button
-                      onClick={() => setVariantFilter("all")}
-                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${variantFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
-                    >Todas ({totalMovesCount})</button>
-                    {(variants ?? []).filter((v) => (variantMoveCounts[v.id] ?? 0) > 0).map((v) => {
-                      const active = variantFilter === v.id;
-                      const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean).join(" / ") || v.sku || v.id.slice(0, 6);
-                      return (
-                        <button
-                          key={v.id}
-                          onClick={() => setVariantFilter(active ? "all" : v.id)}
-                          className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
-                        >{attrs} ({variantMoveCounts[v.id]})</button>
-                      );
-                    })}
-                    {(variantMoveCounts["_no_variant"] ?? 0) > 0 && (
-                      <button
-                        onClick={() => setVariantFilter(variantFilter === "_no_variant" ? "all" : "_no_variant")}
-                        className={`text-[10px] px-2 py-0.5 rounded border italic transition-colors ${variantFilter === "_no_variant" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
-                      >Sem variante ({variantMoveCounts["_no_variant"]})</button>
-                    )}
-                  </div>
+              ) : (
+                <div className="overflow-x-auto border rounded">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-2 w-10"></th>
+                        <th className="text-left p-2">Variante</th>
+                        <th className="text-left p-2 w-28">SKU</th>
+                        {visibleWarehouses.map((w) => <th key={w.id} className="text-right p-2 w-24">{w.name}</th>)}
+                        <th className="text-right p-2 w-24 bg-muted/60">Vendável</th>
+                        <th className="text-right p-2 w-16">Mov.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {variants.map((v) => {
+                        const cells = matrix[v.id] || {};
+                        const t = variantTotals[v.id] ?? { qty: 0, reserved: 0, available: 0 };
+                        const isActive = variantFilter === v.id;
+                        const moveCount = variantMoveCounts[v.id] ?? 0;
+                        return (
+                          <tr
+                            key={v.id}
+                            onClick={() => setVariantFilter(isActive ? "all" : v.id)}
+                            className={`border-t cursor-pointer transition-colors ${!v.active ? "opacity-50" : ""} ${isActive ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted/40"}`}
+                          >
+                            <td className="p-1">
+                              <div className="w-8 h-8 border rounded bg-muted/30 overflow-hidden">
+                                {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
+                              </div>
+                            </td>
+                            <td className="p-2">
+                              <div className="flex flex-wrap gap-1 items-center">
+                                {v.product_variant_values.map((pvv, i) => (
+                                  <Badge key={i} variant="outline" className="text-[10px]">{pvv.product_attribute_values?.name}</Badge>
+                                ))}
+                                {isActive && <Badge variant="default" className="text-[9px] px-1 h-4">Filtrado</Badge>}
+                              </div>
+                            </td>
+                            <td className="p-2 font-mono text-muted-foreground">{v.sku || "—"}</td>
+                            {visibleWarehouses.map((w) => {
+                              const cell = cells[w.id];
+                              const q = cell?.qty || 0;
+                              const r = cell?.reserved || 0;
+                              const avail = q - r;
+                              return (
+                                <td key={w.id} className="p-2 text-right">
+                                  {q === 0 && r === 0 ? <span className="text-muted-foreground/40">—</span> : (
+                                    <div>
+                                      <div className={`font-medium ${avail <= 0 ? "text-destructive" : ""}`}>{fmtNumber(avail)}</div>
+                                      {r > 0 && <div className="text-[9px] text-muted-foreground">{fmtNumber(q)} − {fmtNumber(r)} res.</div>}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td className="p-2 text-right bg-muted/30 font-semibold">
+                              {fmtNumber(t.available)}
+                              {t.reserved > 0 && <div className="text-[9px] text-muted-foreground font-normal">de {fmtNumber(t.qty)}</div>}
+                            </td>
+                            <td className="p-2 text-right">
+                              {moveCount > 0 ? <Badge variant="outline" className="text-[10px]">{moveCount}</Badge> : <span className="text-muted-foreground/40">—</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                {filteredMoves.length === 0 ? (
-                  <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
-                ) : (
-                  <div className="overflow-x-auto border rounded max-h-80">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/50 sticky top-0">
-                        <tr>
-                          <th className="text-left p-2">Data</th>
-                          <th className="text-left p-2">Documento</th>
-                          <th className="text-left p-2">Tipo</th>
-                          <th className="text-left p-2 min-w-[180px]">Variante</th>
-                          <th className="text-left p-2">Armazém</th>
-                          <th className="text-left p-2">Parceiro</th>
-                          <th className="text-right p-2">Qtd</th>
-                          <th className="text-right p-2">Feito</th>
-                          <th className="text-right p-2">Reservado</th>
-                          <th className="text-left p-2">Estado</th>
-                          <th className="text-left p-2">Origem</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredMoves.map((m) => {
-                          const k = m.stock_pickings?.kind;
-                          const dirTone = k === "incoming" ? "text-emerald-600" : k === "outgoing" ? "text-rose-600" : "text-muted-foreground";
-                          const dirSign = k === "incoming" ? "+" : k === "outgoing" ? "−" : "";
-                          return (
-                            <tr key={m.id} className="border-t hover:bg-muted/30">
-                              <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
-                              <td className="p-2">
-                                {m.stock_pickings?.id ? (
-                                  <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline font-medium">{m.stock_pickings.name}</Link>
-                                ) : "—"}
-                              </td>
-                              <td className={`p-2 ${dirTone}`}>
-                                <span className="inline-flex items-center gap-1">{dirSign}{kindLabel(k)}</span>
-                              </td>
-                              <td className="p-2">{renderVariantBadges(m.variant_id)}</td>
-                              <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
-                              <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
-                              <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
-                              <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
-                              <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
-                              <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
-                              <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              )}
+            </div>
+          )}
+
+          {/* Movements */}
+          {!loadingDetails && (
+            <div>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
+                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
+                  <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
+                </div>
+                <div className="flex flex-wrap gap-1 items-center">
+                  <button
+                    onClick={() => setVariantFilter("all")}
+                    className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${variantFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                  >Todas ({totalMovesCount})</button>
+                  {(variants ?? []).filter((v) => (variantMoveCounts[v.id] ?? 0) > 0).map((v) => {
+                    const active = variantFilter === v.id;
+                    const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean).join(" / ") || v.sku || v.id.slice(0, 6);
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => setVariantFilter(active ? "all" : v.id)}
+                        className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                      >{attrs} ({variantMoveCounts[v.id]})</button>
+                    );
+                  })}
+                  {(variantMoveCounts["_no_variant"] ?? 0) > 0 && (
+                    <button
+                      onClick={() => setVariantFilter(variantFilter === "_no_variant" ? "all" : "_no_variant")}
+                      className={`text-[10px] px-2 py-0.5 rounded border italic transition-colors ${variantFilter === "_no_variant" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                    >Sem variante ({variantMoveCounts["_no_variant"]})</button>
+                  )}
+                </div>
               </div>
-            )}
-          </td>
-        </tr>
+              {filteredMoves.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
+              ) : (
+                <div className="overflow-x-auto border rounded max-h-80 bg-background">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        <th className="text-left p-2">Data</th>
+                        <th className="text-left p-2">Documento</th>
+                        <th className="text-left p-2">Tipo</th>
+                        <th className="text-left p-2 min-w-[180px]">Variante</th>
+                        <th className="text-left p-2">Armazém</th>
+                        <th className="text-left p-2">Parceiro</th>
+                        <th className="text-right p-2">Qtd</th>
+                        <th className="text-right p-2">Feito</th>
+                        <th className="text-right p-2">Reservado</th>
+                        <th className="text-left p-2">Estado</th>
+                        <th className="text-left p-2">Origem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMoves.map((m) => {
+                        const k = m.stock_pickings?.kind;
+                        const dirTone = k === "incoming" ? "text-emerald-600" : k === "outgoing" ? "text-rose-600" : "text-muted-foreground";
+                        const dirSign = k === "incoming" ? "+" : k === "outgoing" ? "−" : "";
+                        const DirIcon = k === "incoming" ? TrendingUp : k === "outgoing" ? TrendingDown : ArrowRightLeft;
+                        return (
+                          <tr key={m.id} className="border-t hover:bg-muted/30">
+                            <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                            <td className="p-2">
+                              {m.stock_pickings?.id ? (
+                                <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline font-medium">{m.stock_pickings.name}</Link>
+                              ) : "—"}
+                            </td>
+                            <td className={`p-2 ${dirTone}`}>
+                              <span className="inline-flex items-center gap-1"><DirIcon className="h-3 w-3" />{kindLabel(k)}</span>
+                            </td>
+                            <td className="p-2">{renderVariantBadges(m.variant_id)}</td>
+                            <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
+                            <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
+                            <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
+                            <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
-    </>
+    </Card>
   );
 }
 
+function Stat({ label, value, tone, bold, muted }: { label: string; value: number; tone?: "amber" | "emerald" | "destructive" | "primary"; bold?: boolean; muted?: boolean }) {
+  const toneCls = tone === "amber" ? "text-amber-600"
+    : tone === "emerald" ? "text-emerald-600"
+    : tone === "destructive" ? "text-destructive"
+    : tone === "primary" ? "text-primary"
+    : muted ? "text-muted-foreground"
+    : "";
+  return (
+    <div className="min-w-[68px]">
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className={`tabular-nums ${bold ? "text-base font-bold" : "text-sm font-medium"} ${toneCls}`}>{fmtNumber(value)}</div>
+    </div>
+  );
+}
+
+function KpiMini({ label, value, tone, sign }: { label: string; value: number; tone?: "amber" | "emerald" | "destructive" | "primary" | "rose"; sign?: string }) {
+  const toneCls = tone === "amber" ? "text-amber-600"
+    : tone === "emerald" ? "text-emerald-600"
+    : tone === "rose" ? "text-rose-600"
+    : tone === "destructive" ? "text-destructive"
+    : tone === "primary" ? "text-primary"
+    : "";
+  return (
+    <div className="border rounded-md p-2 bg-background">
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className={`text-base font-semibold tabular-nums ${toneCls}`}>{value > 0 && sign ? sign : ""}{fmtNumber(value)}</div>
+    </div>
+  );
+}
