@@ -10,8 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Truck, User2, Calendar, Trash2 } from "lucide-react";
+import { Truck, User2, Calendar, Trash2, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function RouteDetail() {
   const { id } = useParams();
@@ -80,8 +84,8 @@ export default function RouteDetail() {
     qc.invalidateQueries({ queryKey: ["routes-schedule"] });
   };
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const remove = async () => {
-    if (!confirm("Apagar esta rota? As entregas atribuídas ficarão sem rota.")) return;
     const { error } = await supabase.from("delivery_routes").delete().eq("id", id!);
     if (error) return toast.error(error.message);
     toast.success("Rota apagada");
@@ -105,7 +109,7 @@ export default function RouteDetail() {
             </>
           ) : (
             <>
-              <Button size="sm" variant="destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmOpen(true)}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
               <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
             </>
           )
@@ -225,6 +229,35 @@ export default function RouteDetail() {
           </table>
         </Card>
       </PageBody>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Apagar rota de {r.delivery_zones?.name ?? ""} · {r.route_date}?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Esta ação não pode ser revertida.</p>
+                {pickings.length > 0 ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-foreground">
+                    <strong>{pickings.length}</strong> {pickings.length === 1 ? "entrega ficará" : "entregas ficarão"} sem rota atribuída e voltarão para o estado <em>por agendar</em>.
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Não há entregas atribuídas a esta rota.</p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Apagar rota
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
