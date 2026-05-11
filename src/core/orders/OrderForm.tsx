@@ -141,6 +141,24 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       return m;
     },
   });
+  const { data: variantStockMap } = useQuery({
+    queryKey: ["variants-stock-agg"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stock_quants")
+        .select("variant_id,quantity,reserved_quantity,stock_locations!inner(type)")
+        .eq("stock_locations.type", "internal")
+        .not("variant_id", "is", null);
+      const m: Record<string, { available: number; on_hand: number }> = {};
+      (data ?? []).forEach((r: any) => {
+        const k = r.variant_id as string;
+        if (!m[k]) m[k] = { available: 0, on_hand: 0 };
+        m[k].on_hand += Number(r.quantity || 0);
+        m[k].available += Number(r.quantity || 0) - Number(r.reserved_quantity || 0);
+      });
+      return m;
+    },
+  });
 
   useEffect(() => {
     if (isNew) return;
@@ -466,8 +484,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                       <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas</td></tr>
                     ) : productLines.map((l) => {
                       const i = lines.indexOf(l);
-                      const s = l.product_id ? stockMap?.[l.product_id] : undefined;
-                      const avail = s?.available ?? 0;
+                      const ps = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const vs = l.variant_id ? variantStockMap?.[l.variant_id] : undefined;
+                      const avail = vs ? vs.available : (ps?.available ?? 0);
                       const qty = Number(l.quantity || 0);
                       const tone = !l.product_id ? "text-muted-foreground"
                         : avail >= qty ? "text-emerald-600"
@@ -593,7 +612,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           {l.product_id ? (
                             <div className={`text-xs ${tone}`}>
                               <div className="font-medium">{avail} disp.</div>
-                              {s?.incoming ? <div className="text-[10px] text-muted-foreground">+{s.incoming} a chegar</div> : null}
+                              {ps?.incoming ? <div className="text-[10px] text-muted-foreground">+{ps.incoming} a chegar</div> : null}
                             </div>
                           ) : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
