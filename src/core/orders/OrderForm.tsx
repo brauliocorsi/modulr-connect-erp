@@ -612,7 +612,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                           {l.product_id ? (
                             <div className={`text-xs ${tone}`}>
                               <div className="font-medium">{avail} disp.</div>
-                              {s?.incoming ? <div className="text-[10px] text-muted-foreground">+{s.incoming} a chegar</div> : null}
+                              {ps?.incoming ? <div className="text-[10px] text-muted-foreground">+{ps.incoming} a chegar</div> : null}
                             </div>
                           ) : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
