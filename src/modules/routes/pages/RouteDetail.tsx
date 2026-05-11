@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 export default function RouteDetail() {
   const { id } = useParams();
   const qc = useQueryClient();
+  const nav = useNavigate();
 
   const { data: route } = useQuery({
     queryKey: ["route-detail", id],
