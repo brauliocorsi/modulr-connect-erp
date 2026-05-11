@@ -122,13 +122,17 @@ export default function ShipmentsPage() {
   const open = (r: any) => !["done", "cancelled"].includes(r.state);
   const cais = all.filter((r) => open(r) && r.dest?.name === "Cais de Carga");
   const enroute = all.filter((r) => open(r) && r.source?.name === "Em Entrega");
-  const pending = all.filter((r) => open(r) && !cais.includes(r) && !enroute.includes(r));
+  // Pickup = open outgoing leaving Cais de Carga directly to customer (SO without delivery service)
+  const pickupStage = all.filter((r) => open(r) && r.source?.name === "Cais de Carga" && r.so && !r.so.include_delivery);
+  const pending = all.filter((r) => open(r) && !cais.includes(r) && !enroute.includes(r) && !pickupStage.includes(r));
   const done = all.filter((r) => r.state === "done");
   const delivery = all.filter((r) => r.so?.include_delivery);
   const pickup = all.filter((r) => r.so && !r.so.include_delivery);
 
   const stage = params.get("stage");
-  const defaultTab = stage === "cais" ? "cais" : stage === "enroute" ? "enroute" : "cais";
+  const defaultTab = ["cais", "enroute", "pickup", "pending", "delivery", "done", "all"].includes(stage ?? "")
+    ? (stage as string)
+    : "cais";
 
   return (
     <>
@@ -140,18 +144,18 @@ export default function ShipmentsPage() {
         <Tabs value={defaultTab} onValueChange={(v) => { params.set("stage", v); setParams(params, { replace: true }); }}>
           <TabsList>
             <TabsTrigger value="cais"><PackageCheck className="h-3.5 w-3.5 mr-1" />Cais de Carga <Badge variant="secondary" className="ml-2">{cais.length}</Badge></TabsTrigger>
+            <TabsTrigger value="pickup"><PackageCheck className="h-3.5 w-3.5 mr-1" />Levantamento <Badge variant="secondary" className="ml-2">{pickupStage.length}</Badge></TabsTrigger>
             <TabsTrigger value="enroute"><Truck className="h-3.5 w-3.5 mr-1" />Em Entrega <Badge variant="secondary" className="ml-2">{enroute.length}</Badge></TabsTrigger>
             <TabsTrigger value="pending">Outras pendentes <Badge variant="secondary" className="ml-2">{pending.length}</Badge></TabsTrigger>
-            <TabsTrigger value="delivery">Entregas <Badge variant="secondary" className="ml-2">{delivery.length}</Badge></TabsTrigger>
-            <TabsTrigger value="pickup">Levantamentos <Badge variant="secondary" className="ml-2">{pickup.length}</Badge></TabsTrigger>
+            <TabsTrigger value="delivery">Todas entregas <Badge variant="secondary" className="ml-2">{delivery.length}</Badge></TabsTrigger>
             <TabsTrigger value="done">Concluídas <Badge variant="secondary" className="ml-2">{done.length}</Badge></TabsTrigger>
             <TabsTrigger value="all">Todas <Badge variant="secondary" className="ml-2">{all.length}</Badge></TabsTrigger>
           </TabsList>
           <TabsContent value="cais" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={cais} />}</TabsContent>
+          <TabsContent value="pickup" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={pickupStage} />}</TabsContent>
           <TabsContent value="enroute" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={enroute} />}</TabsContent>
           <TabsContent value="pending" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={pending} />}</TabsContent>
           <TabsContent value="delivery" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={delivery} />}</TabsContent>
-          <TabsContent value="pickup" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={pickup} />}</TabsContent>
           <TabsContent value="done" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={done} />}</TabsContent>
           <TabsContent value="all" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={all} />}</TabsContent>
         </Tabs>
