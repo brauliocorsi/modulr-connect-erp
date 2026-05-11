@@ -516,9 +516,6 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                 </div>
               </div>
 
-              {(() => { return null; })()}
-              {/* Apply filter to variants list */}
-
               {(() => {
                 const displayedVariants = onlyWithStock
                   ? variants.filter((v) => (variantTotals[v.id]?.qty ?? 0) > 0 || (variantTotals[v.id]?.reserved ?? 0) > 0)
