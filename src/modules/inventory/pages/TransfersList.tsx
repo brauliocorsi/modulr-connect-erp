@@ -294,14 +294,14 @@ export default function TransfersList() {
 
                 if (!groupMode) {
                   if (visibleRows.length === 0) {
-                    return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                    return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                   }
                   return visibleRows.map((r: any) => renderRow(r));
                 }
 
                 const { groups, singletons } = grouped;
                 if (groups.length === 0 && singletons.length === 0) {
-                  return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                  return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                 }
                 const out: JSX.Element[] = [];
                 for (const g of groups) {
@@ -326,6 +326,7 @@ export default function TransfersList() {
                           <StateBadge value={g.state} />
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs">{g.scheduledAt ? new Date(g.scheduledAt).toLocaleString("pt-PT") : "—"}</td>
                     </tr>
