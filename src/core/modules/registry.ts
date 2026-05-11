@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -141,6 +141,19 @@ export const MODULES: ModuleDef[] = [
     description: "Caixas de loja, sessões e movimentos diários",
     menu: [
       { section: "Caixas", label: "Caixas", to: "/cashbox" },
+    ],
+  },
+  {
+    id: "routes" as any,
+    name: "Rotas",
+    shortName: "Rotas",
+    icon: Map,
+    color: "bg-[hsl(173_80%_36%)]",
+    basePath: "/routes",
+    description: "Cronograma de rotas, zonas e entregas agendadas",
+    menu: [
+      { section: "Rotas", label: "Cronograma", to: "/routes" },
+      { section: "Configuração", label: "Zonas", to: "/routes/zones" },
     ],
   },
   {

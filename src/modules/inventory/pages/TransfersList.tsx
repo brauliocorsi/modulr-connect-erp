@@ -47,7 +47,7 @@ export default function TransfersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("stock_pickings")
-        .select("id,name,kind,state,scheduled_at,created_at,done_at,step_label,batch_id,warehouse_id,origin,source_location_id,destination_location_id,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
+        .select("id,name,kind,state,scheduled_at,created_at,done_at,step_label,batch_id,route_id,warehouse_id,origin,source_location_id,destination_location_id,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name),delivery_routes(route_date,delivery_zones(name,color))")
         .order(sort.key, { ascending: sort.asc })
         .limit(1000);
       if (q) query = query.ilike("name", `%${q}%`);
@@ -241,6 +241,7 @@ export default function TransfersList() {
                 <th className="text-left px-3 py-2">Parceiro</th>
                 <SortHead k="state" label="Estado" />
                 <th className="text-left px-3 py-2">Lote</th>
+                <th className="text-left px-3 py-2">Rota</th>
                 <SortHead k="scheduled_at" label="Programado" />
               </tr>
             </thead>
@@ -276,20 +277,31 @@ export default function TransfersList() {
                       </div>
                     </td>
                     <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
+                    <td className="px-3 py-2">
+                      {r.route_id ? (
+                        <Link to={`/routes/${r.route_id}`} className="text-primary hover:underline text-xs flex items-center gap-1">
+                          {r.delivery_routes?.delivery_zones?.color && (
+                            <span className="inline-block h-2.5 w-2.5 rounded-full border" style={{ backgroundColor: r.delivery_routes.delivery_zones.color }} />
+                          )}
+                          {r.delivery_routes?.delivery_zones?.name ?? "Rota"}
+                          <span className="text-muted-foreground">· {r.delivery_routes?.route_date}</span>
+                        </Link>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
                   </tr>
                 );
 
                 if (!groupMode) {
                   if (visibleRows.length === 0) {
-                    return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                    return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                   }
                   return visibleRows.map((r: any) => renderRow(r));
                 }
 
                 const { groups, singletons } = grouped;
                 if (groups.length === 0 && singletons.length === 0) {
-                  return <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                  return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                 }
                 const out: JSX.Element[] = [];
                 for (const g of groups) {
@@ -314,6 +326,7 @@ export default function TransfersList() {
                           <StateBadge value={g.state} />
                         </div>
                       </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs">{g.scheduledAt ? new Date(g.scheduledAt).toLocaleString("pt-PT") : "—"}</td>
                     </tr>
