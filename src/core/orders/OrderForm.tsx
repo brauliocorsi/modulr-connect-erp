@@ -505,7 +505,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               <Card className="p-3 flex flex-wrap items-center gap-3">
                 <DeliveryStatusBadge
                   picking={shipment as any}
-                  onChanged={() => qc.invalidateQueries({ queryKey: ["sale-shipment", order.name] })}
+                  onChanged={() => queryClient.invalidateQueries({ queryKey: ["sale-shipment", order.name] })}
                   showActions={!isLocked && shipment.state !== "done"}
                 />
                 <div className="ml-auto text-xs text-muted-foreground">
