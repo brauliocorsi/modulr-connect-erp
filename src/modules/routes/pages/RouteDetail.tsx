@@ -229,6 +229,35 @@ export default function RouteDetail() {
           </table>
         </Card>
       </PageBody>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Apagar rota de {r.delivery_zones?.name ?? ""} · {r.route_date}?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Esta ação não pode ser revertida.</p>
+                {pickings.length > 0 ? (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-foreground">
+                    <strong>{pickings.length}</strong> {pickings.length === 1 ? "entrega ficará" : "entregas ficarão"} sem rota atribuída e voltarão para o estado <em>por agendar</em>.
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Não há entregas atribuídas a esta rota.</p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Apagar rota
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
