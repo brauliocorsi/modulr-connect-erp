@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
@@ -17,7 +17,9 @@ import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/Regi
 export default function BillForm() {
   const { id } = useParams();
   const nav = useNavigate();
+  const [sp] = useSearchParams();
   const isNew = !id || id === "new";
+  const prefillPoId = isNew ? sp.get("po") : null;
 
   const [bill, setBill] = useState<any>({
     bill_date: new Date().toISOString().slice(0, 10),
@@ -59,9 +61,27 @@ export default function BillForm() {
       setPartners(pp ?? []);
       setCenters(cc ?? []);
       setPos(pp2 ?? []);
+      // Prefill from ?po=<id>
+      if (prefillPoId) {
+        const { data: po } = await supabase
+          .from("purchase_orders")
+          .select("id, partner_id, amount_total, name, expected_date")
+          .eq("id", prefillPoId)
+          .maybeSingle();
+        if (po) {
+          setBill((b: any) => ({
+            ...b,
+            partner_id: po.partner_id,
+            purchase_order_id: po.id,
+            amount_total: Number(po.amount_total || 0),
+            reference: po.name,
+            due_date: po.expected_date ?? b.due_date,
+          }));
+        }
+      }
     })();
     load();
-  }, [id]);
+  }, [id, prefillPoId]);
 
   const save = async () => {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");

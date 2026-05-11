@@ -13,6 +13,7 @@ import { MarkInvoicedDialog } from "@/core/orders/MarkInvoicedDialog";
 import { FileCheck2 } from "lucide-react";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
+import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -300,6 +301,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       amount_total: totals.total,
     };
     if (kind === "sale") payload.commitment_date = order.commitment_date ?? null;
+    if (kind === "purchase") payload.expected_date = order.expected_date ?? null;
     if (isNew) {
       const { data: seqRes } = await supabase.rpc("next_sequence", { _code: kind === "sale" ? "sale_order" : "purchase_order" });
       payload.name = seqRes ?? "TMP";
@@ -477,6 +479,17 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                     type="date"
                     value={order.commitment_date ?? ""}
                     onChange={(e) => setOrder({ ...order, commitment_date: e.target.value || null })}
+                    disabled={isLocked}
+                  />
+                </div>
+              )}
+              {kind === "purchase" && (
+                <div className="space-y-2">
+                  <Label>Data de entrega prevista</Label>
+                  <Input
+                    type="date"
+                    value={order.expected_date ?? ""}
+                    onChange={(e) => setOrder({ ...order, expected_date: e.target.value || null })}
                     disabled={isLocked}
                   />
                 </div>
@@ -856,6 +869,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
             {!isNew && kind === "sale" && (
               <PaymentsTab orderId={id!} partnerId={order.partner_id} total={Number(order.amount_total ?? totals.total)} isLocked={["cancelled"].includes(order.state)} />
+            )}
+            {!isNew && kind === "purchase" && order.name && order.name !== "Rascunho" && (
+              <PurchaseBillsPanel poId={id!} poName={order.name} poTotal={Number(order.amount_total ?? totals.total)} />
             )}
             {!isNew && kind === "sale" && <OrderTraceability saleOrderId={id!} />}
             {!isNew && <RecordSidebar recordType={kind === "sale" ? "sale_order" : "purchase_order"} recordId={id!} />}
