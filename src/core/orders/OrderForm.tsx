@@ -500,11 +500,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                                                 key={p.id}
                                                 value={`${p.name} ${p.barcode ?? ""}`}
                                                 onSelect={() => {
+                                                  const pvs = (variantsByProduct?.[p.id] ?? []).filter((v: any) => v.active !== false);
+                                                  const onlyV = pvs.length === 1 ? pvs[0] : null;
+                                                  const base = kind === "sale" ? Number(p.list_price ?? 0) : Number(p.standard_cost ?? 0);
                                                   setLine(i, {
                                                     product_id: p.id,
-                                                    variant_id: null,
-                                                    unit_price: kind === "sale" ? Number(p.list_price ?? 0) : Number(p.standard_cost ?? 0),
-                                                    description: p.name ?? "",
+                                                    variant_id: onlyV?.id ?? null,
+                                                    unit_price: base + Number(onlyV?.price_extra ?? 0),
+                                                    description: `${p.name ?? ""}${onlyV ? ` — ${onlyV.label}` : ""}`,
                                                   });
                                                   (document.activeElement as HTMLElement)?.blur();
                                                 }}
