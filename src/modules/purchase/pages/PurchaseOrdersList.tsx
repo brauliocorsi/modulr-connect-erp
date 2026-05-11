@@ -229,6 +229,9 @@ export const PurchaseOrdersList = () => {
                 <Merge className="h-4 w-4 mr-1" /> Agrupar {selected.size}
               </Button>
             )}
+            <Button size="sm" variant={groupDrafts ? "default" : "outline"} onClick={toggleGroupDrafts} title="Agrupar rascunhos por fornecedor">
+              <Layers className="h-4 w-4 mr-1" /> Agrupar rascunhos
+            </Button>
             <Button asChild size="sm" variant="outline">
               <Link to="/purchase/kanban"><LayoutGrid className="h-4 w-4 mr-1" /> Kanban</Link>
             </Button>
