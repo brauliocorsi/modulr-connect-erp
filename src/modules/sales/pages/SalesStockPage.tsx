@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Package, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, AlertCircle } from "lucide-react";
+import { Search, Package, ChevronDown, ChevronRight, Warehouse as WarehouseIcon, AlertCircle, ArrowRightLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { stateLabel, kindLabel } from "@/lib/picking";
 
 type ForecastRow = {
   product_id: string;
@@ -51,6 +52,18 @@ type Variant = {
   product_variant_values: { product_attribute_values: { name: string } | null }[];
 };
 
+type Move = {
+  id: string;
+  created_at: string;
+  variant_id: string | null;
+  quantity: number;
+  quantity_done: number;
+  reserved_quantity: number;
+  state: string;
+  reference: string | null;
+  stock_pickings: { id: string; name: string; kind: string; warehouse_id: string | null; origin: string | null; partners: { name: string } | null } | null;
+};
+
 export default function SalesStockPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [forecast, setForecast] = useState<ForecastRow[]>([]);
@@ -62,6 +75,7 @@ export default function SalesStockPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [variantsByProduct, setVariantsByProduct] = useState<Record<string, Variant[]>>({});
   const [quantsByProduct, setQuantsByProduct] = useState<Record<string, Quant[]>>({});
+  const [movesByProduct, setMovesByProduct] = useState<Record<string, Move[]>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
@@ -131,14 +145,20 @@ export default function SalesStockPage() {
     const isOpen = !!expanded[productId];
     setExpanded((p) => ({ ...p, [productId]: !isOpen }));
     if (isOpen) return;
-    if (variantsByProduct[productId] && quantsByProduct[productId]) return;
+    if (variantsByProduct[productId] && quantsByProduct[productId] && movesByProduct[productId]) return;
     setLoadingDetails((p) => ({ ...p, [productId]: true }));
-    const [{ data: vs }, { data: qs }] = await Promise.all([
+    const [{ data: vs }, { data: qs }, { data: mv }] = await Promise.all([
       supabase.from("product_variants").select("id,product_id,sku,image_url,active,product_variant_values(product_attribute_values(name))").eq("product_id", productId),
       supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name)").eq("product_id", productId),
+      supabase.from("stock_moves")
+        .select("id,created_at,variant_id,quantity,quantity_done,reserved_quantity,state,reference,stock_pickings!inner(id,name,kind,warehouse_id,origin,partners(name))")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
     setVariantsByProduct((p) => ({ ...p, [productId]: (vs as Variant[]) ?? [] }));
     setQuantsByProduct((p) => ({ ...p, [productId]: (qs as Quant[]) ?? [] }));
+    setMovesByProduct((p) => ({ ...p, [productId]: (mv as any) ?? [] }));
     setLoadingDetails((p) => ({ ...p, [productId]: false }));
   };
 
@@ -227,6 +247,7 @@ export default function SalesStockPage() {
                     filterWh={filterWh}
                     variants={variantsByProduct[p.id]}
                     quants={quantsByProduct[p.id]}
+                    moves={movesByProduct[p.id]}
                     loadingDetails={!!loadingDetails[p.id]}
                   />
                 );
@@ -239,7 +260,7 @@ export default function SalesStockPage() {
   );
 }
 
-function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, variants, quants, loadingDetails }: {
+function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, variants, quants, moves, loadingDetails }: {
   p: Product;
   s: { on_hand: number; reserved: number; available: number; forecasted: number; incoming: number; outgoing: number; sold_30d: number };
   isOpen: boolean;
@@ -249,8 +270,21 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
   filterWh: string;
   variants?: Variant[];
   quants?: Quant[];
+  moves?: Move[];
   loadingDetails: boolean;
 }) {
+  const variantLabel = (vid: string | null) => {
+    if (!vid) return "—";
+    const v = variants?.find((x) => x.id === vid);
+    if (!v) return "—";
+    const attrs = v.product_variant_values.map((p) => p.product_attribute_values?.name).filter(Boolean).join(" / ");
+    return attrs || v.sku || vid.slice(0, 6);
+  };
+  const whName = (wid: string | null) => warehouses.find((w) => w.id === wid)?.name ?? "—";
+  const filteredMoves = useMemo(() => {
+    return (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+  }, [moves, filterWh]);
+
   // Per-variant-warehouse matrix
   const matrix = useMemo(() => {
     const m: Record<string, Record<string, { qty: number; reserved: number }>> = {};
@@ -375,6 +409,59 @@ function ProductRow({ p, s, isOpen, lowStock, onToggle, warehouses, filterWh, va
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Movements (incl. variants) */}
+            {!loadingDetails && (
+              <div className="mt-3">
+                <div className="text-xs font-semibold flex items-center gap-1 mb-1 text-muted-foreground">
+                  <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações {filteredMoves.length > 0 && <span className="font-normal">({filteredMoves.length})</span>}
+                </div>
+                {filteredMoves.length === 0 ? (
+                  <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
+                ) : (
+                  <div className="overflow-x-auto border rounded max-h-72">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2">Data</th>
+                          <th className="text-left p-2">Documento</th>
+                          <th className="text-left p-2">Tipo</th>
+                          <th className="text-left p-2">Variante</th>
+                          <th className="text-left p-2">Armazém</th>
+                          <th className="text-left p-2">Parceiro</th>
+                          <th className="text-right p-2">Qtd</th>
+                          <th className="text-right p-2">Feito</th>
+                          <th className="text-right p-2">Reservado</th>
+                          <th className="text-left p-2">Estado</th>
+                          <th className="text-left p-2">Origem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMoves.map((m) => (
+                          <tr key={m.id} className="border-t">
+                            <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                            <td className="p-2">
+                              {m.stock_pickings?.id ? (
+                                <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline">{m.stock_pickings.name}</Link>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2">{kindLabel(m.stock_pickings?.kind)}</td>
+                            <td className="p-2">{variantLabel(m.variant_id)}</td>
+                            <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity)}</td>
+                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
+                            <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
+                            <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
+                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </td>
