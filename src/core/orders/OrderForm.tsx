@@ -339,6 +339,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     if (!lineCount) {
       return toast.error("Adicione ao menos uma linha com quantidade maior que 0 antes de confirmar.");
     }
+    if (kind === "sale") {
+      const { count: schedCount } = await supabase
+        .from("sale_payment_schedules")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", id!);
+      if (!schedCount) {
+        return toast.error("Defina as condições de pagamento (parcelas) na aba Pagamento antes de confirmar.");
+      }
+    }
     // Re-check current state to avoid double-confirm with stale UI
     const { data: cur } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
     const curState = (cur as any)?.state;
