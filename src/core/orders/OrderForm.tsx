@@ -182,6 +182,22 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     return () => { clearTimeout(timer); supabase.removeChannel(channel); };
   }, [id, isNew, ordersTable, linesTable]);
 
+  // Realtime: manter stock por produto/variante atualizado mesmo durante criação da venda
+  useEffect(() => {
+    const invalidateStock = () => {
+      queryClient.invalidateQueries({ queryKey: ["products-stock-agg"] });
+      queryClient.invalidateQueries({ queryKey: ["variants-stock-agg"] });
+    };
+    let timer: any;
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(invalidateStock, 250); };
+    const channel = supabase
+      .channel(`order-stock-live-${kind}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_quants" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_moves" }, debounced)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+  }, [queryClient, kind]);
+
   const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
   const serviceLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") !== "product"), [lines]);
   const totals = useMemo(() => {
