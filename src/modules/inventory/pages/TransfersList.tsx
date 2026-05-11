@@ -42,16 +42,17 @@ export default function TransfersList() {
   });
 
   const { data: rows = [] } = useQuery({
-    queryKey: ["transfers-list", q, filters, sort],
+    queryKey: ["transfers-list", q, filters, sort, groupMode],
     queryFn: async () => {
       let query: any = supabase
         .from("stock_pickings")
         .select("id,name,kind,state,scheduled_at,created_at,done_at,step_label,batch_id,warehouse_id,origin,source_location_id,destination_location_id,reschedule_count,tracking_ref,partners(name),vehicles(name,license_plate),delivery_carriers(name)")
         .order(sort.key, { ascending: sort.asc })
-        .limit(500);
+        .limit(1000);
       if (q) query = query.ilike("name", `%${q}%`);
       if (filters.kind) query = query.eq("kind", filters.kind);
-      if (filters.state) query = query.eq("state", filters.state);
+      // When grouping, state filter is applied to the consolidated state client-side so we keep all chain steps.
+      if (filters.state && !groupMode) query = query.eq("state", filters.state);
       if (filters.warehouse_id) query = query.eq("warehouse_id", filters.warehouse_id);
       if (filters.batch_id) query = query.eq("batch_id", filters.batch_id);
       if (filters.carrier_id) query = query.eq("carrier_id", filters.carrier_id);
