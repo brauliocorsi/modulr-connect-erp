@@ -167,9 +167,37 @@ export default function SalesStockPage() {
         .order("created_at", { ascending: false })
         .limit(100),
     ]);
+
+    // Enrich moves missing variant_id by looking up the source order line via origin (e.g. SO00001 / PO00001)
+    const moves = (mv as Move[]) ?? [];
+    const orphanOrigins = Array.from(new Set(
+      moves.filter((m) => !m.variant_id && m.stock_pickings?.origin).map((m) => m.stock_pickings!.origin as string)
+    ));
+    const inferred: Record<string, string> = {}; // origin -> variant_id
+    if (orphanOrigins.length > 0) {
+      const saleOrigins = orphanOrigins.filter((o) => o.startsWith("SO"));
+      const purchaseOrigins = orphanOrigins.filter((o) => o.startsWith("PO"));
+      const [soRes, poRes] = await Promise.all([
+        saleOrigins.length
+          ? supabase.from("sale_order_lines").select("variant_id, sale_orders!inner(name)").eq("product_id", productId).in("sale_orders.name", saleOrigins).not("variant_id", "is", null)
+          : Promise.resolve({ data: [] as any[] }),
+        purchaseOrigins.length
+          ? supabase.from("purchase_order_lines").select("variant_id, purchase_orders!inner(name)").eq("product_id", productId).in("purchase_orders.name", purchaseOrigins).not("variant_id", "is", null)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      ((soRes.data as any[]) || []).forEach((r) => { if (r.sale_orders?.name && r.variant_id) inferred[r.sale_orders.name] = r.variant_id; });
+      ((poRes.data as any[]) || []).forEach((r) => { if (r.purchase_orders?.name && r.variant_id) inferred[r.purchase_orders.name] = r.variant_id; });
+    }
+    const enriched = moves.map((m) => {
+      if (m.variant_id) return m;
+      const origin = m.stock_pickings?.origin;
+      const inf = origin ? inferred[origin] : undefined;
+      return inf ? { ...m, variant_id: inf, _inferred: true } as any : m;
+    });
+
     setVariantsByProduct((p) => ({ ...p, [productId]: (vs as Variant[]) ?? [] }));
     setQuantsByProduct((p) => ({ ...p, [productId]: (qs as Quant[]) ?? [] }));
-    setMovesByProduct((p) => ({ ...p, [productId]: (mv as any) ?? [] }));
+    setMovesByProduct((p) => ({ ...p, [productId]: enriched }));
     setLoadingDetails((p) => ({ ...p, [productId]: false }));
   };
 
@@ -342,8 +370,21 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
     });
   }, [dirScopedMoves, variantFilter]);
 
-  const renderVariantBadges = (vid: string | null) => {
-    if (!vid) return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
+  const hasVariants = (variants ?? []).length > 0;
+
+  const renderVariantBadges = (vid: string | null, inferred?: boolean) => {
+    if (!vid) {
+      if (hasVariants) {
+        return (
+          <div className="inline-flex items-center gap-1 text-[11px] text-destructive bg-destructive/10 border border-destructive/30 rounded px-1.5 py-0.5">
+            <AlertCircle className="h-3 w-3" />
+            <span className="font-medium">Variante não definida</span>
+            <span className="text-muted-foreground">— {(variants ?? []).length} disponíveis</span>
+          </div>
+        );
+      }
+      return <span className="text-muted-foreground italic text-[11px]">Sem variante</span>;
+    }
     const v = variantById[vid];
     if (!v) return <span className="text-muted-foreground">{vid.slice(0, 6)}</span>;
     const attrs = v.product_variant_values.map((pv) => pv.product_attribute_values?.name).filter(Boolean) as string[];
@@ -352,10 +393,13 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
         <div className="w-6 h-6 border rounded bg-muted/30 overflow-hidden flex-shrink-0">
           {v.image_url ? <img src={v.image_url} alt="" className="w-full h-full object-cover" /> : null}
         </div>
-        <div className="flex flex-wrap gap-0.5">
+        <div className="flex flex-wrap gap-0.5 items-center">
           {attrs.length > 0 ? attrs.map((a, i) => (
             <Badge key={i} variant="secondary" className="text-[9px] px-1 py-0 h-4">{a}</Badge>
           )) : v.sku ? <span className="font-mono text-[10px]">{v.sku}</span> : <span className="text-muted-foreground">—</span>}
+          {inferred && (
+            <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-500 text-amber-700 dark:text-amber-400" title="Variante inferida a partir da linha do pedido de origem">inferido</Badge>
+          )}
         </div>
       </div>
     );
@@ -698,7 +742,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                             <td className={`p-2 ${dirTone}`}>
                               <span className="inline-flex items-center gap-1"><DirIcon className="h-3 w-3" />{kindLabel(k)}</span>
                             </td>
-                            <td className="p-2">{renderVariantBadges(m.variant_id)}</td>
+                            <td className="p-2">{renderVariantBadges(m.variant_id, (m as any)._inferred)}</td>
                             <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
                             <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
                             <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
