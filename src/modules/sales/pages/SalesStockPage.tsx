@@ -145,14 +145,20 @@ export default function SalesStockPage() {
     const isOpen = !!expanded[productId];
     setExpanded((p) => ({ ...p, [productId]: !isOpen }));
     if (isOpen) return;
-    if (variantsByProduct[productId] && quantsByProduct[productId]) return;
+    if (variantsByProduct[productId] && quantsByProduct[productId] && movesByProduct[productId]) return;
     setLoadingDetails((p) => ({ ...p, [productId]: true }));
-    const [{ data: vs }, { data: qs }] = await Promise.all([
+    const [{ data: vs }, { data: qs }, { data: mv }] = await Promise.all([
       supabase.from("product_variants").select("id,product_id,sku,image_url,active,product_variant_values(product_attribute_values(name))").eq("product_id", productId),
       supabase.from("stock_quants").select("product_id,variant_id,quantity,reserved_quantity,stock_locations(warehouse_id,name)").eq("product_id", productId),
+      supabase.from("stock_moves")
+        .select("id,created_at,variant_id,quantity,quantity_done,reserved_quantity,state,reference,stock_pickings!inner(id,name,kind,warehouse_id,origin,partners(name))")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
     setVariantsByProduct((p) => ({ ...p, [productId]: (vs as Variant[]) ?? [] }));
     setQuantsByProduct((p) => ({ ...p, [productId]: (qs as Quant[]) ?? [] }));
+    setMovesByProduct((p) => ({ ...p, [productId]: (mv as any) ?? [] }));
     setLoadingDetails((p) => ({ ...p, [productId]: false }));
   };
 
