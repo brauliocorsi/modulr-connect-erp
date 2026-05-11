@@ -179,7 +179,9 @@ export default function DeliveryPicking() {
               </select>
             </div>
             <div className="text-xs text-muted-foreground">
-              Sem cobrança? Pões o valor a 0 e segues — a entrega regista-se na mesma.
+              {openBalance > 0.01
+                ? "É obrigatório cobrar o valor total em aberto antes de concluir a entrega."
+                : "Sem valor em aberto — podes concluir a entrega."}
             </div>
           </div>
           <DialogFooter>
