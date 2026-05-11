@@ -205,7 +205,7 @@ export default function TransferForm() {
         const { data: pol } = await supabase
           .from("purchase_order_lines")
           .select("product_id, source_sale_order_id, sale_orders:source_sale_order_id(id,name)")
-          .eq("purchase_order_id", po.id);
+          .eq("order_id", po.id);
         const map: Record<string, { id: string; name: string }[]> = {};
         (pol ?? []).forEach((l: any) => {
           if (!l.sale_orders) return;
