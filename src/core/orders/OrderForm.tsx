@@ -55,6 +55,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { id } = useParams();
   const isNew = !id || id === "new";
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const ordersTable = kind === "sale" ? "sale_orders" : "purchase_orders";
   const linesTable = kind === "sale" ? "sale_order_lines" : "purchase_order_lines";
   const partnerFlag = kind === "sale" ? "is_customer" : "is_supplier";
