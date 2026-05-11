@@ -75,6 +75,7 @@ export default function SalesStockPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [variantsByProduct, setVariantsByProduct] = useState<Record<string, Variant[]>>({});
   const [quantsByProduct, setQuantsByProduct] = useState<Record<string, Quant[]>>({});
+  const [movesByProduct, setMovesByProduct] = useState<Record<string, Move[]>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
