@@ -32,6 +32,7 @@ export default function TransferForm() {
   const [availByProduct, setAvailByProduct] = useState<Record<string, number>>({});
   const [incomingByProduct, setIncomingByProduct] = useState<Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
+  const [sourceSoByProduct, setSourceSoByProduct] = useState<Record<string, { id: string; name: string }[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
   const [flowDocs, setFlowDocs] = useState<{ sale: any | null; purchases: any[]; pickings: any[] }>({ sale: null, purchases: [], pickings: [] });
@@ -196,6 +197,27 @@ export default function TransferForm() {
       const map: Record<string, any[]> = {};
       (lots ?? []).forEach((l: any) => { (map[l.product_id] ||= []).push(l); });
       setLotsByProduct(map);
+    }
+    // Resolve source sale order per product line for incoming pickings (via PO lines)
+    if (p?.kind === "incoming" && p?.origin && (m ?? []).length) {
+      const { data: po } = await supabase.from("purchase_orders").select("id").eq("name", p.origin).maybeSingle();
+      if (po?.id) {
+        const { data: pol } = await supabase
+          .from("purchase_order_lines")
+          .select("product_id, source_sale_order_id, sale_orders:source_sale_order_id(id,name)")
+          .eq("order_id", po.id);
+        const map: Record<string, { id: string; name: string }[]> = {};
+        (pol ?? []).forEach((l: any) => {
+          if (!l.sale_orders) return;
+          const arr = (map[l.product_id] ||= []);
+          if (!arr.find((s) => s.id === l.sale_orders.id)) arr.push(l.sale_orders);
+        });
+        setSourceSoByProduct(map);
+      } else {
+        setSourceSoByProduct({});
+      }
+    } else {
+      setSourceSoByProduct({});
     }
   };
   useEffect(() => {
@@ -635,6 +657,16 @@ export default function TransferForm() {
                              </div>
                            );
                          })()}
+                         {(sourceSoByProduct[m.product_id] ?? []).map((so) => (
+                           <a
+                             key={so.id}
+                             href={`/sales/orders/${so.id}`}
+                             className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 mr-1"
+                             title="Venda de origem deste produto"
+                           >
+                             <ShoppingCart className="h-3 w-3" /> Venda: {so.name}
+                           </a>
+                         ))}
                        </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
