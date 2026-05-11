@@ -1949,6 +1949,7 @@ export type Database = {
           product_id: string
           quantity: number
           sequence: number
+          source_sale_order_id: string | null
           subtotal: number
           tax_pct: number
           unit_price: number
@@ -1963,6 +1964,7 @@ export type Database = {
           product_id: string
           quantity?: number
           sequence?: number
+          source_sale_order_id?: string | null
           subtotal?: number
           tax_pct?: number
           unit_price?: number
@@ -1977,6 +1979,7 @@ export type Database = {
           product_id?: string
           quantity?: number
           sequence?: number
+          source_sale_order_id?: string | null
           subtotal?: number
           tax_pct?: number
           unit_price?: number
@@ -2003,6 +2006,20 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
+            columns: ["source_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
+            columns: ["source_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
           {
