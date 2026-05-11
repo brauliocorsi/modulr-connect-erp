@@ -105,16 +105,21 @@ export function DeliveryStatusBadge({
               <CalendarCheck2 className="h-3 w-3" /> Confirmado agendamento · {fmtDate(picking.scheduled_at)}
             </Badge>
             {showActions && (
-              <ScheduleDeliveryDialog
-                picking={picking}
-                onChanged={onChanged}
-                pickupMode
-                trigger={
-                  <Button size="sm" variant="outline" className="h-8">
-                    Alterar data
-                  </Button>
-                }
-              />
+              <>
+                <ScheduleDeliveryDialog
+                  picking={picking}
+                  onChanged={onChanged}
+                  pickupMode
+                  trigger={
+                    <Button size="sm" variant="outline" className="h-8">
+                      Alterar data
+                    </Button>
+                  }
+                />
+                <Button size="sm" variant="ghost" className="h-8 text-destructive hover:text-destructive" onClick={cancelPickup}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Cancelar agendamento
+                </Button>
+              </>
             )}
           </>
         )}
