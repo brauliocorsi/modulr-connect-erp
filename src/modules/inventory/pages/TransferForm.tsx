@@ -282,7 +282,7 @@ export default function TransferForm() {
       }
     }
 
-    if (isInternalChainStep && !isFinalToCustomer) {
+    if (isInternalChainStep) {
       // Auto-fill full quantities, no confirmation needed.
       for (const m of moves) {
         await supabase.from("stock_moves").update({ quantity_done: Number(m.quantity), lot_id: m.lot_id ?? null }).eq("id", m.id);
