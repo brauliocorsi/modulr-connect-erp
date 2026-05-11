@@ -230,6 +230,7 @@ export function ScheduleDeliveryDialog({
             </div>
           )}
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
