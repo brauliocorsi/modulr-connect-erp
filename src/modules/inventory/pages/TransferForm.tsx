@@ -657,6 +657,16 @@ export default function TransferForm() {
                              </div>
                            );
                          })()}
+                         {(sourceSoByProduct[m.product_id] ?? []).map((so) => (
+                           <a
+                             key={so.id}
+                             href={`/sales/orders/${so.id}`}
+                             className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 mr-1"
+                             title="Venda de origem deste produto"
+                           >
+                             <ShoppingCart className="h-3 w-3" /> Venda: {so.name}
+                           </a>
+                         ))}
                        </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
