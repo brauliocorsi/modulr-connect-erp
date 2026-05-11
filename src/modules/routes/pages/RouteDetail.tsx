@@ -164,11 +164,34 @@ export default function RouteDetail() {
               </div>
             )}
           </Card>
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data</div>
+            {editing ? (
+              <Input type="date" className="mt-1" value={form.route_date ?? ""} onChange={(e) => setForm({ ...form, route_date: e.target.value })} />
+            ) : <div className="mt-1 text-sm">{r.route_date}</div>}
+          </Card>
           <Card className="p-3 md:col-span-2">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Zona</div>
-            <div className="mt-1 text-sm">
-              {r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}
-            </div>
+            <div className="text-xs text-muted-foreground">Zona</div>
+            {editing ? (
+              <Select value={form.zone_id} onValueChange={(v) => setForm({ ...form, zone_id: v })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(zones as any[]).map((z) => (
+                    <SelectItem key={z.id} value={z.id}>{z.name} · {z.zip_from}–{z.zip_to}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="mt-1 text-sm">
+                {r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}
+              </div>
+            )}
+          </Card>
+          <Card className="p-3 md:col-span-3">
+            <Label className="text-xs text-muted-foreground">Notas</Label>
+            {editing ? (
+              <Input className="mt-1" value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            ) : <div className="mt-1 text-sm">{r.notes || "—"}</div>}
           </Card>
         </div>
 
