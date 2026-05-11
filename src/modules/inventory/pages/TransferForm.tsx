@@ -72,8 +72,10 @@ export default function TransferForm() {
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
     setMoves((m ?? []).map((mv: any) => {
-      const doneQty = Number(mv.quantity_done);
-      return Number.isFinite(doneQty) && doneQty > 0 ? mv : { ...mv, quantity_done: Number(mv.quantity || 0) };
+      // Default to ordered quantity only when nothing was set yet (null). Respect explicit 0.
+      const raw = mv.quantity_done;
+      const hasValue = raw !== null && raw !== undefined;
+      return hasValue ? mv : { ...mv, quantity_done: Number(mv.quantity || 0) };
     }));
     let sale: any = null;
     let purchases: any[] = [];
