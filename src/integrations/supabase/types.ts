@@ -2301,36 +2301,45 @@ export type Database = {
       reordering_rules: {
         Row: {
           active: boolean
+          check_interval_minutes: number
           created_at: string
           id: string
+          last_run_at: string | null
           location_id: string | null
           max_qty: number
           min_qty: number
           multiple_qty: number
+          next_run_at: string
           product_id: string
           variant_id: string | null
           warehouse_id: string
         }
         Insert: {
           active?: boolean
+          check_interval_minutes?: number
           created_at?: string
           id?: string
+          last_run_at?: string | null
           location_id?: string | null
           max_qty?: number
           min_qty?: number
           multiple_qty?: number
+          next_run_at?: string
           product_id: string
           variant_id?: string | null
           warehouse_id: string
         }
         Update: {
           active?: boolean
+          check_interval_minutes?: number
           created_at?: string
           id?: string
+          last_run_at?: string | null
           location_id?: string | null
           max_qty?: number
           min_qty?: number
           multiple_qty?: number
+          next_run_at?: string
           product_id?: string
           variant_id?: string | null
           warehouse_id?: string
