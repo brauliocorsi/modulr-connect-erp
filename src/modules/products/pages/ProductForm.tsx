@@ -174,7 +174,12 @@ export default function ProductForm() {
                       <Label>Adicional de entrega (€)</Label>
                       <Input type="number" step="0.01" value={form.delivery_surcharge ?? 0} onChange={(e) => setForm({ ...form, delivery_surcharge: Number(e.target.value) })} />
                       <p className="text-xs text-muted-foreground">Somado à entrega base por unidade (ex.: produto volumoso).</p>
+                    <div className="space-y-2">
+                      <Label>Tempo de montagem (min)</Label>
+                      <Input type="number" step="1" min={0} value={form.assembly_minutes ?? 0} onChange={(e) => setForm({ ...form, assembly_minutes: Number(e.target.value) })} />
+                      <p className="text-xs text-muted-foreground">Minutos por unidade. Usado para calcular a capacidade da rota.</p>
                     </div>
+                  </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Descrição comercial</Label>
