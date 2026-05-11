@@ -76,6 +76,19 @@ export function VariantsTab({ productId }: { productId: string }) {
       .select("id, sku, barcode, price_extra, active, weight, image_url, product_variant_values(value_id, product_attribute_values(name))")
       .eq("product_id", productId);
     setVariants((vs as any) ?? []);
+
+    const { data: qs } = await supabase
+      .from("stock_quants")
+      .select("variant_id, quantity, reserved_quantity")
+      .eq("product_id", productId);
+    const agg: Record<string, { qty: number; reserved: number }> = {};
+    (qs ?? []).forEach((q: any) => {
+      const vid = q.variant_id || "_no_variant";
+      agg[vid] ??= { qty: 0, reserved: 0 };
+      agg[vid].qty += Number(q.quantity || 0);
+      agg[vid].reserved += Number(q.reserved_quantity || 0);
+    });
+    setStockByVariant(agg);
   };
 
   useEffect(() => { load(); }, [productId]);
