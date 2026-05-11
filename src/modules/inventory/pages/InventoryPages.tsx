@@ -4,68 +4,72 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, PackageCheck, Truck, RefreshCw, ClipboardList, Zap } from "lucide-react";
+import { ArrowDownToLine, PackageCheck, Truck, RefreshCw, ClipboardList, Zap, HandHelping } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 
 export const InventoryDashboard = () => {
   const { data } = useQuery({
-    queryKey: ["pickings-counts-v2"],
+    queryKey: ["pickings-counts-v3"],
     queryFn: async () => {
-      // Resolve key location ids by name
       const { data: locs } = await supabase
         .from("stock_locations")
         .select("id,name")
         .in("name", ["Cais de Carga", "Em Entrega"]);
-      const cais = locs?.find((l: any) => l.name === "Cais de Carga")?.id ?? null;
-      const enroute = locs?.find((l: any) => l.name === "Em Entrega")?.id ?? null;
+      const caisId = locs?.find((l: any) => l.name === "Cais de Carga")?.id ?? null;
+      const enrouteId = locs?.find((l: any) => l.name === "Em Entrega")?.id ?? null;
 
-      const baseOpen = (q: any) => q.neq("state", "done").neq("state", "cancelled");
+      // Fetch all open outgoing pickings with src/dest + linked SO type to split them.
+      const { data: outgoing } = await supabase
+        .from("stock_pickings")
+        .select("id,state,origin,source_location_id,destination_location_id")
+        .eq("kind", "outgoing")
+        .not("state", "in", "(done,cancelled)")
+        .limit(2000);
 
-      const incomingP = baseOpen(
-        supabase.from("stock_pickings").select("id", { count: "exact", head: true }).eq("kind", "incoming")
-      );
-      const internalP = baseOpen(
-        supabase.from("stock_pickings").select("id", { count: "exact", head: true }).eq("kind", "internal")
-      );
-      // Cais de Carga: outgoing pickings whose destination is Cais de Carga (waiting to be loaded)
-      const caisP = cais
-        ? baseOpen(
-            supabase
-              .from("stock_pickings")
-              .select("id", { count: "exact", head: true })
-              .eq("kind", "outgoing")
-              .eq("destination_location_id", cais)
-          )
-        : Promise.resolve({ count: 0 } as any);
-      // Em Entrega: outgoing pickings already at/leaving Em Entrega (in transit to customer)
-      const enrouteP = enroute
-        ? baseOpen(
-            supabase
-              .from("stock_pickings")
-              .select("id", { count: "exact", head: true })
-              .eq("kind", "outgoing")
-              .eq("source_location_id", enroute)
-          )
-        : Promise.resolve({ count: 0 } as any);
+      const soNames = Array.from(new Set((outgoing ?? []).map((p: any) => p.origin).filter(Boolean))) as string[];
+      const soMap: Record<string, { include_delivery: boolean }> = {};
+      if (soNames.length) {
+        const { data: sos } = await supabase
+          .from("sale_orders")
+          .select("name,include_delivery")
+          .in("name", soNames);
+        (sos ?? []).forEach((s: any) => (soMap[s.name] = { include_delivery: !!s.include_delivery }));
+      }
 
-      const [inc, intl, c, en] = await Promise.all([incomingP, internalP, caisP, enrouteP]);
+      const cais = (outgoing ?? []).filter((p: any) => p.destination_location_id === caisId);
+      const enroute = (outgoing ?? []).filter((p: any) => p.source_location_id === enrouteId);
+      // Pickup = outgoing going from Cais de Carga directly to Customer (no Em Entrega step). Identify by SO flag.
+      const pickup = (outgoing ?? []).filter((p: any) => p.source_location_id === caisId && p.origin && soMap[p.origin]?.include_delivery === false);
+
+      // Incoming + internal counts
+      const baseOpen = (q: any) => q.not("state", "in", "(done,cancelled)");
+      const [{ data: inc }, { data: intl }] = await Promise.all([
+        baseOpen(supabase.from("stock_pickings").select("id,state").eq("kind", "incoming")),
+        baseOpen(supabase.from("stock_pickings").select("id,state").eq("kind", "internal")),
+      ]);
+
+      const ready = (rows: any[]) => rows.filter((r) => r.state === "ready").length;
+
       return {
-        incoming: inc.count ?? 0,
-        internal: intl.count ?? 0,
-        cais: c.count ?? 0,
-        enroute: en.count ?? 0,
+        incoming: { count: (inc ?? []).length, ready: ready(inc ?? []) },
+        internal: { count: (intl ?? []).length, ready: ready(intl ?? []) },
+        cais: { count: cais.length, ready: ready(cais) },
+        enroute: { count: enroute.length, ready: ready(enroute) },
+        pickup: { count: pickup.length, ready: ready(pickup) },
       };
     },
   });
 
   const cards = [
-    { title: "Recebimentos", icon: ArrowDownToLine, count: data?.incoming ?? 0, color: "text-success", to: "/inventory/receipts", hint: "Aguardando processamento" },
-    { title: "Cais de Carga", icon: PackageCheck, count: data?.cais ?? 0, color: "text-warning", to: "/inventory/shipments?stage=cais", hint: "Separados, aguardando carga" },
-    { title: "Em Entrega", icon: Truck, count: data?.enroute ?? 0, color: "text-info", to: "/inventory/shipments?stage=enroute", hint: "Em rota até ao cliente" },
-    { title: "Transferências internas", icon: RefreshCw, count: data?.internal ?? 0, color: "text-primary", to: "/inventory/internal-transfers", hint: "Movimentações entre locais" },
-    { title: "Ajustes pendentes", icon: ClipboardList, count: 0, color: "text-muted-foreground", to: "/inventory/adjustments", hint: "Inventários a confirmar" },
+    { title: "Recebimentos", icon: ArrowDownToLine, stat: data?.incoming, color: "text-success", to: "/inventory/receipts", hint: "Aguardando processamento" },
+    { title: "Cais de Carga", icon: PackageCheck, stat: data?.cais, color: "text-warning", to: "/inventory/shipments?stage=cais", hint: "Separados, aguardando carga" },
+    { title: "Levantamento", icon: HandHelping, stat: data?.pickup, color: "text-violet-600", to: "/inventory/shipments?stage=pickup", hint: "Cliente vai levantar no cais" },
+    { title: "Em Entrega", icon: Truck, stat: data?.enroute, color: "text-info", to: "/inventory/shipments?stage=enroute", hint: "Em rota até ao cliente" },
+    { title: "Transferências internas", icon: RefreshCw, stat: data?.internal, color: "text-primary", to: "/inventory/internal-transfers", hint: "Movimentações entre locais" },
+    { title: "Ajustes pendentes", icon: ClipboardList, stat: { count: 0, ready: 0 }, color: "text-muted-foreground", to: "/inventory/adjustments", hint: "Inventários a confirmar" },
   ];
 
   const runReorder = async () => {
@@ -87,21 +91,30 @@ export const InventoryDashboard = () => {
       />
       <PageBody>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {cards.map((c) => (
-            <Link key={c.title} to={c.to}>
-              <Card className="p-5 hover:shadow-md hover:bg-accent/30 transition-all cursor-pointer h-full">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-muted-foreground">{c.title}</div>
-                    <div className="text-3xl font-bold mt-1">{c.count}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{(c as any).hint ?? "Aguardando processamento"}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {cards.map((c) => {
+            const count = c.stat?.count ?? 0;
+            const ready = c.stat?.ready ?? 0;
+            return (
+              <Link key={c.title} to={c.to}>
+                <Card className="p-5 hover:shadow-md hover:bg-accent/30 transition-all cursor-pointer h-full relative">
+                  {ready > 0 && (
+                    <Badge className="absolute top-2 right-2 bg-emerald-600 hover:bg-emerald-600 text-white">
+                      {ready} pronto{ready > 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-muted-foreground">{c.title}</div>
+                      <div className="text-3xl font-bold mt-1">{count}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{(c as any).hint ?? "Aguardando processamento"}</div>
+                    </div>
+                    <c.icon className={"h-8 w-8 " + c.color} />
                   </div>
-                  <c.icon className={"h-8 w-8 " + c.color} />
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </PageBody>
     </>
