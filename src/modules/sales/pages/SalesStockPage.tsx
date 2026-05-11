@@ -293,6 +293,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const [variantView, setVariantView] = useState<"grid" | "matrix">("grid");
   const [dirFilter, setDirFilter] = useState<"all" | "incoming" | "outgoing">("all");
   const [onlyWithStock, setOnlyWithStock] = useState(false);
+  const [onlyDone, setOnlyDone] = useState(true);
 
   const lowStock = s.available <= 0;
 
@@ -345,13 +346,14 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   }, [variantTotals]);
 
   const movesByDir = useMemo(() => {
-    const all = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    const base = (moves ?? []).filter((m) => filterWh === "all" || m.stock_pickings?.warehouse_id === filterWh);
+    const all = onlyDone ? base.filter((m) => m.state === "done") : base;
     return {
       all,
       incoming: all.filter((m) => m.stock_pickings?.kind === "incoming"),
       outgoing: all.filter((m) => m.stock_pickings?.kind === "outgoing"),
     };
-  }, [moves, filterWh]);
+  }, [moves, filterWh, onlyDone]);
 
   const dirScopedMoves = dirFilter === "all" ? movesByDir.all : movesByDir[dirFilter];
 
@@ -675,15 +677,19 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
             </div>
           )}
 
-          {/* Movements */}
+          {/* Movements — vista simples e concreta */}
           {!loadingDetails && (
             <div>
               <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-xs font-semibold flex items-center gap-1 text-muted-foreground">
-                    <ArrowRightLeft className="h-3.5 w-3.5" /> Últimas movimentações
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Movimentações de stock
                     <span className="font-normal">({filteredMoves.length}{filteredMoves.length !== totalMovesCount && ` de ${totalMovesCount}`})</span>
                   </div>
+                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground border rounded-md px-2 py-1 bg-background">
+                    <Switch checked={onlyDone} onCheckedChange={setOnlyDone} />
+                    Apenas aplicados ao stock
+                  </label>
                   <div className="inline-flex border rounded-md p-0.5 bg-background">
                     {([
                       { k: "all", label: `Todas (${movesByDir.all.length})`, cls: "" },
@@ -729,55 +735,54 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
                 </div>
               </div>
               {filteredMoves.length === 0 ? (
-                <div className="text-xs text-muted-foreground py-2">Sem movimentações registadas.</div>
+                <div className="text-xs text-muted-foreground py-6 text-center border rounded bg-muted/20">
+                  Sem movimentações {onlyDone ? "aplicadas" : "registadas"}.
+                </div>
               ) : (
-                <div className="overflow-x-auto border rounded max-h-80 bg-background">
-                  <table className="w-full text-xs">
-                    <thead className="bg-muted/50 sticky top-0">
-                      <tr>
-                        <th className="text-left p-2">Data</th>
-                        <th className="text-left p-2">Documento</th>
-                        <th className="text-left p-2">Tipo</th>
-                        <th className="text-left p-2 min-w-[180px]">Variante</th>
-                        <th className="text-left p-2">Armazém</th>
-                        <th className="text-left p-2">Parceiro</th>
-                        <th className="text-right p-2">Qtd</th>
-                        <th className="text-right p-2">Feito</th>
-                        <th className="text-right p-2">Reservado</th>
-                        <th className="text-left p-2">Estado</th>
-                        <th className="text-left p-2">Origem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredMoves.map((m) => {
-                        const k = m.stock_pickings?.kind;
-                        const dirTone = k === "incoming" ? "text-emerald-600" : k === "outgoing" ? "text-rose-600" : "text-muted-foreground";
-                        const dirSign = k === "incoming" ? "+" : k === "outgoing" ? "−" : "";
-                        const DirIcon = k === "incoming" ? TrendingUp : k === "outgoing" ? TrendingDown : ArrowRightLeft;
-                        return (
-                          <tr key={m.id} className="border-t hover:bg-muted/30">
-                            <td className="p-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
-                            <td className="p-2">
-                              {m.stock_pickings?.id ? (
-                                <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline font-medium">{m.stock_pickings.name}</Link>
-                              ) : "—"}
-                            </td>
-                            <td className={`p-2 ${dirTone}`}>
-                              <span className="inline-flex items-center gap-1"><DirIcon className="h-3 w-3" />{kindLabel(k)}</span>
-                            </td>
-                            <td className="p-2">{renderVariantBadges(m.variant_id, (m as any)._inferred)}</td>
-                            <td className="p-2">{whName(m.stock_pickings?.warehouse_id ?? null)}</td>
-                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.partners?.name ?? "—"}</td>
-                            <td className={`p-2 text-right tabular-nums font-medium ${dirTone}`}>{dirSign}{fmtNumber(m.quantity)}</td>
-                            <td className="p-2 text-right tabular-nums">{fmtNumber(m.quantity_done)}</td>
-                            <td className="p-2 text-right tabular-nums text-amber-600">{m.reserved_quantity ? fmtNumber(m.reserved_quantity) : "—"}</td>
-                            <td className="p-2"><Badge variant="outline" className="text-[10px]">{stateLabel(m.state)}</Badge></td>
-                            <td className="p-2 text-muted-foreground">{m.stock_pickings?.origin ?? "—"}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="border rounded max-h-[26rem] overflow-y-auto bg-background divide-y">
+                  {filteredMoves.map((m) => {
+                    const k = m.stock_pickings?.kind;
+                    const isDone = m.state === "done";
+                    const dirTone = k === "incoming" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
+                      : k === "outgoing" ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900"
+                      : "bg-muted text-muted-foreground border-border";
+                    const dirSign = k === "incoming" ? "+" : k === "outgoing" ? "−" : "±";
+                    const DirIcon = k === "incoming" ? TrendingUp : k === "outgoing" ? TrendingDown : ArrowRightLeft;
+                    const qtyShown = isDone ? Number(m.quantity_done || m.quantity) : Number(m.quantity);
+                    return (
+                      <div key={m.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 text-xs">
+                        <div className={`flex flex-col items-center justify-center min-w-[80px] border rounded-md px-2 py-1 ${dirTone}`}>
+                          <div className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide font-medium opacity-80">
+                            <DirIcon className="h-3 w-3" />{kindLabel(k)}
+                          </div>
+                          <div className="text-base font-bold tabular-nums leading-tight">{dirSign}{fmtNumber(qtyShown)}</div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {renderVariantBadges(m.variant_id, (m as any)._inferred)}
+                            {!isDone && <Badge variant="outline" className="text-[9px]">{stateLabel(m.state)}</Badge>}
+                            {isDone && <Badge variant="secondary" className="text-[9px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">Aplicado</Badge>}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                            <span>{new Date(m.created_at).toLocaleString("pt-PT")}</span>
+                            <span>·</span>
+                            <span>{whName(m.stock_pickings?.warehouse_id ?? null)}</span>
+                            {m.stock_pickings?.partners?.name && (<><span>·</span><span>{m.stock_pickings.partners.name}</span></>)}
+                          </div>
+                        </div>
+                        <div className="text-right text-[11px] min-w-[120px]">
+                          {m.stock_pickings?.id ? (
+                            <Link to={`/inventory/transfers/${m.stock_pickings.id}`} className="text-primary hover:underline font-medium">
+                              {m.stock_pickings.name}
+                            </Link>
+                          ) : <span className="text-muted-foreground">—</span>}
+                          {m.stock_pickings?.origin && (
+                            <div className="text-muted-foreground text-[10px]">Origem: {m.stock_pickings.origin}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
