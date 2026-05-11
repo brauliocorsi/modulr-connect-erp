@@ -42,11 +42,21 @@ export default function CashSessionDetail() {
     } else setOpenerName("");
     const { data: m } = await supabase
       .from("cash_movements")
-      .select("*")
+      .select("*, customer_payments(method_id, payment_methods(name))")
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
   };
+
+  const methodTotals = (() => {
+    const map = new Map<string, number>();
+    for (const m of moves) {
+      const name = m.customer_payments?.payment_methods?.name
+        ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
+      map.set(name, (map.get(name) ?? 0) + Number(m.amount || 0));
+    }
+    return Array.from(map.entries()).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  })();
   useEffect(() => { if (id) load(); }, [id]);
 
   const balance = moves.reduce((s, m) => s + Number(m.amount || 0), 0);
