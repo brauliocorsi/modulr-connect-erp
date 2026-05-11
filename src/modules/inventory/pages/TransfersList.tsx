@@ -224,6 +224,10 @@ export default function TransfersList() {
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
+          <div className="ml-auto flex items-center gap-2 text-sm">
+            <Switch id="group-origin" checked={groupMode} onCheckedChange={setGroupMode} />
+            <Label htmlFor="group-origin" className="cursor-pointer">Agrupar por origem (SO/PO)</Label>
+          </div>
         </Card>
         <Card>
           <table className="w-full text-sm">
