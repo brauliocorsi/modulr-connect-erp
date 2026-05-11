@@ -28,6 +28,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { printSaleOrder } from "./printSaleOrder";
+import { DeliveryStatusBadge } from "@/modules/inventory/components/DeliveryStatusBadge";
 import { NumberField } from "@/core/forms/NumberField";
 
 type Line = {
@@ -121,7 +122,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("stock_pickings")
-        .select("id,name,state,scheduled_at,done_at")
+        .select("id,name,state,scheduled_at,done_at,route_id,origin")
         .eq("kind", "outgoing")
         .eq("origin", order.name)
         .order("scheduled_at", { ascending: false })
@@ -501,11 +502,14 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
             </Card>
 
             {kind === "sale" && shipment && (
-              <Card className="p-3 flex items-center gap-3 border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                <div className="text-sm flex-1">
-                  <span className="font-medium">Entrega programada</span> — {shipment.name}
-                  {shipment.scheduled_at && <> · prevista {new Date(shipment.scheduled_at).toLocaleString("pt-PT")}</>}
+              <Card className="p-3 flex flex-wrap items-center gap-3">
+                <DeliveryStatusBadge
+                  picking={shipment as any}
+                  onChanged={() => queryClient.invalidateQueries({ queryKey: ["sale-shipment", order.name] })}
+                  showActions={!isLocked && shipment.state !== "done"}
+                />
+                <div className="ml-auto text-xs text-muted-foreground">
+                  Transferência {shipment.name}
                   {shipment.done_at && <> · entregue {new Date(shipment.done_at).toLocaleString("pt-PT")}</>}
                 </div>
                 <Button asChild size="sm" variant="outline">
