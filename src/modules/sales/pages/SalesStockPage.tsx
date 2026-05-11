@@ -293,6 +293,7 @@ function ProductCard({ p, s, isOpen, onToggle, warehouses, filterWh, variants, q
   const [variantView, setVariantView] = useState<"grid" | "matrix">("grid");
   const [dirFilter, setDirFilter] = useState<"all" | "incoming" | "outgoing">("all");
   const [onlyWithStock, setOnlyWithStock] = useState(false);
+  const [onlyDone, setOnlyDone] = useState(true);
 
   const lowStock = s.available <= 0;
 
