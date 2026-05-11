@@ -51,7 +51,7 @@ export async function printPickingList(pickingId: string) {
 
   const { data: moves } = await supabase
     .from("stock_moves")
-    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), stock_lots(name)")
+    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
     .eq("picking_id", pickingId);
 
   const { data: company } = await supabase
