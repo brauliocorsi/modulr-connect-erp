@@ -485,8 +485,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                     ) : productLines.map((l) => {
                       const i = lines.indexOf(l);
                       const ps = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const product = products?.find((x: any) => x.id === l.product_id);
+                      const productVariants = l.product_id ? variantsByProduct?.[l.product_id] ?? [] : [];
+                      const productHasVariants = productVariants.length > 0;
                       const vs = l.variant_id ? variantStockMap?.[l.variant_id] : undefined;
-                      const avail = vs ? vs.available : (ps?.available ?? 0);
+                      // Se o produto tem variantes, o stock só é válido por variante.
+                      // Sem variante selecionada → 0 (força a escolha). Variante sem entrada de stock → 0.
+                      const avail = productHasVariants
+                        ? (l.variant_id ? (vs?.available ?? 0) : 0)
+                        : (ps?.available ?? 0);
                       const qty = Number(l.quantity || 0);
                       const tone = !l.product_id ? "text-muted-foreground"
                         : avail >= qty ? "text-emerald-600"
