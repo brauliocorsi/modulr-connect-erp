@@ -333,16 +333,39 @@ export default function TransferForm() {
   const isPartial = !!availSummary && availSummary.readyMoves > 0 && availSummary.readyMoves < availSummary.total;
   const isFullyShort = !!availSummary && availSummary.readyMoves === 0 && availSummary.available < availSummary.needed && !isLocked;
 
+  // Receipt summary (after validation)
+  const receiptSummary = (() => {
+    if (!moves.length) return null;
+    const doneCount = moves.filter((m) => m.state === "done").length;
+    const cancelledCount = moves.filter((m) => m.state === "cancelled").length;
+    const totalQty = moves.reduce((s, m) => s + Number(m.quantity || 0), 0);
+    const doneQty = moves.reduce((s, m) => s + (m.state === "done" ? Number(m.quantity_done || 0) : 0), 0);
+    return { doneCount, cancelledCount, total: moves.length, totalQty, doneQty };
+  })();
+  const isDone = picking.state === "done";
+  const isPartialReceipt = isDone && (!!backorder || (receiptSummary && receiptSummary.doneQty < receiptSummary.totalQty));
+  const headerLabel = isPartialReceipt
+    ? "Recebido parcialmente"
+    : isDone
+      ? "Recebido completo"
+      : isPartial
+        ? "Parcialmente disponível"
+        : stateLabel(picking.state);
+  const headerTone: any = isPartialReceipt
+    ? "warning"
+    : isDone
+      ? "success"
+      : isPartial
+        ? "warning"
+        : (TONE[picking.state] ?? "default");
+
   return (
     <>
       <FormHeader
         title={picking.name}
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Transferências", to: "/inventory/transfers" }, { label: picking.name }]}
         backTo="/inventory/transfers"
-        state={{
-          label: isPartial ? "Parcialmente disponível" : stateLabel(picking.state),
-          tone: isPartial ? "warning" : (TONE[picking.state] ?? "default"),
-        }}
+        state={{ label: headerLabel, tone: headerTone }}
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
@@ -512,13 +535,21 @@ export default function TransferForm() {
                 <p className="text-xs text-muted-foreground">Selecione carrinha própria <em>ou</em> uma transportadora externa antes de validar a saída.</p>
               </Card>
             )}
-            {(original || backorder) && (
-              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-amber-50 border-amber-200">
+            {(original || backorder || (isDone && receiptSummary)) && (
+              <Card className={`p-3 text-sm flex flex-wrap items-center gap-3 ${isPartialReceipt ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900" : isDone ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900" : "bg-amber-50 border-amber-200"}`}>
+                {isDone && receiptSummary && (
+                  <div className="flex items-center gap-2 font-medium">
+                    {isPartialReceipt ? <AlertTriangle className="h-4 w-4 text-amber-700" /> : <CheckCircle2 className="h-4 w-4 text-emerald-700" />}
+                    {isPartialReceipt
+                      ? `Recebido parcial: ${receiptSummary.doneQty} de ${receiptSummary.totalQty} unidades · ${receiptSummary.doneCount} linha(s) recebida(s), ${receiptSummary.cancelledCount} em falta`
+                      : `Recebido completo: ${receiptSummary.doneQty} de ${receiptSummary.totalQty} unidades`}
+                  </div>
+                )}
                 {original && (
                   <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
                 )}
                 {backorder && (
-                  <div>→ Backorder gerada: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline font-medium">{backorder.name}</a> ({stateLabel(backorder.state)})</div>
+                  <div>→ Itens em falta movidos para: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline font-medium">{backorder.name}</a> ({stateLabel(backorder.state)})</div>
                 )}
               </Card>
             )}
@@ -688,7 +719,27 @@ export default function TransferForm() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2">{stateLabel(m.state)}</td>
+                      <td className="px-3 py-2">
+                        {m.state === "done" ? (
+                          Number(m.quantity_done) >= Number(m.quantity) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                              <CheckCircle2 className="h-3 w-3" /> Recebido · {m.quantity_done}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                              <AlertTriangle className="h-3 w-3" /> Parcial · {m.quantity_done}/{m.quantity}
+                            </span>
+                          )
+                        ) : m.state === "cancelled" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200">
+                            <X className="h-3 w-3" /> Não recebido · 0/{m.quantity}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+                            <Truck className="h-3 w-3" /> {stateLabel(m.state)} · 0/{m.quantity}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );})}
                 </tbody>
