@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -19,11 +19,11 @@ const STATE_TONE: Record<string, string> = {
 
 function useShipments() {
   return useQuery({
-    queryKey: ["shipments-all"],
+    queryKey: ["shipments-all-v2"],
     queryFn: async () => {
       const { data: pickings } = await supabase
         .from("stock_pickings")
-        .select("id,name,state,scheduled_at,done_at,origin, partners(name)")
+        .select("id,name,state,scheduled_at,done_at,origin, partners(name), source:source_location_id(name), dest:destination_location_id(name)")
         .eq("kind", "outgoing")
         .order("scheduled_at", { ascending: false })
         .limit(500);
@@ -75,6 +75,7 @@ function Table({ rows }: { rows: any[] }) {
               <th className="text-left px-3 py-2">Venda</th>
               <th className="text-left px-3 py-2">Cliente</th>
               <th className="text-left px-3 py-2">Tipo</th>
+              <th className="text-left px-3 py-2">Etapa</th>
               <th className="text-left px-3 py-2">Programado</th>
               <th className="text-left px-3 py-2">Estado</th>
               <th className="text-right px-3 py-2">Ações</th>
@@ -82,7 +83,7 @@ function Table({ rows }: { rows: any[] }) {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-6 text-muted-foreground">Sem expedições</td></tr>
+              <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem expedições</td></tr>
             ) : rows.map((r) => (
               <tr key={r.id} className="border-t hover:bg-accent/40">
                 <td className="px-3 py-2">
@@ -95,6 +96,7 @@ function Table({ rows }: { rows: any[] }) {
                 </td>
                 <td className="px-3 py-2 text-xs">{r.so?.partner ?? r.partners?.name ?? "—"}</td>
                 <td className="px-3 py-2"><ServiceBadge so={r.so} /></td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">{(r.source?.name ?? "?")} → {(r.dest?.name ?? "?")}</td>
                 <td className="px-3 py-2 text-xs">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
                 <td className="px-3 py-2"><span className={`text-xs px-2 py-0.5 rounded ${STATE_TONE[r.state] ?? ""}`}>{stateLabel(r.state)}</span></td>
                 <td className="px-2 py-1 text-right">
@@ -115,11 +117,19 @@ function Table({ rows }: { rows: any[] }) {
 
 export default function ShipmentsPage() {
   const { data, isLoading } = useShipments();
+  const [params, setParams] = useSearchParams();
   const all = data ?? [];
-  const pending = all.filter((r) => !["done", "cancelled"].includes(r.state));
+  const open = (r: any) => !["done", "cancelled"].includes(r.state);
+  const cais = all.filter((r) => open(r) && r.dest?.name === "Cais de Carga");
+  const enroute = all.filter((r) => open(r) && r.source?.name === "Em Entrega");
+  const pending = all.filter((r) => open(r) && !cais.includes(r) && !enroute.includes(r));
   const done = all.filter((r) => r.state === "done");
   const delivery = all.filter((r) => r.so?.include_delivery);
   const pickup = all.filter((r) => r.so && !r.so.include_delivery);
+
+  const stage = params.get("stage");
+  const defaultTab = stage === "cais" ? "cais" : stage === "enroute" ? "enroute" : "cais";
+
   return (
     <>
       <PageHeader
@@ -127,14 +137,18 @@ export default function ShipmentsPage() {
         breadcrumb={[{ label: "Inventário", to: "/inventory" }, { label: "Expedições" }]}
       />
       <PageBody>
-        <Tabs defaultValue="pending">
+        <Tabs value={defaultTab} onValueChange={(v) => { params.set("stage", v); setParams(params, { replace: true }); }}>
           <TabsList>
-            <TabsTrigger value="pending">Pendentes <Badge variant="secondary" className="ml-2">{pending.length}</Badge></TabsTrigger>
+            <TabsTrigger value="cais"><PackageCheck className="h-3.5 w-3.5 mr-1" />Cais de Carga <Badge variant="secondary" className="ml-2">{cais.length}</Badge></TabsTrigger>
+            <TabsTrigger value="enroute"><Truck className="h-3.5 w-3.5 mr-1" />Em Entrega <Badge variant="secondary" className="ml-2">{enroute.length}</Badge></TabsTrigger>
+            <TabsTrigger value="pending">Outras pendentes <Badge variant="secondary" className="ml-2">{pending.length}</Badge></TabsTrigger>
             <TabsTrigger value="delivery">Entregas <Badge variant="secondary" className="ml-2">{delivery.length}</Badge></TabsTrigger>
             <TabsTrigger value="pickup">Levantamentos <Badge variant="secondary" className="ml-2">{pickup.length}</Badge></TabsTrigger>
             <TabsTrigger value="done">Concluídas <Badge variant="secondary" className="ml-2">{done.length}</Badge></TabsTrigger>
             <TabsTrigger value="all">Todas <Badge variant="secondary" className="ml-2">{all.length}</Badge></TabsTrigger>
           </TabsList>
+          <TabsContent value="cais" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={cais} />}</TabsContent>
+          <TabsContent value="enroute" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={enroute} />}</TabsContent>
           <TabsContent value="pending" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={pending} />}</TabsContent>
           <TabsContent value="delivery" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={delivery} />}</TabsContent>
           <TabsContent value="pickup" className="mt-4">{isLoading ? <div className="p-4 text-muted-foreground">Carregando…</div> : <Table rows={pickup} />}</TabsContent>
