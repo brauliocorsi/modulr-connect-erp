@@ -55,6 +55,11 @@ export default function RouteDetail() {
     queryFn: async () => (await supabase.from("vehicles").select("id,name,license_plate").eq("active", true).order("name")).data ?? [],
   });
 
+  const { data: zones = [] } = useQuery({
+    queryKey: ["zones-route-edit"],
+    queryFn: async () => (await supabase.from("delivery_zones").select("id,name,zip_from,zip_to").eq("active", true).order("name")).data ?? [],
+  });
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   useEffect(() => {
@@ -62,6 +67,7 @@ export default function RouteDetail() {
       driver_id: route.driver_id, vehicle_id: route.vehicle_id,
       max_deliveries: route.max_deliveries, max_assembly_minutes: route.max_assembly_minutes,
       state: route.state, notes: route.notes,
+      route_date: route.route_date, zone_id: route.zone_id,
     });
   }, [route]);
 
@@ -71,6 +77,16 @@ export default function RouteDetail() {
     toast.success("Rota atualizada");
     setEditing(false);
     qc.invalidateQueries({ queryKey: ["route-detail", id] });
+    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
+  };
+
+  const remove = async () => {
+    if (!confirm("Apagar esta rota? As entregas atribuídas ficarão sem rota.")) return;
+    const { error } = await supabase.from("delivery_routes").delete().eq("id", id!);
+    if (error) return toast.error(error.message);
+    toast.success("Rota apagada");
+    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
+    nav("/routes");
   };
 
   if (!route) return <PageBody>Carregando…</PageBody>;
