@@ -300,6 +300,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       amount_total: totals.total,
     };
     if (kind === "sale") payload.commitment_date = order.commitment_date ?? null;
+    if (kind === "purchase") payload.expected_date = order.expected_date ?? null;
     if (isNew) {
       const { data: seqRes } = await supabase.rpc("next_sequence", { _code: kind === "sale" ? "sale_order" : "purchase_order" });
       payload.name = seqRes ?? "TMP";
