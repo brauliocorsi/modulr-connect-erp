@@ -1,7 +1,7 @@
 import { fmtMoney } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
@@ -55,6 +55,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { id } = useParams();
   const isNew = !id || id === "new";
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const ordersTable = kind === "sale" ? "sale_orders" : "purchase_orders";
   const linesTable = kind === "sale" ? "sale_order_lines" : "purchase_order_lines";
   const partnerFlag = kind === "sale" ? "is_customer" : "is_supplier";
@@ -180,6 +181,22 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       .subscribe();
     return () => { clearTimeout(timer); supabase.removeChannel(channel); };
   }, [id, isNew, ordersTable, linesTable]);
+
+  // Realtime: manter stock por produto/variante atualizado mesmo durante criação da venda
+  useEffect(() => {
+    const invalidateStock = () => {
+      queryClient.invalidateQueries({ queryKey: ["products-stock-agg"] });
+      queryClient.invalidateQueries({ queryKey: ["variants-stock-agg"] });
+    };
+    let timer: any;
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(invalidateStock, 250); };
+    const channel = supabase
+      .channel(`order-stock-live-${kind}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_quants" }, debounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_moves" }, debounced)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+  }, [queryClient, kind]);
 
   const productLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") === "product"), [lines]);
   const serviceLines = useMemo(() => lines.filter((l) => (l.line_kind ?? "product") !== "product"), [lines]);
@@ -485,8 +502,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                     ) : productLines.map((l) => {
                       const i = lines.indexOf(l);
                       const ps = l.product_id ? stockMap?.[l.product_id] : undefined;
+                      const product = products?.find((x: any) => x.id === l.product_id);
+                      const productVariants = l.product_id ? variantsByProduct?.[l.product_id] ?? [] : [];
+                      const productHasVariants = productVariants.length > 0;
                       const vs = l.variant_id ? variantStockMap?.[l.variant_id] : undefined;
-                      const avail = vs ? vs.available : (ps?.available ?? 0);
+                      // Se o produto tem variantes, o stock só é válido por variante.
+                      // Sem variante selecionada → 0 (força a escolha). Variante sem entrada de stock → 0.
+                      const avail = productHasVariants
+                        ? (l.variant_id ? (vs?.available ?? 0) : 0)
+                        : (ps?.available ?? 0);
                       const qty = Number(l.quantity || 0);
                       const tone = !l.product_id ? "text-muted-foreground"
                         : avail >= qty ? "text-emerald-600"
