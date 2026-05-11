@@ -648,11 +648,14 @@ export default function TransferForm() {
                           step={isInt ? 1 : 0.01}
                           min={0}
                           max={m.quantity}
-                          value={Number(m.quantity_done) > 0 ? m.quantity_done : m.quantity}
+                          value={m.quantity_done ?? ""}
                           disabled={isLocked}
                           onChange={(e) => {
-                            const v = Number(e.target.value);
-                            setMoveDone(i, isInt ? Math.max(0, Math.floor(v)) : v);
+                            const raw = e.target.value;
+                            if (raw === "") { setMoveDone(i, 0); return; }
+                            const v = Number(raw);
+                            if (!Number.isFinite(v)) return;
+                            setMoveDone(i, isInt ? Math.max(0, Math.floor(v)) : Math.max(0, v));
                           }}
                         />
                       </td>
