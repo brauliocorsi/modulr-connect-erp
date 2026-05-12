@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { Package, MapPin, X, CheckCircle2 } from "lucide-react";
+import { Package, MapPin, X, CheckCircle2, Printer } from "lucide-react";
+import { printBinLabel, printColisLabels } from "./printBarcodes";
 
 type Pending = {
   product_id: string;
@@ -16,7 +17,7 @@ type Pending = {
 export default function PutawayScan() {
   const nav = useNavigate();
   const [pending, setPending] = useState<Pending | null>(null);
-  const [history, setHistoryDone] = useState<{ name: string; loc: string; ts: number }[]>([]);
+  const [history, setHistoryDone] = useState<{ name: string; loc: string; ts: number; locId: string; pkgId: string | null }[]>([]);
 
   const handleScan = async (raw: string) => {
     const v = raw.trim();
@@ -58,7 +59,7 @@ export default function PutawayScan() {
       if (error) return log(`Falha: ${error.message}`, "error");
       const labelExtra = pending.package_label ? ` · ${pending.package_label}` : "";
       log(`✓ ${pending.qty}× ${pending.product_name}${labelExtra} → ${loc.full_path ?? loc.name}`, "ok");
-      setHistoryDone((h) => [{ name: `${pending.product_name}${labelExtra}`, loc: loc.full_path ?? loc.name, ts: Date.now() }, ...h].slice(0, 30));
+      setHistoryDone((h) => [{ name: `${pending.product_name}${labelExtra}`, loc: loc.full_path ?? loc.name, ts: Date.now(), locId: loc.id, pkgId: pending.package_id }, ...h].slice(0, 30));
       setPending(null);
       return;
     }
@@ -158,8 +159,22 @@ export default function PutawayScan() {
               <ul className="divide-y divide-slate-800">
                 {history.map((h) => (
                   <li key={h.ts} className="px-4 py-2 text-sm flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> {h.name}</span>
-                    <span className="text-xs text-slate-400 font-mono">{h.loc}</span>
+                    <span className="flex items-center gap-2 min-w-0"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> <span className="truncate">{h.name}</span></span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 font-mono">{h.loc}</span>
+                      <button
+                        onClick={() => printBinLabel(h.locId)}
+                        title="Imprimir etiqueta do bin"
+                        className="p-1 rounded hover:bg-slate-800 text-slate-300"
+                      ><Printer className="h-3.5 w-3.5" /></button>
+                      {h.pkgId && (
+                        <button
+                          onClick={() => printColisLabels([h.pkgId!], { bin: { name: h.loc } })}
+                          title="Imprimir etiqueta do colis (com local)"
+                          className="p-1 rounded hover:bg-slate-800 text-amber-300"
+                        ><Printer className="h-3.5 w-3.5" /></button>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>

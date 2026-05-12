@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, ShoppingBag, PackageCheck } from "lucide-react";
+import { ShoppingCart, ShoppingBag, PackageCheck, Tag } from "lucide-react";
 import { stateLabel } from "@/lib/picking";
+import { printReceiptLabels } from "@/modules/barcode/printBarcodes";
 
 type Row = {
   id: string;
@@ -95,6 +96,9 @@ function ReceiptRow({ r, showSO }: { r: Row; showSO: boolean }) {
       </td>
       <td className="px-2 py-1">
         <div className="flex items-center justify-end gap-1">
+          <Button size="sm" variant="outline" className="h-7 px-2" title="Imprimir etiquetas de colis/produtos" onClick={() => printReceiptLabels(r.id)}>
+            <Tag className="h-3.5 w-3.5 mr-1" />Etiquetas
+          </Button>
           {r.so && (
             <Button asChild size="sm" variant="outline" className="h-7 px-2" title={`Abrir venda ${r.so.name}`}>
               <Link to={`/sales/orders/${r.so.id}`}>
