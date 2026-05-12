@@ -63,6 +63,14 @@ export default function CashSessionDetail() {
   const totalIn = moves.filter((m) => Number(m.amount) > 0 && m.kind !== "opening").reduce((s, m) => s + Number(m.amount), 0);
   const totalOut = moves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
 
+  const cashTotal = (() => {
+    const cashNames = ["dinheiro", "cash", "numerário", "numerario"];
+    for (const [name, total] of methodTotals) {
+      if (cashNames.some((c) => name.toLowerCase().includes(c))) return total;
+    }
+    return 0;
+  })();
+
   const close = async () => {
     if (counted === "") return toast.error("Informe o valor contado");
     const { error } = await supabase.rpc("close_cash_session", { _session: id!, _counted: Number(counted) });
