@@ -152,9 +152,9 @@ export default function ProductForm() {
                 <TabsTrigger value="bom" disabled={isNew}>BOM/Kit</TabsTrigger>
                 <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
                 <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
-                <TagPicker label="Tags" value={form.tags || []} onChange={(t: string[]) => setForm({ ...form, tags: t })} />
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
                 <TabsTrigger value="packages" disabled={isNew}>Colis</TabsTrigger>
+              </TabsList>
 
               <TabsContent value="sales" className="pt-4">
                 <Card className="p-6 space-y-4">
