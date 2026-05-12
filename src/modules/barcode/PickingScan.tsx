@@ -201,10 +201,10 @@ export default function PickingScan() {
 
   const validate = async () => {
     if (!picking) return;
-    for (const m of moves) {
-      if (m.quantity_done == null) {
-        await supabase.from("stock_moves").update({ quantity_done: m.quantity }).eq("id", m.id);
-      }
+    const incomplete = moves.filter((m) => m.state !== "done" && m.state !== "cancelled" && Number(m.quantity_done ?? 0) < Number(m.quantity));
+    if (incomplete.length > 0) {
+      const names = incomplete.map((m) => `${m.products?.name} (${Number(m.quantity_done ?? 0)}/${Number(m.quantity)})`).join(", ");
+      return log(`Faltam scans: ${names}`, "error");
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: picking.id });
     if (error) return log(`Falha: ${error.message}`, "error");
