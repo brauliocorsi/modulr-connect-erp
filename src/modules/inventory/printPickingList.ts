@@ -58,13 +58,31 @@ export async function printPickingList(pickingId: string) {
   const { data: packages } = productIds.length
     ? await supabase
         .from("product_packages")
-        .select("product_id, sequence, label, barcode")
+        .select("id, product_id, sequence, label, barcode")
         .in("product_id", productIds)
         .order("sequence", { ascending: true })
     : { data: [] as any[] };
   const packagesByProduct: Record<string, any[]> = {};
   (packages ?? []).forEach((p: any) => {
     (packagesByProduct[p.product_id] ||= []).push(p);
+  });
+
+  // Fetch live quants to know WHERE the stock currently is
+  const { data: quants } = productIds.length
+    ? await supabase
+        .from("stock_quants")
+        .select("product_id, package_id, quantity, stock_locations!inner(name, full_path, type, is_bin, barcode)")
+        .in("product_id", productIds)
+        .gt("quantity", 0)
+    : { data: [] as any[] };
+  const binsByProduct: Record<string, { label: string; qty: number; barcode: string | null }[]> = {};
+  const binsByPackage: Record<string, { label: string; qty: number; barcode: string | null }[]> = {};
+  (quants ?? []).forEach((q: any) => {
+    const loc = q.stock_locations;
+    if (!loc || loc.type !== "internal") return;
+    const entry = { label: loc.full_path ?? loc.name, qty: Number(q.quantity), barcode: loc.barcode ?? null };
+    if (q.package_id) (binsByPackage[q.package_id] ||= []).push(entry);
+    else (binsByProduct[q.product_id] ||= []).push(entry);
   });
 
   const { data: company } = await supabase
