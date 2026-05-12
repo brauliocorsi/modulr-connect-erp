@@ -30,6 +30,8 @@ export default function PickingScan() {
   const [moves, setMoves] = useState<Move[]>([]);
   const [pending, setPending] = useState<any[]>([]);
   const [activeLocation, setActiveLocation] = useState<{ id: string; name: string } | null>(null);
+  const [packagesByProduct, setPackagesByProduct] = useState<Record<string, { id: string; sequence: number; label: string; barcode: string | null }[]>>({});
+  const [scannedColis, setScannedColis] = useState<Record<string, Set<number>>>({});
 
   const loadPending = async () => {
     let q = supabase
@@ -54,11 +56,26 @@ export default function PickingScan() {
     if (!p) return;
     setPicking(p);
     setActiveLocation(null);
+    setScannedColis({});
     const { data: m } = await supabase
       .from("stock_moves")
       .select("id,product_id,quantity,quantity_done,state,source_location_id,destination_location_id,products(name,barcode,internal_ref)")
       .eq("picking_id", id);
-    setMoves((m as any) ?? []);
+    const movesData = (m as any[]) ?? [];
+    setMoves(movesData);
+    const pids = Array.from(new Set(movesData.map((mv) => mv.product_id).filter(Boolean)));
+    if (pids.length) {
+      const { data: pkgs } = await supabase
+        .from("product_packages")
+        .select("id,product_id,sequence,label,barcode")
+        .in("product_id", pids)
+        .order("sequence", { ascending: true });
+      const map: Record<string, any[]> = {};
+      (pkgs ?? []).forEach((pk: any) => { (map[pk.product_id] ||= []).push(pk); });
+      setPackagesByProduct(map);
+    } else {
+      setPackagesByProduct({});
+    }
   };
 
   const handleScan = async (raw: string) => {
@@ -103,6 +120,40 @@ export default function PickingScan() {
       return log(`Local ativo: ${loc.full_path ?? loc.name}`, "info");
     }
 
+    // Colis (product_packages) scan
+    const { data: pkg } = await supabase
+      .from("product_packages")
+      .select("id,product_id,sequence,label,barcode")
+      .eq("barcode", v)
+      .maybeSingle();
+    if (pkg) {
+      const move = moves.find((m) => m.product_id === pkg.product_id);
+      if (!move) return log(`Colis "${pkg.label}" pertence a produto fora desta transferência`, "error");
+      if (activeLocation && move.source_location_id !== activeLocation.id && move.destination_location_id !== activeLocation.id) {
+        return log(`${move.products?.name} não pertence ao local ativo`, "error");
+      }
+      if (move.state === "done" || move.state === "cancelled") return log(`${move.products?.name} já concluído`, "warn");
+      const cur = Number(move.quantity_done ?? 0);
+      const max = Number(move.quantity);
+      if (cur >= max) return log(`${move.products?.name}: já completo ${max}/${max}`, "warn");
+      const totalSeq = (packagesByProduct[pkg.product_id] ?? []).length || 1;
+      const set = new Set(scannedColis[move.id] ?? []);
+      if (set.has(pkg.sequence)) return log(`Colis ${pkg.label} já bipado para esta unidade`, "warn");
+      set.add(pkg.sequence);
+      if (set.size >= totalSeq) {
+        const next = cur + 1;
+        const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", move.id);
+        if (error) return log(error.message, "error");
+        setMoves((ms) => ms.map((m) => (m.id === move.id ? { ...m, quantity_done: next } : m)));
+        setScannedColis((s) => ({ ...s, [move.id]: new Set() }));
+        log(`✓ Unidade completa de ${move.products?.name} (${next}/${max})`, "ok");
+      } else {
+        setScannedColis((s) => ({ ...s, [move.id]: set }));
+        log(`+ Colis ${pkg.label} (${set.size}/${totalSeq}) — ${move.products?.name}`, "info");
+      }
+      return;
+    }
+
     // Product scan
     const candidate = moves.find((m) => m.products?.barcode === v) ||
                       moves.find((m) => m.products?.internal_ref === v) ||
@@ -126,6 +177,10 @@ export default function PickingScan() {
     const cur = Number(candidate.quantity_done ?? 0);
     const max = Number(candidate.quantity);
     if (cur >= max) return log(`${candidate.products?.name}: já bipou ${max}/${max}`, "warn");
+    // If product has colis defined, force colis scanning
+    if ((packagesByProduct[candidate.product_id] ?? []).length > 0) {
+      return log(`${candidate.products?.name} requer scan dos colis (não use o código do produto)`, "warn");
+    }
     const next = cur + 1;
     const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", candidate.id);
     if (error) return log(error.message, "error");
@@ -201,9 +256,22 @@ export default function PickingScan() {
                     const cur = Number(m.quantity_done ?? 0);
                     const need = Number(m.quantity);
                     const full = cur >= need;
+                    const pkgs = packagesByProduct[m.product_id] ?? [];
+                    const scanned = scannedColis[m.id] ?? new Set<number>();
                     return (
                       <tr key={m.id} className={`border-t border-slate-800 ${full ? "bg-emerald-950/40" : ""}`}>
-                        <td className="px-3 py-2 flex items-center gap-2"><Package className="h-4 w-4 text-slate-500" />{m.products?.name}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2"><Package className="h-4 w-4 text-slate-500" />{m.products?.name}</div>
+                          {pkgs.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1 pl-6">
+                              {pkgs.map((p) => (
+                                <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${scanned.has(p.sequence) ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-400"}`}>
+                                  {p.label}{p.barcode ? ` · ${p.barcode}` : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-mono text-xs text-slate-400">{m.products?.barcode ?? m.products?.internal_ref ?? "—"}</td>
                         <td className="px-3 py-2 font-bold"><span className={full ? "text-emerald-300" : "text-white"}>{cur}</span><span className="text-slate-500"> / {need}</span></td>
                       </tr>

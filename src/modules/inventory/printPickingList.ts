@@ -51,8 +51,21 @@ export async function printPickingList(pickingId: string) {
 
   const { data: moves } = await supabase
     .from("stock_moves")
-    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
+    .select("quantity, quantity_done, state, product_id, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
     .eq("picking_id", pickingId);
+
+  const productIds = Array.from(new Set((moves ?? []).map((m: any) => m.product_id).filter(Boolean)));
+  const { data: packages } = productIds.length
+    ? await supabase
+        .from("product_packages")
+        .select("product_id, sequence, label, barcode")
+        .in("product_id", productIds)
+        .order("sequence", { ascending: true })
+    : { data: [] as any[] };
+  const packagesByProduct: Record<string, any[]> = {};
+  (packages ?? []).forEach((p: any) => {
+    (packagesByProduct[p.product_id] ||= []).push(p);
+  });
 
   const { data: company } = await supabase
     .from("companies")
@@ -72,6 +85,25 @@ export async function printPickingList(pickingId: string) {
         .join(" · ");
       const sku = variant?.sku || m.products?.internal_ref || "";
       const code = variant?.barcode || m.products?.barcode || variant?.sku || m.products?.internal_ref || "";
+      const pkgs = packagesByProduct[m.product_id] ?? [];
+      const qty = Number(m.quantity ?? 0);
+      const colisBlock = pkgs.length
+        ? `<div class="colis">
+            <div class="colis-title">Colis a apanhar (${pkgs.length} por unidade × ${qty} = ${pkgs.length * qty})</div>
+            <table class="colis-tbl">
+              <thead><tr><th>#</th><th>Etiqueta</th><th>Código de barras</th><th class="check">✓</th></tr></thead>
+              <tbody>
+                ${pkgs.map((p: any) => `
+                  <tr>
+                    <td class="num">${p.sequence}</td>
+                    <td>${esc(p.label)}</td>
+                    <td class="bc-cell">${p.barcode ? barcodeSvg(p.barcode) : '<span class="muted">—</span>'}</td>
+                    <td class="check">${Array.from({ length: qty }).map(() => '<span class="checkbox-sm"></span>').join("")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>`
+        : "";
       return `
       <tr>
         <td class="num">${i + 1}</td>
@@ -80,9 +112,10 @@ export async function printPickingList(pickingId: string) {
           ${attrs ? `<div class="variant">${esc(attrs)}</div>` : ""}
           ${sku ? `<div class="muted">SKU: ${esc(sku)}</div>` : ""}
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
+          ${colisBlock}
         </td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
-        <td class="num">${Number(m.quantity ?? 0)}</td>
+        <td class="num">${qty}</td>
         <td class="num">${Number(m.quantity_done ?? 0)}</td>
         <td class="check"><div class="checkbox"></div></td>
       </tr>`;
@@ -134,6 +167,14 @@ export async function printPickingList(pickingId: string) {
   }
   .actions { margin-bottom: 16px; }
   .actions button { padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .colis { margin-top: 8px; padding: 6px 8px; background: #fafafa; border: 1px dashed #bbb; border-radius: 4px; }
+  .colis-title { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #555; font-weight: 700; margin-bottom: 4px; }
+  .colis-tbl { width: 100%; border-collapse: collapse; }
+  .colis-tbl th, .colis-tbl td { border: 1px solid #ddd; padding: 4px 6px; font-size: 11px; }
+  .colis-tbl th { background: #efefef; font-size: 9px; }
+  .bc-cell { width: 180px; }
+  .bc-cell svg { width: 100%; height: 36px; }
+  .checkbox-sm { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #111; border-radius: 2px; margin: 0 2px 0 0; vertical-align: middle; }
 </style>
 </head><body>
   <div class="actions no-print">
