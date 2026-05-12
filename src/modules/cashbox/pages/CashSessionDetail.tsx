@@ -26,6 +26,7 @@ export default function CashSessionDetail() {
   const [movDlg, setMovDlg] = useState(false);
   const [closeDlg, setCloseDlg] = useState(false);
   const [counted, setCounted] = useState<string>("");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
 
   const [openerName, setOpenerName] = useState<string>("");
 
