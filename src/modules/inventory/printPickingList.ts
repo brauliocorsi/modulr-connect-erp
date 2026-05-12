@@ -109,19 +109,32 @@ export async function printPickingList(pickingId: string) {
         ? `<div class="colis">
             <div class="colis-title">Colis a apanhar (${pkgs.length} por unidade × ${qty} = ${pkgs.length * qty})</div>
             <table class="colis-tbl">
-              <thead><tr><th>#</th><th>Etiqueta</th><th>Código de barras</th><th class="check">✓</th></tr></thead>
+              <thead><tr><th>#</th><th>Etiqueta</th><th>Local</th><th>Código de barras</th><th class="check">✓</th></tr></thead>
               <tbody>
-                ${pkgs.map((p: any) => `
+                ${pkgs.map((p: any) => {
+                  const locs = binsByPackage[p.id] ?? [];
+                  const locCell = locs.length
+                    ? locs.map((b) => `<div>${esc(b.label)} <span class="muted">(${b.qty})</span>${b.barcode ? `<div class="bc-mini">${barcodeSvg(b.barcode)}</div>` : ""}</div>`).join("")
+                    : '<span class="muted">—</span>';
+                  return `
                   <tr>
                     <td class="num">${p.sequence}</td>
                     <td>${esc(p.label)}</td>
+                    <td class="loc-cell">${locCell}</td>
                     <td class="bc-cell">${p.barcode ? barcodeSvg(p.barcode) : '<span class="muted">—</span>'}</td>
                     <td class="check">${Array.from({ length: qty }).map(() => '<span class="checkbox-sm"></span>').join("")}</td>
-                  </tr>`).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           </div>`
         : "";
+      const productBins = binsByProduct[m.product_id] ?? [];
+      const locMain = pkgs.length === 0 && productBins.length
+        ? productBins.map((b) => `<div>${esc(b.label)} <span class="muted">(${b.qty})</span></div>`).join("")
+        : pkgs.length > 0
+          ? '<span class="muted">ver colis</span>'
+          : '<span class="muted">—</span>';
       return `
       <tr>
         <td class="num">${i + 1}</td>
@@ -132,6 +145,7 @@ export async function printPickingList(pickingId: string) {
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
           ${colisBlock}
         </td>
+        <td class="loc-cell">${locMain}</td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
         <td class="num">${qty}</td>
         <td class="num">${Number(m.quantity_done ?? 0)}</td>
