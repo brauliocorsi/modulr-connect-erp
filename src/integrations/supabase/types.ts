@@ -224,6 +224,8 @@ export type Database = {
           notes: string | null
           partner_id: string | null
           payment_id: string | null
+          reconciled_at: string | null
+          reconciled_by: string | null
           reference: string | null
           session_id: string
           user_id: string | null
@@ -238,6 +240,8 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           reference?: string | null
           session_id: string
           user_id?: string | null
@@ -252,6 +256,8 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
           reference?: string | null
           session_id?: string
           user_id?: string | null
