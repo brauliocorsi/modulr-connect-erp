@@ -30,6 +30,8 @@ export default function PickingScan() {
   const [moves, setMoves] = useState<Move[]>([]);
   const [pending, setPending] = useState<any[]>([]);
   const [activeLocation, setActiveLocation] = useState<{ id: string; name: string } | null>(null);
+  const [packagesByProduct, setPackagesByProduct] = useState<Record<string, { id: string; sequence: number; label: string; barcode: string | null }[]>>({});
+  const [scannedColis, setScannedColis] = useState<Record<string, Set<number>>>({});
 
   const loadPending = async () => {
     let q = supabase
@@ -54,11 +56,26 @@ export default function PickingScan() {
     if (!p) return;
     setPicking(p);
     setActiveLocation(null);
+    setScannedColis({});
     const { data: m } = await supabase
       .from("stock_moves")
       .select("id,product_id,quantity,quantity_done,state,source_location_id,destination_location_id,products(name,barcode,internal_ref)")
       .eq("picking_id", id);
-    setMoves((m as any) ?? []);
+    const movesData = (m as any[]) ?? [];
+    setMoves(movesData);
+    const pids = Array.from(new Set(movesData.map((mv) => mv.product_id).filter(Boolean)));
+    if (pids.length) {
+      const { data: pkgs } = await supabase
+        .from("product_packages")
+        .select("id,product_id,sequence,label,barcode")
+        .in("product_id", pids)
+        .order("sequence", { ascending: true });
+      const map: Record<string, any[]> = {};
+      (pkgs ?? []).forEach((pk: any) => { (map[pk.product_id] ||= []).push(pk); });
+      setPackagesByProduct(map);
+    } else {
+      setPackagesByProduct({});
+    }
   };
 
   const handleScan = async (raw: string) => {
