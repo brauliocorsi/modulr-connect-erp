@@ -4221,6 +4221,15 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      putaway_stock: {
+        Args: {
+          _location: string
+          _package: string
+          _product: string
+          _qty: number
+        }
+        Returns: string
+      }
       reallocate_freed_stock: {
         Args: { _exclude_so?: string; _product: string; _warehouse: string }
         Returns: Json
