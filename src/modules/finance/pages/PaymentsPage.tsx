@@ -51,14 +51,60 @@ export default function PaymentsPage() {
     setPending(sched ?? []);
 
     // Cash movements grouped by session for reconciliation
-    const { data: moves } = await supabase
+    const { data: moves, error: movesErr } = await supabase
       .from("cash_movements")
-      .select("id, session_id, kind, amount, reference, created_at, reconciled_at, partners(name), customer_payments(payment_methods(name)), cash_sessions(name, cash_registers(name))")
+      .select("id, session_id, kind, amount, reference, created_at, reconciled_at, partner_id, payment_id")
       .in("kind", ["sale", "sangria", "withdrawal", "deposit", "cash_in"])
       .order("created_at", { ascending: false })
       .limit(1000);
+    if (movesErr) console.error("cash_movements error", movesErr);
 
     const list = (moves ?? []) as any[];
+
+    // Hydrate related data without relying on FK embeds
+    const sessionIds = Array.from(new Set(list.map((m) => m.session_id).filter(Boolean)));
+    const partnerIds = Array.from(new Set(list.map((m) => m.partner_id).filter(Boolean)));
+    const paymentIds = Array.from(new Set(list.map((m) => m.payment_id).filter(Boolean)));
+
+    const [sessRes, partRes, payRes] = await Promise.all([
+      sessionIds.length
+        ? supabase.from("cash_sessions").select("id, name, register_id").in("id", sessionIds)
+        : Promise.resolve({ data: [] as any[] }),
+      partnerIds.length
+        ? supabase.from("partners").select("id, name").in("id", partnerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      paymentIds.length
+        ? supabase.from("customer_payments").select("id, method_id").in("id", paymentIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const sessionsMap = new Map<string, any>((sessRes.data ?? []).map((s: any) => [s.id, s]));
+    const partnersMap = new Map<string, any>((partRes.data ?? []).map((p: any) => [p.id, p]));
+    const paymentsMap = new Map<string, any>((payRes.data ?? []).map((p: any) => [p.id, p]));
+
+    const registerIds = Array.from(new Set(Array.from(sessionsMap.values()).map((s: any) => s.register_id).filter(Boolean)));
+    const methodIds = Array.from(new Set(Array.from(paymentsMap.values()).map((p: any) => p.method_id).filter(Boolean)));
+    const [regRes, methRes] = await Promise.all([
+      registerIds.length
+        ? supabase.from("cash_registers").select("id, name").in("id", registerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      methodIds.length
+        ? supabase.from("payment_methods").select("id, name").in("id", methodIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const registersMap = new Map<string, any>((regRes.data ?? []).map((r: any) => [r.id, r]));
+    const methodsMap = new Map<string, any>((methRes.data ?? []).map((m: any) => [m.id, m]));
+
+    // Attach helpers onto each move
+    for (const m of list) {
+      const sess = sessionsMap.get(m.session_id);
+      const reg = sess ? registersMap.get(sess.register_id) : null;
+      const pay = m.payment_id ? paymentsMap.get(m.payment_id) : null;
+      const method = pay ? methodsMap.get(pay.method_id) : null;
+      m.__session = sess;
+      m.__register = reg;
+      m.__method = method;
+      m.__partner = m.partner_id ? partnersMap.get(m.partner_id) : null;
+    }
     // Compute eligibility: non-cash payments are always eligible.
     // Cash sale/cash_in entries become eligible up to the absolute sum of sangrias/withdrawals in the same session.
     const bySession = new Map<string, any[]>();
@@ -77,7 +123,7 @@ export default function PaymentsPage() {
 
       // Sort cash sale entries by created_at to allocate sangria pool fifo
       const cashEntries = arr
-        .filter((m) => isCashName(m.customer_payments?.payment_methods?.name) && Number(m.amount) > 0)
+        .filter((m) => isCashName(m.__method?.name) && Number(m.amount) > 0)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
       let remainingPool = sangriaPool;
@@ -91,11 +137,11 @@ export default function PaymentsPage() {
       }
 
       for (const m of arr) {
-        const methodName = m.customer_payments?.payment_methods?.name
+        const methodName = m.__method?.name
           ?? (m.kind === "sangria" || m.kind === "withdrawal" ? "Sangria/Retirada" : "—");
         const isCash = isCashName(methodName);
         const isWithdrawal = ["sangria", "withdrawal"].includes(m.kind);
-        if (isWithdrawal) continue; // sangrias themselves are not items to conciliate; they unlock cash
+        if (isWithdrawal) continue;
 
         let eligible = true;
         let block_reason: string | undefined;
@@ -107,13 +153,13 @@ export default function PaymentsPage() {
         out.push({
           id: m.id,
           session_id: sid,
-          session_name: m.cash_sessions?.name ?? "—",
-          register_name: m.cash_sessions?.cash_registers?.name ?? "—",
+          session_name: m.__session?.name ?? "—",
+          register_name: m.__register?.name ?? "—",
           created_at: m.created_at,
           amount: Number(m.amount || 0),
           method: methodName,
           reference: m.reference,
-          partner: m.partners?.name ?? null,
+          partner: m.__partner?.name ?? null,
           reconciled_at: m.reconciled_at,
           eligible,
           block_reason,
