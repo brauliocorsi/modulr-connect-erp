@@ -59,7 +59,7 @@ export default function PutawayScan() {
       if (error) return log(`Falha: ${error.message}`, "error");
       const labelExtra = pending.package_label ? ` · ${pending.package_label}` : "";
       log(`✓ ${pending.qty}× ${pending.product_name}${labelExtra} → ${loc.full_path ?? loc.name}`, "ok");
-      setHistoryDone((h) => [{ name: `${pending.product_name}${labelExtra}`, loc: loc.full_path ?? loc.name, ts: Date.now() }, ...h].slice(0, 30));
+      setHistoryDone((h) => [{ name: `${pending.product_name}${labelExtra}`, loc: loc.full_path ?? loc.name, ts: Date.now(), locId: loc.id, pkgId: pending.package_id }, ...h].slice(0, 30));
       setPending(null);
       return;
     }
