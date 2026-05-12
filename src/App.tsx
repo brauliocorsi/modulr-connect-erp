@@ -139,6 +139,7 @@ const App = () => (
                 <Route path="waves" element={<WaveScan />} />
                 <Route path="lookup/product" element={<ProductLookup />} />
                 <Route path="lookup/location" element={<LocationLookup />} />
+                <Route path="putaway" element={<PutawayScan />} />
               </Route>
 
               {/* Products */}
