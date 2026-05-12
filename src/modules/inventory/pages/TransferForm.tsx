@@ -691,8 +691,18 @@ export default function TransferForm() {
                            >
                              <ShoppingCart className="h-3 w-3" /> Venda: {so.name}
                            </a>
-                         ))}
-                       </td>
+                          ))}
+                          {(packagesByProduct[m.product_id] ?? []).length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {packagesByProduct[m.product_id].map((pk: any) => (
+                                <span key={pk.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" title={`Colis · scan ${pk.barcode ?? "—"}`}>
+                                  📦 {pk.label} × {Number(m.quantity_done ?? m.quantity ?? 0)}
+                                  {pk.barcode && <span className="font-mono opacity-70">{pk.barcode}</span>}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
                         <td className="px-3 py-2">
