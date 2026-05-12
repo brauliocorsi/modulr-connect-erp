@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -169,6 +169,26 @@ export const MODULES: ModuleDef[] = [
     menu: [
       { section: "Entregas", label: "Hoje", to: "/delivery" },
       { section: "Entregas", label: "Caixa", to: "/delivery/cashbox" },
+    ],
+  },
+  {
+    id: "barcode" as any,
+    name: "Código de Barras",
+    shortName: "Barcode",
+    icon: ScanBarcode,
+    color: "bg-[hsl(280_70%_50%)]",
+    basePath: "/barcode",
+    description: "App de scan: receção, picking, transferências e localizações",
+    menu: [
+      { section: "Scan", label: "Início", to: "/barcode" },
+      { section: "Scan", label: "Receção", to: "/barcode/picking/incoming" },
+      { section: "Scan", label: "Expedição", to: "/barcode/picking/outgoing" },
+      { section: "Scan", label: "Transferência interna", to: "/barcode/picking/internal" },
+      { section: "Scan", label: "Picking (todos)", to: "/barcode/picking/all" },
+      { section: "Scan", label: "Lotes (Batch)", to: "/barcode/batch" },
+      { section: "Scan", label: "Ondas (Wave)", to: "/barcode/wave" },
+      { section: "Consulta", label: "Produto", to: "/barcode/product" },
+      { section: "Consulta", label: "Localização", to: "/barcode/location" },
     ],
   },
   {
