@@ -74,17 +74,26 @@ export default function CashSessionDetail() {
   })();
   useEffect(() => { if (id) load(); }, [id]);
 
-  const balance = moves.reduce((s, m) => s + Number(m.amount || 0), 0);
-  const totalIn = moves.filter((m) => Number(m.amount) > 0 && m.kind !== "opening").reduce((s, m) => s + Number(m.amount), 0);
-  const totalOut = moves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
+  const isCashMove = (m: any) => {
+    const name = m.customer_payments?.payment_methods?.name?.toLowerCase() ?? "";
+    if (!m.payment_id) return true; // abertura, sangria, retirada, despesa, depósito → dinheiro físico
+    return ["dinheiro", "cash", "numerário", "numerario"].some((c) => name.includes(c));
+  };
+  const cashMoves = moves.filter(isCashMove);
+  const nonCashMoves = moves.filter((m) => !isCashMove(m));
 
-  const cashTotal = (() => {
-    const cashNames = ["dinheiro", "cash", "numerário", "numerario"];
-    for (const [name, total] of methodTotals) {
-      if (cashNames.some((c) => name.toLowerCase().includes(c))) return total;
-    }
-    return 0;
-  })();
+  const balance = cashMoves.reduce((s, m) => s + Number(m.amount || 0), 0);
+  const totalIn = cashMoves.filter((m) => Number(m.amount) > 0 && m.kind !== "opening").reduce((s, m) => s + Number(m.amount), 0);
+  const totalOut = cashMoves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
+  const reconcileTotal = nonCashMoves.reduce((s, m) => s + Number(m.amount || 0), 0);
+
+  const methodNames = Array.from(new Set(moves.map((m) =>
+    m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind)
+  )));
+  const filteredMoves = methodFilter === "all" ? moves : moves.filter((m) => {
+    const name = m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
+    return name === methodFilter;
+  });
 
   const close = async () => {
     if (counted === "") return toast.error("Informe o valor contado");
