@@ -73,12 +73,23 @@ export default function TransferForm() {
       .from("stock_moves")
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
-    setMoves((m ?? []).map((mv: any) => {
+    const hydrated = (m ?? []).map((mv: any) => {
       // Default to ordered quantity only when nothing was set yet (null). Respect explicit 0.
       const raw = mv.quantity_done;
       const hasValue = raw !== null && raw !== undefined;
       return hasValue ? mv : { ...mv, quantity_done: Number(mv.quantity || 0) };
-    }));
+    });
+    setMoves(hydrated);
+    // Persist auto-filled "done" quantity for non-finalized moves so the value is real, not just visual.
+    const toPersist = (m ?? []).filter((mv: any) =>
+      (mv.quantity_done === null || mv.quantity_done === undefined) &&
+      mv.state !== "done" && mv.state !== "cancel"
+    );
+    if (toPersist.length > 0) {
+      await Promise.all(toPersist.map((mv: any) =>
+        supabase.from("stock_moves").update({ quantity_done: Number(mv.quantity || 0) }).eq("id", mv.id)
+      ));
+    }
     let sale: any = null;
     let purchases: any[] = [];
     if (p?.origin) {
