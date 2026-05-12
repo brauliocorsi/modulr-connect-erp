@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { CheckCircle2, X, Package } from "lucide-react";
+import { CheckCircle2, X, Package, MapPin } from "lucide-react";
 
 const KIND_LABEL: Record<string, string> = {
   incoming: "Receção",
