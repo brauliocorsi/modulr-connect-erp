@@ -167,6 +167,14 @@ export async function printPickingList(pickingId: string) {
   }
   .actions { margin-bottom: 16px; }
   .actions button { padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .colis { margin-top: 8px; padding: 6px 8px; background: #fafafa; border: 1px dashed #bbb; border-radius: 4px; }
+  .colis-title { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #555; font-weight: 700; margin-bottom: 4px; }
+  .colis-tbl { width: 100%; border-collapse: collapse; }
+  .colis-tbl th, .colis-tbl td { border: 1px solid #ddd; padding: 4px 6px; font-size: 11px; }
+  .colis-tbl th { background: #efefef; font-size: 9px; }
+  .bc-cell { width: 180px; }
+  .bc-cell svg { width: 100%; height: 36px; }
+  .checkbox-sm { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #111; border-radius: 2px; margin: 0 2px 0 0; vertical-align: middle; }
 </style>
 </head><body>
   <div class="actions no-print">
