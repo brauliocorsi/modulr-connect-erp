@@ -29,6 +29,8 @@ export default function CashSessionDetail() {
 
   const [openerName, setOpenerName] = useState<string>("");
 
+  const [reconcile, setReconcile] = useState<any[]>([]);
+
   const load = async () => {
     const { data: s } = await supabase
       .from("cash_sessions")
@@ -46,6 +48,18 @@ export default function CashSessionDetail() {
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
+    if (s?.opened_at && s?.opened_by) {
+      const fromIso = s.opened_at;
+      const toIso = s.closed_at ?? new Date().toISOString();
+      const { data: pays } = await supabase
+        .from("customer_payments")
+        .select("id, amount, created_at, reference, name, payment_methods!inner(name, feeds_cash_session)")
+        .eq("state", "posted")
+        .eq("created_by", s.opened_by)
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso);
+      setReconcile((pays ?? []).filter((p: any) => p.payment_methods?.feeds_cash_session === false));
+    } else setReconcile([]);
   };
 
   const methodTotals = (() => {
