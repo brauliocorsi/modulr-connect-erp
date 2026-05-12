@@ -73,6 +73,16 @@ export default function TransferForm() {
       .from("stock_moves")
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
+    // Load colis (packages) per product for WMS hint
+    const productIds = Array.from(new Set((m ?? []).map((mv: any) => mv.product_id)));
+    if (productIds.length) {
+      const { data: pkgs } = await supabase
+        .from("product_packages").select("id,product_id,sequence,label,barcode")
+        .in("product_id", productIds).order("sequence");
+      const byProd: Record<string, any[]> = {};
+      (pkgs ?? []).forEach((p: any) => { (byProd[p.product_id] ||= []).push(p); });
+      setPackagesByProduct(byProd);
+    } else setPackagesByProduct({});
     const isEditable = (st: string) => st !== "done" && st !== "cancel";
     const hydrated = (m ?? []).map((mv: any) => {
       // For non-finalized moves, always default "Feito" to the demanded quantity.
