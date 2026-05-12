@@ -242,13 +242,14 @@ export async function printPickingList(pickingId: string) {
       <tr>
         <th class="num">#</th>
         <th>Produto</th>
+        <th class="loc-col">Local</th>
         <th class="barcode">Código de barras</th>
         <th class="num">Pedido</th>
         <th class="num">Feito</th>
         <th class="check">✓</th>
       </tr>
     </thead>
-    <tbody>${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:#666;padding:16px">Sem movimentos</td></tr>`}</tbody>
+    <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:#666;padding:16px">Sem movimentos</td></tr>`}</tbody>
   </table>
 
   ${""}
