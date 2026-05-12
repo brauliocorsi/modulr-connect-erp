@@ -208,6 +208,8 @@ const App = () => (
               <Route path="inventory/locations" element={<LocationsList />} />
               <Route path="inventory/locations/new" element={<LocationForm />} />
               <Route path="inventory/locations/:id" element={<LocationForm />} />
+              <Route path="inventory/locations-tree" element={<LocationsTreePage />} />
+              <Route path="inventory/bins" element={<BinsPage />} />
               <Route path="inventory/reordering" element={<ReorderingList />} />
               <Route path="inventory/reordering/new" element={<ReorderingForm />} />
               <Route path="inventory/reordering/:id" element={<ReorderingForm />} />
