@@ -206,6 +206,9 @@ export async function printPickingList(pickingId: string) {
   .colis-tbl th { background: #efefef; font-size: 9px; }
   .bc-cell { width: 180px; }
   .bc-cell svg { width: 100%; height: 36px; }
+  .loc-col { width: 160px; }
+  .loc-cell { font-size: 11px; font-family: monospace; }
+  .bc-mini svg { width: 120px; height: 24px; }
   .checkbox-sm { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #111; border-radius: 2px; margin: 0 2px 0 0; vertical-align: middle; }
 </style>
 </head><body>
