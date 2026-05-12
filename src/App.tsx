@@ -32,6 +32,8 @@ import ReceiptsPage from "@/modules/inventory/pages/ReceiptsPage";
 import ShipmentsPage from "@/modules/inventory/pages/ShipmentsPage";
 import InternalTransfersPage from "@/modules/inventory/pages/InternalTransfersPage";
 import BackordersPage from "@/modules/inventory/pages/BackordersPage";
+import LocationsTreePage from "@/modules/inventory/pages/LocationsTreePage";
+import BinsPage from "@/modules/inventory/pages/BinsPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
 import SalesStockPage from "@/modules/sales/pages/SalesStockPage";
