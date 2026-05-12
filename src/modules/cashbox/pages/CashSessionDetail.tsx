@@ -136,7 +136,7 @@ export default function CashSessionDetail() {
           <Stat label="Entradas em dinheiro" value={fmtMoney(totalIn)} tone="emerald" />
           <Stat label="Saídas" value={fmtMoney(totalOut)} tone="rose" />
           <Stat label="Dinheiro em caixa" value={fmtMoney(balance)} />
-          <Stat label="Para conciliação" value={fmtMoney(reconcile.reduce((s, p) => s + Number(p.amount || 0), 0))} tone="muted" />
+          <Stat label="Para conciliação" value={fmtMoney(reconcileTotal)} tone="muted" />
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
 
