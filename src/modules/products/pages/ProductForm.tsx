@@ -22,6 +22,7 @@ import { BomTab } from "./tabs/BomTab";
 import { StockTab } from "./tabs/StockTab";
 import { WooTab } from "./tabs/WooTab";
 import { ReorderingTab } from "./tabs/ReorderingTab";
+import { PackagesTab } from "./tabs/PackagesTab";
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -152,6 +153,7 @@ export default function ProductForm() {
                 <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
                 <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
+                <TabsTrigger value="packages" disabled={isNew}>Colis</TabsTrigger>
               </TabsList>
 
               <TabsContent value="sales" className="pt-4">
@@ -246,6 +248,7 @@ export default function ProductForm() {
               {!isNew && <TabsContent value="stock" className="pt-4"><Card className="p-6"><StockTab productId={id!} /></Card></TabsContent>}
               {!isNew && <TabsContent value="reordering" className="pt-4"><Card className="p-6"><ReorderingTab productId={id!} /></Card></TabsContent>}
               <TabsContent value="woo" className="pt-4"><Card className="p-6"><WooTab form={form} setForm={setForm} /></Card></TabsContent>
+              {!isNew && <TabsContent value="packages" className="pt-4"><Card className="p-6"><PackagesTab productId={id!} /></Card></TabsContent>}
             </Tabs>
 
             {!isNew && <RecordSidebar recordType="product" recordId={id!} />}

@@ -34,6 +34,7 @@ export default function TransferForm() {
   const [incomingByProduct, setIncomingByProduct] = useState<Record<string, { qty: number; pickings: { id: string; name: string; state: string }[] }>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, any[]>>({});
   const [sourceSoByProduct, setSourceSoByProduct] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [packagesByProduct, setPackagesByProduct] = useState<Record<string, any[]>>({});
   const [backorder, setBackorder] = useState<any>(null);
   const [original, setOriginal] = useState<any>(null);
   const [flowDocs, setFlowDocs] = useState<{ sale: any | null; purchases: any[]; pickings: any[] }>({ sale: null, purchases: [], pickings: [] });
@@ -73,6 +74,16 @@ export default function TransferForm() {
       .from("stock_moves")
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
+    // Load colis (packages) per product for WMS hint
+    const productIds = Array.from(new Set((m ?? []).map((mv: any) => mv.product_id)));
+    if (productIds.length) {
+      const { data: pkgs } = await supabase
+        .from("product_packages").select("id,product_id,sequence,label,barcode")
+        .in("product_id", productIds).order("sequence");
+      const byProd: Record<string, any[]> = {};
+      (pkgs ?? []).forEach((p: any) => { (byProd[p.product_id] ||= []).push(p); });
+      setPackagesByProduct(byProd);
+    } else setPackagesByProduct({});
     const isEditable = (st: string) => st !== "done" && st !== "cancel";
     const hydrated = (m ?? []).map((mv: any) => {
       // For non-finalized moves, always default "Feito" to the demanded quantity.
@@ -680,8 +691,18 @@ export default function TransferForm() {
                            >
                              <ShoppingCart className="h-3 w-3" /> Venda: {so.name}
                            </a>
-                         ))}
-                       </td>
+                          ))}
+                          {(packagesByProduct[m.product_id] ?? []).length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {packagesByProduct[m.product_id].map((pk: any) => (
+                                <span key={pk.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" title={`Colis · scan ${pk.barcode ?? "—"}`}>
+                                  📦 {pk.label} × {Number(m.quantity_done ?? m.quantity ?? 0)}
+                                  {pk.barcode && <span className="font-mono opacity-70">{pk.barcode}</span>}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                       <td className="px-3 py-2">{m.quantity}</td>
                       {isOutgoing && (
                         <td className="px-3 py-2">

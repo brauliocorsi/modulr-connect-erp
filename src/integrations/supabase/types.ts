@@ -1578,6 +1578,54 @@ export type Database = {
           },
         ]
       }
+      product_packages: {
+        Row: {
+          barcode: string | null
+          created_at: string
+          id: string
+          label: string
+          notes: string | null
+          product_id: string
+          sequence: number
+          weight_kg: number | null
+        }
+        Insert: {
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          notes?: string | null
+          product_id: string
+          sequence?: number
+          weight_kg?: number | null
+        }
+        Update: {
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          product_id?: string
+          sequence?: number
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_suppliers: {
         Row: {
           id: string
@@ -3016,6 +3064,7 @@ export type Database = {
           destination_location_id: string
           id: string
           lot_id: string | null
+          package_id: string | null
           picking_id: string | null
           product_id: string
           quantity: number
@@ -3033,6 +3082,7 @@ export type Database = {
           destination_location_id: string
           id?: string
           lot_id?: string | null
+          package_id?: string | null
           picking_id?: string | null
           product_id: string
           quantity?: number
@@ -3050,6 +3100,7 @@ export type Database = {
           destination_location_id?: string
           id?: string
           lot_id?: string | null
+          package_id?: string | null
           picking_id?: string | null
           product_id?: string
           quantity?: number
@@ -3075,6 +3126,13 @@ export type Database = {
             columns: ["lot_id"]
             isOneToOne: false
             referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_moves_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "product_packages"
             referencedColumns: ["id"]
           },
           {
@@ -3408,6 +3466,7 @@ export type Database = {
           id: string
           location_id: string
           lot_id: string | null
+          package_id: string | null
           product_id: string
           quantity: number
           reserved_quantity: number
@@ -3418,6 +3477,7 @@ export type Database = {
           id?: string
           location_id: string
           lot_id?: string | null
+          package_id?: string | null
           product_id: string
           quantity?: number
           reserved_quantity?: number
@@ -3428,6 +3488,7 @@ export type Database = {
           id?: string
           location_id?: string
           lot_id?: string | null
+          package_id?: string | null
           product_id?: string
           quantity?: number
           reserved_quantity?: number
@@ -3447,6 +3508,13 @@ export type Database = {
             columns: ["lot_id"]
             isOneToOne: false
             referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_quants_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "product_packages"
             referencedColumns: ["id"]
           },
           {
