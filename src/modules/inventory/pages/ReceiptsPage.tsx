@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, ShoppingBag, PackageCheck } from "lucide-react";
+import { ShoppingCart, ShoppingBag, PackageCheck, Tag } from "lucide-react";
 import { stateLabel } from "@/lib/picking";
+import { printReceiptLabels } from "@/modules/barcode/printBarcodes";
 
 type Row = {
   id: string;
