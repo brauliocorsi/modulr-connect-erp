@@ -32,6 +32,7 @@ export default function PickingScan() {
   const [activeLocation, setActiveLocation] = useState<{ id: string; name: string } | null>(null);
   const [packagesByProduct, setPackagesByProduct] = useState<Record<string, { id: string; sequence: number; label: string; barcode: string | null }[]>>({});
   const [scannedColis, setScannedColis] = useState<Record<string, Set<number>>>({});
+  const [quantsByProduct, setQuantsByProduct] = useState<Record<string, { location: string; package_id: string | null; qty: number }[]>>({});
 
   const loadPending = async () => {
     let q = supabase
