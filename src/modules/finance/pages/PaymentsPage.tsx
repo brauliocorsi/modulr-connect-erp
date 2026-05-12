@@ -45,6 +45,7 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [pending, setPending] = useState<any[]>([]);
   const [recon, setRecon] = useState<ReconRow[]>([]);
+  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [reconFilter, setReconFilter] = useState<"pending" | "reconciled" | "all">("pending");
 
   const load = async () => {
