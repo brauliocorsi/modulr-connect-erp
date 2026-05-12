@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { Package, MapPin, X, CheckCircle2 } from "lucide-react";
+import { Package, MapPin, X, CheckCircle2, Printer } from "lucide-react";
+import { printBinLabel, printColisLabels } from "./printBarcodes";
 
 type Pending = {
   product_id: string;
