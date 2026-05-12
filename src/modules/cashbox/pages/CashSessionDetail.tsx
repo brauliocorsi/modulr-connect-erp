@@ -63,6 +63,14 @@ export default function CashSessionDetail() {
   const totalIn = moves.filter((m) => Number(m.amount) > 0 && m.kind !== "opening").reduce((s, m) => s + Number(m.amount), 0);
   const totalOut = moves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
 
+  const cashTotal = (() => {
+    const cashNames = ["dinheiro", "cash", "numerário", "numerario"];
+    for (const [name, total] of methodTotals) {
+      if (cashNames.some((c) => name.toLowerCase().includes(c))) return total;
+    }
+    return 0;
+  })();
+
   const close = async () => {
     if (counted === "") return toast.error("Informe o valor contado");
     const { error } = await supabase.rpc("close_cash_session", { _session: id!, _counted: Number(counted) });
@@ -97,12 +105,13 @@ export default function CashSessionDetail() {
         }
       />
       <PageBody>
-        <Card className="p-4 grid grid-cols-2 sm:grid-cols-6 gap-4 mb-4">
+        <Card className="p-4 grid grid-cols-2 sm:grid-cols-7 gap-4 mb-4">
           <Stat label="Aberta por" value={openerName || "—"} />
           <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
           <Stat label="Abertura" value={fmtMoney(sess.opening_balance)} />
           <Stat label="Entradas" value={fmtMoney(totalIn)} tone="emerald" />
           <Stat label="Saídas" value={fmtMoney(totalOut)} tone="rose" />
+          <Stat label="Dinheiro" value={fmtMoney(cashTotal)} tone="emerald" />
           <Stat label="Saldo atual" value={fmtMoney(balance)} />
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
