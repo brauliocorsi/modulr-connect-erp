@@ -123,7 +123,7 @@ export default function PaymentsPage() {
 
       // Sort cash sale entries by created_at to allocate sangria pool fifo
       const cashEntries = arr
-        .filter((m) => isCashName(m.customer_payments?.payment_methods?.name) && Number(m.amount) > 0)
+        .filter((m) => isCashName(m.__method?.name) && Number(m.amount) > 0)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
       let remainingPool = sangriaPool;
@@ -137,11 +137,11 @@ export default function PaymentsPage() {
       }
 
       for (const m of arr) {
-        const methodName = m.customer_payments?.payment_methods?.name
+        const methodName = m.__method?.name
           ?? (m.kind === "sangria" || m.kind === "withdrawal" ? "Sangria/Retirada" : "—");
         const isCash = isCashName(methodName);
         const isWithdrawal = ["sangria", "withdrawal"].includes(m.kind);
-        if (isWithdrawal) continue; // sangrias themselves are not items to conciliate; they unlock cash
+        if (isWithdrawal) continue;
 
         let eligible = true;
         let block_reason: string | undefined;
@@ -153,13 +153,13 @@ export default function PaymentsPage() {
         out.push({
           id: m.id,
           session_id: sid,
-          session_name: m.cash_sessions?.name ?? "—",
-          register_name: m.cash_sessions?.cash_registers?.name ?? "—",
+          session_name: m.__session?.name ?? "—",
+          register_name: m.__register?.name ?? "—",
           created_at: m.created_at,
           amount: Number(m.amount || 0),
           method: methodName,
           reference: m.reference,
-          partner: m.partners?.name ?? null,
+          partner: m.__partner?.name ?? null,
           reconciled_at: m.reconciled_at,
           eligible,
           block_reason,
