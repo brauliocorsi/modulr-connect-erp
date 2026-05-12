@@ -256,9 +256,22 @@ export default function PickingScan() {
                     const cur = Number(m.quantity_done ?? 0);
                     const need = Number(m.quantity);
                     const full = cur >= need;
+                    const pkgs = packagesByProduct[m.product_id] ?? [];
+                    const scanned = scannedColis[m.id] ?? new Set<number>();
                     return (
                       <tr key={m.id} className={`border-t border-slate-800 ${full ? "bg-emerald-950/40" : ""}`}>
-                        <td className="px-3 py-2 flex items-center gap-2"><Package className="h-4 w-4 text-slate-500" />{m.products?.name}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2"><Package className="h-4 w-4 text-slate-500" />{m.products?.name}</div>
+                          {pkgs.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1 pl-6">
+                              {pkgs.map((p) => (
+                                <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${scanned.has(p.sequence) ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-400"}`}>
+                                  {p.label}{p.barcode ? ` · ${p.barcode}` : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-mono text-xs text-slate-400">{m.products?.barcode ?? m.products?.internal_ref ?? "—"}</td>
                         <td className="px-3 py-2 font-bold"><span className={full ? "text-emerald-300" : "text-white"}>{cur}</span><span className="text-slate-500"> / {need}</span></td>
                       </tr>
