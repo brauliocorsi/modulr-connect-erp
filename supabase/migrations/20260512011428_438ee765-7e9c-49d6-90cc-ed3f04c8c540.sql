@@ -1,0 +1,1 @@
+ALTER TYPE app_module ADD VALUE IF NOT EXISTS 'barcode';
