@@ -17,7 +17,7 @@ type Pending = {
 export default function PutawayScan() {
   const nav = useNavigate();
   const [pending, setPending] = useState<Pending | null>(null);
-  const [history, setHistoryDone] = useState<{ name: string; loc: string; ts: number }[]>([]);
+  const [history, setHistoryDone] = useState<{ name: string; loc: string; ts: number; locId: string; pkgId: string | null }[]>([]);
 
   const handleScan = async (raw: string) => {
     const v = raw.trim();
