@@ -22,6 +22,7 @@ import { BomTab } from "./tabs/BomTab";
 import { StockTab } from "./tabs/StockTab";
 import { WooTab } from "./tabs/WooTab";
 import { ReorderingTab } from "./tabs/ReorderingTab";
+import { PackagesTab } from "./tabs/PackagesTab";
 
 export default function ProductForm() {
   const { id } = useParams();
