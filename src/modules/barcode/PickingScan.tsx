@@ -278,7 +278,12 @@ export default function PickingScan() {
               )}
               <table className="w-full text-sm">
                 <thead className="bg-slate-800/50 text-xs uppercase tracking-wider text-slate-400">
-                  <tr><th className="text-left px-3 py-2">Produto</th><th className="text-left px-3 py-2 w-32">Código</th><th className="text-left px-3 py-2 w-28">Feito / Pedido</th></tr>
+                  <tr>
+                    <th className="text-left px-3 py-2">Produto</th>
+                    <th className="text-left px-3 py-2">Local</th>
+                    <th className="text-left px-3 py-2 w-32">Código</th>
+                    <th className="text-left px-3 py-2 w-28">Feito / Pedido</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {moves.map((m) => {
@@ -287,18 +292,54 @@ export default function PickingScan() {
                     const full = cur >= need;
                     const pkgs = packagesByProduct[m.product_id] ?? [];
                     const scanned = scannedColis[m.id] ?? new Set<number>();
+                    const quants = quantsByProduct[m.product_id] ?? [];
+                    const quantsByPkg: Record<string, { location: string; qty: number }[]> = {};
+                    quants.forEach((q) => {
+                      const k = q.package_id ?? "__none__";
+                      (quantsByPkg[k] ||= []).push({ location: q.location, qty: q.qty });
+                    });
+                    const generalLocs = quantsByPkg["__none__"] ?? [];
                     return (
                       <tr key={m.id} className={`border-t border-slate-800 ${full ? "bg-emerald-950/40" : ""}`}>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2"><Package className="h-4 w-4 text-slate-500" />{m.products?.name}</div>
                           {pkgs.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1 pl-6">
-                              {pkgs.map((p) => (
-                                <span key={p.id} className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${scanned.has(p.sequence) ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-400"}`}>
-                                  {p.label}{p.barcode ? ` · ${p.barcode}` : ""}
+                            <div className="mt-1 space-y-1 pl-6">
+                              {pkgs.map((p) => {
+                                const locs = quantsByPkg[p.id] ?? [];
+                                return (
+                                  <div key={p.id} className="flex items-center gap-2 flex-wrap">
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${scanned.has(p.sequence) ? "bg-emerald-700 text-white" : "bg-slate-800 text-slate-400"}`}>
+                                      {p.label}{p.barcode ? ` · ${p.barcode}` : ""}
+                                    </span>
+                                    {locs.length > 0 ? (
+                                      locs.map((l, i) => (
+                                        <span key={i} className="text-[10px] font-mono text-fuchsia-300 inline-flex items-center gap-1">
+                                          <MapPin className="h-3 w-3" />{l.location} <span className="text-slate-500">({l.qty})</span>
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-[10px] text-slate-600">sem stock arrumado</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          {generalLocs.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {generalLocs.map((l, i) => (
+                                <span key={i} className="font-mono text-fuchsia-300 inline-flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />{l.location} <span className="text-slate-500">({l.qty})</span>
                                 </span>
                               ))}
                             </div>
+                          ) : pkgs.length === 0 ? (
+                            <span className="text-slate-600">—</span>
+                          ) : (
+                            <span className="text-slate-600 text-[10px]">ver colis</span>
                           )}
                         </td>
                         <td className="px-3 py-2 font-mono text-xs text-slate-400">{m.products?.barcode ?? m.products?.internal_ref ?? "—"}</td>
