@@ -73,17 +73,16 @@ export default function TransferForm() {
       .from("stock_moves")
       .select("*, products(name,tracking,uom_id, product_uom!products_uom_id_fkey(category)), product_variants(sku, product_variant_values(product_attribute_values(name)))")
       .eq("picking_id", id!);
+    const isEditable = (st: string) => st !== "done" && st !== "cancel";
     const hydrated = (m ?? []).map((mv: any) => {
-      // Default to ordered quantity only when nothing was set yet (null). Respect explicit 0.
-      const raw = mv.quantity_done;
-      const hasValue = raw !== null && raw !== undefined;
-      return hasValue ? mv : { ...mv, quantity_done: Number(mv.quantity || 0) };
+      // For non-finalized moves, always default "Feito" to the demanded quantity.
+      if (isEditable(mv.state)) return { ...mv, quantity_done: Number(mv.quantity || 0) };
+      return mv;
     });
     setMoves(hydrated);
-    // Persist auto-filled "done" quantity for non-finalized moves so the value is real, not just visual.
+    // Persist auto-filled "done" quantity so it's real, not just visual.
     const toPersist = (m ?? []).filter((mv: any) =>
-      (mv.quantity_done === null || mv.quantity_done === undefined) &&
-      mv.state !== "done" && mv.state !== "cancel"
+      isEditable(mv.state) && Number(mv.quantity_done || 0) !== Number(mv.quantity || 0)
     );
     if (toPersist.length > 0) {
       await Promise.all(toPersist.map((mv: any) =>
