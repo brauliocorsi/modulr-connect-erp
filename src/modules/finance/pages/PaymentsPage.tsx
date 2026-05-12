@@ -3,30 +3,174 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtMoney } from "@/lib/format";
+import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
+
+const isCashName = (n?: string) => {
+  const s = (n ?? "").toLowerCase();
+  return ["dinheiro", "cash", "numerário", "numerario"].some((c) => s.includes(c));
+};
+
+type ReconRow = {
+  id: string;                // cash_movements.id
+  session_id: string;
+  session_name: string;
+  register_name: string;
+  created_at: string;
+  amount: number;
+  method: string;
+  reference: string | null;
+  partner: string | null;
+  reconciled_at: string | null;
+  eligible: boolean;          // can be reconciled now
+  block_reason?: string;
+};
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [pending, setPending] = useState<any[]>([]);
+  const [recon, setRecon] = useState<ReconRow[]>([]);
+  const [reconFilter, setReconFilter] = useState<"pending" | "reconciled" | "all">("pending");
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("customer_payments")
-        .select("id,name,payment_date,amount,state,reference,partner_id,order_id, payment_methods(name), account_journals(name), partners(name), sale_orders(name)")
-        .order("payment_date", { ascending: false })
-        .limit(500);
-      setPayments(data ?? []);
+  const load = async () => {
+    const { data } = await supabase
+      .from("customer_payments")
+      .select("id,name,payment_date,amount,state,reference,partner_id,order_id, payment_methods(name), account_journals(name), partners(name), sale_orders(name)")
+      .order("payment_date", { ascending: false })
+      .limit(500);
+    setPayments(data ?? []);
 
-      const { data: sched } = await supabase
-        .from("sale_payment_schedules")
-        .select("id,label,due_kind,due_date,due_days,amount,paid_amount,state,order_id, sale_orders(id,name,partner_id, partners(name))")
-        .neq("state", "paid")
-        .order("created_at");
-      setPending(sched ?? []);
-    })();
-  }, []);
+    const { data: sched } = await supabase
+      .from("sale_payment_schedules")
+      .select("id,label,due_kind,due_date,due_days,amount,paid_amount,state,order_id, sale_orders(id,name,partner_id, partners(name))")
+      .neq("state", "paid")
+      .order("created_at");
+    setPending(sched ?? []);
+
+    // Cash movements grouped by session for reconciliation
+    const { data: moves } = await supabase
+      .from("cash_movements")
+      .select("id, session_id, kind, amount, reference, created_at, reconciled_at, partners(name), customer_payments(payment_methods(name)), cash_sessions(name, cash_registers(name))")
+      .in("kind", ["sale", "sangria", "withdrawal", "deposit", "cash_in"])
+      .order("created_at", { ascending: false })
+      .limit(1000);
+
+    const list = (moves ?? []) as any[];
+    // Compute eligibility: non-cash payments are always eligible.
+    // Cash sale/cash_in entries become eligible up to the absolute sum of sangrias/withdrawals in the same session.
+    const bySession = new Map<string, any[]>();
+    for (const m of list) {
+      const arr = bySession.get(m.session_id) ?? [];
+      arr.push(m);
+      bySession.set(m.session_id, arr);
+    }
+
+    const out: ReconRow[] = [];
+    for (const [sid, arr] of bySession) {
+      // Cash withdrawals available pool (positive number)
+      const sangriaPool = arr
+        .filter((m) => ["sangria", "withdrawal"].includes(m.kind))
+        .reduce((s, m) => s + Math.abs(Number(m.amount || 0)), 0);
+
+      // Sort cash sale entries by created_at to allocate sangria pool fifo
+      const cashEntries = arr
+        .filter((m) => isCashName(m.customer_payments?.payment_methods?.name) && Number(m.amount) > 0)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      let remainingPool = sangriaPool;
+      const cashEligibleIds = new Set<string>();
+      for (const c of cashEntries) {
+        const amt = Number(c.amount || 0);
+        if (remainingPool >= amt - 0.01) {
+          cashEligibleIds.add(c.id);
+          remainingPool -= amt;
+        }
+      }
+
+      for (const m of arr) {
+        const methodName = m.customer_payments?.payment_methods?.name
+          ?? (m.kind === "sangria" || m.kind === "withdrawal" ? "Sangria/Retirada" : "—");
+        const isCash = isCashName(methodName);
+        const isWithdrawal = ["sangria", "withdrawal"].includes(m.kind);
+        if (isWithdrawal) continue; // sangrias themselves are not items to conciliate; they unlock cash
+
+        let eligible = true;
+        let block_reason: string | undefined;
+        if (isCash) {
+          eligible = cashEligibleIds.has(m.id);
+          if (!eligible) block_reason = "Aguarda sangria de caixa";
+        }
+
+        out.push({
+          id: m.id,
+          session_id: sid,
+          session_name: m.cash_sessions?.name ?? "—",
+          register_name: m.cash_sessions?.cash_registers?.name ?? "—",
+          created_at: m.created_at,
+          amount: Number(m.amount || 0),
+          method: methodName,
+          reference: m.reference,
+          partner: m.partners?.name ?? null,
+          reconciled_at: m.reconciled_at,
+          eligible,
+          block_reason,
+        });
+      }
+    }
+    out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setRecon(out);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const reconcileOne = async (id: string) => {
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("cash_movements")
+      .update({ reconciled_at: new Date().toISOString(), reconciled_by: u.user?.id ?? null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Movimento conciliado");
+    load();
+  };
+
+  const undoReconcile = async (id: string) => {
+    const { error } = await supabase
+      .from("cash_movements")
+      .update({ reconciled_at: null, reconciled_by: null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Conciliação removida");
+    load();
+  };
+
+  const reconcileAllEligible = async () => {
+    const ids = recon.filter((r) => r.eligible && !r.reconciled_at).map((r) => r.id);
+    if (ids.length === 0) return toast.info("Nada elegível para conciliar");
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("cash_movements")
+      .update({ reconciled_at: new Date().toISOString(), reconciled_by: u.user?.id ?? null })
+      .in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} movimentos conciliados`);
+    load();
+  };
+
+  const filteredRecon = recon.filter((r) => {
+    if (reconFilter === "pending") return !r.reconciled_at;
+    if (reconFilter === "reconciled") return !!r.reconciled_at;
+    return true;
+  });
+
+  const reconCounts = {
+    pending: recon.filter((r) => !r.reconciled_at).length,
+    eligible: recon.filter((r) => r.eligible && !r.reconciled_at).length,
+    reconciled: recon.filter((r) => r.reconciled_at).length,
+  };
 
   return (
     <>
@@ -36,6 +180,7 @@ export default function PaymentsPage() {
           <TabsList>
             <TabsTrigger value="received">Recebidos ({payments.length})</TabsTrigger>
             <TabsTrigger value="pending">Por Receber ({pending.length})</TabsTrigger>
+            <TabsTrigger value="recon">Conciliação de caixa ({reconCounts.pending})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="received">
@@ -114,6 +259,79 @@ export default function PaymentsPage() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="recon">
+            <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
+              <div className="flex gap-1">
+                <Button size="sm" variant={reconFilter === "pending" ? "default" : "outline"} onClick={() => setReconFilter("pending")}>
+                  Pendentes ({reconCounts.pending})
+                </Button>
+                <Button size="sm" variant={reconFilter === "reconciled" ? "default" : "outline"} onClick={() => setReconFilter("reconciled")}>
+                  Conciliados ({reconCounts.reconciled})
+                </Button>
+                <Button size="sm" variant={reconFilter === "all" ? "default" : "outline"} onClick={() => setReconFilter("all")}>
+                  Todos ({recon.length})
+                </Button>
+              </div>
+              <div className="ml-auto text-sm text-muted-foreground">
+                <strong>{reconCounts.eligible}</strong> elegíveis (multibanco/cartão/transferência sempre; dinheiro só após sangria de caixa)
+              </div>
+              <Button size="sm" onClick={reconcileAllEligible} disabled={reconCounts.eligible === 0}>
+                <CheckCircle2 className="h-4 w-4 mr-1" /> Conciliar elegíveis
+              </Button>
+            </Card>
+
+            <Card>
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Data</th>
+                    <th className="text-left px-3 py-2">Sessão</th>
+                    <th className="text-left px-3 py-2">Caixa</th>
+                    <th className="text-left px-3 py-2">Método</th>
+                    <th className="text-left px-3 py-2">Cliente / Ref.</th>
+                    <th className="text-right px-3 py-2">Valor</th>
+                    <th className="text-left px-3 py-2 w-44">Estado</th>
+                    <th className="text-right px-3 py-2 w-32"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecon.length === 0 ? (
+                    <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                  ) : filteredRecon.map((r) => (
+                    <tr key={r.id} className="border-t">
+                      <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{r.session_name}</td>
+                      <td className="px-3 py-2">{r.register_name}</td>
+                      <td className="px-3 py-2">{r.method}</td>
+                      <td className="px-3 py-2">{r.partner ?? r.reference ?? "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.amount)}</td>
+                      <td className="px-3 py-2">
+                        {r.reconciled_at ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                            <CheckCircle2 className="h-3 w-3" /> Conciliado
+                          </span>
+                        ) : r.eligible ? (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200">Elegível</span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" title={r.block_reason}>
+                            {r.block_reason ?? "Bloqueado"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {r.reconciled_at ? (
+                          <Button size="sm" variant="ghost" onClick={() => undoReconcile(r.id)}>Reabrir</Button>
+                        ) : (
+                          <Button size="sm" disabled={!r.eligible} onClick={() => reconcileOne(r.id)}>Conciliar</Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </Card>
