@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { ChevronRight, ChevronDown, Folder, Box, Plus, Printer, List as ListIcon, Network } from "lucide-react";
+import { ChevronRight, ChevronDown, Folder, Box, Plus, Printer, List as ListIcon, Network, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
+import PutawayDialog from "@/modules/inventory/PutawayDialog";
 
 type Loc = {
   id: string;
@@ -133,6 +134,13 @@ export default function LocationsTreePage() {
             {loc.barcode && <span className="ml-2 font-mono text-xs text-muted-foreground">{loc.barcode}</span>}
             {!loc.active && <span className="ml-2 text-xs text-muted-foreground">(inativo)</span>}
           </Link>
+          {loc.is_bin && (
+            <PutawayDialog
+              locationId={loc.id}
+              locationLabel={loc.full_path ?? loc.name}
+              trigger={<Button size="sm" variant="ghost" className="h-7 px-2 text-xs" title="Arrumar produto neste bin"><PackagePlus className="h-3 w-3 mr-1" /> Arrumar</Button>}
+            />
+          )}
           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openGenerator(loc)} title="Gerar bins filhos">
             <Plus className="h-3 w-3 mr-1" /> Bins
           </Button>

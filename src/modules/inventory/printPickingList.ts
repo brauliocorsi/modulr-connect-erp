@@ -58,13 +58,31 @@ export async function printPickingList(pickingId: string) {
   const { data: packages } = productIds.length
     ? await supabase
         .from("product_packages")
-        .select("product_id, sequence, label, barcode")
+        .select("id, product_id, sequence, label, barcode")
         .in("product_id", productIds)
         .order("sequence", { ascending: true })
     : { data: [] as any[] };
   const packagesByProduct: Record<string, any[]> = {};
   (packages ?? []).forEach((p: any) => {
     (packagesByProduct[p.product_id] ||= []).push(p);
+  });
+
+  // Fetch live quants to know WHERE the stock currently is
+  const { data: quants } = productIds.length
+    ? await supabase
+        .from("stock_quants")
+        .select("product_id, package_id, quantity, stock_locations!inner(name, full_path, type, is_bin, barcode)")
+        .in("product_id", productIds)
+        .gt("quantity", 0)
+    : { data: [] as any[] };
+  const binsByProduct: Record<string, { label: string; qty: number; barcode: string | null }[]> = {};
+  const binsByPackage: Record<string, { label: string; qty: number; barcode: string | null }[]> = {};
+  (quants ?? []).forEach((q: any) => {
+    const loc = q.stock_locations;
+    if (!loc || loc.type !== "internal") return;
+    const entry = { label: loc.full_path ?? loc.name, qty: Number(q.quantity), barcode: loc.barcode ?? null };
+    if (q.package_id) (binsByPackage[q.package_id] ||= []).push(entry);
+    else (binsByProduct[q.product_id] ||= []).push(entry);
   });
 
   const { data: company } = await supabase
@@ -91,19 +109,32 @@ export async function printPickingList(pickingId: string) {
         ? `<div class="colis">
             <div class="colis-title">Colis a apanhar (${pkgs.length} por unidade × ${qty} = ${pkgs.length * qty})</div>
             <table class="colis-tbl">
-              <thead><tr><th>#</th><th>Etiqueta</th><th>Código de barras</th><th class="check">✓</th></tr></thead>
+              <thead><tr><th>#</th><th>Etiqueta</th><th>Local</th><th>Código de barras</th><th class="check">✓</th></tr></thead>
               <tbody>
-                ${pkgs.map((p: any) => `
+                ${pkgs.map((p: any) => {
+                  const locs = binsByPackage[p.id] ?? [];
+                  const locCell = locs.length
+                    ? locs.map((b) => `<div>${esc(b.label)} <span class="muted">(${b.qty})</span>${b.barcode ? `<div class="bc-mini">${barcodeSvg(b.barcode)}</div>` : ""}</div>`).join("")
+                    : '<span class="muted">—</span>';
+                  return `
                   <tr>
                     <td class="num">${p.sequence}</td>
                     <td>${esc(p.label)}</td>
+                    <td class="loc-cell">${locCell}</td>
                     <td class="bc-cell">${p.barcode ? barcodeSvg(p.barcode) : '<span class="muted">—</span>'}</td>
                     <td class="check">${Array.from({ length: qty }).map(() => '<span class="checkbox-sm"></span>').join("")}</td>
-                  </tr>`).join("")}
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
           </div>`
         : "";
+      const productBins = binsByProduct[m.product_id] ?? [];
+      const locMain = pkgs.length === 0 && productBins.length
+        ? productBins.map((b) => `<div>${esc(b.label)} <span class="muted">(${b.qty})</span></div>`).join("")
+        : pkgs.length > 0
+          ? '<span class="muted">ver colis</span>'
+          : '<span class="muted">—</span>';
       return `
       <tr>
         <td class="num">${i + 1}</td>
@@ -114,6 +145,7 @@ export async function printPickingList(pickingId: string) {
           ${m.stock_lots?.name ? `<div class="muted">Lote: ${esc(m.stock_lots.name)}</div>` : ""}
           ${colisBlock}
         </td>
+        <td class="loc-cell">${locMain}</td>
         <td class="barcode">${code ? barcodeSvg(code) : '<span class="muted">—</span>'}</td>
         <td class="num">${qty}</td>
         <td class="num">${Number(m.quantity_done ?? 0)}</td>
@@ -174,6 +206,9 @@ export async function printPickingList(pickingId: string) {
   .colis-tbl th { background: #efefef; font-size: 9px; }
   .bc-cell { width: 180px; }
   .bc-cell svg { width: 100%; height: 36px; }
+  .loc-col { width: 160px; }
+  .loc-cell { font-size: 11px; font-family: monospace; }
+  .bc-mini svg { width: 120px; height: 24px; }
   .checkbox-sm { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #111; border-radius: 2px; margin: 0 2px 0 0; vertical-align: middle; }
 </style>
 </head><body>
@@ -210,13 +245,14 @@ export async function printPickingList(pickingId: string) {
       <tr>
         <th class="num">#</th>
         <th>Produto</th>
+        <th class="loc-col">Local</th>
         <th class="barcode">Código de barras</th>
         <th class="num">Pedido</th>
         <th class="num">Feito</th>
         <th class="check">✓</th>
       </tr>
     </thead>
-    <tbody>${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:#666;padding:16px">Sem movimentos</td></tr>`}</tbody>
+    <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:#666;padding:16px">Sem movimentos</td></tr>`}</tbody>
   </table>
 
   ${""}
