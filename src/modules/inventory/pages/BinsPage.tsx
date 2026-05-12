@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Box, Package } from "lucide-react";
+import PutawayDialog from "@/modules/inventory/PutawayDialog";
+import { Button } from "@/components/ui/button";
 
 type Row = {
   id: string;
@@ -91,6 +93,9 @@ export default function BinsPage() {
                   <Box className="h-4 w-4 text-amber-600" />
                   <Link to={`/inventory/locations/${id}`} className="font-semibold hover:underline">{loc?.full_path ?? loc?.name}</Link>
                   {loc?.barcode && <span className="font-mono text-xs text-muted-foreground">{loc.barcode}</span>}
+                  <div className="ml-auto">
+                    <PutawayDialog locationId={id} locationLabel={loc?.full_path ?? loc?.name} onDone={load} />
+                  </div>
                 </div>
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">

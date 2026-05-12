@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Package, Warehouse as WarehouseIcon } from "lucide-react";
 import { toast } from "sonner";
+import PutawayDialog from "@/modules/inventory/PutawayDialog";
 
 type Quant = {
   variant_id: string | null;
@@ -161,7 +162,10 @@ export function StockTab({ productId }: { productId: string }) {
 
       {/* Set stock */}
       <Card className="p-4 space-y-3">
-        <div className="font-semibold text-sm">Definir stock</div>
+        <div className="flex items-center justify-between">
+          <div className="font-semibold text-sm">Definir stock</div>
+          <PutawayDialog productId={productId} onDone={load} />
+        </div>
         <div className="grid sm:grid-cols-[1fr_120px_1fr_auto] gap-2 items-end">
           <div>
             <div className="text-xs text-muted-foreground mb-1">Armazém</div>
