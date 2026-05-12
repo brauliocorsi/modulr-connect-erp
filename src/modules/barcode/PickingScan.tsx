@@ -75,16 +75,35 @@ export default function PickingScan() {
     setMoves(movesData);
     const pids = Array.from(new Set(movesData.map((mv) => mv.product_id).filter(Boolean)));
     if (pids.length) {
-      const { data: pkgs } = await supabase
-        .from("product_packages")
-        .select("id,product_id,sequence,label,barcode")
-        .in("product_id", pids)
-        .order("sequence", { ascending: true });
+      const [{ data: pkgs }, { data: quants }] = await Promise.all([
+        supabase
+          .from("product_packages")
+          .select("id,product_id,sequence,label,barcode")
+          .in("product_id", pids)
+          .order("sequence", { ascending: true }),
+        supabase
+          .from("stock_quants")
+          .select("product_id,package_id,quantity,stock_locations!inner(full_path,name,type,is_bin)")
+          .in("product_id", pids)
+          .gt("quantity", 0),
+      ]);
       const map: Record<string, any[]> = {};
       (pkgs ?? []).forEach((pk: any) => { (map[pk.product_id] ||= []).push(pk); });
       setPackagesByProduct(map);
+      const qmap: Record<string, { location: string; package_id: string | null; qty: number }[]> = {};
+      ((quants ?? []) as any[]).forEach((q) => {
+        const loc = q.stock_locations;
+        if (!loc || loc.type !== "internal" || !loc.is_bin) return;
+        (qmap[q.product_id] ||= []).push({
+          location: loc.full_path ?? loc.name,
+          package_id: q.package_id,
+          qty: Number(q.quantity),
+        });
+      });
+      setQuantsByProduct(qmap);
     } else {
       setPackagesByProduct({});
+      setQuantsByProduct({});
     }
   };
 
