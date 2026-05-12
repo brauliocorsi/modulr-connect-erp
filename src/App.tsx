@@ -75,6 +75,7 @@ import BatchScan from "@/modules/barcode/BatchScan";
 import WaveScan from "@/modules/barcode/WaveScan";
 import ProductLookup from "@/modules/barcode/ProductLookup";
 import LocationLookup from "@/modules/barcode/LocationLookup";
+import PutawayScan from "@/modules/barcode/PutawayScan";
 import VehiclesList from "@/modules/inventory/pages/VehiclesList";
 import VehicleForm from "@/modules/inventory/pages/VehicleForm";
 import CarriersList from "@/modules/inventory/pages/CarriersList";
@@ -138,6 +139,7 @@ const App = () => (
                 <Route path="waves" element={<WaveScan />} />
                 <Route path="lookup/product" element={<ProductLookup />} />
                 <Route path="lookup/location" element={<LocationLookup />} />
+                <Route path="putaway" element={<PutawayScan />} />
               </Route>
 
               {/* Products */}

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Layers, Waves, Package, MapPin, ClipboardCheck, Printer } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Layers, Waves, Package, MapPin, ClipboardCheck, Printer, PackagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { printCommandBarcodes, printLocationBarcodes } from "./printBarcodes";
 
@@ -9,6 +9,7 @@ const TILES = [
   { to: "/barcode/op/outgoing", label: "Expedição", desc: "Envios para clientes", icon: ArrowUpFromLine, color: "from-sky-500 to-sky-700" },
   { to: "/barcode/op/internal", label: "Transferência interna", desc: "Movimentos entre locais", icon: ArrowLeftRight, color: "from-indigo-500 to-indigo-700" },
   { to: "/barcode/op/all", label: "Picking", desc: "Qualquer transferência", icon: ClipboardCheck, color: "from-violet-500 to-violet-700" },
+  { to: "/barcode/putaway", label: "Arrumar", desc: "Colis/produto → bin", icon: PackagePlus, color: "from-orange-500 to-orange-700" },
   { to: "/barcode/batches", label: "Lote (Batch)", desc: "Várias transferências", icon: Layers, color: "from-amber-500 to-amber-700" },
   { to: "/barcode/waves", label: "Onda (Wave)", desc: "Movimentos agrupados", icon: Waves, color: "from-cyan-500 to-cyan-700" },
   { to: "/barcode/lookup/product", label: "Consultar produto", desc: "Stock e localizações", icon: Package, color: "from-rose-500 to-rose-700" },
