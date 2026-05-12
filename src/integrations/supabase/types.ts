@@ -4316,6 +4316,7 @@ export type Database = {
         | "discuss"
         | "delivery"
         | "routes"
+        | "barcode"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -4478,6 +4479,7 @@ export const Constants = {
         "discuss",
         "delivery",
         "routes",
+        "barcode",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
