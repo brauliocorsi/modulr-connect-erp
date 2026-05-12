@@ -120,6 +120,40 @@ export default function PickingScan() {
       return log(`Local ativo: ${loc.full_path ?? loc.name}`, "info");
     }
 
+    // Colis (product_packages) scan
+    const { data: pkg } = await supabase
+      .from("product_packages")
+      .select("id,product_id,sequence,label,barcode")
+      .eq("barcode", v)
+      .maybeSingle();
+    if (pkg) {
+      const move = moves.find((m) => m.product_id === pkg.product_id);
+      if (!move) return log(`Colis "${pkg.label}" pertence a produto fora desta transferência`, "error");
+      if (activeLocation && move.source_location_id !== activeLocation.id && move.destination_location_id !== activeLocation.id) {
+        return log(`${move.products?.name} não pertence ao local ativo`, "error");
+      }
+      if (move.state === "done" || move.state === "cancelled") return log(`${move.products?.name} já concluído`, "warn");
+      const cur = Number(move.quantity_done ?? 0);
+      const max = Number(move.quantity);
+      if (cur >= max) return log(`${move.products?.name}: já completo ${max}/${max}`, "warn");
+      const totalSeq = (packagesByProduct[pkg.product_id] ?? []).length || 1;
+      const set = new Set(scannedColis[move.id] ?? []);
+      if (set.has(pkg.sequence)) return log(`Colis ${pkg.label} já bipado para esta unidade`, "warn");
+      set.add(pkg.sequence);
+      if (set.size >= totalSeq) {
+        const next = cur + 1;
+        const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", move.id);
+        if (error) return log(error.message, "error");
+        setMoves((ms) => ms.map((m) => (m.id === move.id ? { ...m, quantity_done: next } : m)));
+        setScannedColis((s) => ({ ...s, [move.id]: new Set() }));
+        log(`✓ Unidade completa de ${move.products?.name} (${next}/${max})`, "ok");
+      } else {
+        setScannedColis((s) => ({ ...s, [move.id]: set }));
+        log(`+ Colis ${pkg.label} (${set.size}/${totalSeq}) — ${move.products?.name}`, "info");
+      }
+      return;
+    }
+
     // Product scan
     const candidate = moves.find((m) => m.products?.barcode === v) ||
                       moves.find((m) => m.products?.internal_ref === v) ||
@@ -143,6 +177,10 @@ export default function PickingScan() {
     const cur = Number(candidate.quantity_done ?? 0);
     const max = Number(candidate.quantity);
     if (cur >= max) return log(`${candidate.products?.name}: já bipou ${max}/${max}`, "warn");
+    // If product has colis defined, force colis scanning
+    if ((packagesByProduct[candidate.product_id] ?? []).length > 0) {
+      return log(`${candidate.products?.name} requer scan dos colis (não use o código do produto)`, "warn");
+    }
     const next = cur + 1;
     const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", candidate.id);
     if (error) return log(error.message, "error");
