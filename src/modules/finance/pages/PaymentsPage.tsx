@@ -365,6 +365,40 @@ export default function PaymentsPage() {
               </Button>
             </Card>
 
+            {sessionSummaries.length > 0 && (
+              <Card className="p-3 mb-3">
+                <div className="text-sm font-semibold mb-2">Cruzamento por sessão (dinheiro vs sangria)</div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40">
+                      <tr>
+                        <th className="text-left px-3 py-2">Sessão</th>
+                        <th className="text-left px-3 py-2">Caixa</th>
+                        <th className="text-right px-3 py-2">Vendas em dinheiro</th>
+                        <th className="text-right px-3 py-2">Sangrias / Retiradas</th>
+                        <th className="text-right px-3 py-2">Dinheiro elegível</th>
+                        <th className="text-right px-3 py-2">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sessionSummaries.map((s) => (
+                        <tr key={s.session_id} className="border-t">
+                          <td className="px-3 py-2 font-mono text-xs">{s.session_name}</td>
+                          <td className="px-3 py-2">{s.register_name}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.cashSales)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.sangria)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.eligibleCash)}</td>
+                          <td className={`px-3 py-2 text-right tabular-nums font-semibold ${Math.abs(s.diff) < 0.01 ? "text-emerald-600" : "text-amber-600"}`}>
+                            {fmtMoney(s.diff)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
             <Card>
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
