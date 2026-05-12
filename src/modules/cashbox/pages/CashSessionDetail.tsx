@@ -105,12 +105,13 @@ export default function CashSessionDetail() {
         }
       />
       <PageBody>
-        <Card className="p-4 grid grid-cols-2 sm:grid-cols-6 gap-4 mb-4">
+        <Card className="p-4 grid grid-cols-2 sm:grid-cols-7 gap-4 mb-4">
           <Stat label="Aberta por" value={openerName || "—"} />
           <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
           <Stat label="Abertura" value={fmtMoney(sess.opening_balance)} />
           <Stat label="Entradas" value={fmtMoney(totalIn)} tone="emerald" />
           <Stat label="Saídas" value={fmtMoney(totalOut)} tone="rose" />
+          <Stat label="Dinheiro" value={fmtMoney(cashTotal)} tone="emerald" />
           <Stat label="Saldo atual" value={fmtMoney(balance)} />
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
