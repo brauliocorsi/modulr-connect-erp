@@ -57,11 +57,20 @@ export default function PickingScan() {
     setPicking(p);
     setActiveLocation(null);
     setScannedColis({});
+    // Reset quantity_done to 0 in DB so the operator must re-confirm every unit by scanning
+    await supabase
+      .from("stock_moves")
+      .update({ quantity_done: 0 })
+      .eq("picking_id", id)
+      .not("state", "in", "(done,cancelled)");
     const { data: m } = await supabase
       .from("stock_moves")
       .select("id,product_id,quantity,quantity_done,state,source_location_id,destination_location_id,products(name,barcode,internal_ref)")
       .eq("picking_id", id);
-    const movesData = (m as any[]) ?? [];
+    const movesData = ((m as any[]) ?? []).map((mv) => ({
+      ...mv,
+      quantity_done: mv.state === "done" || mv.state === "cancelled" ? mv.quantity_done : 0,
+    }));
     setMoves(movesData);
     const pids = Array.from(new Set(movesData.map((mv) => mv.product_id).filter(Boolean)));
     if (pids.length) {
