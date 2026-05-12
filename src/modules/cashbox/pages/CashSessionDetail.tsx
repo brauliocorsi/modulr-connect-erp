@@ -29,6 +29,8 @@ export default function CashSessionDetail() {
 
   const [openerName, setOpenerName] = useState<string>("");
 
+  const [reconcile, setReconcile] = useState<any[]>([]);
+
   const load = async () => {
     const { data: s } = await supabase
       .from("cash_sessions")
@@ -46,6 +48,18 @@ export default function CashSessionDetail() {
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
+    if (s?.opened_at && s?.opened_by) {
+      const fromIso = s.opened_at;
+      const toIso = s.closed_at ?? new Date().toISOString();
+      const { data: pays } = await supabase
+        .from("customer_payments")
+        .select("id, amount, created_at, reference, name, payment_methods!inner(name, feeds_cash_session)")
+        .eq("state", "posted")
+        .eq("created_by", s.opened_by)
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso);
+      setReconcile((pays ?? []).filter((p: any) => p.payment_methods?.feeds_cash_session === false));
+    } else setReconcile([]);
   };
 
   const methodTotals = (() => {
@@ -109,12 +123,30 @@ export default function CashSessionDetail() {
           <Stat label="Aberta por" value={openerName || "—"} />
           <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
           <Stat label="Abertura" value={fmtMoney(sess.opening_balance)} />
-          <Stat label="Entradas" value={fmtMoney(totalIn)} tone="emerald" />
+          <Stat label="Entradas em dinheiro" value={fmtMoney(totalIn)} tone="emerald" />
           <Stat label="Saídas" value={fmtMoney(totalOut)} tone="rose" />
-          <Stat label="Dinheiro" value={fmtMoney(cashTotal)} tone="emerald" />
-          <Stat label="Saldo atual" value={fmtMoney(balance)} />
+          <Stat label="Dinheiro em caixa" value={fmtMoney(balance)} />
+          <Stat label="Para conciliação" value={fmtMoney(reconcile.reduce((s, p) => s + Number(p.amount || 0), 0))} tone="muted" />
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
+
+        {reconcile.length > 0 && (
+          <Card className="p-4 mb-4">
+            <div className="text-sm font-semibold mb-3">A enviar para conciliação financeira (cartão / multibanco / transferência)</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(reconcile.reduce((acc: Record<string, number>, p: any) => {
+                const name = p.payment_methods?.name ?? "—";
+                acc[name] = (acc[name] ?? 0) + Number(p.amount || 0);
+                return acc;
+              }, {})).map(([name, total]) => (
+                <div key={name} className="rounded-md border bg-muted/30 px-3 py-2 min-w-[140px]">
+                  <div className="text-xs text-muted-foreground">{name}</div>
+                  <div className="text-base font-semibold tabular-nums">{fmtMoney(total as number)}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-4 mb-4">
           <div className="text-sm font-semibold mb-3">Por forma de pagamento</div>
