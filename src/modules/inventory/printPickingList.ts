@@ -51,8 +51,21 @@ export async function printPickingList(pickingId: string) {
 
   const { data: moves } = await supabase
     .from("stock_moves")
-    .select("quantity, quantity_done, state, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
+    .select("quantity, quantity_done, state, product_id, products(name, internal_ref, barcode), product_variants(sku, barcode, product_variant_values(product_attribute_values(name))), stock_lots(name)")
     .eq("picking_id", pickingId);
+
+  const productIds = Array.from(new Set((moves ?? []).map((m: any) => m.product_id).filter(Boolean)));
+  const { data: packages } = productIds.length
+    ? await supabase
+        .from("product_packages")
+        .select("product_id, sequence, label, barcode")
+        .in("product_id", productIds)
+        .order("sequence", { ascending: true })
+    : { data: [] as any[] };
+  const packagesByProduct: Record<string, any[]> = {};
+  (packages ?? []).forEach((p: any) => {
+    (packagesByProduct[p.product_id] ||= []).push(p);
+  });
 
   const { data: company } = await supabase
     .from("companies")
