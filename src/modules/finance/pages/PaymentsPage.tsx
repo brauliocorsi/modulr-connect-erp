@@ -15,7 +15,7 @@ const isCashName = (n?: string) => {
 };
 
 type ReconRow = {
-  id: string;                // cash_movements.id
+  id: string;
   session_id: string;
   session_name: string;
   register_name: string;
@@ -25,8 +25,20 @@ type ReconRow = {
   reference: string | null;
   partner: string | null;
   reconciled_at: string | null;
-  eligible: boolean;          // can be reconciled now
+  eligible: boolean;
   block_reason?: string;
+  kind: string;
+  is_withdrawal: boolean;
+};
+
+type SessionSummary = {
+  session_id: string;
+  session_name: string;
+  register_name: string;
+  cashSales: number;
+  sangria: number;
+  eligibleCash: number;
+  diff: number;
 };
 
 export default function PaymentsPage() {
