@@ -128,37 +128,55 @@ export default function PaymentsPage() {
     }
 
     const out: ReconRow[] = [];
+    const summaries: SessionSummary[] = [];
     for (const [sid, arr] of bySession) {
       // Cash withdrawals available pool (positive number)
       const sangriaPool = arr
         .filter((m) => ["sangria", "withdrawal"].includes(m.kind))
         .reduce((s, m) => s + Math.abs(Number(m.amount || 0)), 0);
 
-      // Sort cash sale entries by created_at to allocate sangria pool fifo
+      // Sort cash sale entries by created_at to allocate sangria pool FIFO
       const cashEntries = arr
-        .filter((m) => isCashName(m.__method?.name) && Number(m.amount) > 0)
+        .filter((m) => isCashName(m.__method?.name) && Number(m.amount) > 0 && !["sangria","withdrawal"].includes(m.kind))
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      const cashSalesTotal = cashEntries.reduce((s, m) => s + Number(m.amount || 0), 0);
 
       let remainingPool = sangriaPool;
       const cashEligibleIds = new Set<string>();
+      let eligibleCashTotal = 0;
       for (const c of cashEntries) {
         const amt = Number(c.amount || 0);
         if (remainingPool >= amt - 0.01) {
           cashEligibleIds.add(c.id);
           remainingPool -= amt;
+          eligibleCashTotal += amt;
         }
       }
 
+      const firstSess = arr.find((m) => m.__session) ?? arr[0];
+      summaries.push({
+        session_id: sid,
+        session_name: firstSess?.__session?.name ?? "—",
+        register_name: firstSess?.__register?.name ?? "—",
+        cashSales: cashSalesTotal,
+        sangria: sangriaPool,
+        eligibleCash: eligibleCashTotal,
+        diff: cashSalesTotal - sangriaPool,
+      });
+
       for (const m of arr) {
-        const methodName = m.__method?.name
-          ?? (m.kind === "sangria" || m.kind === "withdrawal" ? "Sangria/Retirada" : "—");
-        const isCash = isCashName(methodName);
         const isWithdrawal = ["sangria", "withdrawal"].includes(m.kind);
-        if (isWithdrawal) continue;
+        const methodName = m.__method?.name
+          ?? (isWithdrawal ? "Sangria/Retirada" : "—");
+        const isCash = isCashName(methodName) || isWithdrawal;
 
         let eligible = true;
         let block_reason: string | undefined;
-        if (isCash) {
+        if (isWithdrawal) {
+          // Sangrias are themselves financial movements that go to reconciliation (they unlock cash)
+          eligible = true;
+        } else if (isCash) {
           eligible = cashEligibleIds.has(m.id);
           if (!eligible) block_reason = "Aguarda sangria de caixa";
         }
@@ -176,11 +194,14 @@ export default function PaymentsPage() {
           reconciled_at: m.reconciled_at,
           eligible,
           block_reason,
+          kind: m.kind,
+          is_withdrawal: isWithdrawal,
         });
       }
     }
     out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setRecon(out);
+    setSessionSummaries(summaries.sort((a, b) => a.session_name.localeCompare(b.session_name)));
   };
 
   useEffect(() => { load(); }, []);
