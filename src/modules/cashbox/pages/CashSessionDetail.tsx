@@ -140,13 +140,13 @@ export default function CashSessionDetail() {
           {!isOpen && <Stat label="Diferença" value={fmtMoney(sess.difference ?? 0)} tone={Number(sess.difference) === 0 ? "muted" : "rose"} />}
         </Card>
 
-        {reconcile.length > 0 && (
+        {nonCashMoves.length > 0 && (
           <Card className="p-4 mb-4">
             <div className="text-sm font-semibold mb-3">A enviar para conciliação financeira (cartão / multibanco / transferência)</div>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(reconcile.reduce((acc: Record<string, number>, p: any) => {
-                const name = p.payment_methods?.name ?? "—";
-                acc[name] = (acc[name] ?? 0) + Number(p.amount || 0);
+              {Object.entries(nonCashMoves.reduce((acc: Record<string, number>, m: any) => {
+                const name = m.customer_payments?.payment_methods?.name ?? "—";
+                acc[name] = (acc[name] ?? 0) + Number(m.amount || 0);
                 return acc;
               }, {})).map(([name, total]) => (
                 <div key={name} className="rounded-md border bg-muted/30 px-3 py-2 min-w-[140px]">
@@ -177,7 +177,17 @@ export default function CashSessionDetail() {
         </Card>
 
         <Card>
-          <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
+          <div className="px-4 py-3 border-b font-semibold flex items-center justify-between gap-3">
+            <span>Movimentos</span>
+            <select
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+              className="h-8 rounded-md border bg-background px-2 text-sm"
+            >
+              <option value="all">Todas as formas</option>
+              {methodNames.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40">
@@ -191,9 +201,9 @@ export default function CashSessionDetail() {
                 </tr>
               </thead>
               <tbody>
-                {moves.length === 0 ? (
+                {filteredMoves.length === 0 ? (
                   <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
-                ) : moves.map((m) => (
+                ) : filteredMoves.map((m) => (
                   <tr key={m.id} className="border-t">
                     <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
                     <td className="px-3 py-2">{KIND_LABEL[m.kind] ?? m.kind}</td>
