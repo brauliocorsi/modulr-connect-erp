@@ -38,7 +38,9 @@ export default function CashRegistersList() {
     driver_employee_id: "",
   });
   const [linkOpen, setLinkOpen] = useState(false);
-  const [linkForm, setLinkForm] = useState({ email: "", password: "" });
+  const [linkMode, setLinkMode] = useState<"existing" | "new">("existing");
+  const [linkForm, setLinkForm] = useState({ email: "", password: "", existing_user_id: "" });
+  const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
   const [linking, setLinking] = useState(false);
 
   const load = async () => {
