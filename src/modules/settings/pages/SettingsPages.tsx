@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ListView } from "@/core/layout/ListView";
+import { SimpleForm } from "@/core/layout/SimpleForm";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
@@ -152,12 +153,27 @@ function CreateUserDialog() {
   );
 }
 
+export const UserForm = () => (
+  <SimpleForm
+    table="profiles"
+    title="Usuário"
+    basePath="/settings/users"
+    breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
+    fields={[
+      { name: "full_name", label: "Nome completo" },
+      { name: "job_title", label: "Cargo" },
+      { name: "active", label: "Ativo", type: "boolean", default: true },
+    ]}
+  />
+);
+
 export const UsersSettings = () => (
   <ListView
     title="Usuários"
     breadcrumb={[{ label: "Configurações" }, { label: "Usuários" }]}
     table="profiles"
     searchColumn="full_name"
+    rowLink={(r: any) => `/settings/users/${r.id}`}
     actions={<CreateUserDialog />}
     columns={[
       { key: "full_name", header: "Nome" },
