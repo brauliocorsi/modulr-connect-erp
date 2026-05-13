@@ -100,7 +100,7 @@ export default function BatchScan() {
     <ScanLayout
       title="Lote (Batch)"
       subtitle={batch ? `${batch.name}` : "Bipe o código de um lote"}
-      actions={batch ? (
+      actions={batch && batch.state !== "done" && batch.state !== "cancelled" ? (
         <>
           <button onClick={() => { setBatch(null); setAgg([]); }} className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm"><X className="inline h-4 w-4 mr-1" />Fechar</button>
           <button onClick={validate} className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold"><CheckCircle2 className="inline h-4 w-4 mr-1" />Validar lote</button>
