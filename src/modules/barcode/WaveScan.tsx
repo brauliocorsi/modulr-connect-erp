@@ -17,7 +17,7 @@ export default function WaveScan() {
   useEffect(() => { loadPending(); }, []);
 
   const openWave = async (id: string) => {
-    const { data: w } = await supabase.from("stock_picking_waves").select("*").eq("id", id).maybeSingle();
+    const { data: w } = await supabase.from("stock_picking_waves").select("*,updated_at").eq("id", id).maybeSingle();
     if (!w) return;
     setWave(w);
     const { data: ms } = await supabase

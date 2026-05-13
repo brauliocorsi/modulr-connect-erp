@@ -32,7 +32,7 @@ export default function BatchScan() {
   useEffect(() => { loadPending(); }, []);
 
   const openBatch = async (id: string) => {
-    const { data: b } = await supabase.from("stock_picking_batches").select("*").eq("id", id).maybeSingle();
+    const { data: b } = await supabase.from("stock_picking_batches").select("*,updated_at").eq("id", id).maybeSingle();
     if (!b) return;
     setBatch(b);
     const { data: ps } = await supabase.from("stock_pickings").select("id").eq("batch_id", id);
