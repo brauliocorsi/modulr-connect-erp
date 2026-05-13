@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Wallet, Truck, Store } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Wallet, Truck, Store, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 
@@ -36,6 +37,9 @@ export default function CashRegistersList() {
     department_id: "",
     driver_employee_id: "",
   });
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkForm, setLinkForm] = useState({ email: "", password: "" });
+  const [linking, setLinking] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -113,6 +117,43 @@ export default function CashRegistersList() {
       driver_employee_id: employeeId,
       name: f.name || (emp ? `Caixa ${emp.full_name}` : ""),
     }));
+  };
+
+  const selectedDriver = useMemo(() => users.find((u) => u.id === form.driver_employee_id), [users, form.driver_employee_id]);
+
+  const linkUser = async () => {
+    if (!selectedDriver) return;
+    if (!linkForm.email.trim() || !linkForm.password.trim()) return toast.error("Preencha email e password");
+    setLinking(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          email: linkForm.email.trim(),
+          password: linkForm.password,
+          full_name: selectedDriver.full_name,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || "Erro ao criar utilizador");
+      const newUserId = result.user_id;
+      const { error: updErr } = await supabase.from("hr_employees").update({ user_id: newUserId }).eq("id", selectedDriver.id);
+      if (updErr) throw updErr;
+      setUsers((prev) => prev.map((u) => (u.id === selectedDriver.id ? { ...u, user_id: newUserId } : u)));
+      setForm((f) => ({ ...f, driver_employee_id: selectedDriver.id }));
+      setLinkOpen(false);
+      setLinkForm({ email: "", password: "" });
+      toast.success("Utilizador criado e associado ao funcionário");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao associar utilizador");
+    } finally {
+      setLinking(false);
+    }
   };
 
   const create = async () => {
@@ -314,6 +355,16 @@ export default function CashRegistersList() {
                     </Select>
                   </div>
                 </div>
+                {selectedDriver && !selectedDriver.user_id && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                      <span className="text-xs">Este funcionário não tem utilizador associado.</span>
+                      <Button size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+                        <UserPlus className="h-3.5 w-3.5 mr-1" /> Associar utilizador
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   Será criado automaticamente um diário de caixa dedicado ao entregador, pronto para abertura e fecho de sessão.
                 </div>
@@ -323,6 +374,38 @@ export default function CashRegistersList() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={create}>Criar Caixa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Associar utilizador a {selectedDriver?.full_name ?? "funcionário"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label>Email <span className="text-destructive">*</span></Label>
+              <Input
+                type="email"
+                value={linkForm.email}
+                onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="exemplo@email.com"
+              />
+            </div>
+            <div>
+              <Label>Password <span className="text-destructive">*</span></Label>
+              <Input
+                type="password"
+                value={linkForm.password}
+                onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setLinkOpen(false)}>Cancelar</Button>
+            <Button onClick={linkUser} disabled={linking}>{linking ? "A associar…" : "Criar e associar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
