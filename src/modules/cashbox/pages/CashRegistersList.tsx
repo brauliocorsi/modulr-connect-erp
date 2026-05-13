@@ -355,6 +355,16 @@ export default function CashRegistersList() {
                     </Select>
                   </div>
                 </div>
+                {selectedDriver && !selectedDriver.user_id && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                      <span className="text-xs">Este funcionário não tem utilizador associado.</span>
+                      <Button size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+                        <UserPlus className="h-3.5 w-3.5 mr-1" /> Associar utilizador
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   Será criado automaticamente um diário de caixa dedicado ao entregador, pronto para abertura e fecho de sessão.
                 </div>
