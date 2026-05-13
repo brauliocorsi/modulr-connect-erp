@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Layers, Waves, Package, MapPin, ClipboardCheck, Printer, PackagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { printCommandBarcodes, printLocationBarcodes } from "./printBarcodes";
+import SmartScan from "./SmartScan";
 
 const TILES = [
   { to: "/barcode/op/incoming", label: "Receção", desc: "Entradas de produtos", icon: ArrowDownToLine, color: "from-emerald-500 to-emerald-700" },
@@ -29,7 +30,11 @@ export default function BarcodeHome() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-1">Operações de armazém</h1>
-      <p className="text-slate-400 mb-8">Selecione uma operação. Toda a aplicação foi desenhada para uso 100% via leitor de códigos.</p>
+      <p className="text-slate-400 mb-6">Bipe qualquer código — local, produto ou transferência. Toda a aplicação está pronta para uso 100% via leitor.</p>
+
+      <div className="mb-8">
+        <SmartScan />
+      </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {TILES.map((t) => {

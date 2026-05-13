@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
@@ -47,6 +47,13 @@ export default function PickingScan() {
   };
 
   useEffect(() => { loadPending(); /* eslint-disable-next-line */ }, [kind]);
+
+  const routerLoc = useLocation();
+  useEffect(() => {
+    const pid = (routerLoc.state as any)?.pickingId;
+    if (pid && !picking) { openPicking(pid); }
+    // eslint-disable-next-line
+  }, [routerLoc.state]);
 
   const openPicking = async (id: string) => {
     const { data: p } = await supabase
