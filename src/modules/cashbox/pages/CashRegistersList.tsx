@@ -123,34 +123,58 @@ export default function CashRegistersList() {
 
   const selectedDriver = useMemo(() => users.find((u) => u.id === form.driver_employee_id), [users, form.driver_employee_id]);
 
+  const openLinkDialog = async () => {
+    setLinkOpen(true);
+    setLinkMode("existing");
+    setLinkForm({ email: "", password: "", existing_user_id: "" });
+    // Carrega perfis que ainda não estão associados a um funcionário
+    const linkedIds = users.map((u) => u.user_id).filter(Boolean);
+    let q = supabase.from("profiles").select("id, full_name, email").eq("active", true).order("full_name");
+    if (linkedIds.length) q = q.not("id", "in", `(${linkedIds.join(",")})`);
+    const { data } = await q;
+    setAvailableProfiles(data ?? []);
+  };
+
   const linkUser = async () => {
     if (!selectedDriver) return;
-    if (!linkForm.email.trim() || !linkForm.password.trim()) return toast.error("Preencha email e password");
     setLinking(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.session?.access_token ?? ""}`,
-        },
-        body: JSON.stringify({
-          email: linkForm.email.trim(),
-          password: linkForm.password,
-          full_name: selectedDriver.full_name,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok || result.error) throw new Error(result.error || "Erro ao criar utilizador");
-      const newUserId = result.user_id;
+      let newUserId: string;
+      if (linkMode === "existing") {
+        if (!linkForm.existing_user_id) {
+          setLinking(false);
+          return toast.error("Selecione um utilizador");
+        }
+        newUserId = linkForm.existing_user_id;
+      } else {
+        if (!linkForm.email.trim() || !linkForm.password.trim()) {
+          setLinking(false);
+          return toast.error("Preencha email e password");
+        }
+        const { data: session } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({
+            email: linkForm.email.trim(),
+            password: linkForm.password,
+            full_name: selectedDriver.full_name,
+          }),
+        });
+        const result = await res.json();
+        if (!res.ok || result.error) throw new Error(result.error || "Erro ao criar utilizador");
+        newUserId = result.user_id;
+      }
       const { error: updErr } = await supabase.from("hr_employees").update({ user_id: newUserId }).eq("id", selectedDriver.id);
       if (updErr) throw updErr;
       setUsers((prev) => prev.map((u) => (u.id === selectedDriver.id ? { ...u, user_id: newUserId } : u)));
       setForm((f) => ({ ...f, driver_employee_id: selectedDriver.id }));
       setLinkOpen(false);
-      setLinkForm({ email: "", password: "" });
-      toast.success("Utilizador criado e associado ao funcionário");
+      setLinkForm({ email: "", password: "", existing_user_id: "" });
+      toast.success("Utilizador associado ao funcionário");
     } catch (e: any) {
       toast.error(e.message || "Erro ao associar utilizador");
     } finally {
