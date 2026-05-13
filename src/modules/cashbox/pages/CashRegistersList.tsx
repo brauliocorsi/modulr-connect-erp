@@ -124,10 +124,13 @@ export default function CashRegistersList() {
       if (!form.driver_employee_id) return toast.error("Selecione o entregador responsável");
     }
 
-    let journalId = form.journal_id;
+    // Para entregador, criamos sempre um diário próprio (ignora seleção).
+    let journalId = kind === "driver" ? "" : form.journal_id;
     if (!journalId) {
       const prefix = kind === "driver" ? "CASH-DRV" : "CASH";
-      const code = `${prefix}-${form.name.trim().toUpperCase().replace(/\s+/g, "-").slice(0, 20)}`;
+      const slug = form.name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "-").slice(0, 20);
+      const suffix = Date.now().toString(36).slice(-4).toUpperCase();
+      const code = `${prefix}-${slug}-${suffix}`;
       const { data: j, error: jErr } = await supabase
         .from("account_journals")
         .insert({ name: `Caixa ${form.name.trim()}`, code, type: "cash", currency: "EUR", active: true })
