@@ -377,6 +377,38 @@ export default function CashRegistersList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Associar utilizador a {selectedDriver?.full_name ?? "funcionário"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label>Email <span className="text-destructive">*</span></Label>
+              <Input
+                type="email"
+                value={linkForm.email}
+                onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="exemplo@email.com"
+              />
+            </div>
+            <div>
+              <Label>Password <span className="text-destructive">*</span></Label>
+              <Input
+                type="password"
+                value={linkForm.password}
+                onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setLinkOpen(false)}>Cancelar</Button>
+            <Button onClick={linkUser} disabled={linking}>{linking ? "A associar…" : "Criar e associar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
