@@ -155,18 +155,113 @@ function CreateUserDialog() {
   );
 }
 
+function EmployeeLinkCard() {
+  const { id } = useParams();
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<string>("");
+
+  const { data: linked } = useQuery({
+    queryKey: ["hr_employee_for_user", id],
+    enabled: !!id && id !== "new",
+    queryFn: async () => {
+      const { data } = await supabase.from("hr_employees").select("id, full_name, job_title, email").eq("user_id", id!).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: available } = useQuery({
+    queryKey: ["hr_employees_unlinked"],
+    queryFn: async () => {
+      const { data } = await supabase.from("hr_employees").select("id, full_name, email").is("user_id", null).eq("active", true).order("full_name");
+      return data ?? [];
+    },
+  });
+
+  const link = useMutation({
+    mutationFn: async (employeeId: string) => {
+      const { error } = await supabase.from("hr_employees").update({ user_id: id! }).eq("id", employeeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Funcionário vinculado");
+      setSelected("");
+      qc.invalidateQueries({ queryKey: ["hr_employee_for_user", id] });
+      qc.invalidateQueries({ queryKey: ["hr_employees_unlinked"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const unlink = useMutation({
+    mutationFn: async () => {
+      if (!linked?.id) return;
+      const { error } = await supabase.from("hr_employees").update({ user_id: null }).eq("id", linked.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Vínculo removido");
+      qc.invalidateQueries({ queryKey: ["hr_employee_for_user", id] });
+      qc.invalidateQueries({ queryKey: ["hr_employees_unlinked"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (!id || id === "new") return null;
+
+  return (
+    <PageBody>
+      <Card className="p-6 max-w-3xl space-y-4">
+        <div>
+          <div className="font-semibold">Funcionário vinculado</div>
+          <div className="text-xs text-muted-foreground">Associe este utilizador a uma ficha de funcionário existente.</div>
+        </div>
+        {linked ? (
+          <div className="flex items-center justify-between gap-3 border rounded-md p-3">
+            <div>
+              <div className="font-medium">{linked.full_name}</div>
+              <div className="text-xs text-muted-foreground">{linked.job_title || linked.email}</div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => unlink.mutate()} disabled={unlink.isPending}>
+              <Unlink className="h-4 w-4 mr-1" /> Desvincular
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-end gap-2">
+            <div className="flex-1 space-y-2">
+              <Label>Funcionário</Label>
+              <Select value={selected} onValueChange={setSelected}>
+                <SelectTrigger><SelectValue placeholder="Selecione um funcionário…" /></SelectTrigger>
+                <SelectContent>
+                  {(available ?? []).map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>{e.full_name}{e.email ? ` — ${e.email}` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button size="sm" onClick={() => selected && link.mutate(selected)} disabled={!selected || link.isPending}>
+              <Link2 className="h-4 w-4 mr-1" /> Vincular
+            </Button>
+          </div>
+        )}
+      </Card>
+    </PageBody>
+  );
+}
+
 export const UserForm = () => (
-  <SimpleForm
-    table="profiles"
-    title="Usuário"
-    basePath="/settings/users"
-    breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
-    fields={[
-      { name: "full_name", label: "Nome completo" },
-      { name: "job_title", label: "Cargo" },
-      { name: "active", label: "Ativo", type: "boolean", default: true },
-    ]}
-  />
+  <>
+    <SimpleForm
+      table="profiles"
+      title="Usuário"
+      basePath="/settings/users"
+      breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
+      fields={[
+        { name: "full_name", label: "Nome completo" },
+        { name: "job_title", label: "Cargo" },
+        { name: "active", label: "Ativo", type: "boolean", default: true },
+      ]}
+    />
+    <EmployeeLinkCard />
+  </>
 );
 
 export const UsersSettings = () => (
