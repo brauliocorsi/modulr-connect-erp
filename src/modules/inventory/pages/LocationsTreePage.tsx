@@ -11,6 +11,8 @@ import { Link } from "react-router-dom";
 import { ChevronRight, ChevronDown, Folder, Box, Plus, Printer, List as ListIcon, Network, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import PutawayDialog from "@/modules/inventory/PutawayDialog";
+import { printBinLabel } from "@/modules/barcode/printBarcodes";
+import JsBarcode from "jsbarcode";
 
 type Loc = {
   id: string;
@@ -96,7 +98,7 @@ export default function LocationsTreePage() {
     load();
   };
 
-  const printLabels = (root: Loc) => {
+  const printLabels = async (root: Loc) => {
     const collect: Loc[] = [];
     const walk = (id: string) => {
       const ch = childrenOf.get(id) ?? [];
@@ -105,15 +107,35 @@ export default function LocationsTreePage() {
     if (root.is_bin) collect.push(root);
     walk(root.id);
     if (collect.length === 0) return toast.info("Sem bins/códigos para imprimir");
+    if (collect.length === 1) return printBinLabel(collect[0].id);
+
+    const esc = (s: any) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const bcSvg = (val: string) => {
+      try {
+        const xs = new XMLSerializer();
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        JsBarcode(svg, val, { format: "CODE128", displayValue: true, fontSize: 14, height: 60, margin: 4, width: 1.8 });
+        return xs.serializeToString(svg);
+      } catch { return `<div style="font-family:monospace">${esc(val)}</div>`; }
+    };
+    const cards = collect.map((c) => {
+      const code = c.barcode || c.full_path || c.name;
+      return `<div class="lbl"><b>${esc(c.name)}</b><small>${esc(c.full_path ?? "")}</small>${bcSvg(code)}</div>`;
+    }).join("");
     const html = `<!doctype html><html><head><title>Etiquetas Bins</title><style>
-      body{font-family:system-ui;margin:16px}
-      .lbl{border:2px solid #000;padding:14px;margin-bottom:10px;width:280px;text-align:center;page-break-inside:avoid}
-      .lbl b{display:block;font-size:22px;margin-bottom:6px}
-      .lbl code{font-family:monospace;font-size:18px;letter-spacing:3px}
-      .lbl small{display:block;color:#444;margin-top:4px}
+      @page{size:A4;margin:10mm}
+      body{font-family:system-ui;margin:0;padding:14px}
+      .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+      .lbl{border:1px solid #bbb;border-radius:6px;padding:10px;text-align:center;page-break-inside:avoid}
+      .lbl b{display:block;font-size:16px;margin-bottom:2px}
+      .lbl small{display:block;color:#666;font-size:11px;margin-bottom:6px}
+      .toolbar{padding:8px;background:#f4f4f4;border-bottom:1px solid #ddd;margin:-14px -14px 12px}
+      .toolbar button{padding:6px 12px;margin-right:6px}
+      @media print{.toolbar{display:none}}
     </style></head><body>
-    ${collect.map(c => `<div class="lbl"><b>${c.name}</b><code>${c.barcode ?? "—"}</code><small>${c.full_path ?? ""}</small></div>`).join("")}
-    <script>window.print()</script></body></html>`;
+      <div class="toolbar"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Fechar</button></div>
+      <div class="grid">${cards}</div>
+    </body></html>`;
     const w = window.open("", "_blank"); w?.document.write(html); w?.document.close();
   };
 
