@@ -122,6 +122,8 @@ export default function CashRegistersList() {
       if (!form.store_id) return toast.error("Selecione a loja");
     } else {
       if (!form.driver_employee_id) return toast.error("Selecione o entregador responsável");
+      const emp = users.find((u) => u.id === form.driver_employee_id);
+      if (!emp?.user_id) return toast.error("Este funcionário ainda não tem utilizador associado. Crie/associe um utilizador na ficha do funcionário antes de criar o caixa de entregador.");
     }
 
     // Para entregador, criamos sempre um diário próprio (ignora seleção).
