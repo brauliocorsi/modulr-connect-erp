@@ -38,7 +38,9 @@ export default function CashRegistersList() {
     driver_employee_id: "",
   });
   const [linkOpen, setLinkOpen] = useState(false);
-  const [linkForm, setLinkForm] = useState({ email: "", password: "" });
+  const [linkMode, setLinkMode] = useState<"existing" | "new">("existing");
+  const [linkForm, setLinkForm] = useState({ email: "", password: "", existing_user_id: "" });
+  const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
   const [linking, setLinking] = useState(false);
 
   const load = async () => {
@@ -121,34 +123,58 @@ export default function CashRegistersList() {
 
   const selectedDriver = useMemo(() => users.find((u) => u.id === form.driver_employee_id), [users, form.driver_employee_id]);
 
+  const openLinkDialog = async () => {
+    setLinkOpen(true);
+    setLinkMode("existing");
+    setLinkForm({ email: "", password: "", existing_user_id: "" });
+    // Carrega perfis que ainda não estão associados a um funcionário
+    const linkedIds = users.map((u) => u.user_id).filter(Boolean);
+    let q = supabase.from("profiles").select("id, full_name, email").eq("active", true).order("full_name");
+    if (linkedIds.length) q = q.not("id", "in", `(${linkedIds.join(",")})`);
+    const { data } = await q;
+    setAvailableProfiles(data ?? []);
+  };
+
   const linkUser = async () => {
     if (!selectedDriver) return;
-    if (!linkForm.email.trim() || !linkForm.password.trim()) return toast.error("Preencha email e password");
     setLinking(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.session?.access_token ?? ""}`,
-        },
-        body: JSON.stringify({
-          email: linkForm.email.trim(),
-          password: linkForm.password,
-          full_name: selectedDriver.full_name,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok || result.error) throw new Error(result.error || "Erro ao criar utilizador");
-      const newUserId = result.user_id;
+      let newUserId: string;
+      if (linkMode === "existing") {
+        if (!linkForm.existing_user_id) {
+          setLinking(false);
+          return toast.error("Selecione um utilizador");
+        }
+        newUserId = linkForm.existing_user_id;
+      } else {
+        if (!linkForm.email.trim() || !linkForm.password.trim()) {
+          setLinking(false);
+          return toast.error("Preencha email e password");
+        }
+        const { data: session } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({
+            email: linkForm.email.trim(),
+            password: linkForm.password,
+            full_name: selectedDriver.full_name,
+          }),
+        });
+        const result = await res.json();
+        if (!res.ok || result.error) throw new Error(result.error || "Erro ao criar utilizador");
+        newUserId = result.user_id;
+      }
       const { error: updErr } = await supabase.from("hr_employees").update({ user_id: newUserId }).eq("id", selectedDriver.id);
       if (updErr) throw updErr;
       setUsers((prev) => prev.map((u) => (u.id === selectedDriver.id ? { ...u, user_id: newUserId } : u)));
       setForm((f) => ({ ...f, driver_employee_id: selectedDriver.id }));
       setLinkOpen(false);
-      setLinkForm({ email: "", password: "" });
-      toast.success("Utilizador criado e associado ao funcionário");
+      setLinkForm({ email: "", password: "", existing_user_id: "" });
+      toast.success("Utilizador associado ao funcionário");
     } catch (e: any) {
       toast.error(e.message || "Erro ao associar utilizador");
     } finally {
@@ -359,7 +385,7 @@ export default function CashRegistersList() {
                   <Alert variant="destructive" className="py-2">
                     <AlertDescription className="flex items-center justify-between gap-2">
                       <span className="text-xs">Este funcionário não tem utilizador associado.</span>
-                      <Button size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+                      <Button size="sm" variant="outline" onClick={openLinkDialog}>
                         <UserPlus className="h-3.5 w-3.5 mr-1" /> Associar utilizador
                       </Button>
                     </AlertDescription>
@@ -382,30 +408,64 @@ export default function CashRegistersList() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Associar utilizador a {selectedDriver?.full_name ?? "funcionário"}</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">Vincule um utilizador existente ou crie um novo dedicado.</p>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <Tabs value={linkMode} onValueChange={(v) => setLinkMode(v as "existing" | "new")} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="existing">Utilizador existente</TabsTrigger>
+              <TabsTrigger value="new">Criar novo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {linkMode === "existing" ? (
             <div>
-              <Label>Email <span className="text-destructive">*</span></Label>
-              <Input
-                type="email"
-                value={linkForm.email}
-                onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="exemplo@email.com"
-              />
+              <Label>Utilizador <span className="text-destructive">*</span></Label>
+              <Select
+                value={linkForm.existing_user_id}
+                onValueChange={(v) => setLinkForm((f) => ({ ...f, existing_user_id: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione um utilizador…" /></SelectTrigger>
+                <SelectContent>
+                  {availableProfiles.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem utilizadores disponíveis</div>
+                  ) : availableProfiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name || p.email}{p.email ? ` (${p.email})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">Apenas utilizadores ainda não vinculados a outro funcionário.</p>
             </div>
-            <div>
-              <Label>Password <span className="text-destructive">*</span></Label>
-              <Input
-                type="password"
-                value={linkForm.password}
-                onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder="••••••••"
-              />
+          ) : (
+            <div className="grid gap-3">
+              <div>
+                <Label>Email <span className="text-destructive">*</span></Label>
+                <Input
+                  type="email"
+                  value={linkForm.email}
+                  onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="exemplo@email.com"
+                />
+              </div>
+              <div>
+                <Label>Password <span className="text-destructive">*</span></Label>
+                <Input
+                  type="password"
+                  value={linkForm.password}
+                  onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setLinkOpen(false)}>Cancelar</Button>
-            <Button onClick={linkUser} disabled={linking}>{linking ? "A associar…" : "Criar e associar"}</Button>
+            <Button onClick={linkUser} disabled={linking}>
+              {linking ? "A associar…" : linkMode === "existing" ? "Vincular" : "Criar e vincular"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
