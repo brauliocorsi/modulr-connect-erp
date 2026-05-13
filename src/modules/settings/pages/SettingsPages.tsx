@@ -152,12 +152,27 @@ function CreateUserDialog() {
   );
 }
 
+export const UserForm = () => (
+  <SimpleForm
+    table="profiles"
+    title="Usuário"
+    basePath="/settings/users"
+    breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
+    fields={[
+      { name: "full_name", label: "Nome completo" },
+      { name: "job_title", label: "Cargo" },
+      { name: "active", label: "Ativo", type: "boolean", default: true },
+    ]}
+  />
+);
+
 export const UsersSettings = () => (
   <ListView
     title="Usuários"
     breadcrumb={[{ label: "Configurações" }, { label: "Usuários" }]}
     table="profiles"
     searchColumn="full_name"
+    rowLink={(r: any) => `/settings/users/${r.id}`}
     actions={<CreateUserDialog />}
     columns={[
       { key: "full_name", header: "Nome" },
