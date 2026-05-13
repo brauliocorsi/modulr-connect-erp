@@ -310,12 +310,8 @@ export default function CashRegistersList() {
                     </Select>
                   </div>
                 </div>
-                <div>
-                  <Label>Diário (cash)</Label>
-                  <Select value={form.journal_id} onValueChange={(v) => setForm({ ...form, journal_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Criar automaticamente" /></SelectTrigger>
-                    <SelectContent>{journals.map((j) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  Será criado automaticamente um diário de caixa dedicado ao entregador, pronto para abertura e fecho de sessão.
                 </div>
               </>
             )}
