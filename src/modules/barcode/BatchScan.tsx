@@ -85,6 +85,7 @@ export default function BatchScan() {
 
   const validate = async () => {
     if (!batch) return;
+    if (batch.state === "done" || batch.state === "cancelled") return log("Lote já validado/cancelado", "warn");
     const { data, error } = await supabase.rpc("validate_batch", { _batch: batch.id });
     if (error) return log(error.message, "error");
     const r = (data as any) ?? {};
