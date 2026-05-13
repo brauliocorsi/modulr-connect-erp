@@ -385,7 +385,7 @@ export default function CashRegistersList() {
                   <Alert variant="destructive" className="py-2">
                     <AlertDescription className="flex items-center justify-between gap-2">
                       <span className="text-xs">Este funcionário não tem utilizador associado.</span>
-                      <Button size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+                      <Button size="sm" variant="outline" onClick={openLinkDialog}>
                         <UserPlus className="h-3.5 w-3.5 mr-1" /> Associar utilizador
                       </Button>
                     </AlertDescription>
