@@ -69,7 +69,7 @@ export default function CashRegistersList() {
         supabase.from("stores").select("id,name,warehouse_id").eq("active", true).order("name"),
         supabase.from("warehouses").select("id,name").eq("active", true).order("name"),
         supabase.from("account_journals").select("id,name").eq("type", "cash").eq("active", true).order("name"),
-        supabase.from("hr_employees").select("id, user_id, full_name, department_id").eq("active", true).not("user_id", "is", null).order("full_name"),
+        supabase.from("hr_employees").select("id, user_id, full_name, department_id").eq("active", true).order("full_name"),
         supabase.from("hr_departments").select("id,name").order("name"),
       ]);
       setStores(s ?? []);
