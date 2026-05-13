@@ -53,6 +53,7 @@ export default function WaveScan() {
 
   const validate = async () => {
     if (!wave) return;
+    if (wave.state === "done" || wave.state === "cancelled") return log("Onda já validada/cancelada", "warn");
     const { error } = await supabase.rpc("validate_wave", { _wave: wave.id });
     if (error) return log(error.message, "error");
     log(`✓ Onda ${wave.name} validada`, "ok");
