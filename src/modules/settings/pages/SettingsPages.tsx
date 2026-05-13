@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ListView } from "@/core/layout/ListView";
+import { SimpleForm } from "@/core/layout/SimpleForm";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
