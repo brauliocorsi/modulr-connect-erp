@@ -37,15 +37,15 @@ export const ServiceRequestForm = () => (
     breadcrumb={[{ label: "Assistência", to: "/service/requests" }, { label: "Pedido" }]}
     fields={[
       { name: "name", label: "Nº", required: true },
-      { name: "partner_id", label: "Cliente", type: "reference", refTable: "partners", refLabel: "name" },
-      { name: "product_id", label: "Produto", type: "reference", refTable: "products", refLabel: "name" },
+      { name: "partner_id", label: "Cliente ID" },
+      { name: "product_id", label: "Produto ID" },
       { name: "priority", label: "Prioridade", type: "select", options: [
         { value: "low", label: "Baixa" }, { value: "normal", label: "Normal" },
         { value: "high", label: "Alta" }, { value: "urgent", label: "Urgente" },
       ]},
       { name: "state", label: "Estado", type: "select", options: STATE_OPTIONS },
-      { name: "assigned_to", label: "Responsável", type: "reference", refTable: "profiles", refLabel: "full_name" },
-      { name: "scheduled_for", label: "Agendado para", type: "datetime" },
+      { name: "assigned_to", label: "Responsável (user id)" },
+      { name: "scheduled_for", label: "Agendado para", type: "date" },
       { name: "description", label: "Descrição do problema", type: "textarea" },
       { name: "resolution", label: "Resolução / notas internas", type: "textarea" },
     ]}

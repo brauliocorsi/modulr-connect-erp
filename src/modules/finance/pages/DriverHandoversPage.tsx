@@ -51,7 +51,7 @@ export default function DriverHandoversPage() {
 
   return (
     <>
-      <PageHeader title="Entregas e caixa" subtitle="Conferência de caixas entregues por motoristas"
+      <PageHeader title="Entregas e caixa"
         breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Entregas e caixa" }]} />
       <PageBody>
         <Card>
