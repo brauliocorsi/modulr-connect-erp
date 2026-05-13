@@ -408,30 +408,64 @@ export default function CashRegistersList() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Associar utilizador a {selectedDriver?.full_name ?? "funcionário"}</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">Vincule um utilizador existente ou crie um novo dedicado.</p>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <Tabs value={linkMode} onValueChange={(v) => setLinkMode(v as "existing" | "new")} className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="existing">Utilizador existente</TabsTrigger>
+              <TabsTrigger value="new">Criar novo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {linkMode === "existing" ? (
             <div>
-              <Label>Email <span className="text-destructive">*</span></Label>
-              <Input
-                type="email"
-                value={linkForm.email}
-                onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="exemplo@email.com"
-              />
+              <Label>Utilizador <span className="text-destructive">*</span></Label>
+              <Select
+                value={linkForm.existing_user_id}
+                onValueChange={(v) => setLinkForm((f) => ({ ...f, existing_user_id: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione um utilizador…" /></SelectTrigger>
+                <SelectContent>
+                  {availableProfiles.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem utilizadores disponíveis</div>
+                  ) : availableProfiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name || p.email}{p.email ? ` (${p.email})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">Apenas utilizadores ainda não vinculados a outro funcionário.</p>
             </div>
-            <div>
-              <Label>Password <span className="text-destructive">*</span></Label>
-              <Input
-                type="password"
-                value={linkForm.password}
-                onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
-                placeholder="••••••••"
-              />
+          ) : (
+            <div className="grid gap-3">
+              <div>
+                <Label>Email <span className="text-destructive">*</span></Label>
+                <Input
+                  type="email"
+                  value={linkForm.email}
+                  onChange={(e) => setLinkForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="exemplo@email.com"
+                />
+              </div>
+              <div>
+                <Label>Password <span className="text-destructive">*</span></Label>
+                <Input
+                  type="password"
+                  value={linkForm.password}
+                  onChange={(e) => setLinkForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setLinkOpen(false)}>Cancelar</Button>
-            <Button onClick={linkUser} disabled={linking}>{linking ? "A associar…" : "Criar e associar"}</Button>
+            <Button onClick={linkUser} disabled={linking}>
+              {linking ? "A associar…" : linkMode === "existing" ? "Vincular" : "Criar e vincular"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
