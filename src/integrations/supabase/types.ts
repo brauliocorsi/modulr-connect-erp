@@ -283,6 +283,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          department_id: string | null
           driver_id: string | null
           id: string
           journal_id: string | null
@@ -295,6 +296,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          department_id?: string | null
           driver_id?: string | null
           id?: string
           journal_id?: string | null
@@ -307,6 +309,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          department_id?: string | null
           driver_id?: string | null
           id?: string
           journal_id?: string | null

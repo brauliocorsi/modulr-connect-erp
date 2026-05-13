@@ -1,0 +1,1 @@
+ALTER TABLE public.cash_registers ADD COLUMN IF NOT EXISTS department_id uuid;

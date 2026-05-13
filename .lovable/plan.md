@@ -1,63 +1,41 @@
-Refino do plano "Arrumar" anterior, com colis em bins diferentes, localização sempre visível no picking, e ação de arrumação também disponível fora da app de códigos de barras.
+# Caixa do entregador no app Caixa
 
-## 1. App de Código de Barras — modo "Arrumar"
+Hoje, em **Caixa → Caixas → Novo Caixa**, só se cria caixa de **loja** (obriga a escolher loja). O app de entregador (`DeliveryCashbox`) já procura `cash_registers.driver_id = user.id`, mas não há UI para criar esse caixa — daí a mensagem "Não tens caixa associado".
 
-Nova página `/barcode/putaway` (tile laranja na home + entrada no menu).
+## Objetivo
 
-### Fluxo de scan, agora colis-a-colis
+No diálogo "Novo Caixa", permitir escolher o **tipo** de caixa:
+- **Loja** (atual) — exige loja
+- **Entregador** (novo) — exige departamento + entregador responsável (driver)
 
-```text
-1. Bipar COLIS (ou produto sem colis)   → seleciona item
-2. Bipar LOCALIZAÇÃO (bin)              → grava ESSE colis nessa bin
-3. Bipar próximo COLIS                  → pode ser outro colis do mesmo produto
-4. Bipar nova LOCALIZAÇÃO               → o segundo colis vai para outra bin
-... 
-OK / ESC para terminar ou cancelar.
-```
+## Mudanças
 
-Diferença chave face ao plano anterior: **cada colis é arrumado individualmente**, podendo ir para uma bin diferente. Para produtos sem colis, comporta-se como antes (produto + qty + bin).
+### 1. Base de dados (migração)
+- Adicionar coluna `department_id uuid` em `cash_registers` (nullable, referência lógica a `hr_departments.id`).
+- Manter `driver_id` (já existe) e `user_id` (responsável). Para caixa de entregador, `driver_id = user_id` (mesmo utilizador).
+- `store_id` e `warehouse_id` passam a ser nullable na lógica do form quando o tipo é "Entregador".
 
-### RPC `putaway_stock(_product, _package, _qty, _location)`
+### 2. `CashRegistersList.tsx` — diálogo "Novo Caixa"
+- Novo seletor no topo: **Tipo de caixa** → `loja | entregador` (default `loja`).
+- Quando **entregador**:
+  - Esconder campos Loja / Armazém / Diário (cria diário automaticamente).
+  - Mostrar **Departamento** (select de `hr_departments`, opcional).
+  - **Responsável (Entregador)**: select de `hr_employees` filtrado pelo departamento escolhido (mostra apenas empregados com `user_id` definido). Se não houver departamento selecionado, lista todos.
+  - Ao gravar: `driver_id = user_id` do empregado, `department_id` = escolhido, `store_id/warehouse_id = null`, criar diário `CASH-DRV-{nome}` automaticamente.
+  - Nome sugerido: pré-preencher como `Caixa <nome do entregador>` quando se escolhe responsável.
+- Quando **loja**: comportamento atual inalterado.
 
-- `package_id` opcional. Quando fornecido, atualiza `stock_quants` filtrando por `(product_id, package_id, location_id)`.
-- Cria `stock_moves` interno `done` com `package_id` para auditoria.
-- Origem = local virtual de stock do armazém da localização destino.
-- Valida que destino é `is_bin = true`.
+### 3. Listagem de caixas (mesmo ficheiro)
+- No card mostrar badge "Entregador" quando `driver_id` definido (em vez de "Loja: —").
+- Mostrar nome do departamento quando aplicável.
 
-## 2. Localização sempre visível
+## Detalhes técnicos
 
-### No picking (app de códigos de barras — `PickingScan.tsx`)
+- `cash_registers` SELECT já permite `inventory_user`/`sales_user`; INSERT continua via política `cash_registers_manage` (precisa permissão `finance.cash_registers.edit`).
+- `DeliveryCashbox` não precisa de alterações — assim que existir um registo com o `driver_id` certo, passa a aparecer ao entregador.
+- Diário criado automaticamente reutiliza o padrão já existente (`account_journals` type `cash`).
 
-Para cada movimento:
-- Mostra a **localização origem do quant** onde o stock está. Quando há colis em várias bins, lista cada colis com a sua bin (ex.: `Caixa 1/2 → A-01-03 · Caixa 2/2 → B-04-12`).
-- Linha de cabeçalho do movimento mostra a bin sugerida com mais stock.
+## Ficheiros afetados
 
-### Na lista de picking impressa (`printPickingList.ts`)
-
-Coluna nova "Local" no quadro principal e, dentro do bloco de colis, coluna "Local" com o barcode da bin (CODE128) para o operador bipar.
-
-### Em outros sítios
-
-- `BinsPage` e `LocationsTreePage` já mostram, mas adicionam contagem por colis.
-- `ProductLookup` (consulta na app barcode) passa a listar quants por (bin, colis).
-
-## 3. Arrumar fora da app de códigos de barras
-
-Adicionar ação no UI normal:
-
-- **No formulário do Produto** → tab "Stock", botão **"Arrumar em local"**: dialog com select de armazém, bin destino, colis (se aplicável) e quantidade. Chama a mesma RPC `putaway_stock`.
-- **Na página `LocationsTreePage`** (vista hierárquica) → ao abrir uma bin, botão **"+ Arrumar produto"**: dialog com produto/colis/qty.
-- **Na `BinsPage`** → ação por linha "Arrumar mais" e "Mover".
-
-Reutilizam a mesma RPC e o mesmo componente `PutawayDialog`.
-
-## Ficheiros tocados
-
-- Novos: `src/modules/barcode/PutawayScan.tsx`, `src/modules/inventory/PutawayDialog.tsx`
-- Editados: `BarcodeHome.tsx`, `BarcodeShell.tsx`, `App.tsx`, `registry.ts`, `PickingScan.tsx`, `printPickingList.ts`, `ProductLookup.tsx`, `LocationsTreePage.tsx`, `BinsPage.tsx`, `tabs/StockTab.tsx`
-- Migração: RPC `putaway_stock` (suporta `package_id` nullable)
-
-## Fora do âmbito
-
-- Sugestão automática de bin (continua manual).
-- Movimentações entre duas bins (já cobertas por Transferência interna).
+- Migração SQL: `ALTER TABLE cash_registers ADD COLUMN department_id uuid;`
+- `src/modules/cashbox/pages/CashRegistersList.tsx` (diálogo + listagem)
