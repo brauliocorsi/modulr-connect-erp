@@ -85,7 +85,7 @@ import DeliveryHome from "@/modules/delivery/pages/DeliveryHome";
 import DeliveryBatch from "@/modules/delivery/pages/DeliveryBatch";
 import DeliveryPicking from "@/modules/delivery/pages/DeliveryPicking";
 import DeliveryCashbox from "@/modules/delivery/pages/DeliveryCashbox";
-import { AppsSettings, UsersSettings, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
+import { AppsSettings, UsersSettings, UserForm, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
