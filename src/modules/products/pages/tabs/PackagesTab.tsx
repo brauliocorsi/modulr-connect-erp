@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { printColisLabels } from "@/modules/barcode/printBarcodes";
 
 type Pkg = {
   id: string;
@@ -65,18 +66,13 @@ export function PackagesTab({ productId }: { productId: string }) {
     load();
   };
 
-  const printLabels = () => {
-    const html = `<!doctype html><html><head><title>Etiquetas Colis</title>
-      <style>
-        body{font-family:system-ui;margin:20px}
-        .lbl{border:1px solid #000;padding:12px;margin-bottom:8px;width:300px;text-align:center;page-break-inside:avoid}
-        .lbl b{font-size:18px;display:block;margin:6px 0}
-        .lbl code{font-family:monospace;font-size:14px;letter-spacing:2px}
-      </style></head><body>
-      ${items.map(p => `<div class="lbl"><b>${p.label}</b><code>${p.barcode ?? "—"}</code></div>`).join("")}
-      <script>window.print()</script></body></html>`;
-    const w = window.open("", "_blank");
-    w?.document.write(html); w?.document.close();
+  const printLabels = async () => {
+    if (!items.length) return;
+    await printColisLabels(items.map((p) => p.id));
+  };
+
+  const printOne = async (id: string) => {
+    await printColisLabels([id]);
   };
 
   return (
@@ -129,7 +125,8 @@ export function PackagesTab({ productId }: { productId: string }) {
                 <td className="px-2 py-1">
                   <Input className="h-8" value={p.notes ?? ""} onChange={(e) => update(p.id, { notes: e.target.value || null })} />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => printOne(p.id)} title="Imprimir etiqueta"><Printer className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
                 </td>
               </tr>

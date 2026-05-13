@@ -4,9 +4,10 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { Box, Package } from "lucide-react";
+import { Box, Package, Printer } from "lucide-react";
 import PutawayDialog from "@/modules/inventory/PutawayDialog";
 import { Button } from "@/components/ui/button";
+import { printBinLabel, printColisLabels } from "@/modules/barcode/printBarcodes";
 
 type Row = {
   id: string;
@@ -93,7 +94,10 @@ export default function BinsPage() {
                   <Box className="h-4 w-4 text-amber-600" />
                   <Link to={`/inventory/locations/${id}`} className="font-semibold hover:underline">{loc?.full_path ?? loc?.name}</Link>
                   {loc?.barcode && <span className="font-mono text-xs text-muted-foreground">{loc.barcode}</span>}
-                  <div className="ml-auto">
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => printBinLabel(id)} title="Imprimir etiqueta do bin">
+                      <Printer className="h-3.5 w-3.5 mr-1" /> Etiqueta
+                    </Button>
                     <PutawayDialog locationId={id} locationLabel={loc?.full_path ?? loc?.name} onDone={load} />
                   </div>
                 </div>
@@ -115,7 +119,16 @@ export default function BinsPage() {
                           </Link>
                         </td>
                         <td className="px-3 py-1">
-                          {r.pkg ? <span><strong>{r.pkg.label}</strong>{r.pkg.barcode ? <span className="font-mono ml-1 text-xs text-muted-foreground">{r.pkg.barcode}</span> : null}</span> : <span className="text-muted-foreground">—</span>}
+                          {r.pkg ? (
+                            <span className="inline-flex items-center gap-1">
+                              <strong>{r.pkg.label}</strong>
+                              {r.pkg.barcode ? <span className="font-mono ml-1 text-xs text-muted-foreground">{r.pkg.barcode}</span> : null}
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Imprimir etiqueta do colis (com local)"
+                                onClick={() => printColisLabels([r.package_id!], { bin: { name: r.location?.full_path ?? r.location?.name ?? "", barcode: r.location?.barcode } })}>
+                                <Printer className="h-3 w-3" />
+                              </Button>
+                            </span>
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-3 py-1 text-right tabular-nums font-medium">{Number(r.quantity)}</td>
                         <td className="px-3 py-1 text-right tabular-nums text-muted-foreground">{Number(r.reserved_quantity || 0)}</td>
