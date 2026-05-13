@@ -69,7 +69,7 @@ export default function CashRegistersList() {
         supabase.from("stores").select("id,name,warehouse_id").eq("active", true).order("name"),
         supabase.from("warehouses").select("id,name").eq("active", true).order("name"),
         supabase.from("account_journals").select("id,name").eq("type", "cash").eq("active", true).order("name"),
-        supabase.from("hr_employees").select("id, user_id, full_name, department_id").eq("active", true).not("user_id", "is", null).order("full_name"),
+        supabase.from("hr_employees").select("id, user_id, full_name, department_id").eq("active", true).order("full_name"),
         supabase.from("hr_departments").select("id,name").order("name"),
       ]);
       setStores(s ?? []);
@@ -122,6 +122,8 @@ export default function CashRegistersList() {
       if (!form.store_id) return toast.error("Selecione a loja");
     } else {
       if (!form.driver_employee_id) return toast.error("Selecione o entregador responsável");
+      const emp = users.find((u) => u.id === form.driver_employee_id);
+      if (!emp?.user_id) return toast.error("Este funcionário ainda não tem utilizador associado. Crie/associe um utilizador na ficha do funcionário antes de criar o caixa de entregador.");
     }
 
     // Para entregador, criamos sempre um diário próprio (ignora seleção).
@@ -302,9 +304,11 @@ export default function CashRegistersList() {
                       <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
                       <SelectContent>
                         {driverEmployees.length === 0 ? (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem entregadores no departamento</div>
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem funcionários no departamento</div>
                         ) : driverEmployees.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name}{!u.user_id ? " — sem utilizador" : ""}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
