@@ -304,9 +304,11 @@ export default function CashRegistersList() {
                       <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
                       <SelectContent>
                         {driverEmployees.length === 0 ? (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem entregadores no departamento</div>
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">Sem funcionários no departamento</div>
                         ) : driverEmployees.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name}{!u.user_id ? " — sem utilizador" : ""}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
