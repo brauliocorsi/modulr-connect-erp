@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { CheckCircle2, X, Package } from "lucide-react";
+import { CheckCircle2, X, Package, Lock, CalendarCheck } from "lucide-react";
+import { fmtDateTime } from "@/lib/format";
 
 export default function WaveScan() {
   const [wave, setWave] = useState<any>(null);
