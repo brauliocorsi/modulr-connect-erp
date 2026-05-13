@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode, Wrench } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -131,6 +131,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Configuração", label: "Diários", to: "/finance/journals" },
       { section: "Configuração", label: "Métodos de Pagamento", to: "/finance/methods" },
       { section: "Configuração", label: "Centros de Custo", to: "/finance/cost_centers" },
+      { section: "Operações", label: "Entregas e Caixa", to: "/finance/handovers" },
     ],
   },
   {
@@ -201,6 +202,18 @@ export const MODULES: ModuleDef[] = [
     basePath: "/discuss",
     description: "Canais de equipa e mensagens diretas",
     menu: [{ section: "Conversas", label: "Canais", to: "/discuss" }],
+  },
+  {
+    id: "service" as any,
+    name: "Assistência",
+    shortName: "Assistência",
+    icon: Wrench,
+    color: "bg-[hsl(35_90%_55%)]",
+    basePath: "/service",
+    description: "Pedidos de assistência pós-entrega",
+    menu: [
+      { section: "Assistência", label: "Pedidos", to: "/service/requests" },
+    ],
   },
   {
     id: "settings",

@@ -50,6 +50,8 @@ import ReconciliationPage from "@/modules/finance/pages/ReconciliationPage";
 import CashRegistersList from "@/modules/cashbox/pages/CashRegistersList";
 import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
+import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
+import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
 import { PurchaseOrdersList, SuppliersList } from "@/modules/purchase/pages/PurchasePages";
@@ -250,6 +252,13 @@ const App = () => (
               <Route path="finance/payables" element={<PayablesList />} />
               <Route path="finance/payables/new" element={<BillForm />} />
               <Route path="finance/payables/:id" element={<BillForm />} />
+              <Route path="finance/handovers" element={<DriverHandoversPage />} />
+
+              {/* Assistência */}
+              <Route path="service" element={<Navigate to="/service/requests" replace />} />
+              <Route path="service/requests" element={<ServiceRequestsList />} />
+              <Route path="service/requests/new" element={<ServiceRequestForm />} />
+              <Route path="service/requests/:id" element={<ServiceRequestForm />} />
 
               {/* Cashbox */}
               <Route path="cashbox" element={<CashRegistersList />} />

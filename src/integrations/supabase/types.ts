@@ -224,9 +224,11 @@ export type Database = {
           notes: string | null
           partner_id: string | null
           payment_id: string | null
+          picking_id: string | null
           reconciled_at: string | null
           reconciled_by: string | null
           reference: string | null
+          route_id: string | null
           session_id: string
           user_id: string | null
         }
@@ -240,9 +242,11 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
+          picking_id?: string | null
           reconciled_at?: string | null
           reconciled_by?: string | null
           reference?: string | null
+          route_id?: string | null
           session_id: string
           user_id?: string | null
         }
@@ -256,9 +260,11 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
+          picking_id?: string | null
           reconciled_at?: string | null
           reconciled_by?: string | null
           reference?: string | null
+          route_id?: string | null
           session_id?: string
           user_id?: string | null
         }
@@ -268,6 +274,27 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: false
             referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "cash_movements_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
             referencedColumns: ["id"]
           },
           {
@@ -358,13 +385,21 @@ export type Database = {
           closing_balance_theoretical: number | null
           created_at: string
           difference: number | null
+          handover_at: string | null
+          handover_by: string | null
+          handover_cash_amount: number | null
+          handover_state: string
           id: string
           name: string
           notes: string | null
           opened_at: string
           opened_by: string | null
           opening_balance: number
+          reconciled_at: string | null
+          reconciled_by: string | null
+          reconciliation_notes: string | null
           register_id: string
+          route_id: string | null
           state: string
         }
         Insert: {
@@ -374,13 +409,21 @@ export type Database = {
           closing_balance_theoretical?: number | null
           created_at?: string
           difference?: number | null
+          handover_at?: string | null
+          handover_by?: string | null
+          handover_cash_amount?: number | null
+          handover_state?: string
           id?: string
           name: string
           notes?: string | null
           opened_at?: string
           opened_by?: string | null
           opening_balance?: number
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reconciliation_notes?: string | null
           register_id: string
+          route_id?: string | null
           state?: string
         }
         Update: {
@@ -390,13 +433,21 @@ export type Database = {
           closing_balance_theoretical?: number | null
           created_at?: string
           difference?: number | null
+          handover_at?: string | null
+          handover_by?: string | null
+          handover_cash_amount?: number | null
+          handover_state?: string
           id?: string
           name?: string
           notes?: string | null
           opened_at?: string
           opened_by?: string | null
           opening_balance?: number
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reconciliation_notes?: string | null
           register_id?: string
+          route_id?: string | null
           state?: string
         }
         Relationships: [
@@ -405,6 +456,13 @@ export type Database = {
             columns: ["register_id"]
             isOneToOne: false
             referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_sessions_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
             referencedColumns: ["id"]
           },
         ]
@@ -2939,6 +2997,106 @@ export type Database = {
         }
         Relationships: []
       }
+      service_requests: {
+        Row: {
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          partner_id: string | null
+          picking_id: string | null
+          priority: string
+          product_id: string | null
+          reported_by: string | null
+          resolution: string | null
+          route_id: string | null
+          scheduled_for: string | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          partner_id?: string | null
+          picking_id?: string | null
+          priority?: string
+          product_id?: string | null
+          reported_by?: string | null
+          resolution?: string | null
+          route_id?: string | null
+          scheduled_for?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          partner_id?: string | null
+          picking_id?: string | null
+          priority?: string
+          product_id?: string | null
+          reported_by?: string | null
+          resolution?: string | null
+          route_id?: string | null
+          scheduled_for?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "service_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "service_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_locations: {
         Row: {
           active: boolean
@@ -4159,10 +4317,22 @@ export type Database = {
         }
         Returns: Json
       }
+      driver_deliver_picking_multi: {
+        Args: { _payments: Json; _picking: string }
+        Returns: Json
+      }
+      driver_handover_session: {
+        Args: { _counted_cash?: number; _session: string }
+        Returns: undefined
+      }
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
         Returns: string
+      }
+      finance_reconcile_session: {
+        Args: { _notes?: string; _session: string }
+        Returns: undefined
       }
       find_zone_for_zip: { Args: { _zip: string }; Returns: string }
       generate_product_variants: { Args: { _product: string }; Returns: number }
