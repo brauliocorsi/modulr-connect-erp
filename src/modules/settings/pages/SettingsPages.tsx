@@ -13,7 +13,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { ListView } from "@/core/layout/ListView";
 import { SimpleForm } from "@/core/layout/SimpleForm";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Link2, Unlink } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const AppsSettings = () => {
   const qc = useQueryClient();
