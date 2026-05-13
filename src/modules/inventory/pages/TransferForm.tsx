@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { StateBadge } from "@/core/layout/StateBadge";
 import { printPickingList } from "@/modules/inventory/printPickingList";
+import { printReceiptLabels } from "@/modules/barcode/printBarcodes";
 import { toast } from "sonner";
 
 import { stateLabel, kindLabel } from "@/lib/picking";
@@ -446,6 +447,9 @@ export default function TransferForm() {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => printPickingList(id!)}>
               <Printer className="h-4 w-4 mr-1" /> Imprimir picking
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => printReceiptLabels(id!)} title="Etiquetas dos colis/produtos desta transferência">
+              <Printer className="h-4 w-4 mr-1" /> Etiquetas
             </Button>
             {isOutgoing && !isLocked && (
               <Button size="sm" variant="outline" onClick={tryReserve}>

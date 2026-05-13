@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Plus, Trash2, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { printColisLabels, printBinLabel } from "@/modules/barcode/printBarcodes";
 
 const TONE: Record<string, any> = { draft: "default", in_progress: "info", done: "success", cancelled: "destructive" };
 
@@ -117,6 +118,19 @@ export default function AdjustmentForm() {
         actions={
           <div className="flex gap-2">
             {!isLocked && <Button size="sm" variant="outline" onClick={save}>Salvar</Button>}
+            {!isNew && (
+              <Button size="sm" variant="outline" onClick={async () => {
+                const productIds = Array.from(new Set(lines.map((l) => l.product_id).filter(Boolean)));
+                if (!productIds.length) { toast.error("Sem produtos nas linhas"); return; }
+                const { data } = await supabase.from("product_packages").select("id").in("product_id", productIds).order("sequence");
+                const ids = (data ?? []).map((p: any) => p.id);
+                if (ids.length) await printColisLabels(ids);
+                else if (adj.location_id) await printBinLabel(adj.location_id);
+                else toast.error("Sem colis nem local definido");
+              }} title="Imprimir etiquetas dos colis dos produtos do ajuste">
+                <Printer className="h-4 w-4 mr-1" /> Etiquetas
+              </Button>
+            )}
             {!isLocked && !isNew && <Button size="sm" onClick={validate}><CheckCircle2 className="h-4 w-4 mr-1" /> Validar</Button>}
           </div>
         }

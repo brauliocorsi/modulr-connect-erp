@@ -23,6 +23,8 @@ import { StockTab } from "./tabs/StockTab";
 import { WooTab } from "./tabs/WooTab";
 import { ReorderingTab } from "./tabs/ReorderingTab";
 import { PackagesTab } from "./tabs/PackagesTab";
+import { printColisLabels } from "@/modules/barcode/printBarcodes";
+import { Printer } from "lucide-react";
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -84,7 +86,21 @@ export default function ProductForm() {
         breadcrumb={[{ label: "Produtos", to: "/products" }, { label: form.name || "Novo" }]}
         backTo="/products"
         state={form.active === false ? { label: "Arquivado", tone: "destructive" } : undefined}
-        actions={<Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>}
+        actions={
+          <div className="flex gap-2">
+            {!isNew && (
+              <Button size="sm" variant="outline" onClick={async () => {
+                const { data } = await supabase.from("product_packages").select("id").eq("product_id", id!).order("sequence");
+                const ids = (data ?? []).map((p: any) => p.id);
+                if (!ids.length) { toast.error("Sem colis definidos"); return; }
+                await printColisLabels(ids);
+              }}>
+                <Printer className="h-4 w-4 mr-1" /> Etiquetas colis
+              </Button>
+            )}
+            <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>
+          </div>
+        }
         onDelete={isNew ? undefined : remove}
       />
       <PageBody>
