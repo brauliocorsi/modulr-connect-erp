@@ -3,7 +3,8 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { CheckCircle2, X, Package, MapPin } from "lucide-react";
+import { CheckCircle2, X, Package, MapPin, Lock, CalendarCheck } from "lucide-react";
+import { fmtDateTime } from "@/lib/format";
 
 const KIND_LABEL: Record<string, string> = {
   incoming: "Receção",
@@ -269,6 +270,21 @@ export default function PickingScan() {
             placeholder={picking ? "Bipe produto, local, OK ou ESC" : "Bipe código da transferência (ex.: WH/IN/00001)"}
             flash={flash}
           />
+
+          {picking && (picking.state === "done" || picking.state === "cancelled") && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+              <Lock className="h-5 w-5 text-slate-400 shrink-0" />
+              <div>
+                <div className="text-sm font-semibold text-slate-200">
+                  {picking.state === "done" ? "Transferência concluída" : "Transferência cancelada"}
+                </div>
+                <div className="text-xs text-slate-400 flex items-center gap-1">
+                  <CalendarCheck className="h-3 w-3" />
+                  {fmtDateTime(picking.done_at ?? picking.updated_at)}
+                </div>
+              </div>
+            </div>
+          )}
 
           {picking && (
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">

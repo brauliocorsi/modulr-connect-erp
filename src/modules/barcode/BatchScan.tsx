@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
-import { CheckCircle2, X, Package } from "lucide-react";
+import { CheckCircle2, X, Package, Lock, CalendarCheck } from "lucide-react";
+import { fmtDateTime } from "@/lib/format";
 
 type AggMove = {
   product_id: string;
@@ -31,7 +32,7 @@ export default function BatchScan() {
   useEffect(() => { loadPending(); }, []);
 
   const openBatch = async (id: string) => {
-    const { data: b } = await supabase.from("stock_picking_batches").select("*").eq("id", id).maybeSingle();
+    const { data: b } = await supabase.from("stock_picking_batches").select("*,updated_at").eq("id", id).maybeSingle();
     if (!b) return;
     setBatch(b);
     const { data: ps } = await supabase.from("stock_pickings").select("id").eq("batch_id", id);
@@ -111,6 +112,20 @@ export default function BatchScan() {
       <div className="grid lg:grid-cols-[1fr_320px] gap-4">
         <div className="space-y-4">
           <ScanInput inputRef={inputRef} code={code} setCode={setCode} onSubmit={() => submit()} placeholder={batch ? "Bipe produto, OK ou ESC" : "Bipe o código do lote (ex.: BATCH/00001)"} flash={flash} />
+          {batch && (batch.state === "done" || batch.state === "cancelled") && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+              <Lock className="h-5 w-5 text-slate-400 shrink-0" />
+              <div>
+                <div className="text-sm font-semibold text-slate-200">
+                  {batch.state === "done" ? "Lote concluído" : "Lote cancelado"}
+                </div>
+                <div className="text-xs text-slate-400 flex items-center gap-1">
+                  <CalendarCheck className="h-3 w-3" />
+                  {fmtDateTime(batch.updated_at)}
+                </div>
+              </div>
+            </div>
+          )}
           {batch ? (
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
