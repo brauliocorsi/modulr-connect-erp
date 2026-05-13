@@ -228,6 +228,7 @@ export default function PickingScan() {
 
   const validate = async () => {
     if (!picking) return;
+    if (picking.state === "done" || picking.state === "cancelled") return log("Transferência já validada/cancelada", "warn");
     const incomplete = moves.filter((m) => m.state !== "done" && m.state !== "cancelled" && Number(m.quantity_done ?? 0) < Number(m.quantity));
     if (incomplete.length > 0) {
       const names = incomplete.map((m) => `${m.products?.name} (${Number(m.quantity_done ?? 0)}/${Number(m.quantity)})`).join(", ");
@@ -247,7 +248,7 @@ export default function PickingScan() {
     <ScanLayout
       title={KIND_LABEL[kind] ?? "Picking"}
       subtitle={picking ? `${picking.name} · ${picking.partners?.name ?? ""}` : "Bipe o código de uma transferência para começar"}
-      actions={picking ? (
+      actions={picking && picking.state !== "done" && picking.state !== "cancelled" ? (
         <>
           <button onClick={() => { setPicking(null); setMoves([]); }} className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm">
             <X className="inline h-4 w-4 mr-1" /> Fechar

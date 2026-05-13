@@ -53,6 +53,7 @@ export default function WaveScan() {
 
   const validate = async () => {
     if (!wave) return;
+    if (wave.state === "done" || wave.state === "cancelled") return log("Onda já validada/cancelada", "warn");
     const { error } = await supabase.rpc("validate_wave", { _wave: wave.id });
     if (error) return log(error.message, "error");
     log(`✓ Onda ${wave.name} validada`, "ok");
@@ -66,7 +67,7 @@ export default function WaveScan() {
     <ScanLayout
       title="Onda (Wave)"
       subtitle={wave ? wave.name : "Bipe o código de uma onda"}
-      actions={wave ? (
+      actions={wave && wave.state !== "done" && wave.state !== "cancelled" ? (
         <>
           <button onClick={() => { setWave(null); setMoves([]); }} className="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-sm"><X className="inline h-4 w-4 mr-1" />Fechar</button>
           <button onClick={validate} className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold"><CheckCircle2 className="inline h-4 w-4 mr-1" />Validar onda</button>
