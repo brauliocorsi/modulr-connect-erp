@@ -37,6 +37,9 @@ export default function CashRegistersList() {
     department_id: "",
     driver_employee_id: "",
   });
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkForm, setLinkForm] = useState({ email: "", password: "" });
+  const [linking, setLinking] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
