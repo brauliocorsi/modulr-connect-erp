@@ -3097,6 +3097,42 @@ export type Database = {
           },
         ]
       }
+      service_states: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_closed: boolean
+          is_default: boolean
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          is_default?: boolean
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean
+          is_default?: boolean
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stock_locations: {
         Row: {
           active: boolean
