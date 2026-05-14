@@ -14,6 +14,9 @@ const TONES: Record<string, string> = {
   partial: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
   pending: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
   cancelled: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200",
+  new: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200",
+  triaged: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200",
+  scheduled: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
 };
 
 export function StateBadge({ value }: { value?: string | null }) {
