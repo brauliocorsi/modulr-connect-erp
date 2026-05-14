@@ -64,42 +64,52 @@ export default function Discuss() {
     const mentions = Array.from(text.matchAll(/@([\w.@-]+)/g))
       .map((m) => profiles.find((p) => (p.full_name ?? p.email ?? "").toLowerCase().includes(m[1].toLowerCase()))?.id)
       .filter(Boolean) as string[];
-    await supabase.from("chat_messages").insert({ channel_id: channelId, author_id: user.id, body: text.trim(), mentions });
+    const body = text.trim();
     setText("");
+    const { error } = await supabase.from("chat_messages").insert({ channel_id: channelId, author_id: user.id, body, mentions });
+    if (error) {
+      toast.error("Não foi possível enviar a mensagem", { description: error.message });
+      setText(body);
+    }
   };
 
   const createChannel = async () => {
     if (!newName.trim() || !user) return;
-    const { data } = await supabase.from("chat_channels").insert({ name: newName.trim(), created_by: user.id }).select().single();
-    if (data) {
-      await supabase.from("chat_channel_members").insert({ channel_id: data.id, user_id: user.id });
-      setChannels((c) => [...c, data as Channel]);
-      setNewName(""); setOpen(false);
-      nav(`/discuss/${data.id}`);
-    }
+    const { data, error } = await supabase.from("chat_channels").insert({ name: newName.trim(), created_by: user.id }).select().single();
+    if (error || !data) { toast.error("Erro ao criar canal", { description: error?.message }); return; }
+    await supabase.from("chat_channel_members").insert({ channel_id: data.id, user_id: user.id });
+    setChannels((c) => [...c, data as Channel]);
+    setNewName(""); setOpen(false);
+    nav(`/discuss/${data.id}`);
   };
 
   const dmKey = (a: string, b: string) => "dm:" + [a, b].sort().join("|");
   const profileLabel = (p: Profile) => p.full_name ?? p.email ?? "Utilizador";
 
   const openDm = async (otherId: string) => {
-    if (!user || otherId === user.id) return;
+    if (!user) { toast.error("Sessão inválida"); return; }
+    if (otherId === user.id) return;
     const key = dmKey(user.id, otherId);
-    const { data: existing } = await supabase
-      .from("chat_channels").select("*").eq("kind", "dm").eq("name", key).maybeSingle();
-    let channel = existing as Channel | null;
+    // Look in local list first (private channels we already have access to)
+    let channel: Channel | null = channels.find((c) => c.kind === "dm" && c.name === key) ?? null;
+    if (!channel) {
+      const { data: existing } = await supabase
+        .from("chat_channels").select("*").eq("kind", "dm").eq("name", key).maybeSingle();
+      channel = (existing as Channel | null) ?? null;
+    }
     if (!channel) {
       const otherProf = profiles.find((p) => p.id === otherId);
       const { data: created, error } = await supabase
         .from("chat_channels")
         .insert({ name: key, kind: "dm", is_private: true, created_by: user.id, description: otherProf ? `DM com ${profileLabel(otherProf)}` : "Mensagem direta" })
         .select().single();
-      if (error || !created) return;
+      if (error || !created) { toast.error("Erro ao criar conversa", { description: error?.message }); return; }
       channel = created as Channel;
-      await supabase.from("chat_channel_members").insert([
+      const { error: memErr } = await supabase.from("chat_channel_members").insert([
         { channel_id: channel.id, user_id: user.id },
         { channel_id: channel.id, user_id: otherId },
       ]);
+      if (memErr) { toast.error("Erro ao adicionar membros", { description: memErr.message }); return; }
       setChannels((c) => [...c, channel as Channel]);
     }
     setDmOpen(false); setDmSearch("");
