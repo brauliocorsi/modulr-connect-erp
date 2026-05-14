@@ -60,10 +60,14 @@ type SR = {
   id: string; name: string; state: string; priority: string; created_at: string;
   resolution_due_at: string | null; response_due_at: string | null;
   first_response_at: string | null; resolved_at: string | null;
+  sla_paused_at?: string | null; sla_pause_reason?: string | null;
+  sla_paused_total_minutes?: number | null; sla_extension_minutes?: number | null;
   partners: { name: string } | null;
   products: { name: string } | null;
   stock_pickings: { name: string; origin: string | null } | null;
 };
+type PriorityException = { id: string; priority: string; response_minutes: number; resolution_minutes: number; reason: string | null; active: boolean };
+type SlaExceptionLog = { id: string; request_id: string; action: string; minutes: number | null; reason: string; old_resolution_due_at: string | null; new_resolution_due_at: string | null; created_at: string; created_by: string | null };
 
 const useStates = () => useQuery({
   queryKey: ["service_states"],
