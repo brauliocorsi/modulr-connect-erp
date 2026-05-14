@@ -89,31 +89,15 @@ export default function Discuss() {
   const openDm = async (otherId: string) => {
     if (!user) { toast.error("Sessão inválida"); return; }
     if (otherId === user.id) return;
-    const key = dmKey(user.id, otherId);
-    // Look in local list first (private channels we already have access to)
-    let channel: Channel | null = channels.find((c) => c.kind === "dm" && c.name === key) ?? null;
-    if (!channel) {
-      const { data: existing } = await supabase
-        .from("chat_channels").select("*").eq("kind", "dm").eq("name", key).maybeSingle();
-      channel = (existing as Channel | null) ?? null;
-    }
-    if (!channel) {
-      const otherProf = profiles.find((p) => p.id === otherId);
-      const { data: created, error } = await supabase
-        .from("chat_channels")
-        .insert({ name: key, kind: "dm", is_private: true, created_by: user.id, description: otherProf ? `DM com ${profileLabel(otherProf)}` : "Mensagem direta" })
-        .select().single();
-      if (error || !created) { toast.error("Erro ao criar conversa", { description: error?.message }); return; }
-      channel = created as Channel;
-      const { error: memErr } = await supabase.from("chat_channel_members").insert([
-        { channel_id: channel.id, user_id: user.id },
-        { channel_id: channel.id, user_id: otherId },
-      ]);
-      if (memErr) { toast.error("Erro ao adicionar membros", { description: memErr.message }); return; }
-      setChannels((c) => [...c, channel as Channel]);
+    const { data: newId, error } = await supabase.rpc("discuss_open_dm", { _other: otherId });
+    if (error || !newId) { toast.error("Erro ao iniciar conversa", { description: error?.message }); return; }
+    const channelId = newId as string;
+    if (!channels.find((c) => c.id === channelId)) {
+      const { data: ch } = await supabase.from("chat_channels").select("*").eq("id", channelId).maybeSingle();
+      if (ch) setChannels((c) => [...c, ch as Channel]);
     }
     setDmOpen(false); setDmSearch("");
-    nav(`/discuss/${channel.id}`);
+    nav(`/discuss/${channelId}`);
   };
 
   const dmDisplayName = (c: Channel) => {

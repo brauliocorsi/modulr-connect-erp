@@ -4492,6 +4492,7 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      discuss_open_dm: { Args: { _other: string }; Returns: string }
       driver_assign_batch: {
         Args: {
           _batch: string
