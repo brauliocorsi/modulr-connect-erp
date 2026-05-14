@@ -267,6 +267,7 @@ function KanbanTab() {
                 {r.stock_pickings?.name && (
                   <div className="text-muted-foreground font-mono text-[10px] mt-1">📦 {r.stock_pickings.name}</div>
                 )}
+                <div className="mt-1"><SlaBadge r={r} /></div>
               </Link>
             ))}
             {(grouped[s.key]?.length ?? 0) === 0 && (
