@@ -153,14 +153,15 @@ function ListTab() {
     <div className="border rounded-lg overflow-hidden bg-card">
       <table className="w-full text-sm table-fixed">
         <colgroup>
-          <col className="w-[110px]" />
-          <col />
-          <col />
-          <col className="w-[120px]" />
-          <col className="w-[120px]" />
           <col className="w-[100px]" />
-          <col className="w-[130px]" />
-          <col className="w-[160px]" />
+          <col />
+          <col />
+          <col className="w-[110px]" />
+          <col className="w-[110px]" />
+          <col className="w-[90px]" />
+          <col className="w-[120px]" />
+          <col className="w-[150px]" />
+          <col className="w-[150px]" />
         </colgroup>
         <thead className="bg-muted/40 text-left">
           <tr>
@@ -171,6 +172,7 @@ function ListTab() {
             <th className="px-3 py-2 font-medium">Venda</th>
             <th className="px-3 py-2 font-medium">Prioridade</th>
             <th className="px-3 py-2 font-medium">Estado</th>
+            <th className="px-3 py-2 font-medium">SLA</th>
             <th className="px-3 py-2 font-medium">Aberto em</th>
           </tr>
         </thead>
@@ -194,6 +196,7 @@ function ListTab() {
                     {s?.label ?? r.state}
                   </span>
                 </td>
+                <td className="px-3 py-2"><SlaBadge r={r} /></td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
               </tr>
             );
