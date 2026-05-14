@@ -60,10 +60,14 @@ type SR = {
   id: string; name: string; state: string; priority: string; created_at: string;
   resolution_due_at: string | null; response_due_at: string | null;
   first_response_at: string | null; resolved_at: string | null;
+  sla_paused_at?: string | null; sla_pause_reason?: string | null;
+  sla_paused_total_minutes?: number | null; sla_extension_minutes?: number | null;
   partners: { name: string } | null;
   products: { name: string } | null;
   stock_pickings: { name: string; origin: string | null } | null;
 };
+type PriorityException = { id: string; priority: string; response_minutes: number; resolution_minutes: number; reason: string | null; active: boolean };
+type SlaExceptionLog = { id: string; request_id: string; action: string; minutes: number | null; reason: string; old_resolution_due_at: string | null; new_resolution_due_at: string | null; created_at: string; created_by: string | null };
 
 const useStates = () => useQuery({
   queryKey: ["service_states"],
@@ -88,7 +92,7 @@ const useRequests = () => useQuery({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("service_requests")
-      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, partners(name), products(name), stock_pickings(name, origin)")
+      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, sla_paused_at, sla_pause_reason, sla_paused_total_minutes, sla_extension_minutes, partners(name), products(name), stock_pickings(name, origin)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
@@ -96,10 +100,20 @@ const useRequests = () => useQuery({
   },
 });
 
+const usePriorityExceptions = () => useQuery({
+  queryKey: ["service_sla_priority_exceptions"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("service_sla_priority_exceptions" as any).select("*").order("priority");
+    if (error) throw error;
+    return (data ?? []) as unknown as PriorityException[];
+  },
+});
+
 // SLA status helpers
-type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "none";
-function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at">): SlaState {
+type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "paused" | "none";
+function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at" | "created_at" | "sla_paused_at">): SlaState {
   if (!r.resolution_due_at) return "none";
+  if (r.sla_paused_at) return "paused";
   const due = new Date(r.resolution_due_at).getTime();
   if (r.resolved_at) {
     return new Date(r.resolved_at).getTime() <= due ? "met" : "missed";
@@ -116,11 +130,12 @@ const SLA_TONES: Record<SlaState, string> = {
   breached: "bg-rose-100 text-rose-900",
   met: "bg-emerald-100 text-emerald-800",
   missed: "bg-rose-100 text-rose-900",
+  paused: "bg-violet-100 text-violet-900",
   none: "bg-slate-100 text-slate-700",
 };
 const SLA_LABEL: Record<SlaState, string> = {
   ok: "No prazo", at_risk: "Em risco", breached: "Em atraso",
-  met: "Cumprido", missed: "Falhado", none: "Sem SLA",
+  met: "Cumprido", missed: "Falhado", paused: "Pausado", none: "Sem SLA",
 };
 function SlaBadge({ r }: { r: SR }) {
   const s = slaStatus(r);
@@ -135,7 +150,7 @@ function SlaBadge({ r }: { r: SR }) {
   };
   return (
     <span className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium " + SLA_TONES[s]}>
-      {SLA_LABEL[s]}{!r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
+      {SLA_LABEL[s]}{s !== "paused" && !r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
     </span>
   );
 }
@@ -524,9 +539,122 @@ function SlaTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PriorityExceptionsCard />
     </div>
   );
 }
+
+function PriorityExceptionsCard() {
+  const qc = useQueryClient();
+  const { data: items = [] } = usePriorityExceptions();
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<Partial<PriorityException> | null>(null);
+  const fmtMins = (m: number) => m >= 1440 ? `${Math.round(m/1440)}d` : m >= 60 ? `${Math.round(m/60)}h` : `${m}min`;
+  const openNew = () => { setEdit({ priority: "high", response_minutes: 120, resolution_minutes: 480, reason: "", active: true }); setOpen(true); };
+  const openEdit = (p: PriorityException) => { setEdit({ ...p }); setOpen(true); };
+  const save = async () => {
+    if (!edit?.priority) return toast.error("Prioridade obrigatória");
+    const payload = {
+      priority: edit.priority,
+      response_minutes: Number(edit.response_minutes ?? 0),
+      resolution_minutes: Number(edit.resolution_minutes ?? 0),
+      reason: edit.reason ?? null,
+      active: edit.active ?? true,
+    };
+    const { error } = edit.id
+      ? await supabase.from("service_sla_priority_exceptions" as any).update(payload).eq("id", edit.id)
+      : await supabase.from("service_sla_priority_exceptions" as any).upsert(payload, { onConflict: "priority" });
+    if (error) return toast.error(error.message);
+    toast.success("Exceção salva");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["service_sla_priority_exceptions"] });
+  };
+  const remove = async (p: PriorityException) => {
+    if (!confirm(`Excluir exceção "${p.priority}"?`)) return;
+    const { error } = await supabase.from("service_sla_priority_exceptions" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["service_sla_priority_exceptions"] });
+  };
+  return (
+    <div className="space-y-2 pt-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Exceções por prioridade</h3>
+          <p className="text-xs text-muted-foreground">Sobrescrevem os tempos da política padrão para uma prioridade específica.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nova exceção</Button>
+      </div>
+      <Card className="p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left">
+            <tr>
+              <th className="px-3 py-2 font-medium w-32">Prioridade</th>
+              <th className="px-3 py-2 font-medium w-32">1ª Resposta</th>
+              <th className="px-3 py-2 font-medium w-32">Resolução</th>
+              <th className="px-3 py-2 font-medium">Motivo</th>
+              <th className="px-3 py-2 font-medium w-20">Ativa</th>
+              <th className="px-3 py-2 font-medium w-24"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(p => (
+              <tr key={p.id} className="border-t">
+                <td className="px-3 py-2">
+                  <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[p.priority] ?? "bg-muted")}>
+                    {PRIORITY_PT[p.priority] ?? p.priority}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.response_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.resolution_minutes)}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-[300px]">{p.reason ?? "—"}</td>
+                <td className="px-3 py-2 text-xs">{p.active ? "Sim" : "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">Sem exceções por prioridade.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit?.id ? "Editar exceção" : "Nova exceção por prioridade"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Prioridade</Label>
+              <select className="w-full h-10 border rounded-md px-2 bg-background" value={edit?.priority ?? "high"}
+                onChange={(e) => setEdit({ ...edit!, priority: e.target.value })} disabled={!!edit?.id}>
+                <option value="low">Baixa</option><option value="normal">Normal</option>
+                <option value="high">Alta</option><option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Switch checked={!!edit?.active} onCheckedChange={(v) => setEdit({ ...edit!, active: v })} /><Label>Ativa</Label>
+            </div>
+            <div className="space-y-1"><Label>1ª resposta (min)</Label>
+              <Input type="number" value={edit?.response_minutes ?? 0} onChange={(e) => setEdit({ ...edit!, response_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1"><Label>Resolução (min)</Label>
+              <Input type="number" value={edit?.resolution_minutes ?? 0} onChange={(e) => setEdit({ ...edit!, resolution_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1 col-span-2"><Label>Motivo / observação</Label>
+              <Input value={edit?.reason ?? ""} onChange={(e) => setEdit({ ...edit!, reason: e.target.value })} placeholder="ex: Contrato VIP, sazonalidade…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 
 // ---------- Page ----------
 export const ServiceRequestsList = () => {
@@ -554,35 +682,182 @@ export const ServiceRequestsList = () => {
   );
 };
 
+// ---------- SLA Exception Dialog ----------
+type ExceptionMode = "pause" | "resume" | "extend" | "adjust";
+function SlaExceptionDialog({ requestId, mode, open, onOpenChange, onDone, currentDue }: {
+  requestId: string; mode: ExceptionMode; open: boolean; onOpenChange: (v: boolean) => void; onDone: () => void; currentDue?: string | null;
+}) {
+  const [reason, setReason] = useState("");
+  const [minutes, setMinutes] = useState<number>(60);
+  const [newDue, setNewDue] = useState<string>(currentDue ? new Date(currentDue).toISOString().slice(0, 16) : "");
+  useEffect(() => { if (open) { setReason(""); setMinutes(60); setNewDue(currentDue ? new Date(currentDue).toISOString().slice(0, 16) : ""); } }, [open, currentDue]);
+  const titleMap: Record<ExceptionMode, string> = { pause: "Pausar SLA", resume: "Retomar SLA", extend: "Prorrogar prazo", adjust: "Ajustar prazo" };
+  const submit = async () => {
+    if (!reason.trim()) return toast.error("Informe o motivo");
+    let res;
+    if (mode === "pause") res = await supabase.rpc("service_sla_pause" as any, { _request_id: requestId, _reason: reason });
+    else if (mode === "resume") res = await supabase.rpc("service_sla_resume" as any, { _request_id: requestId, _reason: reason });
+    else if (mode === "extend") {
+      if (!minutes || minutes <= 0) return toast.error("Minutos inválidos");
+      res = await supabase.rpc("service_sla_extend" as any, { _request_id: requestId, _minutes: minutes, _reason: reason });
+    } else {
+      if (!newDue) return toast.error("Selecione novo prazo");
+      res = await supabase.rpc("service_sla_adjust" as any, { _request_id: requestId, _new_due: new Date(newDue).toISOString(), _reason: reason });
+    }
+    if ((res as any)?.error) return toast.error((res as any).error.message);
+    toast.success("SLA atualizado");
+    onOpenChange(false);
+    onDone();
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{titleMap[mode]}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          {mode === "extend" && (
+            <div className="space-y-1"><Label>Minutos a adicionar</Label>
+              <Input type="number" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+              <div className="flex gap-1 mt-1">
+                {[60, 240, 1440, 2880].map(m => (
+                  <Button key={m} type="button" variant="outline" size="sm" onClick={() => setMinutes(m)}>
+                    {m >= 1440 ? `+${m/1440}d` : `+${m/60}h`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {mode === "adjust" && (
+            <div className="space-y-1"><Label>Novo prazo de resolução</Label>
+              <Input type="datetime-local" value={newDue} onChange={(e) => setNewDue(e.target.value)} />
+            </div>
+          )}
+          <div className="space-y-1"><Label>Motivo</Label>
+            <textarea className="w-full min-h-[80px] border rounded-md px-3 py-2 text-sm bg-background"
+              value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Justifique a exceção…" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={submit}>Confirmar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SlaExceptionHistory({ requestId }: { requestId: string }) {
+  const { data: logs = [] } = useQuery({
+    queryKey: ["service_sla_exceptions", requestId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_sla_exceptions" as any)
+        .select("*").eq("request_id", requestId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as SlaExceptionLog[];
+    },
+  });
+  if (!logs.length) return <div className="text-xs text-muted-foreground">Sem exceções registadas.</div>;
+  const ACT: Record<string, { l: string; t: string }> = {
+    pause: { l: "Pausa", t: "bg-violet-100 text-violet-900" },
+    resume: { l: "Retomada", t: "bg-emerald-100 text-emerald-900" },
+    extend: { l: "Prorrogação", t: "bg-amber-100 text-amber-900" },
+    adjust: { l: "Ajuste", t: "bg-sky-100 text-sky-900" },
+  };
+  return (
+    <div className="space-y-1">
+      {logs.map(l => {
+        const a = ACT[l.action] ?? { l: l.action, t: "bg-slate-100" };
+        return (
+          <div key={l.id} className="text-xs flex flex-wrap gap-2 items-center border-b pb-1">
+            <span className={"px-2 py-0.5 rounded-full font-medium " + a.t}>{a.l}</span>
+            <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString("pt-PT")}</span>
+            {l.minutes != null && <span className="font-mono">{l.minutes >= 1440 ? `${Math.round(l.minutes/1440)}d` : l.minutes >= 60 ? `${Math.round(l.minutes/60)}h` : `${l.minutes}min`}</span>}
+            {l.new_resolution_due_at && (
+              <span className="text-muted-foreground">→ {new Date(l.new_resolution_due_at).toLocaleString("pt-PT")}</span>
+            )}
+            <span className="flex-1 italic">"{l.reason}"</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ---------- Form ----------
 function LinkedRefs({ id }: { id: string }) {
+  const qc = useQueryClient();
   const [info, setInfo] = useState<any>(null);
   const { data: states = [] } = useStates();
   const stateMap = useMemo(() => Object.fromEntries(states.map(s => [s.key, s])), [states]);
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("service_requests")
-        .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, picking_id, stock_pickings(id, name, origin), partners(name)")
-        .eq("id", id)
-        .maybeSingle();
-      setInfo(data);
-    })();
-  }, [id]);
+  const [excMode, setExcMode] = useState<ExceptionMode | null>(null);
+  const reload = async () => {
+    const { data } = await supabase
+      .from("service_requests")
+      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, sla_paused_at, sla_pause_reason, sla_paused_total_minutes, sla_extension_minutes, picking_id, stock_pickings(id, name, origin), partners(name)")
+      .eq("id", id)
+      .maybeSingle();
+    setInfo(data);
+    qc.invalidateQueries({ queryKey: ["service_sla_exceptions", id] });
+    qc.invalidateQueries({ queryKey: ["service_requests_all"] });
+  };
+  useEffect(() => { reload(); }, [id]);
   if (!info) return null;
   const s = stateMap[info.state];
+  const isResolved = !!info.resolved_at;
+  const isPaused = !!info.sla_paused_at;
   return (
-    <Card className="p-4 max-w-3xl mb-3 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Estado:</span>
-        <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + colorClass(s?.color)}>{s?.label ?? info.state}</span>
+    <Card className="p-4 max-w-3xl mb-3 space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Estado:</span>
+          <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + colorClass(s?.color)}>{s?.label ?? info.state}</span>
+        </div>
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Prioridade:</span>
+          <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[info.priority] ?? "bg-muted")}>{PRIORITY_PT[info.priority] ?? info.priority}</span>
+        </div>
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">SLA:</span><SlaBadge r={info as any} /></div>
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Cliente:</span><span className="text-xs">{info.partners?.name ?? "—"}</span></div>
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Entrega:</span><span className="font-mono text-xs">{info.stock_pickings?.name ?? "—"}</span></div>
+        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Venda:</span><span className="font-mono text-xs">{info.stock_pickings?.origin ?? "—"}</span></div>
       </div>
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Prioridade:</span>
-        <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[info.priority] ?? "bg-muted")}>{PRIORITY_PT[info.priority] ?? info.priority}</span>
-      </div>
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">SLA:</span><SlaBadge r={info as any} /></div>
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Cliente:</span><span className="text-xs">{info.partners?.name ?? "—"}</span></div>
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Entrega:</span><span className="font-mono text-xs">{info.stock_pickings?.name ?? "—"}</span></div>
-      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Venda:</span><span className="font-mono text-xs">{info.stock_pickings?.origin ?? "—"}</span></div>
+
+      {!isResolved && (
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+          {isPaused ? (
+            <Button size="sm" variant="outline" onClick={() => setExcMode("resume")}>Retomar SLA</Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setExcMode("pause")}>Pausar SLA</Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => setExcMode("extend")}>Prorrogar prazo</Button>
+          <Button size="sm" variant="outline" onClick={() => setExcMode("adjust")}>Ajustar prazo</Button>
+          {(info.sla_paused_total_minutes ?? 0) > 0 && (
+            <span className="text-xs text-muted-foreground self-center">Pausado total: {info.sla_paused_total_minutes}min</span>
+          )}
+          {(info.sla_extension_minutes ?? 0) > 0 && (
+            <span className="text-xs text-muted-foreground self-center">Prorrogado: {info.sla_extension_minutes}min</span>
+          )}
+        </div>
+      )}
+
+      {isPaused && info.sla_pause_reason && (
+        <div className="text-xs bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-900 rounded p-2">
+          <span className="font-medium">SLA pausado:</span> {info.sla_pause_reason}
+        </div>
+      )}
+
+      <details className="text-xs">
+        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Histórico de exceções SLA</summary>
+        <div className="mt-2"><SlaExceptionHistory requestId={id} /></div>
+      </details>
+
+      {excMode && (
+        <SlaExceptionDialog
+          requestId={id}
+          mode={excMode}
+          open={!!excMode}
+          onOpenChange={(v) => !v && setExcMode(null)}
+          onDone={reload}
+          currentDue={info.resolution_due_at}
+        />
+      )}
     </Card>
   );
 }

@@ -3017,6 +3017,10 @@ export type Database = {
           response_due_at: string | null
           route_id: string | null
           scheduled_for: string | null
+          sla_extension_minutes: number
+          sla_pause_reason: string | null
+          sla_paused_at: string | null
+          sla_paused_total_minutes: number
           sla_policy_id: string | null
           state: string
           updated_at: string
@@ -3040,6 +3044,10 @@ export type Database = {
           response_due_at?: string | null
           route_id?: string | null
           scheduled_for?: string | null
+          sla_extension_minutes?: number
+          sla_pause_reason?: string | null
+          sla_paused_at?: string | null
+          sla_paused_total_minutes?: number
           sla_policy_id?: string | null
           state?: string
           updated_at?: string
@@ -3063,6 +3071,10 @@ export type Database = {
           response_due_at?: string | null
           route_id?: string | null
           scheduled_for?: string | null
+          sla_extension_minutes?: number
+          sla_pause_reason?: string | null
+          sla_paused_at?: string | null
+          sla_paused_total_minutes?: number
           sla_policy_id?: string | null
           state?: string
           updated_at?: string
@@ -3119,6 +3131,56 @@ export type Database = {
           },
         ]
       }
+      service_sla_exceptions: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          id: string
+          minutes: number | null
+          new_resolution_due_at: string | null
+          new_response_due_at: string | null
+          old_resolution_due_at: string | null
+          old_response_due_at: string | null
+          reason: string
+          request_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          minutes?: number | null
+          new_resolution_due_at?: string | null
+          new_response_due_at?: string | null
+          old_resolution_due_at?: string | null
+          old_response_due_at?: string | null
+          reason: string
+          request_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          minutes?: number | null
+          new_resolution_due_at?: string | null
+          new_response_due_at?: string | null
+          old_resolution_due_at?: string | null
+          old_response_due_at?: string | null
+          reason?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_sla_exceptions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_sla_policies: {
         Row: {
           active: boolean
@@ -3146,6 +3208,39 @@ export type Database = {
           id?: string
           name?: string
           priority?: string
+          resolution_minutes?: number
+          response_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_sla_priority_exceptions: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          priority: string
+          reason: string | null
+          resolution_minutes: number
+          response_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          priority: string
+          reason?: string | null
+          resolution_minutes: number
+          response_minutes: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          priority?: string
+          reason?: string | null
           resolution_minutes?: number
           response_minutes?: number
           updated_at?: string
@@ -4533,6 +4628,22 @@ export type Database = {
         Returns: undefined
       }
       seed_default_schedule: { Args: { _so: string }; Returns: undefined }
+      service_sla_adjust: {
+        Args: { _new_due: string; _reason: string; _request_id: string }
+        Returns: undefined
+      }
+      service_sla_extend: {
+        Args: { _minutes: number; _reason: string; _request_id: string }
+        Returns: undefined
+      }
+      service_sla_pause: {
+        Args: { _reason: string; _request_id: string }
+        Returns: undefined
+      }
+      service_sla_resume: {
+        Args: { _reason: string; _request_id: string }
+        Returns: undefined
+      }
       set_product_stock: {
         Args: {
           _product: string
