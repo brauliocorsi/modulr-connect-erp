@@ -10,6 +10,11 @@ export const STATE_PT: Record<string, string> = {
   posted: "Lançado",
   paid: "Pago",
   pending: "Pendente",
+  // service requests
+  new: "Novo",
+  triaged: "Triado",
+  scheduled: "Agendado",
+  in_progress: "Em curso",
 };
 
 export const KIND_PT: Record<string, string> = {
