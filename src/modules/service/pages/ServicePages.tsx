@@ -55,8 +55,11 @@ const PRIORITY_TONES: Record<string, string> = {
 const PRIORITY_PT: Record<string, string> = { low: "Baixa", normal: "Normal", high: "Alta", urgent: "Urgente" };
 
 type SState = { id: string; key: string; label: string; color: string; sort_order: number; is_default: boolean; is_closed: boolean };
+type SlaPolicy = { id: string; name: string; active: boolean; priority: string; response_minutes: number; resolution_minutes: number };
 type SR = {
   id: string; name: string; state: string; priority: string; created_at: string;
+  resolution_due_at: string | null; response_due_at: string | null;
+  first_response_at: string | null; resolved_at: string | null;
   partners: { name: string } | null;
   products: { name: string } | null;
   stock_pickings: { name: string; origin: string | null } | null;
@@ -71,18 +74,71 @@ const useStates = () => useQuery({
   },
 });
 
+const useSlaPolicies = () => useQuery({
+  queryKey: ["service_sla_policies"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("service_sla_policies" as any).select("*").order("priority");
+    if (error) throw error;
+    return (data ?? []) as unknown as SlaPolicy[];
+  },
+});
+
 const useRequests = () => useQuery({
   queryKey: ["service_requests_all"],
   queryFn: async () => {
     const { data, error } = await supabase
       .from("service_requests")
-      .select("id, name, state, priority, created_at, partners(name), products(name), stock_pickings(name, origin)")
+      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, partners(name), products(name), stock_pickings(name, origin)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
     return (data ?? []) as unknown as SR[];
   },
 });
+
+// SLA status helpers
+type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "none";
+function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at">): SlaState {
+  if (!r.resolution_due_at) return "none";
+  const due = new Date(r.resolution_due_at).getTime();
+  if (r.resolved_at) {
+    return new Date(r.resolved_at).getTime() <= due ? "met" : "missed";
+  }
+  const now = Date.now();
+  if (now > due) return "breached";
+  const total = due - new Date((r as any).created_at ?? now).getTime();
+  if (total > 0 && (due - now) / total < 0.2) return "at_risk";
+  return "ok";
+}
+const SLA_TONES: Record<SlaState, string> = {
+  ok: "bg-emerald-100 text-emerald-800",
+  at_risk: "bg-amber-100 text-amber-900",
+  breached: "bg-rose-100 text-rose-900",
+  met: "bg-emerald-100 text-emerald-800",
+  missed: "bg-rose-100 text-rose-900",
+  none: "bg-slate-100 text-slate-700",
+};
+const SLA_LABEL: Record<SlaState, string> = {
+  ok: "No prazo", at_risk: "Em risco", breached: "Em atraso",
+  met: "Cumprido", missed: "Falhado", none: "Sem SLA",
+};
+function SlaBadge({ r }: { r: SR }) {
+  const s = slaStatus(r);
+  if (s === "none") return <span className="text-xs text-muted-foreground">—</span>;
+  const due = r.resolution_due_at ? new Date(r.resolution_due_at) : null;
+  const remaining = due ? due.getTime() - Date.now() : 0;
+  const fmt = (ms: number) => {
+    const a = Math.abs(ms);
+    const h = Math.floor(a / 3600000);
+    const m = Math.floor((a % 3600000) / 60000);
+    return h >= 24 ? `${Math.floor(h/24)}d ${h%24}h` : `${h}h ${m}m`;
+  };
+  return (
+    <span className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium " + SLA_TONES[s]}>
+      {SLA_LABEL[s]}{!r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
+    </span>
+  );
+}
 
 // ---------- List view ----------
 function ListTab() {
