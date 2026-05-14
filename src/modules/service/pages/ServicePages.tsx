@@ -563,7 +563,7 @@ function LinkedRefs({ id }: { id: string }) {
     (async () => {
       const { data } = await supabase
         .from("service_requests")
-        .select("state, priority, picking_id, stock_pickings(id, name, origin), partners(name)")
+        .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, picking_id, stock_pickings(id, name, origin), partners(name)")
         .eq("id", id)
         .maybeSingle();
       setInfo(data);
@@ -579,6 +579,7 @@ function LinkedRefs({ id }: { id: string }) {
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Prioridade:</span>
         <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[info.priority] ?? "bg-muted")}>{PRIORITY_PT[info.priority] ?? info.priority}</span>
       </div>
+      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">SLA:</span><SlaBadge r={info as any} /></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Cliente:</span><span className="text-xs">{info.partners?.name ?? "—"}</span></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Entrega:</span><span className="font-mono text-xs">{info.stock_pickings?.name ?? "—"}</span></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Venda:</span><span className="font-mono text-xs">{info.stock_pickings?.origin ?? "—"}</span></div>
