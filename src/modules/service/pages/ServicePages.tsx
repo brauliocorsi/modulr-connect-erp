@@ -407,10 +407,12 @@ export const ServiceRequestsList = () => {
             <TabsTrigger value="list">Lista</TabsTrigger>
             <TabsTrigger value="kanban">Kanban</TabsTrigger>
             <TabsTrigger value="states">Estados</TabsTrigger>
+            <TabsTrigger value="sla">SLA</TabsTrigger>
           </TabsList>
           <TabsContent value="list" className="mt-3"><ListTab /></TabsContent>
           <TabsContent value="kanban" className="mt-3"><KanbanTab /></TabsContent>
           <TabsContent value="states" className="mt-3"><StatesTab /></TabsContent>
+          <TabsContent value="sla" className="mt-3"><SlaTab /></TabsContent>
         </Tabs>
       </PageBody>
     </>
