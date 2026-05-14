@@ -221,7 +221,7 @@ export default function Discuss() {
               <div ref={endRef} />
             </div>
             <div className="border-t p-3 flex gap-2">
-              <Textarea rows={1} placeholder={`Mensagem em #${current.name} — use @nome para mencionar`} value={text}
+              <Textarea rows={1} placeholder={current.kind === "dm" ? `Mensagem para ${dmDisplayName(current)}` : `Mensagem em #${current.name} — use @nome para mencionar`} value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
               <Button onClick={send}><Send className="h-4 w-4" /></Button>
