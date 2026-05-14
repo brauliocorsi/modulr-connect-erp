@@ -170,7 +170,7 @@ export default function Discuss() {
                 <Button size="icon" variant="ghost" title="Novo canal"><Plus className="h-4 w-4" /></Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Novo canal</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Novo canal</DialogTitle><DialogDescription>Crie um canal de conversa para a equipa.</DialogDescription></DialogHeader>
                 <Input placeholder="nome-do-canal" value={newName} onChange={(e) => setNewName(e.target.value)} />
                 <DialogFooter><Button onClick={createChannel}>Criar</Button></DialogFooter>
               </DialogContent>
