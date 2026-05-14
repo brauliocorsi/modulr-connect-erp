@@ -539,9 +539,122 @@ function SlaTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PriorityExceptionsCard />
     </div>
   );
 }
+
+function PriorityExceptionsCard() {
+  const qc = useQueryClient();
+  const { data: items = [] } = usePriorityExceptions();
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<Partial<PriorityException> | null>(null);
+  const fmtMins = (m: number) => m >= 1440 ? `${Math.round(m/1440)}d` : m >= 60 ? `${Math.round(m/60)}h` : `${m}min`;
+  const openNew = () => { setEdit({ priority: "high", response_minutes: 120, resolution_minutes: 480, reason: "", active: true }); setOpen(true); };
+  const openEdit = (p: PriorityException) => { setEdit({ ...p }); setOpen(true); };
+  const save = async () => {
+    if (!edit?.priority) return toast.error("Prioridade obrigatória");
+    const payload = {
+      priority: edit.priority,
+      response_minutes: Number(edit.response_minutes ?? 0),
+      resolution_minutes: Number(edit.resolution_minutes ?? 0),
+      reason: edit.reason ?? null,
+      active: edit.active ?? true,
+    };
+    const { error } = edit.id
+      ? await supabase.from("service_sla_priority_exceptions" as any).update(payload).eq("id", edit.id)
+      : await supabase.from("service_sla_priority_exceptions" as any).upsert(payload, { onConflict: "priority" });
+    if (error) return toast.error(error.message);
+    toast.success("Exceção salva");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["service_sla_priority_exceptions"] });
+  };
+  const remove = async (p: PriorityException) => {
+    if (!confirm(`Excluir exceção "${p.priority}"?`)) return;
+    const { error } = await supabase.from("service_sla_priority_exceptions" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["service_sla_priority_exceptions"] });
+  };
+  return (
+    <div className="space-y-2 pt-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Exceções por prioridade</h3>
+          <p className="text-xs text-muted-foreground">Sobrescrevem os tempos da política padrão para uma prioridade específica.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nova exceção</Button>
+      </div>
+      <Card className="p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left">
+            <tr>
+              <th className="px-3 py-2 font-medium w-32">Prioridade</th>
+              <th className="px-3 py-2 font-medium w-32">1ª Resposta</th>
+              <th className="px-3 py-2 font-medium w-32">Resolução</th>
+              <th className="px-3 py-2 font-medium">Motivo</th>
+              <th className="px-3 py-2 font-medium w-20">Ativa</th>
+              <th className="px-3 py-2 font-medium w-24"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(p => (
+              <tr key={p.id} className="border-t">
+                <td className="px-3 py-2">
+                  <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[p.priority] ?? "bg-muted")}>
+                    {PRIORITY_PT[p.priority] ?? p.priority}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.response_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.resolution_minutes)}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-[300px]">{p.reason ?? "—"}</td>
+                <td className="px-3 py-2 text-xs">{p.active ? "Sim" : "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">Sem exceções por prioridade.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit?.id ? "Editar exceção" : "Nova exceção por prioridade"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Prioridade</Label>
+              <select className="w-full h-10 border rounded-md px-2 bg-background" value={edit?.priority ?? "high"}
+                onChange={(e) => setEdit({ ...edit!, priority: e.target.value })} disabled={!!edit?.id}>
+                <option value="low">Baixa</option><option value="normal">Normal</option>
+                <option value="high">Alta</option><option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Switch checked={!!edit?.active} onCheckedChange={(v) => setEdit({ ...edit!, active: v })} /><Label>Ativa</Label>
+            </div>
+            <div className="space-y-1"><Label>1ª resposta (min)</Label>
+              <Input type="number" value={edit?.response_minutes ?? 0} onChange={(e) => setEdit({ ...edit!, response_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1"><Label>Resolução (min)</Label>
+              <Input type="number" value={edit?.resolution_minutes ?? 0} onChange={(e) => setEdit({ ...edit!, resolution_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1 col-span-2"><Label>Motivo / observação</Label>
+              <Input value={edit?.reason ?? ""} onChange={(e) => setEdit({ ...edit!, reason: e.target.value })} placeholder="ex: Contrato VIP, sazonalidade…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 
 // ---------- Page ----------
 export const ServiceRequestsList = () => {
