@@ -3003,6 +3003,7 @@ export type Database = {
           closed_at: string | null
           created_at: string
           description: string | null
+          first_response_at: string | null
           id: string
           name: string
           partner_id: string | null
@@ -3011,8 +3012,12 @@ export type Database = {
           product_id: string | null
           reported_by: string | null
           resolution: string | null
+          resolution_due_at: string | null
+          resolved_at: string | null
+          response_due_at: string | null
           route_id: string | null
           scheduled_for: string | null
+          sla_policy_id: string | null
           state: string
           updated_at: string
         }
@@ -3021,6 +3026,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           description?: string | null
+          first_response_at?: string | null
           id?: string
           name: string
           partner_id?: string | null
@@ -3029,8 +3035,12 @@ export type Database = {
           product_id?: string | null
           reported_by?: string | null
           resolution?: string | null
+          resolution_due_at?: string | null
+          resolved_at?: string | null
+          response_due_at?: string | null
           route_id?: string | null
           scheduled_for?: string | null
+          sla_policy_id?: string | null
           state?: string
           updated_at?: string
         }
@@ -3039,6 +3049,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           description?: string | null
+          first_response_at?: string | null
           id?: string
           name?: string
           partner_id?: string | null
@@ -3047,8 +3058,12 @@ export type Database = {
           product_id?: string | null
           reported_by?: string | null
           resolution?: string | null
+          resolution_due_at?: string | null
+          resolved_at?: string | null
+          response_due_at?: string | null
           route_id?: string | null
           scheduled_for?: string | null
+          sla_policy_id?: string | null
           state?: string
           updated_at?: string
         }
@@ -3095,7 +3110,47 @@ export type Database = {
             referencedRelation: "delivery_routes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "service_requests_sla_policy_id_fkey"
+            columns: ["sla_policy_id"]
+            isOneToOne: false
+            referencedRelation: "service_sla_policies"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      service_sla_policies: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          priority: string
+          resolution_minutes: number
+          response_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          priority: string
+          resolution_minutes?: number
+          response_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          priority?: string
+          resolution_minutes?: number
+          response_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_states: {
         Row: {

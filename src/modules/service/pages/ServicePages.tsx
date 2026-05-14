@@ -55,8 +55,11 @@ const PRIORITY_TONES: Record<string, string> = {
 const PRIORITY_PT: Record<string, string> = { low: "Baixa", normal: "Normal", high: "Alta", urgent: "Urgente" };
 
 type SState = { id: string; key: string; label: string; color: string; sort_order: number; is_default: boolean; is_closed: boolean };
+type SlaPolicy = { id: string; name: string; active: boolean; priority: string; response_minutes: number; resolution_minutes: number };
 type SR = {
   id: string; name: string; state: string; priority: string; created_at: string;
+  resolution_due_at: string | null; response_due_at: string | null;
+  first_response_at: string | null; resolved_at: string | null;
   partners: { name: string } | null;
   products: { name: string } | null;
   stock_pickings: { name: string; origin: string | null } | null;
@@ -71,18 +74,71 @@ const useStates = () => useQuery({
   },
 });
 
+const useSlaPolicies = () => useQuery({
+  queryKey: ["service_sla_policies"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("service_sla_policies" as any).select("*").order("priority");
+    if (error) throw error;
+    return (data ?? []) as unknown as SlaPolicy[];
+  },
+});
+
 const useRequests = () => useQuery({
   queryKey: ["service_requests_all"],
   queryFn: async () => {
     const { data, error } = await supabase
       .from("service_requests")
-      .select("id, name, state, priority, created_at, partners(name), products(name), stock_pickings(name, origin)")
+      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, partners(name), products(name), stock_pickings(name, origin)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
     return (data ?? []) as unknown as SR[];
   },
 });
+
+// SLA status helpers
+type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "none";
+function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at">): SlaState {
+  if (!r.resolution_due_at) return "none";
+  const due = new Date(r.resolution_due_at).getTime();
+  if (r.resolved_at) {
+    return new Date(r.resolved_at).getTime() <= due ? "met" : "missed";
+  }
+  const now = Date.now();
+  if (now > due) return "breached";
+  const total = due - new Date((r as any).created_at ?? now).getTime();
+  if (total > 0 && (due - now) / total < 0.2) return "at_risk";
+  return "ok";
+}
+const SLA_TONES: Record<SlaState, string> = {
+  ok: "bg-emerald-100 text-emerald-800",
+  at_risk: "bg-amber-100 text-amber-900",
+  breached: "bg-rose-100 text-rose-900",
+  met: "bg-emerald-100 text-emerald-800",
+  missed: "bg-rose-100 text-rose-900",
+  none: "bg-slate-100 text-slate-700",
+};
+const SLA_LABEL: Record<SlaState, string> = {
+  ok: "No prazo", at_risk: "Em risco", breached: "Em atraso",
+  met: "Cumprido", missed: "Falhado", none: "Sem SLA",
+};
+function SlaBadge({ r }: { r: SR }) {
+  const s = slaStatus(r);
+  if (s === "none") return <span className="text-xs text-muted-foreground">—</span>;
+  const due = r.resolution_due_at ? new Date(r.resolution_due_at) : null;
+  const remaining = due ? due.getTime() - Date.now() : 0;
+  const fmt = (ms: number) => {
+    const a = Math.abs(ms);
+    const h = Math.floor(a / 3600000);
+    const m = Math.floor((a % 3600000) / 60000);
+    return h >= 24 ? `${Math.floor(h/24)}d ${h%24}h` : `${h}h ${m}m`;
+  };
+  return (
+    <span className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium " + SLA_TONES[s]}>
+      {SLA_LABEL[s]}{!r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
+    </span>
+  );
+}
 
 // ---------- List view ----------
 function ListTab() {
@@ -97,14 +153,15 @@ function ListTab() {
     <div className="border rounded-lg overflow-hidden bg-card">
       <table className="w-full text-sm table-fixed">
         <colgroup>
-          <col className="w-[110px]" />
-          <col />
-          <col />
-          <col className="w-[120px]" />
-          <col className="w-[120px]" />
           <col className="w-[100px]" />
-          <col className="w-[130px]" />
-          <col className="w-[160px]" />
+          <col />
+          <col />
+          <col className="w-[110px]" />
+          <col className="w-[110px]" />
+          <col className="w-[90px]" />
+          <col className="w-[120px]" />
+          <col className="w-[150px]" />
+          <col className="w-[150px]" />
         </colgroup>
         <thead className="bg-muted/40 text-left">
           <tr>
@@ -115,6 +172,7 @@ function ListTab() {
             <th className="px-3 py-2 font-medium">Venda</th>
             <th className="px-3 py-2 font-medium">Prioridade</th>
             <th className="px-3 py-2 font-medium">Estado</th>
+            <th className="px-3 py-2 font-medium">SLA</th>
             <th className="px-3 py-2 font-medium">Aberto em</th>
           </tr>
         </thead>
@@ -138,6 +196,7 @@ function ListTab() {
                     {s?.label ?? r.state}
                   </span>
                 </td>
+                <td className="px-3 py-2"><SlaBadge r={r} /></td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
               </tr>
             );
@@ -208,6 +267,7 @@ function KanbanTab() {
                 {r.stock_pickings?.name && (
                   <div className="text-muted-foreground font-mono text-[10px] mt-1">📦 {r.stock_pickings.name}</div>
                 )}
+                <div className="mt-1"><SlaBadge r={r} /></div>
               </Link>
             ))}
             {(grouped[s.key]?.length ?? 0) === 0 && (
@@ -333,6 +393,141 @@ function StatesTab() {
   );
 }
 
+// ---------- SLA management ----------
+function SlaTab() {
+  const qc = useQueryClient();
+  const { data: policies = [] } = useSlaPolicies();
+  const { data: requests = [] } = useRequests();
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<Partial<SlaPolicy> | null>(null);
+
+  const stats = useMemo(() => {
+    const open = requests.filter(r => !r.resolved_at);
+    const c = { ok: 0, at_risk: 0, breached: 0, met: 0, missed: 0 };
+    requests.forEach(r => { const s = slaStatus(r); if (s !== "none") (c as any)[s]++; });
+    return { openCount: open.length, ...c };
+  }, [requests]);
+
+  const openNew = () => { setEdit({ name: "", priority: "normal", response_minutes: 240, resolution_minutes: 1440, active: true }); setOpen(true); };
+  const openEdit = (p: SlaPolicy) => { setEdit({ ...p }); setOpen(true); };
+  const save = async () => {
+    if (!edit?.name || !edit?.priority) return toast.error("Nome e prioridade são obrigatórios");
+    const payload = {
+      name: edit.name, priority: edit.priority,
+      response_minutes: Number(edit.response_minutes ?? 240),
+      resolution_minutes: Number(edit.resolution_minutes ?? 1440),
+      active: edit.active ?? true,
+    };
+    const { error } = edit.id
+      ? await supabase.from("service_sla_policies" as any).update(payload).eq("id", edit.id)
+      : await supabase.from("service_sla_policies" as any).insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success("Política salva");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["service_sla_policies"] });
+    qc.invalidateQueries({ queryKey: ["service_requests_all"] });
+  };
+  const remove = async (p: SlaPolicy) => {
+    if (!confirm(`Excluir política "${p.name}"?`)) return;
+    const { error } = await supabase.from("service_sla_policies" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["service_sla_policies"] });
+  };
+
+  const fmtMins = (m: number) => m >= 1440 ? `${Math.round(m/1440)}d` : m >= 60 ? `${Math.round(m/60)}h` : `${m}min`;
+
+  return (
+    <div className="space-y-4 max-w-4xl">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {[
+          { l: "Em aberto", v: stats.openCount, t: "bg-slate-100 text-slate-800" },
+          { l: "No prazo", v: stats.ok, t: SLA_TONES.ok },
+          { l: "Em risco", v: stats.at_risk, t: SLA_TONES.at_risk },
+          { l: "Em atraso", v: stats.breached, t: SLA_TONES.breached },
+          { l: "Cumpridos", v: stats.met, t: SLA_TONES.met },
+        ].map((k) => (
+          <Card key={k.l} className="p-3">
+            <div className="text-xs text-muted-foreground">{k.l}</div>
+            <div className={"inline-flex mt-1 px-2 py-0.5 rounded-full text-lg font-semibold " + k.t}>{k.v}</div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nova política</Button>
+      </div>
+
+      <Card className="p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left">
+            <tr>
+              <th className="px-3 py-2 font-medium">Nome</th>
+              <th className="px-3 py-2 font-medium w-32">Prioridade</th>
+              <th className="px-3 py-2 font-medium w-32">1ª Resposta</th>
+              <th className="px-3 py-2 font-medium w-32">Resolução</th>
+              <th className="px-3 py-2 font-medium w-20">Ativa</th>
+              <th className="px-3 py-2 font-medium w-24"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {policies.map(p => (
+              <tr key={p.id} className="border-t">
+                <td className="px-3 py-2">{p.name}</td>
+                <td className="px-3 py-2">
+                  <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[p.priority] ?? "bg-muted")}>
+                    {PRIORITY_PT[p.priority] ?? p.priority}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.response_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.resolution_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{p.active ? "Sim" : "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+            {policies.length === 0 && (
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">Sem políticas. Crie uma para começar.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit?.id ? "Editar política SLA" : "Nova política SLA"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2"><Label>Nome</Label>
+              <Input value={edit?.name ?? ""} onChange={(e) => setEdit({ ...edit!, name: e.target.value })} placeholder="ex: Premium - Urgente" />
+            </div>
+            <div className="space-y-1"><Label>Prioridade</Label>
+              <select className="w-full h-10 border rounded-md px-2 bg-background" value={edit?.priority ?? "normal"}
+                onChange={(e) => setEdit({ ...edit!, priority: e.target.value })}>
+                <option value="low">Baixa</option><option value="normal">Normal</option>
+                <option value="high">Alta</option><option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Switch checked={!!edit?.active} onCheckedChange={(v) => setEdit({ ...edit!, active: v })} /><Label>Ativa</Label>
+            </div>
+            <div className="space-y-1"><Label>Tempo 1ª resposta (min)</Label>
+              <Input type="number" value={edit?.response_minutes ?? 240} onChange={(e) => setEdit({ ...edit!, response_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1"><Label>Tempo resolução (min)</Label>
+              <Input type="number" value={edit?.resolution_minutes ?? 1440} onChange={(e) => setEdit({ ...edit!, resolution_minutes: Number(e.target.value) })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ---------- Page ----------
 export const ServiceRequestsList = () => {
   const nav = useNavigate();
@@ -347,10 +542,12 @@ export const ServiceRequestsList = () => {
             <TabsTrigger value="list">Lista</TabsTrigger>
             <TabsTrigger value="kanban">Kanban</TabsTrigger>
             <TabsTrigger value="states">Estados</TabsTrigger>
+            <TabsTrigger value="sla">SLA</TabsTrigger>
           </TabsList>
           <TabsContent value="list" className="mt-3"><ListTab /></TabsContent>
           <TabsContent value="kanban" className="mt-3"><KanbanTab /></TabsContent>
           <TabsContent value="states" className="mt-3"><StatesTab /></TabsContent>
+          <TabsContent value="sla" className="mt-3"><SlaTab /></TabsContent>
         </Tabs>
       </PageBody>
     </>
@@ -366,7 +563,7 @@ function LinkedRefs({ id }: { id: string }) {
     (async () => {
       const { data } = await supabase
         .from("service_requests")
-        .select("state, priority, picking_id, stock_pickings(id, name, origin), partners(name)")
+        .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, picking_id, stock_pickings(id, name, origin), partners(name)")
         .eq("id", id)
         .maybeSingle();
       setInfo(data);
@@ -382,6 +579,7 @@ function LinkedRefs({ id }: { id: string }) {
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Prioridade:</span>
         <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[info.priority] ?? "bg-muted")}>{PRIORITY_PT[info.priority] ?? info.priority}</span>
       </div>
+      <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">SLA:</span><SlaBadge r={info as any} /></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Cliente:</span><span className="text-xs">{info.partners?.name ?? "—"}</span></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Entrega:</span><span className="font-mono text-xs">{info.stock_pickings?.name ?? "—"}</span></div>
       <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Venda:</span><span className="font-mono text-xs">{info.stock_pickings?.origin ?? "—"}</span></div>
