@@ -3006,6 +3006,8 @@ export type Database = {
           first_response_at: string | null
           id: string
           name: string
+          notified_at_risk_at: string | null
+          notified_breached_at: string | null
           partner_id: string | null
           picking_id: string | null
           priority: string
@@ -3033,6 +3035,8 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           name: string
+          notified_at_risk_at?: string | null
+          notified_breached_at?: string | null
           partner_id?: string | null
           picking_id?: string | null
           priority?: string
@@ -3060,6 +3064,8 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           name?: string
+          notified_at_risk_at?: string | null
+          notified_breached_at?: string | null
           partner_id?: string | null
           picking_id?: string | null
           priority?: string
@@ -4636,6 +4642,7 @@ export type Database = {
         Args: { _minutes: number; _reason: string; _request_id: string }
         Returns: undefined
       }
+      service_sla_notify_check: { Args: never; Returns: Json }
       service_sla_pause: {
         Args: { _reason: string; _request_id: string }
         Returns: undefined
