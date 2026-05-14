@@ -92,11 +92,20 @@ const useRequests = () => useQuery({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("service_requests")
-      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, partners(name), products(name), stock_pickings(name, origin)")
+      .select("id, name, state, priority, created_at, resolution_due_at, response_due_at, first_response_at, resolved_at, sla_paused_at, sla_pause_reason, sla_paused_total_minutes, sla_extension_minutes, partners(name), products(name), stock_pickings(name, origin)")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
     return (data ?? []) as unknown as SR[];
+  },
+});
+
+const usePriorityExceptions = () => useQuery({
+  queryKey: ["service_sla_priority_exceptions"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("service_sla_priority_exceptions" as any).select("*").order("priority");
+    if (error) throw error;
+    return (data ?? []) as unknown as PriorityException[];
   },
 });
 
