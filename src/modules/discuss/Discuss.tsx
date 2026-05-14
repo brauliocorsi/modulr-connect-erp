@@ -136,7 +136,7 @@ export default function Discuss() {
                 <Button size="icon" variant="ghost" title="Nova mensagem direta"><MessageCircle className="h-4 w-4" /></Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Nova mensagem direta</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Nova mensagem direta</DialogTitle><DialogDescription>Selecione um utilizador para iniciar uma conversa privada.</DialogDescription></DialogHeader>
                 <Input placeholder="Buscar utilizador…" value={dmSearch} onChange={(e) => setDmSearch(e.target.value)} />
                 <div className="max-h-72 overflow-auto border rounded-md divide-y">
                   {profiles
