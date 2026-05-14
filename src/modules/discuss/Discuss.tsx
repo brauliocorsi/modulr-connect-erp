@@ -5,10 +5,11 @@ import { useAuth } from "@/core/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Hash, Plus, Send, Lock, Users, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtDateTime } from "@/lib/format";
+import { toast } from "sonner";
 
 type Channel = { id: string; name: string; kind: string; is_private: boolean; description: string | null };
 type Message = { id: string; channel_id: string; author_id: string; body: string; mentions: string[]; created_at: string };
