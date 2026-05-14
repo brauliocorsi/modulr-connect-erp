@@ -110,9 +110,10 @@ const usePriorityExceptions = () => useQuery({
 });
 
 // SLA status helpers
-type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "none";
-function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at">): SlaState {
+type SlaState = "ok" | "at_risk" | "breached" | "met" | "missed" | "paused" | "none";
+function slaStatus(r: Pick<SR, "resolution_due_at" | "resolved_at" | "created_at" | "sla_paused_at">): SlaState {
   if (!r.resolution_due_at) return "none";
+  if (r.sla_paused_at) return "paused";
   const due = new Date(r.resolution_due_at).getTime();
   if (r.resolved_at) {
     return new Date(r.resolved_at).getTime() <= due ? "met" : "missed";
@@ -129,11 +130,12 @@ const SLA_TONES: Record<SlaState, string> = {
   breached: "bg-rose-100 text-rose-900",
   met: "bg-emerald-100 text-emerald-800",
   missed: "bg-rose-100 text-rose-900",
+  paused: "bg-violet-100 text-violet-900",
   none: "bg-slate-100 text-slate-700",
 };
 const SLA_LABEL: Record<SlaState, string> = {
   ok: "No prazo", at_risk: "Em risco", breached: "Em atraso",
-  met: "Cumprido", missed: "Falhado", none: "Sem SLA",
+  met: "Cumprido", missed: "Falhado", paused: "Pausado", none: "Sem SLA",
 };
 function SlaBadge({ r }: { r: SR }) {
   const s = slaStatus(r);
@@ -148,7 +150,7 @@ function SlaBadge({ r }: { r: SR }) {
   };
   return (
     <span className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium " + SLA_TONES[s]}>
-      {SLA_LABEL[s]}{!r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
+      {SLA_LABEL[s]}{s !== "paused" && !r.resolved_at && due && (s === "breached" ? ` · -${fmt(remaining)}` : ` · ${fmt(remaining)}`)}
     </span>
   );
 }
