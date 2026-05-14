@@ -393,6 +393,141 @@ function StatesTab() {
   );
 }
 
+// ---------- SLA management ----------
+function SlaTab() {
+  const qc = useQueryClient();
+  const { data: policies = [] } = useSlaPolicies();
+  const { data: requests = [] } = useRequests();
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<Partial<SlaPolicy> | null>(null);
+
+  const stats = useMemo(() => {
+    const open = requests.filter(r => !r.resolved_at);
+    const c = { ok: 0, at_risk: 0, breached: 0, met: 0, missed: 0 };
+    requests.forEach(r => { const s = slaStatus(r); if (s !== "none") (c as any)[s]++; });
+    return { openCount: open.length, ...c };
+  }, [requests]);
+
+  const openNew = () => { setEdit({ name: "", priority: "normal", response_minutes: 240, resolution_minutes: 1440, active: true }); setOpen(true); };
+  const openEdit = (p: SlaPolicy) => { setEdit({ ...p }); setOpen(true); };
+  const save = async () => {
+    if (!edit?.name || !edit?.priority) return toast.error("Nome e prioridade são obrigatórios");
+    const payload = {
+      name: edit.name, priority: edit.priority,
+      response_minutes: Number(edit.response_minutes ?? 240),
+      resolution_minutes: Number(edit.resolution_minutes ?? 1440),
+      active: edit.active ?? true,
+    };
+    const { error } = edit.id
+      ? await supabase.from("service_sla_policies" as any).update(payload).eq("id", edit.id)
+      : await supabase.from("service_sla_policies" as any).insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success("Política salva");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["service_sla_policies"] });
+    qc.invalidateQueries({ queryKey: ["service_requests_all"] });
+  };
+  const remove = async (p: SlaPolicy) => {
+    if (!confirm(`Excluir política "${p.name}"?`)) return;
+    const { error } = await supabase.from("service_sla_policies" as any).delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["service_sla_policies"] });
+  };
+
+  const fmtMins = (m: number) => m >= 1440 ? `${Math.round(m/1440)}d` : m >= 60 ? `${Math.round(m/60)}h` : `${m}min`;
+
+  return (
+    <div className="space-y-4 max-w-4xl">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {[
+          { l: "Em aberto", v: stats.openCount, t: "bg-slate-100 text-slate-800" },
+          { l: "No prazo", v: stats.ok, t: SLA_TONES.ok },
+          { l: "Em risco", v: stats.at_risk, t: SLA_TONES.at_risk },
+          { l: "Em atraso", v: stats.breached, t: SLA_TONES.breached },
+          { l: "Cumpridos", v: stats.met, t: SLA_TONES.met },
+        ].map((k) => (
+          <Card key={k.l} className="p-3">
+            <div className="text-xs text-muted-foreground">{k.l}</div>
+            <div className={"inline-flex mt-1 px-2 py-0.5 rounded-full text-lg font-semibold " + k.t}>{k.v}</div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nova política</Button>
+      </div>
+
+      <Card className="p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left">
+            <tr>
+              <th className="px-3 py-2 font-medium">Nome</th>
+              <th className="px-3 py-2 font-medium w-32">Prioridade</th>
+              <th className="px-3 py-2 font-medium w-32">1ª Resposta</th>
+              <th className="px-3 py-2 font-medium w-32">Resolução</th>
+              <th className="px-3 py-2 font-medium w-20">Ativa</th>
+              <th className="px-3 py-2 font-medium w-24"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {policies.map(p => (
+              <tr key={p.id} className="border-t">
+                <td className="px-3 py-2">{p.name}</td>
+                <td className="px-3 py-2">
+                  <span className={"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium " + (PRIORITY_TONES[p.priority] ?? "bg-muted")}>
+                    {PRIORITY_PT[p.priority] ?? p.priority}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.response_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{fmtMins(p.resolution_minutes)}</td>
+                <td className="px-3 py-2 text-xs">{p.active ? "Sim" : "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+            {policies.length === 0 && (
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">Sem políticas. Crie uma para começar.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit?.id ? "Editar política SLA" : "Nova política SLA"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2"><Label>Nome</Label>
+              <Input value={edit?.name ?? ""} onChange={(e) => setEdit({ ...edit!, name: e.target.value })} placeholder="ex: Premium - Urgente" />
+            </div>
+            <div className="space-y-1"><Label>Prioridade</Label>
+              <select className="w-full h-10 border rounded-md px-2 bg-background" value={edit?.priority ?? "normal"}
+                onChange={(e) => setEdit({ ...edit!, priority: e.target.value })}>
+                <option value="low">Baixa</option><option value="normal">Normal</option>
+                <option value="high">Alta</option><option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Switch checked={!!edit?.active} onCheckedChange={(v) => setEdit({ ...edit!, active: v })} /><Label>Ativa</Label>
+            </div>
+            <div className="space-y-1"><Label>Tempo 1ª resposta (min)</Label>
+              <Input type="number" value={edit?.response_minutes ?? 240} onChange={(e) => setEdit({ ...edit!, response_minutes: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1"><Label>Tempo resolução (min)</Label>
+              <Input type="number" value={edit?.resolution_minutes ?? 1440} onChange={(e) => setEdit({ ...edit!, resolution_minutes: Number(e.target.value) })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ---------- Page ----------
 export const ServiceRequestsList = () => {
   const nav = useNavigate();
