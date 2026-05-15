@@ -5413,6 +5413,7 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
       putaway_stock: {
         Args: {
           _location: string
