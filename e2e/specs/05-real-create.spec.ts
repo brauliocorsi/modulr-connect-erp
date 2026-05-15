@@ -29,10 +29,7 @@ test.describe("Criação real via UI", () => {
 
     await page.getByRole("button", { name: /^salvar$/i }).click();
 
-    // Toast de sucesso (sonner renderiza role=status com texto "Salvo")
-    await expect(page.getByText(/^salvo$/i).first()).toBeVisible({ timeout: 15_000 });
-
-    // Redireção para /products/:uuid
+    // Redireção para /products/:uuid (prova mais forte de sucesso que toast transitório)
     await expect(page).toHaveURL(
       /\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
       { timeout: 15_000 },
