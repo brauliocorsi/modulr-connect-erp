@@ -1809,10 +1809,13 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          entity_id: string | null
+          entity_type: string | null
           id: string
           link: string | null
           module: Database["public"]["Enums"]["app_module"]
           payload: Json | null
+          priority: string
           read_at: string | null
           title: string
           type: string
@@ -1821,10 +1824,13 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           link?: string | null
           module: Database["public"]["Enums"]["app_module"]
           payload?: Json | null
+          priority?: string
           read_at?: string | null
           title: string
           type: string
@@ -1833,10 +1839,13 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           link?: string | null
           module?: Database["public"]["Enums"]["app_module"]
           payload?: Json | null
+          priority?: string
           read_at?: string | null
           title?: string
           type?: string
@@ -5329,6 +5338,16 @@ export type Database = {
         Args: { _counted_cash?: number; _session: string }
         Returns: undefined
       }
+      emit_event: {
+        Args: {
+          _entity_id?: string
+          _entity_type?: string
+          _event_type: string
+          _payload?: Json
+          _source_module: Database["public"]["Enums"]["app_module"]
+        }
+        Returns: string
+      }
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
@@ -5462,6 +5481,21 @@ export type Database = {
       mfg_start_operation: { Args: { _op: string }; Returns: undefined }
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
+      notify_group: {
+        Args: {
+          _body?: string
+          _entity_id?: string
+          _entity_type?: string
+          _group: string
+          _link?: string
+          _module: Database["public"]["Enums"]["app_module"]
+          _payload?: Json
+          _priority?: string
+          _title: string
+          _type: string
+        }
+        Returns: number
+      }
       notify_user: {
         Args: {
           _body: string
