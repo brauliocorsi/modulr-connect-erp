@@ -1,6 +1,8 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -10,6 +12,14 @@ import { fmtDate, fmtDateTime } from "@/lib/format";
 
 export default function ManufacturingOrderDetail() {
   const { id } = useParams();
+  const qc = useQueryClient();
+  const resolveIssue = async (issueId: string) => {
+    const resolution = prompt("Resolução do problema?") ?? "";
+    if (!resolution) return;
+    const { error } = await supabase.rpc("mfg_resolve_issue", { _issue: issueId, _resolution: resolution });
+    if (error) toast.error(error.message);
+    else { toast.success("Problema resolvido"); qc.invalidateQueries({ queryKey: ["mo-iss", id] }); qc.invalidateQueries({ queryKey: ["mo", id] }); }
+  };
   const { data: mo } = useQuery({
     queryKey: ["mo", id],
     enabled: !!id,
@@ -136,7 +146,9 @@ export default function ManufacturingOrderDetail() {
                   <div key={i.id} className="border-b py-2 text-sm">
                     <div><strong>{i.kind}</strong> — {fmtDateTime(i.reported_at)}</div>
                     {i.description && <div>{i.description}</div>}
-                    {i.resolved_at && <div className="text-emerald-600">Resolvido em {fmtDateTime(i.resolved_at)}</div>}
+                    {i.resolved_at
+                      ? <div className="text-emerald-600">Resolvido em {fmtDateTime(i.resolved_at)}{i.resolution && ` — ${i.resolution}`}</div>
+                      : <Button size="sm" variant="outline" className="mt-1" onClick={() => resolveIssue(i.id)}>Marcar como resolvido</Button>}
                     <AttachmentsGrid items={i.attachments} />
                   </div>
                 )) : <div className="text-sm text-muted-foreground py-3">Sem problemas reportados.</div>}
