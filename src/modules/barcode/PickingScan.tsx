@@ -178,9 +178,9 @@ export default function PickingScan() {
       if (set.has(pkg.sequence)) return log(`Colis ${pkg.label} já bipado para esta unidade`, "warn");
       set.add(pkg.sequence);
       if (set.size >= totalSeq) {
-        const next = cur + 1;
-        const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", move.id);
+        const { data: r, error } = await supabase.rpc("scan_increment_move", { _move: move.id, _delta: 1 });
         if (error) return log(error.message, "error");
+        const next = Number((r as any)?.quantity_done ?? cur + 1);
         setMoves((ms) => ms.map((m) => (m.id === move.id ? { ...m, quantity_done: next } : m)));
         setScannedColis((s) => ({ ...s, [move.id]: new Set() }));
         log(`✓ Unidade completa de ${move.products?.name} (${next}/${max})`, "ok");
