@@ -33,11 +33,15 @@ def add(name, exp, obs, ok):
 
 def conn():
     c=pg.connect(**PG); c.autocommit=True; return c
+def _args(a):
+    # accept either *args or a single tuple
+    if len(a)==1 and isinstance(a[0],(tuple,list)): return tuple(a[0])
+    return a
 def q1(cur, sql, *a):
-    cur.execute(sql,a); cols=[d[0] for d in cur.description]; r=cur.fetchone()
+    cur.execute(sql,_args(a)); cols=[d[0] for d in cur.description]; r=cur.fetchone()
     return dict(zip(cols,r)) if r else None
 def qall(cur, sql, *a):
-    cur.execute(sql,a); cols=[d[0] for d in cur.description]
+    cur.execute(sql,_args(a)); cols=[d[0] for d in cur.description]
     return [dict(zip(cols,r)) for r in cur.fetchall()]
 
 def main():
