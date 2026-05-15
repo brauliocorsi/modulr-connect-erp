@@ -463,6 +463,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               <SmartButtons kind={kind} orderName={order.name} />
             )}
             {kind === "sale" && !isNew && id && <SaleProductionPanel saleOrderId={id} />}
+            {kind === "sale" && !isNew && id && <SaleAvailabilityPanel saleOrderId={id} />}
             <Card className="p-6 grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{kind === "sale" ? "Cliente" : "Fornecedor"}</Label>
