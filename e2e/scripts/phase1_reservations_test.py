@@ -63,7 +63,7 @@ def main():
         # initial stock for component (50) and FG (10)
         x(cur, "INSERT INTO stock_quants(product_id,location_id,quantity) VALUES (%s,%s,50)", comp_id, loc_id)
         x(cur, "INSERT INTO stock_quants(product_id,location_id,quantity) VALUES (%s,%s,10)", fg_id, loc_id)
-        add("setup", "warehouse+products+stock", f"wh={wh_id[:8]} fg={fg_id[:8]} comp={comp_id[:8]}", True)
+        add("setup", "warehouse+products+stock", f"wh={str(wh_id)[:8]} fg={str(fg_id)[:8]} comp={str(comp_id)[:8]}", True)
 
         # ===== TEST 1: SO confirm → reserve_picking_strict =====
         # Build SO + outgoing picking + 1 move FG qty=3 manually (no UI triggers)
