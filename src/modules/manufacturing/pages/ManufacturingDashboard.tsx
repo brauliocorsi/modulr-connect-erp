@@ -29,6 +29,32 @@ export default function ManufacturingDashboard() {
     },
   });
 
+  const eff = useQuery({
+    queryKey: ["mfg-eff"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 864e5).toISOString();
+      const [ops, qcs, issues] = await Promise.all([
+        supabase.from("mo_workorder_logs").select("qty_done,qty_scrap,started_at,finished_at").gte("created_at", since),
+        supabase.from("mo_quality_checks").select("result").gte("checked_at", since),
+        supabase.from("mo_issues").select("id,resolved_at").gte("reported_at", since),
+      ]);
+      const logs = ops.data ?? [];
+      const totalDone = logs.reduce((s: number, l: any) => s + Number(l.qty_done ?? 0), 0);
+      const totalScrap = logs.reduce((s: number, l: any) => s + Number(l.qty_scrap ?? 0), 0);
+      const totalMin = logs.reduce((s: number, l: any) => {
+        if (!l.started_at || !l.finished_at) return s;
+        return s + (new Date(l.finished_at).getTime() - new Date(l.started_at).getTime()) / 60000;
+      }, 0);
+      const qcList = qcs.data ?? [];
+      const qcPass = qcList.filter((q: any) => q.result === "pass").length;
+      const qcRate = qcList.length ? Math.round((qcPass / qcList.length) * 100) : null;
+      const scrapRate = totalDone + totalScrap ? Math.round((totalScrap / (totalDone + totalScrap)) * 100) : 0;
+      const issuesList = issues.data ?? [];
+      const openIssues = issuesList.filter((i: any) => !i.resolved_at).length;
+      return { totalDone, totalScrap, totalMin: Math.round(totalMin), qcRate, scrapRate, openIssues };
+    },
+  });
+
   return (
     <>
       <PageHeader title="Manufatura" breadcrumb={[{ label: "Manufatura" }]} />
@@ -42,6 +68,18 @@ export default function ManufacturingDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-6">
+          <div className="text-sm font-semibold mb-2">Eficiência (últimos 30 dias)</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Peças produzidas</div><div className="text-2xl font-semibold mt-1">{eff.data?.totalDone ?? "—"}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Defeitos</div><div className="text-2xl font-semibold mt-1 text-destructive">{eff.data?.totalScrap ?? "—"}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Taxa de defeito</div><div className="text-2xl font-semibold mt-1">{eff.data?.scrapRate ?? "—"}%</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Aprovação QC</div><div className="text-2xl font-semibold mt-1 text-emerald-600">{eff.data?.qcRate ?? "—"}{eff.data?.qcRate != null && "%"}</div></Card>
+            <Card className="p-4"><div className="text-xs text-muted-foreground">Problemas abertos</div><div className="text-2xl font-semibold mt-1 text-amber-600">{eff.data?.openIssues ?? "—"}</div></Card>
+          </div>
+          <div className="mt-3 text-xs text-muted-foreground">Tempo total apontado: {eff.data?.totalMin ?? 0} min</div>
         </div>
       </PageBody>
     </>
