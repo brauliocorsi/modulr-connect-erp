@@ -4619,6 +4619,57 @@ export type Database = {
           },
         ]
       }
+      stock_reservation_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          location_id: string | null
+          lot_id: string | null
+          notes: string | null
+          origin_id: string | null
+          origin_type: string
+          product_id: string
+          qty: number
+          qty_after: number | null
+          qty_before: number | null
+          reserved_by: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          lot_id?: string | null
+          notes?: string | null
+          origin_id?: string | null
+          origin_type: string
+          product_id: string
+          qty: number
+          qty_after?: number | null
+          qty_before?: number | null
+          reserved_by?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          lot_id?: string | null
+          notes?: string | null
+          origin_id?: string | null
+          origin_type?: string
+          product_id?: string
+          qty?: number
+          qty_after?: number | null
+          qty_before?: number | null
+          reserved_by?: string | null
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
       store_members: {
         Row: {
           created_at: string
@@ -5180,6 +5231,7 @@ export type Database = {
       }
     }
     Functions: {
+      _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
         Returns: undefined
@@ -5209,6 +5261,7 @@ export type Database = {
         Args: { _counted: number; _session: string }
         Returns: undefined
       }
+      close_mo: { Args: { _mo: string; _qty_produced?: number }; Returns: Json }
       confirm_pending_payment: {
         Args: { _payment: string }
         Returns: undefined
@@ -5305,6 +5358,22 @@ export type Database = {
           _payload?: Json
           _record_id: string
           _record_type: string
+        }
+        Returns: undefined
+      }
+      log_stock_reservation: {
+        Args: {
+          _action: string
+          _location: string
+          _lot: string
+          _notes?: string
+          _origin: string
+          _origin_type: string
+          _product: string
+          _qty: number
+          _qty_after: number
+          _qty_before: number
+          _variant: string
         }
         Returns: undefined
       }
@@ -5433,6 +5502,7 @@ export type Database = {
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
+      release_mo_reservation: { Args: { _mo: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       release_move_reservation_partial: {
         Args: { _move: string; _qty: number }
@@ -5449,6 +5519,8 @@ export type Database = {
         Args: { _picking: string }
         Returns: undefined
       }
+      reserve_mo: { Args: { _mo: string }; Returns: Json }
+      reserve_picking_strict: { Args: { _picking: string }; Returns: undefined }
       route_capacity_used: {
         Args: { _route: string }
         Returns: {
