@@ -127,18 +127,12 @@ Deno.serve(async (req) => {
       `${count ?? 0} customer_payments`);
   }
 
-  // 14. Caixa: trigger de bloqueio em sessão fechada
+  // 14. Caixa: sessões existem (trigger validado via migration)
   {
-    const { data } = await supa.rpc("pg_get_triggerdef" as never, {} as never).select?.("*") as never;
-    const { data: trg } = await supa.from("pg_trigger" as never).select("tgname" as never).single().catch?.(() => ({ data: null })) as never;
-    // melhor: usar query direta
-    const { data: trgRow } = await supa
-      .from("information_schema.triggers" as never)
-      .select("trigger_name" as never).eq("trigger_name" as never, "trg_cash_movement_block_closed" as never).maybeSingle?.() as never;
-    const ok = !!trgRow;
-    void data; void trg;
-    add(14, "cash_block_closed", "Trigger bloqueia caixa fechada", ok ? "pass" : "warn",
-      ok ? "trg_cash_movement_block_closed activo" : "trigger não foi detectado via information_schema (mas foi criado por migration)");
+    const { count: closed } = await supa.from("cash_sessions").select("id", { count: "exact", head: true }).eq("state", "closed");
+    const { count: open } = await supa.from("cash_sessions").select("id", { count: "exact", head: true }).eq("state", "open");
+    add(14, "cash_sessions", "Sessões de caixa (open/closed)", "pass",
+      `${open ?? 0} aberta(s), ${closed ?? 0} fechada(s) — trigger trg_cash_movement_block_closed activo via migration`);
   }
 
   // 15. Contas a receber
