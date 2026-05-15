@@ -66,13 +66,15 @@ def main():
             pickings.append(pid)
 
         results=[]
+        lock_r = threading.Lock()
         def worker(pid):
             c=conn(); c.autocommit=True; cu=c.cursor()
             try:
-                cu.execute("SELECT reserve_picking_strict(%s)",(pid,))
-                results.append(("ok",pid,None))
+                cu.execute(f"SELECT reserve_picking_strict('{pid}'::uuid)")
+                cu.fetchone()
+                with lock_r: results.append(("ok",pid,None))
             except Exception as e:
-                results.append(("err",pid,str(e)[:80]))
+                with lock_r: results.append(("err",pid,str(e)[:200]))
             finally: c.close()
         ts=[threading.Thread(target=worker,args=(p,)) for p in pickings]
         for t in ts: t.start()
