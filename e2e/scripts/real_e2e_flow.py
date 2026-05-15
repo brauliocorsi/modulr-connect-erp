@@ -11,22 +11,20 @@ markdown report. Cleans up TESTE_E2E_% data at the end.
 Uses direct psql connection via PG* env vars (service-role equivalent —
 bypasses RLS).
 """
-import os, sys, json, datetime, traceback
-import psycopg2
-import psycopg2.extras
+import os, sys, json, datetime, traceback, ssl
+import pg8000.dbapi as pg
 
 PG = dict(
-    host=os.environ["PGHOST"], port=os.environ.get("PGPORT", 5432),
+    host=os.environ["PGHOST"], port=int(os.environ.get("PGPORT", 5432)),
     user=os.environ["PGUSER"], password=os.environ["PGPASSWORD"],
-    dbname=os.environ["PGDATABASE"],
-    sslmode=os.environ.get("PGSSLMODE", "require"),
-    client_encoding="UTF8",
+    database=os.environ["PGDATABASE"],
+    ssl_context=ssl.create_default_context(),
 )
 
 TS = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
 PFX = f"TESTE_E2E_{TS}_"
 
-REPORT = []  # list of dicts: step, action, target, expected, observed, status, risk
+REPORT = []
 
 def add(step, action, target, expected, observed, status, risk=""):
     REPORT.append({
@@ -37,10 +35,25 @@ def add(step, action, target, expected, observed, status, risk=""):
     icon = "✅" if status == "OK" else ("❌" if status == "FAIL" else "⚠️")
     print(f"{icon} [{step}] {action} → {observed[:120]}")
 
+
+class DictCur:
+    def __init__(self, cur): self.cur = cur
+    def execute(self, *a, **k): return self.cur.execute(*a, **k)
+    def fetchone(self):
+        row = self.cur.fetchone()
+        if row is None: return None
+        cols = [c[0] if isinstance(c, tuple) else c["name"] for c in self.cur.description]
+        return dict(zip(cols, row))
+    def fetchall(self):
+        rows = self.cur.fetchall()
+        cols = [c[0] if isinstance(c, tuple) else c["name"] for c in self.cur.description]
+        return [dict(zip(cols, r)) for r in rows]
+
+
 def main():
-    conn = psycopg2.connect(**PG)
+    conn = pg.Connect(**PG)
     conn.autocommit = True
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur = DictCur(conn.cursor())
 
     # ---------- 0. Pre-flight: load required base data ----------
     cur.execute("""
