@@ -15,9 +15,10 @@ setup("authenticate as admin", async ({ page }) => {
   fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true });
 
   await page.goto("/login");
-  await page.getByLabel(/e-?mail/i).fill(EMAIL);
-  await page.getByLabel(/(senha|password|palavra-passe)/i).fill(PASSWORD);
-  await page.getByRole("button", { name: /(entrar|sign in|login)/i }).click();
+  const panel = page.locator('[role="tabpanel"]').first();
+  await panel.locator('input[type="email"]').fill(EMAIL);
+  await panel.locator('input[type="password"]').fill(PASSWORD);
+  await panel.getByRole("button", { name: /entrar/i }).click();
 
   await page.waitForURL((url) => !/\/login/.test(url.pathname), { timeout: 30_000 });
   await expect(page).not.toHaveURL(/\/login/);
