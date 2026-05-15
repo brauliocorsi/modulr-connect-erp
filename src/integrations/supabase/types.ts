@@ -5267,6 +5267,7 @@ export type Database = {
       _test_phase5: { Args: never; Returns: Json }
       _test_phase6: { Args: never; Returns: Json }
       _test_phase7: { Args: never; Returns: Json }
+      _test_phase8: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5553,6 +5554,7 @@ export type Database = {
         Returns: number
       }
       purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
+      purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
       putaway_stock: {
         Args: {
           _location: string
