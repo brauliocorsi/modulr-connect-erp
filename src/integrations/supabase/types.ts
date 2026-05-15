@@ -5243,6 +5243,7 @@ export type Database = {
       }
     }
     Functions: {
+      _test_phase3: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
