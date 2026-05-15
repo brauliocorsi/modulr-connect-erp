@@ -356,31 +356,24 @@ def main():
         json.dumps({k: str(v) for k, v in final_so.items()}),
         "INFO")
 
-    # ---------- Cleanup ----------
-    cleanup_sqls = [
-      "DELETE FROM cash_movements WHERE payment_id IN (SELECT id FROM customer_payments WHERE name LIKE %s)",
-      "DELETE FROM customer_payments WHERE name LIKE %s",
-      "DELETE FROM sale_payment_schedules WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
-      "DELETE FROM stock_moves WHERE picking_id IN (SELECT id FROM stock_pickings WHERE origin LIKE %s)",
-      "DELETE FROM stock_pickings WHERE origin LIKE %s",
-      "DELETE FROM mo_workorder_logs WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
-      "DELETE FROM mo_operations WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
-      "DELETE FROM mo_components WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
-      "DELETE FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
-      "DELETE FROM sale_order_lines WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
-      "DELETE FROM sale_orders WHERE name LIKE %s",
-      "DELETE FROM bom_operations WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s))",
-      "DELETE FROM bom_lines WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s))",
-      "DELETE FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s)",
-      "DELETE FROM stock_quants WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s)",
-      "DELETE FROM partners WHERE name LIKE %s",
-      "DELETE FROM products WHERE name LIKE %s",
-    ]
-    for sql in cleanup_sqls:
-        try: cur.execute(sql, (PFX + "%",))
-        except Exception as e: print(f"cleanup warn: {e}")
-    add("CLEANUP", "delete all TESTE_E2E_% rows", "all tables", "0 rows leftover",
-        "executed", "OK")
+    # ---------- Cleanup (service-role REST DELETE) ----------
+    def rdel(table, **filters):
+        try: srest("DELETE", table, params=filters)
+        except Exception as e: print(f"cleanup {table} warn: {e}")
+    pfx = f"like.{PFX}%25"
+    # children that don't cascade
+    rdel("cash_movements", **{"reference": pfx})
+    rdel("cash_movements", **{"notes": pfx})
+    rdel("customer_payments", **{"name": pfx})
+    rdel("stock_pickings", **{"origin": pfx})  # cascades moves
+    rdel("manufacturing_orders", **{"sale_order_id": f"in.({so})"})  # by id list
+    rdel("sale_orders", **{"name": pfx})  # cascades lines + schedules
+    rdel("boms", **{"product_id": f"in.({prod},{comp_a},{comp_b})"})
+    rdel("products", **{"name": pfx})  # cascades quants
+    rdel("partners", **{"name": pfx})
+    add("CLEANUP", "delete all TESTE_E2E_% rows via service-role REST",
+        "cash_movements/customer_payments/stock_pickings/manufacturing_orders/sale_orders/boms/products/partners",
+        "0 rows leftover", "executed", "OK")
 
     cur.execute("SELECT count(*) AS c FROM products WHERE name LIKE %s", (PFX + "%",))
     leftover = cur.fetchone()["c"]
