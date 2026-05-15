@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode, Wrench } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode, Wrench, Factory, HardHat } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
