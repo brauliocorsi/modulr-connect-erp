@@ -28,7 +28,13 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /global\.setup\.ts/,
-      use: { ...devices["Desktop Chrome"], storageState: undefined },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: undefined,
+        launchOptions: process.env.CHROMIUM_PATH
+          ? { executablePath: process.env.CHROMIUM_PATH }
+          : undefined,
+      },
     },
     {
       name: "chromium",
