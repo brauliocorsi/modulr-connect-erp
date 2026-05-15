@@ -152,15 +152,15 @@ def main():
     # ---------- 4. Sale order (draft) ----------
     so_name = PFX + "SO"
     cur.execute("""
-        INSERT INTO sale_orders(name, partner_id, warehouse_id, state, delivery_mode)
-        VALUES (%s,%s,%s,'draft','delivery') RETURNING id
+        INSERT INTO sale_orders(name, partner_id, warehouse_id, state,
+            delivery_mode, amount_untaxed, amount_total)
+        VALUES (%s,%s,%s,'draft','delivery', 100, 100) RETURNING id
     """, (so_name, customer, wh)); so = cur.fetchone()["id"]
     cur.execute("""
         INSERT INTO sale_order_lines(order_id, product_id, uom_id,
             quantity, unit_price, subtotal, line_kind)
         VALUES (%s,%s,%s, 1, 100, 100, 'product')
     """, (so, prod, uom))
-    cur.execute("UPDATE sale_orders SET amount_untaxed=100, amount_total=100 WHERE id=%s", (so,))
     cur.execute("SELECT public.seed_default_schedule(%s)", (so,))
     cur.execute("SELECT count(*) AS c, sum(amount) AS a FROM sale_payment_schedules WHERE order_id=%s", (so,))
     sch = cur.fetchone()
