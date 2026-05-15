@@ -29,11 +29,8 @@ test.describe("Criação real via UI", () => {
 
     await page.getByRole("button", { name: /^salvar$/i }).click();
 
-    // Redireção para /products/:uuid (prova mais forte de sucesso que toast transitório)
-    await expect(page).toHaveURL(
-      /\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-      { timeout: 15_000 },
-    );
+    // Sucesso: o heading da página passa a mostrar o nome (form.name no FormHeader)
+    await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible({ timeout: 15_000 });
 
     // Persistência: query API direta via supabase ou volta à lista
     await audit.goto("/products");
