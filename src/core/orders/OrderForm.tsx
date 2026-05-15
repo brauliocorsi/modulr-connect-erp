@@ -16,6 +16,7 @@ import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { SaleProductionPanel } from "@/modules/manufacturing/components/SaleProductionPanel";
+import SaleAvailabilityPanel from "@/modules/purchase/components/SaleAvailabilityPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
