@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "@/modules/manufacturing/components/MOBadges";
+import { PhotoUploader, type Attachment } from "@/modules/manufacturing/components/PhotoUploader";
 import { Play, Check, Pause, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate } from "@/lib/format";
@@ -20,10 +21,12 @@ export default function ShopFloorOrder() {
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueKind, setIssueKind] = useState("material_missing");
   const [issueDesc, setIssueDesc] = useState("");
+  const [issuePhotos, setIssuePhotos] = useState<Attachment[]>([]);
   const [finishOp, setFinishOp] = useState<any>(null);
   const [qtyDone, setQtyDone] = useState("");
   const [qtyScrap, setQtyScrap] = useState("0");
   const [notes, setNotes] = useState("");
+  const [finishPhotos, setFinishPhotos] = useState<Attachment[]>([]);
 
   const moQ = useQuery({
     queryKey: ["sf-mo", id],
