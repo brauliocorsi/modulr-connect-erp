@@ -43,9 +43,9 @@ export default function WaveScan() {
     const cur = Number(target.quantity_done ?? 0);
     const max = Number(target.quantity);
     if (cur >= max) return log(`${target.products?.name}: completo`, "warn");
-    const next = cur + 1;
-    const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", target.id);
+    const { data: r, error } = await supabase.rpc("scan_increment_move", { _move: target.id, _delta: 1 });
     if (error) return log(error.message, "error");
+    const next = Number((r as any)?.quantity_done ?? cur + 1);
     setMoves((ms) => ms.map((m) => (m.id === target.id ? { ...m, quantity_done: next } : m)));
     log(`+1 ${target.products?.name} (${next}/${max})`, "ok");
   };
