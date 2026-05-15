@@ -102,6 +102,13 @@ import {
   EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
   LeavesList, LeaveForm, AttendanceClock, AttendancesList,
 } from "@/modules/hr/pages/HrPages";
+import ManufacturingDashboard from "@/modules/manufacturing/pages/ManufacturingDashboard";
+import ManufacturingOrdersList from "@/modules/manufacturing/pages/ManufacturingOrdersList";
+import ManufacturingOrderDetail from "@/modules/manufacturing/pages/ManufacturingOrderDetail";
+import ManufacturingPlanning from "@/modules/manufacturing/pages/ManufacturingPlanning";
+import ShopFloorBoard from "@/modules/shopfloor/pages/ShopFloorBoard";
+import ShopFloorOrder from "@/modules/shopfloor/pages/ShopFloorOrder";
+import ShopFloorQuality from "@/modules/shopfloor/pages/ShopFloorQuality";
 
 const queryClient = new QueryClient();
 
@@ -305,6 +312,17 @@ const App = () => (
                 <Route path=":id" element={<RouteDetail />} />
               </Route>
 
+              {/* Manufacturing */}
+              <Route path="manufacturing" element={<ManufacturingDashboard />} />
+              <Route path="manufacturing/orders" element={<ManufacturingOrdersList />} />
+              <Route path="manufacturing/orders/:id" element={<ManufacturingOrderDetail />} />
+              <Route path="manufacturing/planning" element={<ManufacturingPlanning />} />
+              <Route path="manufacturing/bom" element={<Navigate to="/products/bom" replace />} />
+
+              {/* Shop Floor */}
+              <Route path="shop-floor" element={<ShopFloorBoard />} />
+              <Route path="shop-floor/order/:id" element={<ShopFloorOrder />} />
+              <Route path="shop-floor/quality" element={<ShopFloorQuality />} />
 
               <Route path="*" element={<NotFound />} />
             </Route>
