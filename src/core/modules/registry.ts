@@ -244,6 +244,8 @@ export const MODULES: ModuleDef[] = [
     ],
   },
   {
+    id: "settings",
+    name: "Configurações",
     shortName: "Config",
     icon: Settings,
     color: "bg-[hsl(222_22%_30%)]",
