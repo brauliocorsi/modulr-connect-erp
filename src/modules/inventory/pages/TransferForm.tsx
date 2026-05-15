@@ -98,7 +98,7 @@ export default function TransferForm() {
     );
     if (toPersist.length > 0) {
       await Promise.all(toPersist.map((mv: any) =>
-        supabase.from("stock_moves").update({ quantity_done: Number(mv.quantity || 0) }).eq("id", mv.id)
+        supabase.rpc("scan_set_move_done", { _move: mv.id, _qty: Number(mv.quantity || 0), _lot: null })
       ));
     }
     let sale: any = null;
