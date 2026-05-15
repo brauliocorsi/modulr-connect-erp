@@ -102,6 +102,13 @@ import {
   EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
   LeavesList, LeaveForm, AttendanceClock, AttendancesList,
 } from "@/modules/hr/pages/HrPages";
+import ManufacturingDashboard from "@/modules/manufacturing/pages/ManufacturingDashboard";
+import ManufacturingOrdersList from "@/modules/manufacturing/pages/ManufacturingOrdersList";
+import ManufacturingOrderDetail from "@/modules/manufacturing/pages/ManufacturingOrderDetail";
+import ManufacturingPlanning from "@/modules/manufacturing/pages/ManufacturingPlanning";
+import ShopFloorBoard from "@/modules/shopfloor/pages/ShopFloorBoard";
+import ShopFloorOrder from "@/modules/shopfloor/pages/ShopFloorOrder";
+import ShopFloorQuality from "@/modules/shopfloor/pages/ShopFloorQuality";
 
 const queryClient = new QueryClient();
 
