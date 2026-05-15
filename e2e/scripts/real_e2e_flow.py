@@ -202,9 +202,9 @@ def main():
     so_name = PFX + "SO"
     cur.execute("""
         INSERT INTO sale_orders(name, partner_id, warehouse_id, state,
-            delivery_mode, amount_untaxed, amount_total)
-        VALUES (%s,%s,%s,'draft','delivery', 100, 100) RETURNING id
-    """, (so_name, customer, wh)); so = cur.fetchone()["id"]
+            delivery_mode, amount_untaxed, amount_total, salesperson_id)
+        VALUES (%s,%s,%s,'draft','delivery', 100, 100, %s) RETURNING id
+    """, (so_name, customer, wh, reg_user)); so = cur.fetchone()["id"]
     cur.execute("""
         INSERT INTO sale_order_lines(order_id, product_id, uom_id,
             quantity, unit_price, subtotal, line_kind)
