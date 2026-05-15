@@ -520,27 +520,33 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          attachments: Json
           author_id: string
-          body: string
+          body: string | null
           channel_id: string
           created_at: string
           id: string
+          image_url: string | null
           mentions: string[]
         }
         Insert: {
+          attachments?: Json
           author_id: string
-          body: string
+          body?: string | null
           channel_id: string
           created_at?: string
           id?: string
+          image_url?: string | null
           mentions?: string[]
         }
         Update: {
+          attachments?: Json
           author_id?: string
-          body?: string
+          body?: string | null
           channel_id?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           mentions?: string[]
         }
         Relationships: []
@@ -4492,6 +4498,7 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
       discuss_open_dm: { Args: { _other: string }; Returns: string }
       driver_assign_batch: {
         Args: {
