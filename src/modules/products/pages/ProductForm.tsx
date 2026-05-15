@@ -56,12 +56,19 @@ export default function ProductForm() {
 
   const save = useMutation({
     mutationFn: async () => {
+      // Normalizar strings vazias para NULL nos campos com índice único
+      // (barcode/internal_ref) — caso contrário "" colide com outro produto sem código.
+      const payload = {
+        ...form,
+        barcode: form.barcode?.trim() ? form.barcode.trim() : null,
+        internal_ref: form.internal_ref?.trim() ? form.internal_ref.trim() : null,
+      };
       if (isNew) {
-        const { data, error } = await supabase.from("products").insert(form).select("id").single();
+        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         return data.id as string;
       }
-      const { error } = await supabase.from("products").update(form).eq("id", id!);
+      const { error } = await supabase.from("products").update(payload).eq("id", id!);
       if (error) throw error;
       return id!;
     },
