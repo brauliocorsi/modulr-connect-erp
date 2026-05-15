@@ -12,6 +12,14 @@ import { fmtDate, fmtDateTime } from "@/lib/format";
 
 export default function ManufacturingOrderDetail() {
   const { id } = useParams();
+  const qc = useQueryClient();
+  const resolveIssue = async (issueId: string) => {
+    const resolution = prompt("Resolução do problema?") ?? "";
+    if (!resolution) return;
+    const { error } = await supabase.rpc("mfg_resolve_issue", { _issue: issueId, _resolution: resolution });
+    if (error) toast.error(error.message);
+    else { toast.success("Problema resolvido"); qc.invalidateQueries({ queryKey: ["mo-iss", id] }); qc.invalidateQueries({ queryKey: ["mo", id] }); }
+  };
   const { data: mo } = useQuery({
     queryKey: ["mo", id],
     enabled: !!id,
