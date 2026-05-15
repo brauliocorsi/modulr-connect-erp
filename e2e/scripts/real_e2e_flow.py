@@ -214,13 +214,14 @@ def main():
                    FROM mo_components WHERE mo_id=%s ORDER BY sequence""", (mo,))
     comps = cur.fetchall()
     add("6", "mfg_create_orders_for_sale", "manufacturing_orders + mo_components",
-        "1 MO, 2 mo_components (qty_required from BOM)",
-        f"mo={mo} state={mo_row and mo_row['state']} components={len(comps)} comp_detail={[dict(c) for c in comps]}",
-        "OK" if n_mo == 1 and len(comps) == 2 else "FAIL")
+        "1 MO + 2 mo_components (qty_required from BOM)",
+        f"created={n_mo} mo={mo} state={mo_row and mo_row['state']} components={len(comps)} comp_detail={[dict(c) for c in comps]}",
+        "OK" if mo and len(comps) == 2 else "FAIL")
 
     # ---------- 7. Refresh component availability ----------
-    for c in comps:
-        cur.execute("SELECT public.mfg_refresh_component(%s,%s)", (mo, c["product_id"]))
+    cur.execute("SELECT id FROM mo_components WHERE mo_id=%s", (mo,))
+    for cid_row in cur.fetchall():
+        cur.execute("SELECT public.mfg_refresh_component(%s)", (cid_row["id"],))
     cur.execute("SELECT product_id, qty_required, qty_reserved, qty_available, status FROM mo_components WHERE mo_id=%s ORDER BY sequence", (mo,))
     comps2 = cur.fetchall()
     cur.execute("SELECT state FROM manufacturing_orders WHERE id=%s", (mo,))
