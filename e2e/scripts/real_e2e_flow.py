@@ -337,9 +337,9 @@ def main():
     sch_row = cur.fetchone()
     cur.execute("""
         INSERT INTO customer_payments(name, partner_id, order_id, schedule_id,
-            payment_date, amount, method_id, state)
-        VALUES (%s,%s,%s,%s, CURRENT_DATE, %s, %s, 'posted') RETURNING id
-    """, (PFX + "PAY", customer, so, sch_row["id"], sch_row["amount"], pm_cash))
+            payment_date, amount, method_id, state, created_by)
+        VALUES (%s,%s,%s,%s, CURRENT_DATE, %s, %s, 'posted', %s) RETURNING id
+    """, (PFX + "PAY", customer, so, sch_row["id"], sch_row["amount"], pm_cash, reg_user))
     pay = cur.fetchone()["id"]
     cur.execute("SELECT public.recalc_payment_status(%s)", (so,))
     cur.execute("SELECT payment_status FROM sale_orders WHERE id=%s", (so,))
