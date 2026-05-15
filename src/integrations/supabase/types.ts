@@ -3460,8 +3460,11 @@ export type Database = {
           amount_tax: number
           amount_total: number
           amount_untaxed: number
+          cancelled_at: string | null
+          closed_at: string | null
           commitment_date: string | null
           company_id: string | null
+          confirmed_at: string | null
           created_at: string
           created_by: string | null
           date_order: string
@@ -3493,8 +3496,11 @@ export type Database = {
           amount_tax?: number
           amount_total?: number
           amount_untaxed?: number
+          cancelled_at?: string | null
+          closed_at?: string | null
           commitment_date?: string | null
           company_id?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           date_order?: string
@@ -3526,8 +3532,11 @@ export type Database = {
           amount_tax?: number
           amount_total?: number
           amount_untaxed?: number
+          cancelled_at?: string | null
+          closed_at?: string | null
           commitment_date?: string | null
           company_id?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           date_order?: string
@@ -5244,6 +5253,7 @@ export type Database = {
     }
     Functions: {
       _test_phase3: { Args: never; Returns: Json }
+      _test_phase4: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5544,6 +5554,7 @@ export type Database = {
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
+      recompute_sale_state: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       register_customer_payment: {
