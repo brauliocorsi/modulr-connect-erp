@@ -91,16 +91,39 @@ def main():
           (SELECT id FROM product_categories LIMIT 1) AS cat,
           (SELECT id FROM stock_locations WHERE name='Stock' LIMIT 1) AS loc_stock,
           (SELECT id FROM stock_locations WHERE name='Clientes' LIMIT 1) AS loc_cust,
-          (SELECT id FROM payment_methods WHERE code='CASH' LIMIT 1) AS pm_cash,
-          (SELECT id FROM cash_registers LIMIT 1) AS reg
+          (SELECT id FROM payment_methods WHERE code='CASH' LIMIT 1) AS pm_cash
     """)
     base = cur.fetchone()
-    add("0", "preflight", "base_data", "wh, uom, cat, locations, payment_method present",
-        json.dumps({k: str(v) for k, v in base.items()}),
-        "OK" if all(base.values()) else "FAIL")
-
     wh, uom, cat = base["wh"], base["uom"], base["cat"]
-    loc_stock, pm_cash, reg = base["loc_stock"], base["pm_cash"], base["reg"]
+    loc_stock, pm_cash = base["loc_stock"], base["pm_cash"]
+
+    # Pick (or fall back to) a cash register tied to the SO warehouse.
+    cur.execute("SELECT id FROM cash_registers WHERE warehouse_id=%s AND active LIMIT 1", (wh,))
+    r = cur.fetchone()
+    if not r:
+        cur.execute("SELECT id FROM cash_registers WHERE active LIMIT 1")
+        r = cur.fetchone()
+    reg = r["id"] if r else None
+
+    # Ensure an open cash session exists for the chosen register (required by
+    # tg_payment_to_cash / tg_payment_register_cash_movement).
+    opened_session = None
+    if reg:
+        cur.execute("SELECT id FROM cash_sessions WHERE register_id=%s AND state='open' LIMIT 1", (reg,))
+        s = cur.fetchone()
+        if not s:
+            cur.execute("""
+                INSERT INTO cash_sessions(name, register_id, opening_balance, state)
+                VALUES (%s, %s, 0, 'open') RETURNING id
+            """, (PFX + "SESSION", reg))
+            s = cur.fetchone()
+            opened_session = s["id"]
+
+    add("0", "preflight", "base_data + cash_session",
+        "wh, uom, cat, locations, payment_method, open cash_session present",
+        json.dumps({**{k: str(v) for k, v in base.items()},
+                    "reg": str(reg), "opened_session": str(opened_session)}),
+        "OK" if all(base.values()) and reg else "FAIL")
 
     # ---------- 1. Create components + manufactured product + BOM ----------
     name_a = PFX + "COMP_A"
