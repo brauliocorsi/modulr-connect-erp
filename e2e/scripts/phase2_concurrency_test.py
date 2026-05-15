@@ -51,7 +51,7 @@ def main():
         cur.execute("INSERT INTO sale_orders(name,partner_id,state,warehouse_id,amount_total) VALUES (%s,%s,'confirmed',%s,500) RETURNING id",
                     (PFX+"SO",partner_id,wh_id))
         so_id = cur.fetchone()[0]
-        add("setup","ok",f"fg={fg_id[:8]} so={so_id[:8]}",True)
+        add("setup","ok",f"fg={str(fg_id)[:8]} so={str(so_id)[:8]}",True)
 
         # ========== T1: 8 reservas paralelas, cada uma pede 3 (stock=10)
         # Esperado: no máx 3 sucessos (3*3=9 ≤ 10), restantes falham com check_violation
