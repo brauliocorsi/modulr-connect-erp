@@ -40,7 +40,7 @@ def main():
         wh_id = q1(cur,"SELECT id FROM warehouses WHERE active ORDER BY created_at LIMIT 1")["id"]
         loc_id = q1(cur,"SELECT id FROM stock_locations WHERE warehouse_id=%s AND type='internal' AND active ORDER BY (parent_id IS NULL) DESC LIMIT 1",wh_id)["id"]
         cust_loc = q1(cur,"SELECT id FROM stock_locations WHERE type='customer' LIMIT 1")["id"]
-        cur.execute("INSERT INTO products(name,type,active,can_be_sold) VALUES (%s,'product',true,true) RETURNING id",(PFX+"FG",))
+        cur.execute("INSERT INTO products(name,type,active,can_be_sold) VALUES (%s,'storable',true,true) RETURNING id",(PFX+"FG",))
         fg_id=cur.fetchone()[0]
         cur.execute("INSERT INTO partners(name,is_customer) VALUES (%s,true) RETURNING id",(PFX+"CUST",))
         partner_id=cur.fetchone()[0]
