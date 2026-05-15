@@ -1311,6 +1311,7 @@ export type Database = {
           due_date: string | null
           id: string
           notes: string | null
+          origin: Database["public"]["Enums"]["mo_origin"]
           partner_id: string | null
           planned_end: string | null
           planned_start: string | null
@@ -1337,6 +1338,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
+          origin?: Database["public"]["Enums"]["mo_origin"]
           partner_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
@@ -1363,6 +1365,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           notes?: string | null
+          origin?: Database["public"]["Enums"]["mo_origin"]
           partner_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
@@ -5316,6 +5319,21 @@ export type Database = {
       mfg_can_manage: { Args: { _uid: string }; Returns: boolean }
       mfg_can_operate: { Args: { _uid: string }; Returns: boolean }
       mfg_can_view: { Args: { _uid: string }; Returns: boolean }
+      mfg_create_manual_mo: {
+        Args: {
+          _due: string
+          _notes: string
+          _origin: Database["public"]["Enums"]["mo_origin"]
+          _planned_end: string
+          _planned_start: string
+          _priority: Database["public"]["Enums"]["mo_priority"]
+          _product: string
+          _qty: number
+          _responsible: string
+          _variant: string
+        }
+        Returns: string
+      }
       mfg_create_mo_for_line: {
         Args: { _line: string; _so: string }
         Returns: string
@@ -5548,6 +5566,7 @@ export type Database = {
         | "paused"
         | "done"
         | "blocked"
+      mo_origin: "sale" | "manual" | "replenishment" | "rework" | "other"
       mo_priority: "low" | "normal" | "high" | "urgent"
       mo_qc_result: "pass" | "fail" | "rework"
       mo_state:
@@ -5771,6 +5790,7 @@ export const Constants = {
         "done",
         "blocked",
       ],
+      mo_origin: ["sale", "manual", "replenishment", "rework", "other"],
       mo_priority: ["low", "normal", "high", "urgent"],
       mo_qc_result: ["pass", "fail", "rework"],
       mo_state: [

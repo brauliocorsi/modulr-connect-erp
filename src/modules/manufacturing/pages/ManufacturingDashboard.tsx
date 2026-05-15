@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
+import CreateManualMODialog from "../components/CreateManualMODialog";
 
 const cards: { key: string; label: string; filter: (q: any) => any; tone?: string }[] = [
   { key: "open", label: "Abertas", filter: (q) => q.not("state", "in", "(done,cancelled)") },
@@ -57,7 +58,7 @@ export default function ManufacturingDashboard() {
 
   return (
     <>
-      <PageHeader title="Manufatura" breadcrumb={[{ label: "Manufatura" }]} />
+      <PageHeader title="Manufatura" breadcrumb={[{ label: "Manufatura" }]} actions={<CreateManualMODialog />} />
       <PageBody>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {cards.map((c) => (

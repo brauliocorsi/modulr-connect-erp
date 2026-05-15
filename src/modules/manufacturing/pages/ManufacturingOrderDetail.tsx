@@ -7,6 +7,7 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "../components/MOBadges";
+import { MOOriginBadge } from "../components/MOOriginBadge";
 import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
@@ -62,6 +63,7 @@ export default function ManufacturingOrderDetail() {
         breadcrumb={[{ label: "Manufatura", to: "/manufacturing" }, { label: "Ordens", to: "/manufacturing/orders" }, { label: mo.code }]}
         actions={
           <div className="flex gap-2 items-center">
+            <MOOriginBadge origin={mo.origin} />
             <MOPriorityBadge priority={mo.priority} />
             <MOStateBadge state={mo.state} />
           </div>
@@ -70,11 +72,13 @@ export default function ManufacturingOrderDetail() {
       <PageBody>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <Card className="p-4 lg:col-span-1 space-y-2 text-sm">
+            <div><span className="text-muted-foreground">Origem:</span> <MOOriginBadge origin={mo.origin} /></div>
             <div><span className="text-muted-foreground">Cliente:</span> {mo.partner?.name ?? "—"}</div>
             <div><span className="text-muted-foreground">Quantidade:</span> {Number(mo.qty)}</div>
             <div><span className="text-muted-foreground">Prazo:</span> {fmtDate(mo.due_date)}</div>
             <div><span className="text-muted-foreground">BOM:</span> {mo.bom?.code ?? "—"}</div>
             <div><span className="text-muted-foreground">Venda:</span> {mo.sale ? <Link className="underline" to={`/sales/orders/${mo.sale.id}`}>{mo.sale.name}</Link> : "—"}</div>
+            <div><span className="text-muted-foreground">Criada em:</span> {fmtDateTime(mo.created_at)}</div>
             {mo.blocked_reason && <div className="text-destructive">⚠ {mo.blocked_reason}</div>}
             {mo.notes && <div className="text-muted-foreground whitespace-pre-wrap">{mo.notes}</div>}
             <div className="pt-2"><Link to={`/shop-floor/order/${mo.id}`} className="text-primary underline text-sm">Abrir no chão de fábrica →</Link></div>
