@@ -19,6 +19,8 @@ PG = dict(
     host=os.environ["PGHOST"], port=os.environ.get("PGPORT", 5432),
     user=os.environ["PGUSER"], password=os.environ["PGPASSWORD"],
     dbname=os.environ["PGDATABASE"],
+    sslmode=os.environ.get("PGSSLMODE", "require"),
+    client_encoding="UTF8",
 )
 
 TS = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
