@@ -1509,6 +1509,7 @@ export type Database = {
       }
       mo_issues: {
         Row: {
+          attachments: Json
           description: string | null
           id: string
           kind: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1521,6 +1522,7 @@ export type Database = {
           resolved_by: string | null
         }
         Insert: {
+          attachments?: Json
           description?: string | null
           id?: string
           kind: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1533,6 +1535,7 @@ export type Database = {
           resolved_by?: string | null
         }
         Update: {
+          attachments?: Json
           description?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1625,6 +1628,7 @@ export type Database = {
       }
       mo_quality_checks: {
         Row: {
+          attachments: Json
           checked_at: string
           checked_by: string | null
           defects: string | null
@@ -1636,6 +1640,7 @@ export type Database = {
           result: Database["public"]["Enums"]["mo_qc_result"]
         }
         Insert: {
+          attachments?: Json
           checked_at?: string
           checked_by?: string | null
           defects?: string | null
@@ -1647,6 +1652,7 @@ export type Database = {
           result: Database["public"]["Enums"]["mo_qc_result"]
         }
         Update: {
+          attachments?: Json
           checked_at?: string
           checked_by?: string | null
           defects?: string | null
