@@ -302,6 +302,7 @@ export default function Discuss() {
             <div className="flex-1 overflow-auto p-4 space-y-3">
               {messages.map((m) => {
                 const p = profileMap[m.author_id];
+                const receipts = readReceipts[m.id] ?? [];
                 return (
                   <div key={m.id} className="flex gap-3">
                     <div className="h-8 w-8 rounded-full bg-primary/15 grid place-items-center text-xs font-semibold">
@@ -317,6 +318,28 @@ export default function Discuss() {
                         <a href={m.image_url} target="_blank" rel="noreferrer" className="inline-block mt-1">
                           <img src={m.image_url} alt="anexo" className="max-h-72 max-w-sm rounded border object-contain" />
                         </a>
+                      )}
+                      {receipts.length > 0 && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <span>Visto por</span>
+                          {receipts.map((r) => {
+                            const rp = profileMap[r.user_id];
+                            const name = rp?.full_name ?? rp?.email ?? "Utilizador";
+                            return (
+                              <span
+                                key={r.user_id}
+                                title={`${name} • ${fmtDateTime(r.at)}`}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted"
+                              >
+                                <span className="h-4 w-4 rounded-full bg-primary/15 grid place-items-center text-[9px] font-semibold">
+                                  {name[0]?.toUpperCase()}
+                                </span>
+                                <span className="truncate max-w-[120px]">{name}</span>
+                                <span className="opacity-70">{fmtTime(r.at)}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>
