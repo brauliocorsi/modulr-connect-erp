@@ -1,0 +1,2 @@
+DELETE FROM public.cash_movements WHERE notes LIKE 'TESTE_E2E_%' OR reference LIKE 'TESTE_E2E_%' OR session_id IN (SELECT id FROM public.cash_sessions WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.cash_sessions WHERE name LIKE 'TESTE_E2E_%';

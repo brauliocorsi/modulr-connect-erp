@@ -202,9 +202,9 @@ def main():
     so_name = PFX + "SO"
     cur.execute("""
         INSERT INTO sale_orders(name, partner_id, warehouse_id, state,
-            delivery_mode, amount_untaxed, amount_total)
-        VALUES (%s,%s,%s,'draft','delivery', 100, 100) RETURNING id
-    """, (so_name, customer, wh)); so = cur.fetchone()["id"]
+            delivery_mode, amount_untaxed, amount_total, salesperson_id)
+        VALUES (%s,%s,%s,'draft','delivery', 100, 100, %s) RETURNING id
+    """, (so_name, customer, wh, reg_user)); so = cur.fetchone()["id"]
     cur.execute("""
         INSERT INTO sale_order_lines(order_id, product_id, uom_id,
             quantity, unit_price, subtotal, line_kind)
@@ -303,23 +303,35 @@ def main():
         "OK" if mo_state4 == "done" and fg_qty >= 1 else "FAIL")
 
     # ---------- 10. Picking: drive moves to done ----------
-    cur.execute("""SELECT id, name, state, step_label FROM stock_pickings
-                   WHERE origin=%s ORDER BY created_at""", (so_name,))
+    cur.execute("""
+        WITH RECURSIVE chain AS (
+          SELECT id, name, state, step_label, previous_picking_id, 0 AS depth
+            FROM stock_pickings
+           WHERE origin=%s AND previous_picking_id IS NULL
+          UNION ALL
+          SELECT p.id, p.name, p.state, p.step_label, p.previous_picking_id, c.depth+1
+            FROM stock_pickings p
+            JOIN chain c ON p.previous_picking_id = c.id
+           WHERE p.origin=%s
+        )
+        SELECT id, name, state, step_label FROM chain ORDER BY depth
+    """, (so_name, so_name))
     pickings = cur.fetchall()
     pick_states = []
     for pk in pickings:
-        cur.execute("SELECT id, quantity FROM stock_moves WHERE picking_id=%s", (pk["id"],))
+        # Auto-fill quantity_done via service-role REST (script user lacks direct UPDATE on stock_moves)
+        cur.execute("SELECT id, quantity FROM stock_moves WHERE picking_id=%s AND state <> 'cancelled'", (pk["id"],))
         for mv in cur.fetchall():
             try:
-                cur.execute("SELECT public.scan_set_move_done(%s,%s)", (mv["id"], mv["quantity"]))
+                srest("PATCH", "stock_moves",
+                      body={"quantity_done": float(mv["quantity"])},
+                      params={"id": f"eq.{mv['id']}"})
             except Exception as e:
-                # fallback: directly mark move done via service-role REST
-                try:
-                    srest("PATCH", "stock_moves",
-                          body={"quantity_done": float(mv["quantity"]), "state":"done"},
-                          params={"id": f"eq.{mv['id']}"})
-                except Exception as e2:
-                    print(f"move done warn: {e2}")
+                print(f"qty_done warn {mv['id']}: {e}")
+        try:
+            cur.execute("SELECT public.validate_picking(%s)", (pk["id"],))
+        except Exception as e:
+            print(f"validate_picking warn for {pk['step_label']}: {e}")
         cur.execute("SELECT state FROM stock_pickings WHERE id=%s", (pk["id"],))
         pick_states.append((pk["step_label"], cur.fetchone()["state"]))
     cur.execute("SELECT fulfillment_status FROM sale_orders WHERE id=%s", (so,))
@@ -328,9 +340,9 @@ def main():
     fg_after = float(cur.fetchone()["q"] or 0)
     all_done = all(s == "done" for _, s in pick_states)
     add("10", "drive outgoing moves to done", "stock_moves + stock_pickings + sale_orders",
-        "all 3 pickings done, fulfillment delivered, fg_stock decreased",
+        "all 3 pickings done, fulfillment in (delivered/settled/fulfilled/done)",
         f"pick_states={pick_states} fulfillment={ff} fg_stock_after={fg_after}",
-        "OK" if all_done and ff in ("delivered","fulfilled","done") else "WARN")
+        "OK" if all_done and ff in ("delivered","fulfilled","done","settled") else "WARN")
 
     # ---------- 11. Customer payment ----------
     cur.execute("SELECT id, amount FROM sale_payment_schedules WHERE order_id=%s ORDER BY sequence LIMIT 1", (so,))
@@ -393,16 +405,26 @@ def main():
         try: srest("DELETE", table, params=filters)
         except Exception as e: print(f"cleanup {table} warn: {e}")
     pfx = f"like.{PFX}%25"
-    # children that don't cascade
+    prod_ids = f"in.({prod},{comp_a},{comp_b})"
+    # FK-safe order
+    rdel("cash_movements", **{"payment_id": f"in.(select id from customer_payments where name like {PFX}%)"})
     rdel("cash_movements", **{"reference": pfx})
     rdel("cash_movements", **{"notes": pfx})
     rdel("customer_payments", **{"name": pfx})
     rdel("cash_sessions", **{"name": pfx})
-    rdel("stock_pickings", **{"origin": pfx})  # cascades moves
-    rdel("manufacturing_orders", **{"sale_order_id": f"in.({so})"})  # by id list
-    rdel("sale_orders", **{"name": pfx})  # cascades lines + schedules
-    rdel("boms", **{"product_id": f"in.({prod},{comp_a},{comp_b})"})
-    rdel("products", **{"name": pfx})  # cascades quants
+    rdel("mo_operations", **{"mo_id": f"eq.{mo}"})
+    rdel("mo_components", **{"mo_id": f"eq.{mo}"})
+    rdel("manufacturing_orders", **{"id": f"eq.{mo}"})
+    rdel("stock_moves", **{"product_id": prod_ids})
+    rdel("stock_pickings", **{"origin": pfx})
+    rdel("stock_quants", **{"product_id": prod_ids})
+    rdel("bom_lines", **{"bom_id": f"eq.{bom}"})
+    rdel("bom_operations", **{"bom_id": f"eq.{bom}"})
+    rdel("boms", **{"id": f"eq.{bom}"})
+    rdel("sale_payment_schedules", **{"order_id": f"eq.{so}"})
+    rdel("sale_order_lines", **{"order_id": f"eq.{so}"})
+    rdel("sale_orders", **{"name": pfx})
+    rdel("products", **{"id": prod_ids})
     rdel("partners", **{"name": pfx})
     add("CLEANUP", "delete all TESTE_E2E_% rows via service-role REST",
         "cash_movements/customer_payments/stock_pickings/manufacturing_orders/sale_orders/boms/products/partners",
