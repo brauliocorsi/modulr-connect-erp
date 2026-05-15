@@ -396,6 +396,7 @@ def main():
     rdel("cash_movements", **{"reference": pfx})
     rdel("cash_movements", **{"notes": pfx})
     rdel("customer_payments", **{"name": pfx})
+    rdel("cash_sessions", **{"name": pfx})
     rdel("stock_pickings", **{"origin": pfx})  # cascades moves
     rdel("manufacturing_orders", **{"sale_order_id": f"in.({so})"})  # by id list
     rdel("sale_orders", **{"name": pfx})  # cascades lines + schedules
