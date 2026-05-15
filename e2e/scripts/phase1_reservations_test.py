@@ -53,9 +53,9 @@ def main():
         loc = q1(cur, "SELECT id FROM stock_locations WHERE warehouse_id=%s AND type='internal' AND active=true ORDER BY (parent_id IS NULL) DESC LIMIT 1", wh_id)
         loc_id = loc["id"]
         # finished good + component
-        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'product',true,true,false) RETURNING id", (PFX+"FG",))
+        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'storable',true,true,false) RETURNING id", (PFX+"FG",))
         fg_id = cur.fetchone()[0]
-        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'product',true,false,true) RETURNING id", (PFX+"COMP",))
+        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'storable',true,false,true) RETURNING id", (PFX+"COMP",))
         comp_id = cur.fetchone()[0]
         # partner
         cur.execute("INSERT INTO partners(name,is_customer) VALUES (%s,true) RETURNING id", (PFX+"CUST",))
@@ -63,7 +63,7 @@ def main():
         # initial stock for component (50) and FG (10)
         x(cur, "INSERT INTO stock_quants(product_id,location_id,quantity) VALUES (%s,%s,50)", comp_id, loc_id)
         x(cur, "INSERT INTO stock_quants(product_id,location_id,quantity) VALUES (%s,%s,10)", fg_id, loc_id)
-        add("setup", "warehouse+products+stock", f"wh={wh_id[:8]} fg={fg_id[:8]} comp={comp_id[:8]}", True)
+        add("setup", "warehouse+products+stock", f"wh={str(wh_id)[:8]} fg={str(fg_id)[:8]} comp={str(comp_id)[:8]}", True)
 
         # ===== TEST 1: SO confirm → reserve_picking_strict =====
         # Build SO + outgoing picking + 1 move FG qty=3 manually (no UI triggers)
