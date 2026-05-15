@@ -73,9 +73,9 @@ export default function BatchScan() {
     // Find first move with capacity
     const move = target.moves.find((m) => Number(m.quantity_done ?? 0) < Number(m.quantity));
     if (!move) return log(`${target.name}: sem capacidade`, "warn");
-    const next = Number(move.quantity_done ?? 0) + 1;
-    const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", move.id);
+    const { data: r, error } = await supabase.rpc("scan_increment_move", { _move: move.id, _delta: 1 });
     if (error) return log(error.message, "error");
+    const next = Number((r as any)?.quantity_done ?? Number(move.quantity_done ?? 0) + 1);
     move.quantity_done = next;
     target.done += 1;
     setAgg([...agg]);
