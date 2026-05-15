@@ -254,7 +254,8 @@ def main():
     except Exception as e:
         conn.rollback(); conn.autocommit = True
     # Move MO to done if still qc; produced product appears in stock via trigger.
-    cur.execute("UPDATE manufacturing_orders SET state='done', actual_end=now() WHERE id=%s AND state='qc'", (mo,))
+    srest("PATCH", "manufacturing_orders", body={"state":"done","actual_end":"now()"},
+          params={"id":f"eq.{mo}","state":"eq.qc"})
     # Force a stock entry for finished product (test simulates the warehouse
     # post-production receipt — the auto trigger may or may not move stock).
     cur.execute("""INSERT INTO stock_quants(product_id, location_id, quantity)
