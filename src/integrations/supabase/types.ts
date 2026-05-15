@@ -5360,7 +5360,6 @@ export type Database = {
       }
     }
     Functions: {
-      _test_notify_user_regression: { Args: never; Returns: Json }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
