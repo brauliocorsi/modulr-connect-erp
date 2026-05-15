@@ -5254,6 +5254,7 @@ export type Database = {
     Functions: {
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
+      _test_phase5: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5273,6 +5274,7 @@ export type Database = {
         }[]
       }
       cancel_batch: { Args: { _batch: string }; Returns: undefined }
+      cancel_mo: { Args: { _mo: string }; Returns: undefined }
       cancel_picking: {
         Args: { _cascade?: boolean; _picking: string }
         Returns: undefined
