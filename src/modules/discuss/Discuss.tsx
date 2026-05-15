@@ -14,6 +14,10 @@ import { toast } from "sonner";
 type Channel = { id: string; name: string; kind: string; is_private: boolean; description: string | null };
 type Message = { id: string; channel_id: string; author_id: string; body: string | null; mentions: string[]; created_at: string; image_url: string | null; attachments: any };
 type Profile = { id: string; full_name: string | null; email: string | null };
+type Member = { channel_id: string; user_id: string; last_read_at: string | null };
+
+const fmtTime = (d: string | Date) =>
+  new Date(d).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" });
 
 export default function Discuss() {
   const { channelId } = useParams();
