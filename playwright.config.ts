@@ -22,7 +22,6 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    storageState: "e2e/.auth/admin.json",
   },
   projects: [
     {
@@ -30,7 +29,6 @@ export default defineConfig({
       testMatch: /global\.setup\.ts/,
       use: {
         ...devices["Desktop Chrome"],
-        storageState: undefined,
         launchOptions: process.env.CHROMIUM_PATH
           ? { executablePath: process.env.CHROMIUM_PATH }
           : undefined,
@@ -40,6 +38,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/admin.json",
         launchOptions: process.env.CHROMIUM_PATH
           ? { executablePath: process.env.CHROMIUM_PATH }
           : undefined,
