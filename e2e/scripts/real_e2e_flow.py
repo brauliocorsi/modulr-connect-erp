@@ -11,8 +11,26 @@ markdown report. Cleans up TESTE_E2E_% data at the end.
 Uses direct psql connection via PG* env vars (service-role equivalent —
 bypasses RLS).
 """
-import os, sys, json, datetime, traceback, ssl
+import os, sys, json, datetime, traceback, ssl, urllib.request, urllib.parse
 import pg8000.dbapi as pg
+
+SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
+SRK = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+
+def srest(method, path, body=None, params=None):
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    if params: url += "?" + urllib.parse.urlencode(params)
+    data = None
+    if body is not None: data = json.dumps(body).encode()
+    req = urllib.request.Request(url, method=method, data=data, headers={
+        "apikey": SRK, "Authorization": f"Bearer {SRK}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    })
+    ctx = ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+    with urllib.request.urlopen(req, context=ctx) as r:
+        raw = r.read()
+        return json.loads(raw) if raw else None
 
 _ssl_ctx = ssl.create_default_context()
 _ssl_ctx.check_hostname = False
