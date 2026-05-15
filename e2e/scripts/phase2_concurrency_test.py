@@ -81,7 +81,10 @@ def main():
         ok_count=sum(1 for r in results if r[0]=="ok")
         err_count=sum(1 for r in results if r[0]=="err")
         ins_count=sum(1 for r in results if r[0]=="err" and "Stock insuficiente" in (r[2] or ""))
-        # Validar estado físico
+        # debug
+        for r in results[:3]:
+            if r[0]=="err": print(f"   sample err: {r[2]}")
+        for r in results3[:3] if False else []: pass
         st = q1(cur,"SELECT quantity, reserved_quantity FROM stock_quants WHERE product_id=%s AND location_id=%s",fg_id,loc_id)
         neg = q1(cur,"SELECT count(*) c FROM stock_quants WHERE reserved_quantity<0")
         ok = (float(st["reserved_quantity"]) == ok_count*3
