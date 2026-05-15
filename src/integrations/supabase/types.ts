@@ -1420,6 +1420,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           due_date: string | null
+          expected_finish_date: string | null
           id: string
           notes: string | null
           origin: Database["public"]["Enums"]["mo_origin"]
@@ -1447,6 +1448,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          expected_finish_date?: string | null
           id?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["mo_origin"]
@@ -1474,6 +1476,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          expected_finish_date?: string | null
           id?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["mo_origin"]
@@ -3462,15 +3465,68 @@ export type Database = {
           },
         ]
       }
+      sale_operational_plan_log: {
+        Row: {
+          duration_ms: number | null
+          error: string | null
+          id: string
+          mode: string
+          run_at: string
+          sale_order_id: string
+          summary: Json
+        }
+        Insert: {
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          mode: string
+          run_at?: string
+          sale_order_id: string
+          summary?: Json
+        }
+        Update: {
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          mode?: string
+          run_at?: string
+          sale_order_id?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_order_lines: {
         Row: {
+          availability_source: string | null
+          confidence_level: string | null
           description: string | null
           discount_pct: number
+          expected_availability_date: string | null
           id: string
+          last_planned_at: string | null
           line_kind: string
           manufacturing_status: Database["public"]["Enums"]["sol_mfg_status"]
+          operational_status: string | null
           order_id: string
           product_id: string | null
+          qty_reserved: number
+          qty_to_manufacture: number
+          qty_to_purchase: number
           quantity: number
           sequence: number
           subtotal: number
@@ -3480,13 +3536,21 @@ export type Database = {
           variant_id: string | null
         }
         Insert: {
+          availability_source?: string | null
+          confidence_level?: string | null
           description?: string | null
           discount_pct?: number
+          expected_availability_date?: string | null
           id?: string
+          last_planned_at?: string | null
           line_kind?: string
           manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
+          operational_status?: string | null
           order_id: string
           product_id?: string | null
+          qty_reserved?: number
+          qty_to_manufacture?: number
+          qty_to_purchase?: number
           quantity?: number
           sequence?: number
           subtotal?: number
@@ -3496,13 +3560,21 @@ export type Database = {
           variant_id?: string | null
         }
         Update: {
+          availability_source?: string | null
+          confidence_level?: string | null
           description?: string | null
           discount_pct?: number
+          expected_availability_date?: string | null
           id?: string
+          last_planned_at?: string | null
           line_kind?: string
           manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
+          operational_status?: string | null
           order_id?: string
           product_id?: string | null
+          qty_reserved?: number
+          qty_to_manufacture?: number
+          qty_to_purchase?: number
           quantity?: number
           sequence?: number
           subtotal?: number
@@ -3563,6 +3635,67 @@ export type Database = {
           },
         ]
       }
+      sale_order_timeline: {
+        Row: {
+          created_by: string | null
+          id: string
+          occurred_at: string
+          payload: Json
+          ref: string | null
+          sale_order_id: string
+          sale_order_line_id: string | null
+          source: string | null
+          status: string
+          step: string
+        }
+        Insert: {
+          created_by?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          ref?: string | null
+          sale_order_id: string
+          sale_order_line_id?: string | null
+          source?: string | null
+          status?: string
+          step: string
+        }
+        Update: {
+          created_by?: string | null
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          ref?: string | null
+          sale_order_id?: string
+          sale_order_line_id?: string | null
+          source?: string | null
+          status?: string
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_orders: {
         Row: {
           amount_tax: number
@@ -3580,6 +3713,7 @@ export type Database = {
           delivery_region_rule_id: string | null
           delivery_zip_rule_id: string | null
           delivery_zone_label: string | null
+          expected_ready_date: string | null
           fulfillment_status: string
           id: string
           include_assembly: boolean
@@ -3588,8 +3722,10 @@ export type Database = {
           invoice_notes: string | null
           invoice_number: string | null
           invoice_status: string
+          last_planned_at: string | null
           name: string
           notes: string | null
+          operational_status: string | null
           partner_id: string
           payment_status: string
           pricelist_id: string | null
@@ -3616,6 +3752,7 @@ export type Database = {
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
+          expected_ready_date?: string | null
           fulfillment_status?: string
           id?: string
           include_assembly?: boolean
@@ -3624,8 +3761,10 @@ export type Database = {
           invoice_notes?: string | null
           invoice_number?: string | null
           invoice_status?: string
+          last_planned_at?: string | null
           name: string
           notes?: string | null
+          operational_status?: string | null
           partner_id: string
           payment_status?: string
           pricelist_id?: string | null
@@ -3652,6 +3791,7 @@ export type Database = {
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
           delivery_zone_label?: string | null
+          expected_ready_date?: string | null
           fulfillment_status?: string
           id?: string
           include_assembly?: boolean
@@ -3660,8 +3800,10 @@ export type Database = {
           invoice_notes?: string | null
           invoice_number?: string | null
           invoice_status?: string
+          last_planned_at?: string | null
           name?: string
           notes?: string | null
+          operational_status?: string | null
           partner_id?: string
           payment_status?: string
           pricelist_id?: string | null
@@ -5360,9 +5502,18 @@ export type Database = {
       }
     }
     Functions: {
+      _so_ensure_mo_for_line: {
+        Args: { _line_id: string; _qty: number }
+        Returns: string
+      }
+      _so_reserve_line: {
+        Args: { _line_id: string; _qty: number }
+        Returns: number
+      }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
+      _test_phase13: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -5809,9 +5960,38 @@ export type Database = {
         }
         Returns: number
       }
+      so_classify_line: { Args: { _line_id: string }; Returns: Json }
+      so_emit_timeline: {
+        Args: {
+          _line: string
+          _payload: Json
+          _ref: string
+          _so: string
+          _source: string
+          _step: string
+        }
+        Returns: string
+      }
       so_has_active_backorder: { Args: { _so: string }; Returns: boolean }
       so_is_scheduled: { Args: { _so: string }; Returns: boolean }
       so_is_settled: { Args: { _so: string }; Returns: boolean }
+      so_product_available_now: {
+        Args: { _product: string; _warehouse: string }
+        Returns: number
+      }
+      so_product_in_production_qty: {
+        Args: { _product: string; _warehouse: string }
+        Returns: number
+      }
+      so_product_incoming_qty: {
+        Args: { _product: string; _warehouse: string }
+        Returns: number
+      }
+      so_rollup_operational_status: { Args: { _so: string }; Returns: string }
+      so_run_operational_plan: {
+        Args: { _mode?: string; _order_id: string }
+        Returns: Json
+      }
       suggest_route: {
         Args: { _from_date?: string; _so: string }
         Returns: {
