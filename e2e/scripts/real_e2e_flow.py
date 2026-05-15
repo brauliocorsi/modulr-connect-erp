@@ -239,7 +239,9 @@ def main():
     cur.execute("UPDATE manufacturing_orders SET state='done', actual_end=now() WHERE id=%s AND state='qc'", (mo,))
     # Force a stock entry for finished product (test simulates the warehouse
     # post-production receipt — the auto trigger may or may not move stock).
-    cur.execute("SELECT public.set_product_stock(%s,%s,1,'E2E finished good')", (prod, wh))
+    cur.execute("""INSERT INTO stock_quants(product_id, location_id, quantity)
+                   VALUES (%s,%s,1)
+                   ON CONFLICT DO NOTHING""", (prod, loc_stock))
     cur.execute("SELECT sum(quantity) AS q FROM stock_quants WHERE product_id=%s", (prod,))
     fg_qty = float(cur.fetchone()["q"] or 0)
     cur.execute("SELECT state FROM manufacturing_orders WHERE id=%s", (mo,))
