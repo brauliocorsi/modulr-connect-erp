@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { fmtDate } from "@/lib/format";
+import { PhotoUploader, type Attachment } from "@/modules/manufacturing/components/PhotoUploader";
 
 export default function ShopFloorQuality() {
   const qc = useQueryClient();
@@ -16,6 +17,7 @@ export default function ShopFloorQuality() {
   const [result, setResult] = useState("pass");
   const [defects, setDefects] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState<Attachment[]>([]);
 
   const { data } = useQuery({
     queryKey: ["qc-queue"],
@@ -29,9 +31,10 @@ export default function ShopFloorQuality() {
   const submit = async () => {
     const { error } = await supabase.rpc("mfg_quality_check", {
       _mo: open.id, _result: result as any, _defects: defects || null, _notes: notes || null,
+      _attachments: photos as any,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Qualidade registada"); setOpen(null); setDefects(""); setNotes(""); qc.invalidateQueries({ queryKey: ["qc-queue"] }); }
+    else { toast.success("Qualidade registada"); setOpen(null); setDefects(""); setNotes(""); setPhotos([]); qc.invalidateQueries({ queryKey: ["qc-queue"] }); }
   };
 
   return (
