@@ -1278,6 +1278,459 @@ export type Database = {
           },
         ]
       }
+      manufacturing_orders: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          blocked_reason: string | null
+          bom_id: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          partner_id: string | null
+          planned_end: string | null
+          planned_start: string | null
+          priority: Database["public"]["Enums"]["mo_priority"]
+          product_id: string
+          qty: number
+          responsible_id: string | null
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          state: Database["public"]["Enums"]["mo_state"]
+          uom_id: string | null
+          updated_at: string
+          variant_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          blocked_reason?: string | null
+          bom_id?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["mo_priority"]
+          product_id: string
+          qty: number
+          responsible_id?: string | null
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          state?: Database["public"]["Enums"]["mo_state"]
+          uom_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          blocked_reason?: string | null
+          bom_id?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: Database["public"]["Enums"]["mo_priority"]
+          product_id?: string
+          qty?: number
+          responsible_id?: string | null
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          state?: Database["public"]["Enums"]["mo_state"]
+          uom_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_orders_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_components: {
+        Row: {
+          created_at: string
+          id: string
+          mo_id: string
+          product_id: string
+          qty_available: number
+          qty_consumed: number
+          qty_required: number
+          qty_reserved: number
+          scrap_pct: number
+          sequence: number
+          status: Database["public"]["Enums"]["mo_component_status"]
+          uom_id: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mo_id: string
+          product_id: string
+          qty_available?: number
+          qty_consumed?: number
+          qty_required?: number
+          qty_reserved?: number
+          scrap_pct?: number
+          sequence?: number
+          status?: Database["public"]["Enums"]["mo_component_status"]
+          uom_id?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mo_id?: string
+          product_id?: string
+          qty_available?: number
+          qty_consumed?: number
+          qty_required?: number
+          qty_reserved?: number
+          scrap_pct?: number
+          sequence?: number
+          status?: Database["public"]["Enums"]["mo_component_status"]
+          uom_id?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_components_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "mo_components_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_issues: {
+        Row: {
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["mo_issue_kind"]
+          mo_id: string
+          mo_operation_id: string | null
+          reported_at: string
+          reported_by: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["mo_issue_kind"]
+          mo_id: string
+          mo_operation_id?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["mo_issue_kind"]
+          mo_id?: string
+          mo_operation_id?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_issues_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_issues_mo_operation_id_fkey"
+            columns: ["mo_operation_id"]
+            isOneToOne: false
+            referencedRelation: "mo_operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_operations: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          is_qc: boolean
+          is_rework: boolean
+          mo_id: string
+          name: string
+          operator_id: string | null
+          planned_minutes: number
+          qty_done: number
+          qty_scrap: number
+          sequence: number
+          started_at: string | null
+          state: Database["public"]["Enums"]["mo_op_state"]
+          workcenter: string | null
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          is_qc?: boolean
+          is_rework?: boolean
+          mo_id: string
+          name: string
+          operator_id?: string | null
+          planned_minutes?: number
+          qty_done?: number
+          qty_scrap?: number
+          sequence?: number
+          started_at?: string | null
+          state?: Database["public"]["Enums"]["mo_op_state"]
+          workcenter?: string | null
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          is_qc?: boolean
+          is_rework?: boolean
+          mo_id?: string
+          name?: string
+          operator_id?: string | null
+          planned_minutes?: number
+          qty_done?: number
+          qty_scrap?: number
+          sequence?: number
+          started_at?: string | null
+          state?: Database["public"]["Enums"]["mo_op_state"]
+          workcenter?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_operations_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_quality_checks: {
+        Row: {
+          checked_at: string
+          checked_by: string | null
+          defects: string | null
+          id: string
+          mo_id: string
+          mo_operation_id: string | null
+          needs_rework: boolean
+          notes: string | null
+          result: Database["public"]["Enums"]["mo_qc_result"]
+        }
+        Insert: {
+          checked_at?: string
+          checked_by?: string | null
+          defects?: string | null
+          id?: string
+          mo_id: string
+          mo_operation_id?: string | null
+          needs_rework?: boolean
+          notes?: string | null
+          result: Database["public"]["Enums"]["mo_qc_result"]
+        }
+        Update: {
+          checked_at?: string
+          checked_by?: string | null
+          defects?: string | null
+          id?: string
+          mo_id?: string
+          mo_operation_id?: string | null
+          needs_rework?: boolean
+          notes?: string | null
+          result?: Database["public"]["Enums"]["mo_qc_result"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_quality_checks_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_quality_checks_mo_operation_id_fkey"
+            columns: ["mo_operation_id"]
+            isOneToOne: false
+            referencedRelation: "mo_operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mo_workorder_logs: {
+        Row: {
+          attachments: Json
+          created_at: string
+          finished_at: string | null
+          id: string
+          mo_id: string
+          mo_operation_id: string
+          notes: string | null
+          operator_id: string | null
+          qty_done: number
+          qty_scrap: number
+          started_at: string
+        }
+        Insert: {
+          attachments?: Json
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          mo_id: string
+          mo_operation_id: string
+          notes?: string | null
+          operator_id?: string | null
+          qty_done?: number
+          qty_scrap?: number
+          started_at?: string
+        }
+        Update: {
+          attachments?: Json
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          mo_id?: string
+          mo_operation_id?: string
+          notes?: string | null
+          operator_id?: string | null
+          qty_done?: number
+          qty_scrap?: number
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mo_workorder_logs_mo_id_fkey"
+            columns: ["mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_workorder_logs_mo_operation_id_fkey"
+            columns: ["mo_operation_id"]
+            isOneToOne: false
+            referencedRelation: "mo_operations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_events: {
         Row: {
           created_at: string
@@ -2666,6 +3119,7 @@ export type Database = {
           discount_pct: number
           id: string
           line_kind: string
+          manufacturing_status: Database["public"]["Enums"]["sol_mfg_status"]
           order_id: string
           product_id: string | null
           quantity: number
@@ -2681,6 +3135,7 @@ export type Database = {
           discount_pct?: number
           id?: string
           line_kind?: string
+          manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
           order_id: string
           product_id?: string | null
           quantity?: number
@@ -2696,6 +3151,7 @@ export type Database = {
           discount_pct?: number
           id?: string
           line_kind?: string
+          manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
           order_id?: string
           product_id?: string | null
           quantity?: number
@@ -4564,6 +5020,54 @@ export type Database = {
         Args: { _sources: string[]; _target: string }
         Returns: undefined
       }
+      mfg_available_qty: {
+        Args: { _product: string; _variant: string }
+        Returns: number
+      }
+      mfg_can_manage: { Args: { _uid: string }; Returns: boolean }
+      mfg_can_operate: { Args: { _uid: string }; Returns: boolean }
+      mfg_can_view: { Args: { _uid: string }; Returns: boolean }
+      mfg_create_mo_for_line: {
+        Args: { _line: string; _so: string }
+        Returns: string
+      }
+      mfg_create_orders_for_sale: { Args: { _so: string }; Returns: number }
+      mfg_finish_operation: {
+        Args: {
+          _notes: string
+          _op: string
+          _qty_done: number
+          _qty_scrap: number
+        }
+        Returns: undefined
+      }
+      mfg_next_code: { Args: never; Returns: string }
+      mfg_pause_operation: {
+        Args: { _op: string; _reason: string }
+        Returns: undefined
+      }
+      mfg_quality_check: {
+        Args: {
+          _defects: string
+          _mo: string
+          _notes: string
+          _result: Database["public"]["Enums"]["mo_qc_result"]
+        }
+        Returns: undefined
+      }
+      mfg_refresh_component: { Args: { _id: string }; Returns: undefined }
+      mfg_refresh_mo_state: { Args: { _mo: string }; Returns: undefined }
+      mfg_report_issue: {
+        Args: {
+          _description: string
+          _kind: Database["public"]["Enums"]["mo_issue_kind"]
+          _mo: string
+          _op: string
+        }
+        Returns: string
+      }
+      mfg_start_operation: { Args: { _op: string }; Returns: undefined }
+      mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
       notify_user: {
         Args: {
@@ -4717,6 +5221,7 @@ export type Database = {
         | "routes"
         | "barcode"
         | "service"
+        | "manufacturing"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -4726,6 +5231,37 @@ export type Database = {
         | "inventory_loss"
         | "production"
         | "view"
+      mo_component_status:
+        | "pending"
+        | "reserved"
+        | "partial"
+        | "consumed"
+        | "missing"
+      mo_issue_kind:
+        | "material_missing"
+        | "damaged"
+        | "wrong_measure"
+        | "defect"
+        | "priority_blocked"
+        | "other"
+      mo_op_state:
+        | "pending"
+        | "ready"
+        | "in_progress"
+        | "paused"
+        | "done"
+        | "blocked"
+      mo_priority: "low" | "normal" | "high" | "urgent"
+      mo_qc_result: "pass" | "fail" | "rework"
+      mo_state:
+        | "draft"
+        | "waiting_material"
+        | "ready"
+        | "in_progress"
+        | "paused"
+        | "qc"
+        | "done"
+        | "cancelled"
       partner_kind: "individual" | "company"
       permission_action: "view" | "create" | "edit" | "delete" | "export"
       picking_kind:
@@ -4740,6 +5276,14 @@ export type Database = {
       purchase_state: "draft" | "rfq_sent" | "confirmed" | "done" | "cancelled"
       removal_strategy: "fifo" | "lifo" | "fefo" | "closest"
       sale_state: "draft" | "sent" | "confirmed" | "done" | "cancelled"
+      sol_mfg_status:
+        | "none"
+        | "pending"
+        | "waiting_material"
+        | "in_production"
+        | "qc"
+        | "ready_for_delivery"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4881,6 +5425,7 @@ export const Constants = {
         "routes",
         "barcode",
         "service",
+        "manufacturing",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
@@ -4891,6 +5436,41 @@ export const Constants = {
         "inventory_loss",
         "production",
         "view",
+      ],
+      mo_component_status: [
+        "pending",
+        "reserved",
+        "partial",
+        "consumed",
+        "missing",
+      ],
+      mo_issue_kind: [
+        "material_missing",
+        "damaged",
+        "wrong_measure",
+        "defect",
+        "priority_blocked",
+        "other",
+      ],
+      mo_op_state: [
+        "pending",
+        "ready",
+        "in_progress",
+        "paused",
+        "done",
+        "blocked",
+      ],
+      mo_priority: ["low", "normal", "high", "urgent"],
+      mo_qc_result: ["pass", "fail", "rework"],
+      mo_state: [
+        "draft",
+        "waiting_material",
+        "ready",
+        "in_progress",
+        "paused",
+        "qc",
+        "done",
+        "cancelled",
       ],
       partner_kind: ["individual", "company"],
       permission_action: ["view", "create", "edit", "delete", "export"],
@@ -4907,6 +5487,15 @@ export const Constants = {
       purchase_state: ["draft", "rfq_sent", "confirmed", "done", "cancelled"],
       removal_strategy: ["fifo", "lifo", "fefo", "closest"],
       sale_state: ["draft", "sent", "confirmed", "done", "cancelled"],
+      sol_mfg_status: [
+        "none",
+        "pending",
+        "waiting_material",
+        "in_production",
+        "qc",
+        "ready_for_delivery",
+        "cancelled",
+      ],
     },
   },
 } as const

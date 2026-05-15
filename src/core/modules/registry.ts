@@ -1,4 +1,4 @@
-import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode, Wrench } from "lucide-react";
+import { LucideIcon, Package, ShoppingCart, ShoppingBag, Warehouse, Settings, MessageSquare, Users, Wallet, Banknote, Truck, Map, ScanBarcode, Wrench, Factory, HardHat } from "lucide-react";
 import type { ModuleId } from "@/core/permissions/usePermissions";
 
 export type ModuleMenuItem = {
@@ -213,6 +213,34 @@ export const MODULES: ModuleDef[] = [
     description: "Pedidos de assistência pós-entrega",
     menu: [
       { section: "Assistência", label: "Pedidos", to: "/service/requests" },
+    ],
+  },
+  {
+    id: "manufacturing" as any,
+    name: "Manufatura",
+    shortName: "MRP",
+    icon: Factory,
+    color: "bg-[hsl(210_60%_45%)]",
+    basePath: "/manufacturing",
+    description: "Ordens de fabricação, BOM e planeamento",
+    menu: [
+      { section: "Visão Geral", label: "Dashboard", to: "/manufacturing" },
+      { section: "Produção", label: "Ordens de Fabricação", to: "/manufacturing/orders" },
+      { section: "Produção", label: "Planeamento", to: "/manufacturing/planning" },
+      { section: "Engenharia", label: "Listas de Materiais (BOM)", to: "/products/bom" },
+    ],
+  },
+  {
+    id: "shop_floor" as any,
+    name: "Chão de Fábrica",
+    shortName: "Fábrica",
+    icon: HardHat,
+    color: "bg-[hsl(20_85%_50%)]",
+    basePath: "/shop-floor",
+    description: "Painel operacional do chão de fábrica",
+    menu: [
+      { section: "Operação", label: "Painel", to: "/shop-floor" },
+      { section: "Qualidade", label: "Controle de Qualidade", to: "/shop-floor/quality" },
     ],
   },
   {
