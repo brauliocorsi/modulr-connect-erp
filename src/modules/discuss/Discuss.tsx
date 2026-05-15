@@ -26,6 +26,7 @@ export default function Discuss() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [text, setText] = useState("");
   const [newName, setNewName] = useState("");
   const [open, setOpen] = useState(false);
