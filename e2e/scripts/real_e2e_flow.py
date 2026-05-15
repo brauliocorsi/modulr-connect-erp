@@ -303,8 +303,19 @@ def main():
         "OK" if mo_state4 == "done" and fg_qty >= 1 else "FAIL")
 
     # ---------- 10. Picking: drive moves to done ----------
-    cur.execute("""SELECT id, name, state, step_label FROM stock_pickings
-                   WHERE origin=%s ORDER BY created_at""", (so_name,))
+    cur.execute("""
+        WITH RECURSIVE chain AS (
+          SELECT id, name, state, step_label, previous_picking_id, 0 AS depth
+            FROM stock_pickings
+           WHERE origin=%s AND previous_picking_id IS NULL
+          UNION ALL
+          SELECT p.id, p.name, p.state, p.step_label, p.previous_picking_id, c.depth+1
+            FROM stock_pickings p
+            JOIN chain c ON p.previous_picking_id = c.id
+           WHERE p.origin=%s
+        )
+        SELECT id, name, state, step_label FROM chain ORDER BY depth
+    """, (so_name, so_name))
     pickings = cur.fetchall()
     pick_states = []
     for pk in pickings:
