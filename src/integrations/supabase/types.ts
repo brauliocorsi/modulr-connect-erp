@@ -1006,6 +1006,65 @@ export type Database = {
         }
         Relationships: []
       }
+      erp_remediation_log: {
+        Row: {
+          action: string
+          actor: string | null
+          after: Json | null
+          applied: boolean
+          before: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          health_check_log_id: string | null
+          id: string
+          issue_type: string
+          mode: string
+          reason: string | null
+          severity: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          after?: Json | null
+          applied?: boolean
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          health_check_log_id?: string | null
+          id?: string
+          issue_type: string
+          mode: string
+          reason?: string | null
+          severity: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          after?: Json | null
+          applied?: boolean
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          health_check_log_id?: string | null
+          id?: string
+          issue_type?: string
+          mode?: string
+          reason?: string | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erp_remediation_log_health_check_log_id_fkey"
+            columns: ["health_check_log_id"]
+            isOneToOne: false
+            referencedRelation: "erp_health_check_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_permissions: {
         Row: {
           action: Database["public"]["Enums"]["permission_action"]
@@ -5303,6 +5362,7 @@ export type Database = {
     Functions: {
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
+      _test_phase12: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -5381,6 +5441,10 @@ export type Database = {
       create_wave: { Args: { _moves: string[] }; Returns: string }
       customer_location_id: { Args: never; Returns: string }
       daily_finance_snapshot: { Args: { _date: string }; Returns: Json }
+      dedupe_notifications_for_entity: {
+        Args: { _entity_id: string; _entity_type: string; _type: string }
+        Returns: number
+      }
       default_location: {
         Args: { _name: string; _warehouse: string }
         Returns: string
@@ -5432,6 +5496,10 @@ export type Database = {
       erp_health_check_run: {
         Args: { _threshold_days?: number }
         Returns: string
+      }
+      erp_health_remediate: {
+        Args: { _mode?: string; _run_id: string }
+        Returns: Json
       }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
@@ -5625,6 +5693,11 @@ export type Database = {
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
+      recompute_sale_fulfillment_status: {
+        Args: { _so: string }
+        Returns: string
+      }
+      recompute_sale_payment_status: { Args: { _so: string }; Returns: string }
       recompute_sale_state: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
