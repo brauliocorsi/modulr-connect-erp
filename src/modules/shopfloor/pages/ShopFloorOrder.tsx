@@ -57,9 +57,10 @@ export default function ShopFloorOrder() {
       _qty_done: qtyDone ? Number(qtyDone) : null,
       _qty_scrap: qtyScrap ? Number(qtyScrap) : null,
       _notes: notes || null,
+      _attachments: finishPhotos as any,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Etapa concluída"); setFinishOp(null); setQtyDone(""); setNotes(""); refresh(); }
+    else { toast.success("Etapa concluída"); setFinishOp(null); setQtyDone(""); setNotes(""); setFinishPhotos([]); refresh(); }
   };
   const pause = async (opId: string) => {
     const reason = prompt("Motivo da pausa?") ?? "";
@@ -69,9 +70,10 @@ export default function ShopFloorOrder() {
   const reportIssue = async () => {
     const { error } = await supabase.rpc("mfg_report_issue", {
       _mo: id, _op: null, _kind: issueKind as any, _description: issueDesc || null,
+      _attachments: issuePhotos as any,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Problema reportado"); setIssueOpen(false); setIssueDesc(""); refresh(); }
+    else { toast.success("Problema reportado"); setIssueOpen(false); setIssueDesc(""); setIssuePhotos([]); refresh(); }
   };
 
   const mo = moQ.data;
