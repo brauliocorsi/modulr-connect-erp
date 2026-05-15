@@ -405,16 +405,26 @@ def main():
         try: srest("DELETE", table, params=filters)
         except Exception as e: print(f"cleanup {table} warn: {e}")
     pfx = f"like.{PFX}%25"
-    # children that don't cascade
+    prod_ids = f"in.({prod},{comp_a},{comp_b})"
+    # FK-safe order
+    rdel("cash_movements", **{"payment_id": f"in.(select id from customer_payments where name like {PFX}%)"})
     rdel("cash_movements", **{"reference": pfx})
     rdel("cash_movements", **{"notes": pfx})
     rdel("customer_payments", **{"name": pfx})
     rdel("cash_sessions", **{"name": pfx})
-    rdel("stock_pickings", **{"origin": pfx})  # cascades moves
-    rdel("manufacturing_orders", **{"sale_order_id": f"in.({so})"})  # by id list
-    rdel("sale_orders", **{"name": pfx})  # cascades lines + schedules
-    rdel("boms", **{"product_id": f"in.({prod},{comp_a},{comp_b})"})
-    rdel("products", **{"name": pfx})  # cascades quants
+    rdel("mo_operations", **{"mo_id": f"eq.{mo}"})
+    rdel("mo_components", **{"mo_id": f"eq.{mo}"})
+    rdel("manufacturing_orders", **{"id": f"eq.{mo}"})
+    rdel("stock_moves", **{"product_id": prod_ids})
+    rdel("stock_pickings", **{"origin": pfx})
+    rdel("stock_quants", **{"product_id": prod_ids})
+    rdel("bom_lines", **{"bom_id": f"eq.{bom}"})
+    rdel("bom_operations", **{"bom_id": f"eq.{bom}"})
+    rdel("boms", **{"id": f"eq.{bom}"})
+    rdel("sale_payment_schedules", **{"order_id": f"eq.{so}"})
+    rdel("sale_order_lines", **{"order_id": f"eq.{so}"})
+    rdel("sale_orders", **{"name": pfx})
+    rdel("products", **{"id": prod_ids})
     rdel("partners", **{"name": pfx})
     add("CLEANUP", "delete all TESTE_E2E_% rows via service-role REST",
         "cash_movements/customer_payments/stock_pickings/manufacturing_orders/sale_orders/boms/products/partners",
