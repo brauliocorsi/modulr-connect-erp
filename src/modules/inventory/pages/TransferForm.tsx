@@ -320,7 +320,7 @@ export default function TransferForm() {
       for (const m of moves) {
         const qd = Number(m.quantity_done);
         const finalQty = Number.isFinite(qd) ? Math.max(0, qd) : Number(m.quantity);
-        await supabase.from("stock_moves").update({ quantity_done: finalQty, lot_id: m.lot_id ?? null }).eq("id", m.id);
+        await supabase.rpc("scan_set_move_done", { _move: m.id, _qty: finalQty, _lot: m.lot_id ?? null });
       }
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: id! });
