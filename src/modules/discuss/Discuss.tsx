@@ -59,6 +59,11 @@ export default function Discuss() {
         setMessages((data ?? []) as Message[]);
         setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
       });
+    supabase
+      .from("chat_channel_members")
+      .select("channel_id,user_id,last_read_at")
+      .eq("channel_id", channelId)
+      .then(({ data }) => setMembers((data ?? []) as Member[]));
     markRead(channelId);
     const ch = supabase
       .channel(`discuss-${channelId}`)
@@ -67,9 +72,40 @@ export default function Discuss() {
         setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         markRead(channelId);
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_channel_members", filter: `channel_id=eq.${channelId}` }, (payload) => {
+        setMembers((prev) => {
+          const next = payload.new as Member;
+          if (payload.eventType === "DELETE") {
+            const old = payload.old as Member;
+            return prev.filter((m) => m.user_id !== old.user_id);
+          }
+          const exists = prev.some((m) => m.user_id === next.user_id);
+          return exists ? prev.map((m) => (m.user_id === next.user_id ? next : m)) : [...prev, next];
+        });
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [channelId]);
+
+  const readReceipts = useMemo(() => {
+    // For each member, find the latest message they have read (created_at <= last_read_at)
+    const map: Record<string, { user_id: string; at: string }[]> = {};
+    for (const mem of members) {
+      if (!mem.last_read_at) continue;
+      if (user && mem.user_id === user.id) continue;
+      const lr = new Date(mem.last_read_at).getTime();
+      let lastId: string | null = null;
+      for (const msg of messages) {
+        if (msg.author_id === mem.user_id) continue;
+        if (new Date(msg.created_at).getTime() <= lr) lastId = msg.id;
+        else break;
+      }
+      if (lastId) {
+        (map[lastId] ||= []).push({ user_id: mem.user_id, at: mem.last_read_at });
+      }
+    }
+    return map;
+  }, [members, messages, user]);
 
   const profileMap = useMemo(() => Object.fromEntries(profiles.map((p) => [p.id, p])), [profiles]);
   const current = channels.find((c) => c.id === channelId);
