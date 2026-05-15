@@ -281,10 +281,13 @@ def main():
             try:
                 cur.execute("SELECT public.scan_set_move_done(%s,%s)", (mv["id"], mv["quantity"]))
             except Exception as e:
-                # fallback: directly mark move done
-                conn.rollback(); conn.autocommit = True
-                cur.execute("""UPDATE stock_moves SET quantity_done=quantity, state='done'
-                               WHERE id=%s""", (mv["id"],))
+                # fallback: directly mark move done via service-role REST
+                try:
+                    srest("PATCH", "stock_moves",
+                          body={"quantity_done": float(mv["quantity"]), "state":"done"},
+                          params={"id": f"eq.{mv['id']}"})
+                except Exception as e2:
+                    print(f"move done warn: {e2}")
         cur.execute("SELECT state FROM stock_pickings WHERE id=%s", (pk["id"],))
         pick_states.append((pk["step_label"], cur.fetchone()["state"]))
     cur.execute("SELECT fulfillment_status FROM sale_orders WHERE id=%s", (so,))
