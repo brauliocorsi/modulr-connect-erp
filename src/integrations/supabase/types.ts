@@ -5546,6 +5546,7 @@ export type Database = {
         | "barcode"
         | "service"
         | "manufacturing"
+        | "shop_floor"
       bom_type: "normal" | "phantom" | "subcontract"
       location_type:
         | "internal"
@@ -5765,6 +5766,7 @@ export const Constants = {
         "barcode",
         "service",
         "manufacturing",
+        "shop_floor",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       location_type: [
