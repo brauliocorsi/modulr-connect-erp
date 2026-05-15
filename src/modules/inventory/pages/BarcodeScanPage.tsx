@@ -135,7 +135,7 @@ export default function BarcodeScanPage() {
     if (!picking) return;
     for (const m of moves) {
       if (m.quantity_done == null) {
-        await supabase.from("stock_moves").update({ quantity_done: m.quantity }).eq("id", m.id);
+        await supabase.rpc("scan_set_move_done", { _move: m.id, _qty: Number(m.quantity), _lot: null });
       }
     }
     const { error } = await supabase.rpc("validate_picking", { _picking: picking.id });
