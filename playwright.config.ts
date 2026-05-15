@@ -38,6 +38,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/admin.json",
         launchOptions: process.env.CHROMIUM_PATH
           ? { executablePath: process.env.CHROMIUM_PATH }
           : undefined,
