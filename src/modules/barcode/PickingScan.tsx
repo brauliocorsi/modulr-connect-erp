@@ -218,9 +218,9 @@ export default function PickingScan() {
     if ((packagesByProduct[candidate.product_id] ?? []).length > 0) {
       return log(`${candidate.products?.name} requer scan dos colis (não use o código do produto)`, "warn");
     }
-    const next = cur + 1;
-    const { error } = await supabase.from("stock_moves").update({ quantity_done: next }).eq("id", candidate.id);
+    const { data: r, error } = await supabase.rpc("scan_increment_move", { _move: candidate.id, _delta: 1 });
     if (error) return log(error.message, "error");
+    const next = Number((r as any)?.quantity_done ?? cur + 1);
     setMoves((ms) => ms.map((m) => (m.id === candidate.id ? { ...m, quantity_done: next } : m)));
     log(`+1 ${candidate.products?.name} (${next}/${max})`, "ok");
   };
