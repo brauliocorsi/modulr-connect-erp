@@ -308,18 +308,16 @@ def main():
     pickings = cur.fetchall()
     pick_states = []
     for pk in pickings:
-        cur.execute("SELECT id, quantity FROM stock_moves WHERE picking_id=%s", (pk["id"],))
-        for mv in cur.fetchall():
-            try:
-                cur.execute("SELECT public.scan_set_move_done(%s,%s)", (mv["id"], mv["quantity"]))
-            except Exception as e:
-                # fallback: directly mark move done via service-role REST
-                try:
-                    srest("PATCH", "stock_moves",
-                          body={"quantity_done": float(mv["quantity"]), "state":"done"},
-                          params={"id": f"eq.{mv['id']}"})
-                except Exception as e2:
-                    print(f"move done warn: {e2}")
+        # Auto-fill quantity_done and call validate_picking (SECURITY DEFINER, no auth required)
+        cur.execute("""
+            UPDATE stock_moves
+               SET quantity_done = quantity
+             WHERE picking_id = %s AND state <> 'cancelled'
+        """, (pk["id"],))
+        try:
+            cur.execute("SELECT public.validate_picking(%s)", (pk["id"],))
+        except Exception as e:
+            print(f"validate_picking warn for {pk['step_label']}: {e}")
         cur.execute("SELECT state FROM stock_pickings WHERE id=%s", (pk["id"],))
         pick_states.append((pk["step_label"], cur.fetchone()["state"]))
     cur.execute("SELECT fulfillment_status FROM sale_orders WHERE id=%s", (so,))
