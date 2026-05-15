@@ -5266,6 +5266,7 @@ export type Database = {
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
       _test_phase6: { Args: never; Returns: Json }
+      _test_phase7: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5293,6 +5294,8 @@ export type Database = {
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
       cancel_wave: { Args: { _wave: string }; Returns: undefined }
+      cash_session_balance: { Args: { _session: string }; Returns: number }
+      cash_session_summary: { Args: { _session: string }; Returns: Json }
       close_cash_session: {
         Args: { _counted: number; _session: string }
         Returns: undefined
