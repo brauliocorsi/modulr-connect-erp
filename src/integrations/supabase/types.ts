@@ -967,6 +967,45 @@ export type Database = {
           },
         ]
       }
+      erp_health_check_log: {
+        Row: {
+          duration_ms: number | null
+          findings: Json
+          id: string
+          notified: boolean
+          p0_count: number
+          p1_count: number
+          p2_count: number
+          p3_count: number
+          run_at: string
+          summary: Json
+        }
+        Insert: {
+          duration_ms?: number | null
+          findings: Json
+          id?: string
+          notified?: boolean
+          p0_count?: number
+          p1_count?: number
+          p2_count?: number
+          p3_count?: number
+          run_at?: string
+          summary: Json
+        }
+        Update: {
+          duration_ms?: number | null
+          findings?: Json
+          id?: string
+          notified?: boolean
+          p0_count?: number
+          p1_count?: number
+          p2_count?: number
+          p3_count?: number
+          run_at?: string
+          summary?: Json
+        }
+        Relationships: []
+      }
       group_permissions: {
         Row: {
           action: Database["public"]["Enums"]["permission_action"]
@@ -5263,6 +5302,7 @@ export type Database = {
     }
     Functions: {
       _test_phase10: { Args: never; Returns: Json }
+      _test_phase11: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -5386,6 +5426,11 @@ export type Database = {
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
+        Returns: string
+      }
+      erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
+      erp_health_check_run: {
+        Args: { _threshold_days?: number }
         Returns: string
       }
       finance_reconcile_session: {
