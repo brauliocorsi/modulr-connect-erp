@@ -51,7 +51,7 @@ class DictCur:
 
 
 def main():
-    conn = pg.Connect(**PG)
+    conn = pg.connect(**PG)
     conn.autocommit = True
     cur = DictCur(conn.cursor())
 
