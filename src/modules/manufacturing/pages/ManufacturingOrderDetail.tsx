@@ -5,6 +5,7 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "../components/MOBadges";
+import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
 export default function ManufacturingOrderDetail() {
