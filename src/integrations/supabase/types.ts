@@ -5457,6 +5457,14 @@ export type Database = {
         }[]
       }
       run_reordering_rules: { Args: never; Returns: number }
+      scan_increment_move: {
+        Args: { _delta?: number; _move: string }
+        Returns: Json
+      }
+      scan_set_move_done: {
+        Args: { _lot?: string; _move: string; _qty: number }
+        Returns: Json
+      }
       schedule_picking_to_route: {
         Args: { _picking: string; _route: string }
         Returns: undefined
