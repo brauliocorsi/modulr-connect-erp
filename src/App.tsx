@@ -312,6 +312,17 @@ const App = () => (
                 <Route path=":id" element={<RouteDetail />} />
               </Route>
 
+              {/* Manufacturing */}
+              <Route path="manufacturing" element={<ManufacturingDashboard />} />
+              <Route path="manufacturing/orders" element={<ManufacturingOrdersList />} />
+              <Route path="manufacturing/orders/:id" element={<ManufacturingOrderDetail />} />
+              <Route path="manufacturing/planning" element={<ManufacturingPlanning />} />
+              <Route path="manufacturing/bom" element={<Navigate to="/products/bom" replace />} />
+
+              {/* Shop Floor */}
+              <Route path="shop-floor" element={<ShopFloorBoard />} />
+              <Route path="shop-floor/order/:id" element={<ShopFloorOrder />} />
+              <Route path="shop-floor/quality" element={<ShopFloorQuality />} />
 
               <Route path="*" element={<NotFound />} />
             </Route>
