@@ -5268,6 +5268,7 @@ export type Database = {
       _test_phase6: { Args: never; Returns: Json }
       _test_phase7: { Args: never; Returns: Json }
       _test_phase8: { Args: never; Returns: Json }
+      _test_phase9: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5330,6 +5331,10 @@ export type Database = {
           _qty: number
           _sale?: string
         }
+        Returns: string
+      }
+      create_return_from_picking: {
+        Args: { _lines: Json; _picking_id: string }
         Returns: string
       }
       create_wave: { Args: { _moves: string[] }; Returns: string }
@@ -5539,6 +5544,7 @@ export type Database = {
         Args: { _opening?: number; _register: string }
         Returns: string
       }
+      picking_return_status: { Args: { _picking_id: string }; Returns: Json }
       picking_shortages: {
         Args: { _picking: string }
         Returns: {
