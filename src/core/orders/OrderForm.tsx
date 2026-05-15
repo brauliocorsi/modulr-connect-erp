@@ -15,6 +15,7 @@ import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
+import { SaleProductionPanel } from "@/modules/manufacturing/components/SaleProductionPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
