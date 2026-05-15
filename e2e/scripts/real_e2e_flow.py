@@ -126,8 +126,11 @@ def main():
         f"bom={bom} lines={n}", "OK" if n == 2 else "FAIL")
 
     # ---------- 2. Stock components (so production can reserve) ----------
-    cur.execute("SELECT public.set_product_stock(%s,%s,50,'E2E setup')", (comp_a, wh))
-    cur.execute("SELECT public.set_product_stock(%s,%s,50,'E2E setup')", (comp_b, wh))
+    # bypass admin RPC: insert quants directly at the warehouse Stock location
+    cur.execute("""INSERT INTO stock_quants(product_id, location_id, quantity)
+                   VALUES (%s,%s,50)""", (comp_a, loc_stock))
+    cur.execute("""INSERT INTO stock_quants(product_id, location_id, quantity)
+                   VALUES (%s,%s,50)""", (comp_b, loc_stock))
     cur.execute("""SELECT product_id, sum(quantity) AS q FROM stock_quants
                    WHERE product_id IN (%s,%s) GROUP BY product_id""", (comp_a, comp_b))
     qs = {str(r["product_id"]): float(r["q"]) for r in cur.fetchall()}
