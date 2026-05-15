@@ -39,6 +39,7 @@ import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
 import SalesStockPage from "@/modules/sales/pages/SalesStockPage";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
+import PurchaseNeedsList from "@/modules/purchase/pages/PurchaseNeedsList";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
 import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm } from "@/modules/finance/pages/FinancePages";
 import FinanceDashboard from "@/modules/finance/pages/FinanceDashboard";
@@ -184,6 +185,7 @@ const App = () => (
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
               <Route path="purchase/orders" element={<PurchaseOrdersList />} />
               <Route path="purchase/kanban" element={<RfqKanban />} />
+              <Route path="purchase/needs" element={<PurchaseNeedsList />} />
               <Route path="purchase/orders/new" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/orders/:id" element={<OrderForm kind="purchase" />} />
               <Route path="purchase/suppliers" element={<SuppliersList />} />

@@ -90,6 +90,16 @@ export default function ManufacturingOrderDetail() {
               </TabsList>
 
               <TabsContent value="components">
+                <div className="flex justify-end mb-2">
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    const { data, error } = await supabase.rpc("mfg_create_needs_for_mo", { _mo: id! });
+                    if (error) return toast.error(error.message);
+                    toast.success(`${data ?? 0} necessidade(s) de compra criada(s)`);
+                    qc.invalidateQueries({ queryKey: ["purchase_needs"] });
+                  }}>
+                    Gerar necessidades de compra
+                  </Button>
+                </div>
                 <table className="w-full text-sm">
                   <thead className="text-left text-muted-foreground border-b">
                     <tr><th className="py-2">Produto</th><th>Necessário</th><th>Disponível</th><th>Consumido</th><th>Estado</th></tr>

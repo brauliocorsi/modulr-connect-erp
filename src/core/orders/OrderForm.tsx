@@ -16,6 +16,7 @@ import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { SaleProductionPanel } from "@/modules/manufacturing/components/SaleProductionPanel";
+import SaleAvailabilityPanel from "@/modules/purchase/components/SaleAvailabilityPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -462,6 +463,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               <SmartButtons kind={kind} orderName={order.name} />
             )}
             {kind === "sale" && !isNew && id && <SaleProductionPanel saleOrderId={id} />}
+            {kind === "sale" && !isNew && id && <SaleAvailabilityPanel saleOrderId={id} />}
             <Card className="p-6 grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{kind === "sale" ? "Cliente" : "Fornecedor"}</Label>

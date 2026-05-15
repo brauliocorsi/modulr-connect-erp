@@ -153,9 +153,11 @@ export function StockTab({ productId }: { productId: string }) {
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="p-3"><div className="text-xs text-muted-foreground">Em mão</div><div className="text-2xl font-semibold">{fmtNumber(tot.on_hand)}</div></Card>
+        <Card className="p-3"><div className="text-xs text-muted-foreground">Reservado</div><div className="text-2xl font-semibold text-amber-600">{fmtNumber(rows.reduce((a, r) => a + Number(r.reserved || 0), 0))}</div></Card>
         <Card className="p-3"><div className="text-xs text-muted-foreground">Disponível</div><div className="text-2xl font-semibold">{fmtNumber(tot.available)}</div></Card>
+        <Card className="p-3"><div className="text-xs text-muted-foreground">A receber</div><div className="text-2xl font-semibold text-emerald-600">{fmtNumber(rows.reduce((a, r) => a + Number(r.incoming || 0), 0))}</div></Card>
         <Card className="p-3"><div className="text-xs text-muted-foreground">Previsto</div><div className="text-2xl font-semibold text-primary">{fmtNumber(tot.forecasted)}</div></Card>
         <Card className="p-3"><div className="text-xs text-muted-foreground">Vendido 30d</div><div className="text-2xl font-semibold">{fmtNumber(tot.sold_30d)}</div></Card>
       </div>
