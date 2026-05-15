@@ -134,6 +134,7 @@ export default function ShopFloorOrder() {
                     </SelectContent>
                   </Select>
                   <Textarea placeholder="Descrição" value={issueDesc} onChange={(e) => setIssueDesc(e.target.value)} />
+                  <PhotoUploader value={issuePhotos} onChange={setIssuePhotos} prefix={`issues/${id}`} />
                   <DialogFooter><Button onClick={reportIssue}>Reportar</Button></DialogFooter>
                 </DialogContent>
               </Dialog>
