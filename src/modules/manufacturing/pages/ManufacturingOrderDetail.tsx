@@ -146,7 +146,9 @@ export default function ManufacturingOrderDetail() {
                   <div key={i.id} className="border-b py-2 text-sm">
                     <div><strong>{i.kind}</strong> — {fmtDateTime(i.reported_at)}</div>
                     {i.description && <div>{i.description}</div>}
-                    {i.resolved_at && <div className="text-emerald-600">Resolvido em {fmtDateTime(i.resolved_at)}</div>}
+                    {i.resolved_at
+                      ? <div className="text-emerald-600">Resolvido em {fmtDateTime(i.resolved_at)}{i.resolution && ` — ${i.resolution}`}</div>
+                      : <Button size="sm" variant="outline" className="mt-1" onClick={() => resolveIssue(i.id)}>Marcar como resolvido</Button>}
                     <AttachmentsGrid items={i.attachments} />
                   </div>
                 )) : <div className="text-sm text-muted-foreground py-3">Sem problemas reportados.</div>}
