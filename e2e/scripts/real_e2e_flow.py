@@ -14,11 +14,14 @@ bypasses RLS).
 import os, sys, json, datetime, traceback, ssl
 import pg8000.dbapi as pg
 
+_ssl_ctx = ssl.create_default_context()
+_ssl_ctx.check_hostname = False
+_ssl_ctx.verify_mode = ssl.CERT_NONE
 PG = dict(
     host=os.environ["PGHOST"], port=int(os.environ.get("PGPORT", 5432)),
     user=os.environ["PGUSER"], password=os.environ["PGPASSWORD"],
     database=os.environ["PGDATABASE"],
-    ssl_context=ssl.create_default_context(),
+    ssl_context=_ssl_ctx,
 )
 
 TS = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
