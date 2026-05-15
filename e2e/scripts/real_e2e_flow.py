@@ -115,7 +115,7 @@ def main():
         VALUES (%s,%s,2,%s),(%s,%s,1,%s)
     """, (bom, comp_a, uom, bom, comp_b, uom))
     cur.execute("""
-        INSERT INTO bom_operations(bom_id, sequence, name, planned_minutes)
+        INSERT INTO bom_operations(bom_id, sequence, name, duration_minutes)
         VALUES (%s, 10, 'Corte', 5),(%s, 20, 'Montagem', 10)
     """, (bom, bom))
     cur.execute("SELECT count(*) AS c FROM bom_lines WHERE bom_id=%s", (bom,))
