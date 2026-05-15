@@ -53,9 +53,9 @@ def main():
         loc = q1(cur, "SELECT id FROM stock_locations WHERE warehouse_id=%s AND type='internal' AND active=true ORDER BY (parent_id IS NULL) DESC LIMIT 1", wh_id)
         loc_id = loc["id"]
         # finished good + component
-        cur.execute("INSERT INTO products(name,type,active,sale_ok,purchase_ok) VALUES (%s,'product',true,true,false) RETURNING id", (PFX+"FG",))
+        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'product',true,true,false) RETURNING id", (PFX+"FG",))
         fg_id = cur.fetchone()[0]
-        cur.execute("INSERT INTO products(name,type,active,sale_ok,purchase_ok) VALUES (%s,'product',true,false,true) RETURNING id", (PFX+"COMP",))
+        cur.execute("INSERT INTO products(name,type,active,can_be_sold,can_be_purchased) VALUES (%s,'product',true,false,true) RETURNING id", (PFX+"COMP",))
         comp_id = cur.fetchone()[0]
         # partner
         cur.execute("INSERT INTO partners(name,is_customer) VALUES (%s,true) RETURNING id", (PFX+"CUST",))
@@ -191,7 +191,6 @@ def main():
         # ---- CLEANUP ----
         try:
             cur.execute("BEGIN")
-            cur.execute("DELETE FROM stock_reservation_log WHERE notes LIKE %s OR notes LIKE %s", (f"%{mo_id}%" if mo_id else "%__none__%", f"%{picking_id}%" if picking_id else "%__none__%"))
             cur.execute("DELETE FROM mo_components WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE code LIKE %s)", (PFX+"%",))
             cur.execute("DELETE FROM manufacturing_orders WHERE code LIKE %s", (PFX+"%",))
             cur.execute("DELETE FROM stock_moves WHERE picking_id IN (SELECT id FROM stock_pickings WHERE name LIKE %s)", (PFX+"%",))
