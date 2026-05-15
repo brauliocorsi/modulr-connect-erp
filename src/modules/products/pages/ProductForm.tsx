@@ -230,12 +230,55 @@ export default function ProductForm() {
                 {!isNew && <Card className="p-6"><SuppliersTab productId={id!} /></Card>}
               </TabsContent>
 
-              <TabsContent value="inventory" className="pt-4">
+              <TabsContent value="inventory" className="pt-4 space-y-4">
                 <Card className="p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Switch checked={form.can_be_manufactured} onCheckedChange={(v) => setForm({ ...form, can_be_manufactured: v })} />
-                    <Label>Pode ser fabricado</Label>
+                  <div className="o-section-title">Tipo & Capacidades</div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Tipo de produto</Label>
+                      <Select value={form.product_kind ?? ""} onValueChange={(v) => setForm({ ...form, product_kind: v })}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="finished">Produto acabado</SelectItem>
+                          <SelectItem value="raw">Matéria-prima</SelectItem>
+                          <SelectItem value="component">Componente</SelectItem>
+                          <SelectItem value="service">Serviço</SelectItem>
+                          <SelectItem value="manufactured">Fabricado</SelectItem>
+                          <SelectItem value="purchased">Comprado</SelectItem>
+                          <SelectItem value="mixed">Misto (compra + fabrica)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={form.can_be_manufactured} onCheckedChange={(v) => setForm({ ...form, can_be_manufactured: v })} />
+                      <Label>Pode ser fabricado</Label>
+                    </div>
+                    {form.can_be_manufactured && (
+                      <div className="flex items-center gap-3">
+                        <Switch checked={!!form.requires_bom} onCheckedChange={(v) => setForm({ ...form, requires_bom: v })} />
+                        <Label>Requer BOM</Label>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label>Lead time compra (dias)</Label>
+                      <Input type="number" min={0} value={form.purchase_lead_time_days ?? 0} onChange={(e) => setForm({ ...form, purchase_lead_time_days: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Lead time fabrico (dias)</Label>
+                      <Input type="number" min={0} value={form.mfg_lead_time_days ?? 0} onChange={(e) => setForm({ ...form, mfg_lead_time_days: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Stock mínimo</Label>
+                      <Input type="number" step="0.01" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Stock máximo</Label>
+                      <Input type="number" step="0.01" value={form.max_stock ?? 0} onChange={(e) => setForm({ ...form, max_stock: Number(e.target.value) })} />
+                    </div>
                   </div>
+                </Card>
+                <Card className="p-6 space-y-4">
+                  <div className="o-section-title">Físico</div>
                   <div className="grid sm:grid-cols-3 gap-4">
                     <div className="space-y-2"><Label>Peso (kg)</Label><Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Peso bruto (kg)</Label><Input type="number" step="0.001" value={form.gross_weight ?? 0} onChange={(e) => setForm({ ...form, gross_weight: Number(e.target.value) })} /></div>
