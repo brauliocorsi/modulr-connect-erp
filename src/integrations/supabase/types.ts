@@ -5262,6 +5262,7 @@ export type Database = {
       }
     }
     Functions: {
+      _test_phase10: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -5339,6 +5340,7 @@ export type Database = {
       }
       create_wave: { Args: { _moves: string[] }; Returns: string }
       customer_location_id: { Args: never; Returns: string }
+      daily_finance_snapshot: { Args: { _date: string }; Returns: Json }
       default_location: {
         Args: { _name: string; _warehouse: string }
         Returns: string
@@ -5649,6 +5651,7 @@ export type Database = {
         }[]
       }
       run_reordering_rules: { Args: never; Returns: number }
+      sale_order_reconciliation: { Args: { _order_id: string }; Returns: Json }
       scan_increment_move: {
         Args: { _delta?: number; _move: string }
         Returns: Json
