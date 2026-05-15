@@ -115,22 +115,32 @@ export function ListView<T extends { id: string }>({
               </thead>
               <tbody>
                 {data.map((row) => {
-                  const cells = columns.map((c) => (
-                    <td key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
-                      {c.render ? c.render(row) : (row as any)[c.key]}
-                    </td>
-                  ));
-                  return (
-                    <tr key={row.id} className="o-list-row">
-                      {rowLink ? (
+                  if (rowLink) {
+                    return (
+                      <tr key={row.id} className="o-list-row">
                         <td colSpan={columns.length} className="p-0">
-                          <Link to={rowLink(row)} className="grid" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0,1fr))` }}>
-                            {cells}
+                          <Link
+                            to={rowLink(row)}
+                            className="grid w-full"
+                            style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0,1fr))` }}
+                          >
+                            {columns.map((c) => (
+                              <div key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
+                                {c.render ? c.render(row) : (row as any)[c.key]}
+                              </div>
+                            ))}
                           </Link>
                         </td>
-                      ) : (
-                        cells
-                      )}
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={row.id} className="o-list-row">
+                      {columns.map((c) => (
+                        <td key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
+                          {c.render ? c.render(row) : (row as any)[c.key]}
+                        </td>
+                      ))}
                     </tr>
                   );
                 })}
