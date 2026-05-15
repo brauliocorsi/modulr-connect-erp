@@ -327,25 +327,28 @@ def main():
         "INFO")
 
     # ---------- Cleanup ----------
-    cur.execute("""
-      DELETE FROM cash_movements WHERE payment_id IN (SELECT id FROM customer_payments WHERE name LIKE %s);
-      DELETE FROM customer_payments WHERE name LIKE %s;
-      DELETE FROM sale_payment_schedules WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s);
-      DELETE FROM stock_moves WHERE picking_id IN (SELECT id FROM stock_pickings WHERE origin LIKE %s);
-      DELETE FROM stock_pickings WHERE origin LIKE %s;
-      DELETE FROM mo_workorder_logs WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s));
-      DELETE FROM mo_operations WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s));
-      DELETE FROM mo_components WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s));
-      DELETE FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s);
-      DELETE FROM sale_order_lines WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s);
-      DELETE FROM sale_orders WHERE name LIKE %s;
-      DELETE FROM bom_operations WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s));
-      DELETE FROM bom_lines WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s));
-      DELETE FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s);
-      DELETE FROM stock_quants WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s);
-      DELETE FROM partners WHERE name LIKE %s;
-      DELETE FROM products WHERE name LIKE %s;
-    """, tuple([PFX + "%"] * 17))
+    cleanup_sqls = [
+      "DELETE FROM cash_movements WHERE payment_id IN (SELECT id FROM customer_payments WHERE name LIKE %s)",
+      "DELETE FROM customer_payments WHERE name LIKE %s",
+      "DELETE FROM sale_payment_schedules WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
+      "DELETE FROM stock_moves WHERE picking_id IN (SELECT id FROM stock_pickings WHERE origin LIKE %s)",
+      "DELETE FROM stock_pickings WHERE origin LIKE %s",
+      "DELETE FROM mo_workorder_logs WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
+      "DELETE FROM mo_operations WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
+      "DELETE FROM mo_components WHERE mo_id IN (SELECT id FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s))",
+      "DELETE FROM manufacturing_orders WHERE sale_order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
+      "DELETE FROM sale_order_lines WHERE order_id IN (SELECT id FROM sale_orders WHERE name LIKE %s)",
+      "DELETE FROM sale_orders WHERE name LIKE %s",
+      "DELETE FROM bom_operations WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s))",
+      "DELETE FROM bom_lines WHERE bom_id IN (SELECT id FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s))",
+      "DELETE FROM boms WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s)",
+      "DELETE FROM stock_quants WHERE product_id IN (SELECT id FROM products WHERE name LIKE %s)",
+      "DELETE FROM partners WHERE name LIKE %s",
+      "DELETE FROM products WHERE name LIKE %s",
+    ]
+    for sql in cleanup_sqls:
+        try: cur.execute(sql, (PFX + "%",))
+        except Exception as e: print(f"cleanup warn: {e}")
     add("CLEANUP", "delete all TESTE_E2E_% rows", "all tables", "0 rows leftover",
         "executed", "OK")
 
