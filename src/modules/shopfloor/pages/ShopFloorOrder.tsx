@@ -181,6 +181,7 @@ export default function ShopFloorOrder() {
               <div className="text-sm"><span className="text-muted-foreground">Defeitos</span></div>
               <Input type="number" value={qtyScrap} onChange={(e) => setQtyScrap(e.target.value)} />
               <Textarea placeholder="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <PhotoUploader value={finishPhotos} onChange={setFinishPhotos} prefix={`steps/${id}`} />
             </div>
             <DialogFooter><Button onClick={doFinish}>Confirmar</Button></DialogFooter>
           </DialogContent>
