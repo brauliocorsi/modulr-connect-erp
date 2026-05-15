@@ -39,6 +39,7 @@ import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
 import SalesStockPage from "@/modules/sales/pages/SalesStockPage";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
+import PurchaseNeedsList from "@/modules/purchase/pages/PurchaseNeedsList";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
 import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm } from "@/modules/finance/pages/FinancePages";
 import FinanceDashboard from "@/modules/finance/pages/FinanceDashboard";
