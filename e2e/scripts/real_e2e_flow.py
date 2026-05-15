@@ -98,12 +98,13 @@ def main():
     loc_stock, pm_cash = base["loc_stock"], base["pm_cash"]
 
     # Pick (or fall back to) a cash register tied to the SO warehouse.
-    cur.execute("SELECT id FROM cash_registers WHERE warehouse_id=%s AND active LIMIT 1", (wh,))
+    cur.execute("SELECT id, user_id FROM cash_registers WHERE warehouse_id=%s AND active LIMIT 1", (wh,))
     r = cur.fetchone()
     if not r:
-        cur.execute("SELECT id FROM cash_registers WHERE active LIMIT 1")
+        cur.execute("SELECT id, user_id FROM cash_registers WHERE active LIMIT 1")
         r = cur.fetchone()
     reg = r["id"] if r else None
+    reg_user = r["user_id"] if r else None
 
     # Ensure an open cash session exists for the chosen register (required by
     # tg_payment_to_cash / tg_payment_register_cash_movement).
