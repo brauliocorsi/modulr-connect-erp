@@ -1,0 +1,17 @@
+DELETE FROM public.cash_movements WHERE reference LIKE 'TESTE_E2E_%' OR notes LIKE 'TESTE_E2E_%' OR payment_id IN (SELECT id FROM public.customer_payments WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.customer_payments WHERE name LIKE 'TESTE_E2E_%';
+DELETE FROM public.cash_sessions WHERE name LIKE 'TESTE_E2E_%';
+DELETE FROM public.mo_operations WHERE mo_id IN (SELECT id FROM public.manufacturing_orders WHERE sale_order_id IN (SELECT id FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%') OR product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%'));
+DELETE FROM public.mo_components WHERE mo_id IN (SELECT id FROM public.manufacturing_orders WHERE sale_order_id IN (SELECT id FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%') OR product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%'));
+DELETE FROM public.manufacturing_orders WHERE sale_order_id IN (SELECT id FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%') OR product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.stock_moves WHERE picking_id IN (SELECT id FROM public.stock_pickings WHERE origin LIKE 'TESTE_E2E_%') OR product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.stock_pickings WHERE origin LIKE 'TESTE_E2E_%';
+DELETE FROM public.stock_quants WHERE product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.bom_lines WHERE bom_id IN (SELECT id FROM public.boms WHERE product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%'));
+DELETE FROM public.bom_operations WHERE bom_id IN (SELECT id FROM public.boms WHERE product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%'));
+DELETE FROM public.boms WHERE product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.sale_payment_schedules WHERE order_id IN (SELECT id FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.sale_order_lines WHERE order_id IN (SELECT id FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%') OR product_id IN (SELECT id FROM public.products WHERE name LIKE 'TESTE_E2E_%');
+DELETE FROM public.sale_orders WHERE name LIKE 'TESTE_E2E_%';
+DELETE FROM public.products WHERE name LIKE 'TESTE_E2E_%';
+DELETE FROM public.partners WHERE name LIKE 'TESTE_E2E_%';
