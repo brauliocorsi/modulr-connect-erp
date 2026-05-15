@@ -631,6 +631,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          idempotency_key: string | null
           journal_id: string | null
           method_id: string | null
           name: string
@@ -648,6 +649,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          idempotency_key?: string | null
           journal_id?: string | null
           method_id?: string | null
           name: string
@@ -665,6 +667,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          idempotency_key?: string | null
           journal_id?: string | null
           method_id?: string | null
           name?: string
@@ -5352,6 +5355,12 @@ export type Database = {
         Args: { _module: Database["public"]["Enums"]["app_module"] }
         Returns: boolean
       }
+      lock_cash_session: { Args: { _session: string }; Returns: undefined }
+      lock_order_payments: { Args: { _order: string }; Returns: undefined }
+      lock_quant: {
+        Args: { _location: string; _product: string }
+        Returns: undefined
+      }
       log_record_event: {
         Args: {
           _body: string
@@ -5502,6 +5511,42 @@ export type Database = {
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
+      register_customer_payment: {
+        Args: {
+          _amount: number
+          _idempotency_key?: string
+          _journal?: string
+          _method: string
+          _order: string
+          _payment_date?: string
+          _reference?: string
+          _schedule?: string
+        }
+        Returns: {
+          amount: number
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          idempotency_key: string | null
+          journal_id: string | null
+          method_id: string | null
+          name: string
+          notes: string | null
+          order_id: string | null
+          partner_id: string | null
+          payment_date: string
+          reference: string | null
+          schedule_id: string | null
+          state: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       release_mo_reservation: { Args: { _mo: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       release_move_reservation_partial: {
@@ -5520,7 +5565,7 @@ export type Database = {
         Returns: undefined
       }
       reserve_mo: { Args: { _mo: string }; Returns: Json }
-      reserve_picking_strict: { Args: { _picking: string }; Returns: undefined }
+      reserve_picking_strict: { Args: { _picking: string }; Returns: Json }
       route_capacity_used: {
         Args: { _route: string }
         Returns: {
