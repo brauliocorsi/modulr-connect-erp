@@ -103,14 +103,15 @@ def main():
         if method_id:
             key = "K-"+uuid.uuid4().hex[:10]
             results2=[]
+            lock2 = threading.Lock()
             def pay_worker(k):
                 c=conn(); c.autocommit=True; cu=c.cursor()
                 try:
-                    cu.execute("SELECT (register_customer_payment(%s,%s,%s,NULL,NULL,NULL,%s,NULL)).id",
-                               (so_id, 10, method_id, k))
-                    results2.append(("ok",cu.fetchone()[0]))
+                    cu.execute(f"SELECT (register_customer_payment('{so_id}'::uuid, 10, '{method_id}'::uuid, NULL, NULL, NULL, '{k}', NULL)).id")
+                    r=cu.fetchone()
+                    with lock2: results2.append(("ok",str(r[0])))
                 except Exception as e:
-                    results2.append(("err",str(e)[:80]))
+                    with lock2: results2.append(("err",str(e)[:200]))
                 finally: c.close()
             ts=[threading.Thread(target=pay_worker,args=(key,)) for _ in range(10)]
             for t in ts: t.start()
@@ -119,26 +120,27 @@ def main():
             cnt = q1(cur,"SELECT count(*) c FROM customer_payments WHERE order_id=%s AND idempotency_key=%s",so_id,key)
             ok = int(cnt["c"]) == 1
             add("T2.idempotency_same_key","exatamente 1 customer_payment",
-                f"created={cnt['c']} workers={len(results2)}", ok)
+                f"created={cnt['c']} workers={len(results2)} errs={sum(1 for r in results2 if r[0]=='err')}", ok)
 
-            # ========== T3: chaves diferentes → 10 pagamentos
             keys=[f"K-{uuid.uuid4().hex[:8]}" for _ in range(10)]
             results3=[]
+            lock3 = threading.Lock()
             def pay_diff(k):
                 c=conn(); c.autocommit=True; cu=c.cursor()
                 try:
-                    cu.execute("SELECT (register_customer_payment(%s,%s,%s,NULL,NULL,NULL,%s,NULL)).id",
-                               (so_id, 1, method_id, k))
-                    results3.append(("ok",cu.fetchone()[0]))
+                    cu.execute(f"SELECT (register_customer_payment('{so_id}'::uuid, 1, '{method_id}'::uuid, NULL, NULL, NULL, '{k}', NULL)).id")
+                    r=cu.fetchone()
+                    with lock3: results3.append(("ok",str(r[0])))
                 except Exception as e:
-                    results3.append(("err",str(e)[:80]))
+                    with lock3: results3.append(("err",str(e)[:200]))
                 finally: c.close()
             ts=[threading.Thread(target=pay_diff,args=(k,)) for k in keys]
             for t in ts: t.start()
             for t in ts: t.join()
             cnt2 = q1(cur,"SELECT count(*) c FROM customer_payments WHERE order_id=%s AND idempotency_key = ANY(%s)",so_id,keys)
+            errs3 = [r[1] for r in results3 if r[0]=="err"][:2]
             ok = int(cnt2["c"]) == 10
-            add("T3.different_keys","10 pagamentos criados",f"created={cnt2['c']}",ok)
+            add("T3.different_keys","10 pagamentos criados",f"created={cnt2['c']} errs={errs3}",ok)
 
             # ========== T4: cash_movement no máx 1 por payment
             dup = q1(cur,"""SELECT COUNT(*) c FROM (
