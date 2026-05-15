@@ -1509,6 +1509,7 @@ export type Database = {
       }
       mo_issues: {
         Row: {
+          attachments: Json
           description: string | null
           id: string
           kind: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1521,6 +1522,7 @@ export type Database = {
           resolved_by: string | null
         }
         Insert: {
+          attachments?: Json
           description?: string | null
           id?: string
           kind: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1533,6 +1535,7 @@ export type Database = {
           resolved_by?: string | null
         }
         Update: {
+          attachments?: Json
           description?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["mo_issue_kind"]
@@ -1625,6 +1628,7 @@ export type Database = {
       }
       mo_quality_checks: {
         Row: {
+          attachments: Json
           checked_at: string
           checked_by: string | null
           defects: string | null
@@ -1636,6 +1640,7 @@ export type Database = {
           result: Database["public"]["Enums"]["mo_qc_result"]
         }
         Insert: {
+          attachments?: Json
           checked_at?: string
           checked_by?: string | null
           defects?: string | null
@@ -1647,6 +1652,7 @@ export type Database = {
           result: Database["public"]["Enums"]["mo_qc_result"]
         }
         Update: {
+          attachments?: Json
           checked_at?: string
           checked_by?: string | null
           defects?: string | null
@@ -5032,40 +5038,73 @@ export type Database = {
         Returns: string
       }
       mfg_create_orders_for_sale: { Args: { _so: string }; Returns: number }
-      mfg_finish_operation: {
-        Args: {
-          _notes: string
-          _op: string
-          _qty_done: number
-          _qty_scrap: number
-        }
-        Returns: undefined
-      }
+      mfg_finish_operation:
+        | {
+            Args: {
+              _notes: string
+              _op: string
+              _qty_done: number
+              _qty_scrap: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _attachments?: Json
+              _notes: string
+              _op: string
+              _qty_done: number
+              _qty_scrap: number
+            }
+            Returns: undefined
+          }
       mfg_next_code: { Args: never; Returns: string }
       mfg_pause_operation: {
         Args: { _op: string; _reason: string }
         Returns: undefined
       }
-      mfg_quality_check: {
-        Args: {
-          _defects: string
-          _mo: string
-          _notes: string
-          _result: Database["public"]["Enums"]["mo_qc_result"]
-        }
-        Returns: undefined
-      }
+      mfg_quality_check:
+        | {
+            Args: {
+              _defects: string
+              _mo: string
+              _notes: string
+              _result: Database["public"]["Enums"]["mo_qc_result"]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _attachments?: Json
+              _defects: string
+              _mo: string
+              _notes: string
+              _result: Database["public"]["Enums"]["mo_qc_result"]
+            }
+            Returns: undefined
+          }
       mfg_refresh_component: { Args: { _id: string }; Returns: undefined }
       mfg_refresh_mo_state: { Args: { _mo: string }; Returns: undefined }
-      mfg_report_issue: {
-        Args: {
-          _description: string
-          _kind: Database["public"]["Enums"]["mo_issue_kind"]
-          _mo: string
-          _op: string
-        }
-        Returns: string
-      }
+      mfg_report_issue:
+        | {
+            Args: {
+              _description: string
+              _kind: Database["public"]["Enums"]["mo_issue_kind"]
+              _mo: string
+              _op: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _attachments?: Json
+              _description: string
+              _kind: Database["public"]["Enums"]["mo_issue_kind"]
+              _mo: string
+              _op: string
+            }
+            Returns: undefined
+          }
       mfg_start_operation: { Args: { _op: string }; Returns: undefined }
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }

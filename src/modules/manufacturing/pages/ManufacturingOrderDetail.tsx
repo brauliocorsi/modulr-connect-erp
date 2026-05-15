@@ -5,6 +5,7 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "../components/MOBadges";
+import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
 export default function ManufacturingOrderDetail() {
@@ -125,6 +126,7 @@ export default function ManufacturingOrderDetail() {
                     <div><strong>{q.result}</strong> — {fmtDateTime(q.checked_at)}</div>
                     {q.defects && <div className="text-destructive">Defeitos: {q.defects}</div>}
                     {q.notes && <div className="text-muted-foreground">{q.notes}</div>}
+                    <AttachmentsGrid items={q.attachments} />
                   </div>
                 )) : <div className="text-sm text-muted-foreground py-3">Sem registos de qualidade.</div>}
               </TabsContent>
@@ -135,6 +137,7 @@ export default function ManufacturingOrderDetail() {
                     <div><strong>{i.kind}</strong> — {fmtDateTime(i.reported_at)}</div>
                     {i.description && <div>{i.description}</div>}
                     {i.resolved_at && <div className="text-emerald-600">Resolvido em {fmtDateTime(i.resolved_at)}</div>}
+                    <AttachmentsGrid items={i.attachments} />
                   </div>
                 )) : <div className="text-sm text-muted-foreground py-3">Sem problemas reportados.</div>}
               </TabsContent>

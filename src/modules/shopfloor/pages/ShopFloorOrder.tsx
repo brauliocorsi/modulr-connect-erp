@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "@/modules/manufacturing/components/MOBadges";
+import { PhotoUploader, type Attachment } from "@/modules/manufacturing/components/PhotoUploader";
 import { Play, Check, Pause, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate } from "@/lib/format";
@@ -20,10 +21,12 @@ export default function ShopFloorOrder() {
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueKind, setIssueKind] = useState("material_missing");
   const [issueDesc, setIssueDesc] = useState("");
+  const [issuePhotos, setIssuePhotos] = useState<Attachment[]>([]);
   const [finishOp, setFinishOp] = useState<any>(null);
   const [qtyDone, setQtyDone] = useState("");
   const [qtyScrap, setQtyScrap] = useState("0");
   const [notes, setNotes] = useState("");
+  const [finishPhotos, setFinishPhotos] = useState<Attachment[]>([]);
 
   const moQ = useQuery({
     queryKey: ["sf-mo", id],
@@ -54,9 +57,10 @@ export default function ShopFloorOrder() {
       _qty_done: qtyDone ? Number(qtyDone) : null,
       _qty_scrap: qtyScrap ? Number(qtyScrap) : null,
       _notes: notes || null,
+      _attachments: finishPhotos as any,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Etapa concluída"); setFinishOp(null); setQtyDone(""); setNotes(""); refresh(); }
+    else { toast.success("Etapa concluída"); setFinishOp(null); setQtyDone(""); setNotes(""); setFinishPhotos([]); refresh(); }
   };
   const pause = async (opId: string) => {
     const reason = prompt("Motivo da pausa?") ?? "";
@@ -66,9 +70,10 @@ export default function ShopFloorOrder() {
   const reportIssue = async () => {
     const { error } = await supabase.rpc("mfg_report_issue", {
       _mo: id, _op: null, _kind: issueKind as any, _description: issueDesc || null,
+      _attachments: issuePhotos as any,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Problema reportado"); setIssueOpen(false); setIssueDesc(""); refresh(); }
+    else { toast.success("Problema reportado"); setIssueOpen(false); setIssueDesc(""); setIssuePhotos([]); refresh(); }
   };
 
   const mo = moQ.data;
@@ -129,6 +134,7 @@ export default function ShopFloorOrder() {
                     </SelectContent>
                   </Select>
                   <Textarea placeholder="Descrição" value={issueDesc} onChange={(e) => setIssueDesc(e.target.value)} />
+                  <PhotoUploader value={issuePhotos} onChange={setIssuePhotos} prefix={`issues/${id}`} />
                   <DialogFooter><Button onClick={reportIssue}>Reportar</Button></DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -175,6 +181,7 @@ export default function ShopFloorOrder() {
               <div className="text-sm"><span className="text-muted-foreground">Defeitos</span></div>
               <Input type="number" value={qtyScrap} onChange={(e) => setQtyScrap(e.target.value)} />
               <Textarea placeholder="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <PhotoUploader value={finishPhotos} onChange={setFinishPhotos} prefix={`steps/${id}`} />
             </div>
             <DialogFooter><Button onClick={doFinish}>Confirmar</Button></DialogFooter>
           </DialogContent>
