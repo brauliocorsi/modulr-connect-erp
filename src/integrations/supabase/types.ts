@@ -640,6 +640,7 @@ export type Database = {
           partner_id: string | null
           payment_date: string
           reference: string | null
+          refund_of: string | null
           schedule_id: string | null
           state: string
         }
@@ -658,6 +659,7 @@ export type Database = {
           partner_id?: string | null
           payment_date?: string
           reference?: string | null
+          refund_of?: string | null
           schedule_id?: string | null
           state?: string
         }
@@ -676,6 +678,7 @@ export type Database = {
           partner_id?: string | null
           payment_date?: string
           reference?: string | null
+          refund_of?: string | null
           schedule_id?: string | null
           state?: string
         }
@@ -720,6 +723,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_refund_of_fkey"
+            columns: ["refund_of"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
             referencedColumns: ["id"]
           },
           {
@@ -5255,6 +5265,7 @@ export type Database = {
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
+      _test_phase6: { Args: never; Returns: Json }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -5559,6 +5570,10 @@ export type Database = {
       recompute_sale_state: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
+      refund_customer_payment: {
+        Args: { _payment: string; _reason?: string }
+        Returns: string
+      }
       register_customer_payment: {
         Args: {
           _amount: number
@@ -5585,6 +5600,7 @@ export type Database = {
           partner_id: string | null
           payment_date: string
           reference: string | null
+          refund_of: string | null
           schedule_id: string | null
           state: string
         }
