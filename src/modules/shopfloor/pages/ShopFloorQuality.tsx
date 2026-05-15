@@ -66,6 +66,7 @@ export default function ShopFloorQuality() {
             </Select>
             <Textarea placeholder="Defeitos" value={defects} onChange={(e) => setDefects(e.target.value)} />
             <Textarea placeholder="Notas" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <PhotoUploader value={photos} onChange={setPhotos} prefix={`qc/${open?.id ?? "x"}`} />
             <DialogFooter><Button onClick={submit}>Registar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
