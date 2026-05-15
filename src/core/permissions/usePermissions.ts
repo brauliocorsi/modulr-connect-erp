@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/core/auth/AuthProvider";
 
-export type ModuleId = "core" | "products" | "sales" | "purchase" | "inventory";
+export type ModuleId = "core" | "products" | "sales" | "purchase" | "inventory" | "manufacturing" | "shopfloor";
 export type Action = "view" | "create" | "edit" | "delete" | "export";
 
 export function usePermissions() {
