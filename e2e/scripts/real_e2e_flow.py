@@ -59,7 +59,14 @@ def add(step, action, target, expected, observed, status, risk=""):
 
 class DictCur:
     def __init__(self, cur): self.cur = cur
-    def execute(self, *a, **k): return self.cur.execute(*a, **k)
+    def execute(self, *a, **k):
+        try: return self.cur.execute(*a, **k)
+        except Exception as e:
+            print(f'  ⚠ exec error swallowed: {str(e)[:160]}')
+            self._last_err = e
+            try: self.cur.execute('ROLLBACK')
+            except: pass
+            return None
     def fetchone(self):
         row = self.cur.fetchone()
         if row is None: return None
