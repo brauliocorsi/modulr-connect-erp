@@ -1099,7 +1099,15 @@ export type Database = {
       }
       delivery_routes: {
         Row: {
+          cap_assembly_minutes: number | null
+          cap_deliveries: number | null
+          cap_volume_m3: number | null
+          cap_weight_kg: number | null
           created_at: string
+          current_assembly_minutes: number
+          current_deliveries: number
+          current_volume_m3: number
+          current_weight_kg: number
           dock_id: string | null
           driver_id: string | null
           id: string
@@ -1114,7 +1122,15 @@ export type Database = {
           zone_id: string
         }
         Insert: {
+          cap_assembly_minutes?: number | null
+          cap_deliveries?: number | null
+          cap_volume_m3?: number | null
+          cap_weight_kg?: number | null
           created_at?: string
+          current_assembly_minutes?: number
+          current_deliveries?: number
+          current_volume_m3?: number
+          current_weight_kg?: number
           dock_id?: string | null
           driver_id?: string | null
           id?: string
@@ -1129,7 +1145,15 @@ export type Database = {
           zone_id: string
         }
         Update: {
+          cap_assembly_minutes?: number | null
+          cap_deliveries?: number | null
+          cap_volume_m3?: number | null
+          cap_weight_kg?: number | null
           created_at?: string
+          current_assembly_minutes?: number
+          current_deliveries?: number
+          current_volume_m3?: number
+          current_weight_kg?: number
           dock_id?: string | null
           driver_id?: string | null
           id?: string
@@ -3296,7 +3320,9 @@ export type Database = {
           uom_id: string | null
           updated_at: string
           volume: number | null
+          volume_m3: number | null
           weight: number | null
+          weight_kg: number | null
           width: number | null
           woo_last_sync_at: string | null
           woo_product_id: number | null
@@ -3344,7 +3370,9 @@ export type Database = {
           uom_id?: string | null
           updated_at?: string
           volume?: number | null
+          volume_m3?: number | null
           weight?: number | null
+          weight_kg?: number | null
           width?: number | null
           woo_last_sync_at?: string | null
           woo_product_id?: number | null
@@ -3392,7 +3420,9 @@ export type Database = {
           uom_id?: string | null
           updated_at?: string
           volume?: number | null
+          volume_m3?: number | null
           weight?: number | null
+          weight_kg?: number | null
           width?: number | null
           woo_last_sync_at?: string | null
           woo_product_id?: number | null
@@ -6441,6 +6471,74 @@ export type Database = {
         }
         Relationships: []
       }
+      v_manifest_by_line: {
+        Row: {
+          any_assistance: boolean | null
+          any_damaged: boolean | null
+          package_count: number | null
+          pending_verification: boolean | null
+          product_id: string | null
+          qty_delivered: number | null
+          qty_loaded: number | null
+          qty_pending: number | null
+          qty_returned: number | null
+          route_id: string | null
+          route_order_id: string | null
+          sale_order_line_id: string | null
+          schedule_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_route_order_id_fkey"
+            columns: ["route_order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_picking_exceptions: {
         Row: {
           batch_id: string | null
@@ -6891,6 +6989,7 @@ export type Database = {
       recalc_bill_state: { Args: { _bill: string }; Returns: undefined }
       recalc_payment_status: { Args: { _so: string }; Returns: undefined }
       recalc_picking_state: { Args: { _picking: string }; Returns: undefined }
+      recalc_route_current: { Args: { _route: string }; Returns: undefined }
       recalc_so_fulfillment: { Args: { _so: string }; Returns: undefined }
       recompute_sale_fulfillment_status: {
         Args: { _so: string }
