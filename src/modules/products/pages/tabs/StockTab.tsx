@@ -41,7 +41,7 @@ export function StockTab({ productId }: { productId: string }) {
   const [hideZero, setHideZero] = useState(true);
 
   const load = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("product_stock_forecast")
       .select("*, warehouses(name,code)")
       .eq("product_id", productId);
