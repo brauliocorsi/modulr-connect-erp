@@ -135,6 +135,51 @@ export type Database = {
           },
         ]
       }
+      allocation_hook_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          location_id: string | null
+          product_id: string | null
+          qty: number | null
+          result: Json | null
+          source_event_id: string
+          source_id: string
+          status: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          location_id?: string | null
+          product_id?: string | null
+          qty?: number | null
+          result?: Json | null
+          source_event_id: string
+          source_id: string
+          status?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          location_id?: string | null
+          product_id?: string | null
+          qty?: number | null
+          result?: Json | null
+          source_event_id?: string
+          source_id?: string
+          status?: string
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           description: string | null
