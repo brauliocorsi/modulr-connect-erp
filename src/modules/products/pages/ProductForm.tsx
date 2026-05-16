@@ -23,6 +23,7 @@ import { StockTab } from "./tabs/StockTab";
 import { WooTab } from "./tabs/WooTab";
 import { ReorderingTab } from "./tabs/ReorderingTab";
 import { PackagesTab } from "./tabs/PackagesTab";
+import { PackageTrackingToggle } from "./tabs/PackageTrackingToggle";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
 
@@ -314,7 +315,7 @@ export default function ProductForm() {
               {!isNew && <TabsContent value="stock" className="pt-4"><Card className="p-6"><StockTab productId={id!} /></Card></TabsContent>}
               {!isNew && <TabsContent value="reordering" className="pt-4"><Card className="p-6"><ReorderingTab productId={id!} /></Card></TabsContent>}
               <TabsContent value="woo" className="pt-4"><Card className="p-6"><WooTab form={form} setForm={setForm} /></Card></TabsContent>
-              {!isNew && <TabsContent value="packages" className="pt-4"><Card className="p-6"><PackagesTab productId={id!} /></Card></TabsContent>}
+              {!isNew && <TabsContent value="packages" className="pt-4 space-y-4"><Card className="p-6"><PackageTrackingToggle productId={id!} /></Card><Card className="p-6"><PackagesTab productId={id!} /></Card></TabsContent>}
             </Tabs>
 
             {!isNew && <RecordSidebar recordType="product" recordId={id!} />}

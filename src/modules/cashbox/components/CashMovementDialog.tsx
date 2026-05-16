@@ -1,4 +1,6 @@
 import { useState } from "react";
+// NOTE: gravação direta em `cash_movements` foi substituída por RPC
+// `cash_movement_create` (valida sessão aberta, regista autor, impede bypass).
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -30,21 +32,21 @@ export function CashMovementDialog({
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [saving, setSaving] = useState(false);
   const save = async () => {
     if (!amount || amount <= 0) return toast.error("Valor inválido");
-    const k = KINDS.find((x) => x.value === kind);
-    const signed = (k?.sign ?? -1) * Math.abs(amount);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("cash_movements").insert({
-      session_id: sessionId,
-      kind,
-      amount: signed,
-      reference: reference || null,
-      notes: notes || null,
-      created_by: user?.id,
-      user_id: user?.id,
+    setSaving(true);
+    const { data, error } = await supabase.rpc("cash_movement_create", {
+      _session_id: sessionId,
+      _kind: kind,
+      _amount: Math.abs(amount),
+      _reference: reference || null,
+      _notes: notes || null,
     });
+    setSaving(false);
     if (error) return toast.error(error.message);
+    const res: any = data;
+    if (res?.error) return toast.error(res.error);
     toast.success("Movimento registado");
     onOpenChange(false);
     setAmount(0); setReference(""); setNotes("");
@@ -82,7 +84,7 @@ export function CashMovementDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={save}>Registar</Button>
+          <Button onClick={save} disabled={saving}>{saving ? "A registar…" : "Registar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

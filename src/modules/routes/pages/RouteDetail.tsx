@@ -6,23 +6,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Truck, User2, Calendar, Trash2, AlertTriangle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Truck, User2, Calendar, AlertTriangle, Lock } from "lucide-react";
+
+// NOTE (UI-P0): updates e deletes diretos a `delivery_routes` foram removidos.
+// Lifecycle e mudanças críticas passam pelas RPCs oficiais (delivery_route_*).
+// Edição de metadata livre (driver, notas, capacidade) fica desativada nesta fase
+// até existir RPC dedicada.
 
 export default function RouteDetail() {
   const { id } = useParams();
   const qc = useQueryClient();
-  const nav = useNavigate();
 
-  const { data: route } = useQuery({
+  const { data: route, refetch: refetchRoute } = useQuery({
     queryKey: ["route-detail", id],
     queryFn: async () =>
       (await supabase
@@ -32,7 +29,7 @@ export default function RouteDetail() {
     enabled: !!id,
   });
 
-  const { data: pickings = [] } = useQuery({
+  const { data: pickings = [], refetch: refetchPickings } = useQuery({
     queryKey: ["route-pickings", id],
     enabled: !!id,
     queryFn: async () =>
@@ -43,15 +40,15 @@ export default function RouteDetail() {
         .order("scheduled_at", { ascending: true })).data ?? [],
   });
 
-  const { data: drivers = [] } = useQuery({
-    queryKey: ["drivers-route"],
-    queryFn: async () => {
-      const { data: ug } = await supabase.from("user_groups").select("user_id, groups!inner(code)").eq("groups.code", "delivery_driver");
-      const ids = (ug ?? []).map((r: any) => r.user_id);
-      if (!ids.length) return [];
-      const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
-      return data ?? [];
-    },
+  const { data: routeOrders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ["route-orders", id],
+    enabled: !!id,
+    queryFn: async () =>
+      (await supabase
+        .from("delivery_route_orders")
+        .select("id, sequence, status, schedule_id, delivery_schedules(so_id, sale_orders(name))")
+        .eq("route_id", id!)
+        .order("sequence")).data ?? [],
   });
 
   const { data: vehicles = [] } = useQuery({
@@ -59,169 +56,205 @@ export default function RouteDetail() {
     queryFn: async () => (await supabase.from("vehicles").select("id,name,license_plate").eq("active", true).order("name")).data ?? [],
   });
 
-  const { data: zones = [] } = useQuery({
-    queryKey: ["zones-route-edit"],
-    queryFn: async () => (await supabase.from("delivery_zones").select("id,name,zip_from,zip_to").eq("active", true).order("name")).data ?? [],
+  const { data: docks = [] } = useQuery({
+    queryKey: ["docks-list"],
+    queryFn: async () => (await supabase.from("loading_docks").select("id,name").eq("active", true).order("name")).data ?? [],
   });
 
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>({});
-  useEffect(() => {
-    if (route) setForm({
-      driver_id: route.driver_id, vehicle_id: route.vehicle_id,
-      max_deliveries: route.max_deliveries, max_assembly_minutes: route.max_assembly_minutes,
-      state: route.state, notes: route.notes,
-      route_date: route.route_date, zone_id: route.zone_id,
-    });
-  }, [route]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [newVehicleId, setNewVehicleId] = useState<string>("");
+  const [dockId, setDockId] = useState<string>("");
 
-  const save = async () => {
-    const { error } = await supabase.from("delivery_routes").update(form).eq("id", id!);
-    if (error) return toast.error(error.message);
-    toast.success("Rota atualizada");
-    setEditing(false);
-    qc.invalidateQueries({ queryKey: ["route-detail", id] });
+  const refreshAll = () => {
+    refetchRoute();
+    refetchPickings();
+    refetchOrders();
     qc.invalidateQueries({ queryKey: ["routes-schedule"] });
   };
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const remove = async () => {
-    const { error } = await supabase.from("delivery_routes").delete().eq("id", id!);
-    if (error) return toast.error(error.message);
-    toast.success("Rota apagada");
-    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
-    nav("/routes");
+  const callRpc = async (key: string, fn: string, args: Record<string, any>, label: string) => {
+    setBusy(key);
+    const { data, error } = await (supabase as any).rpc(fn, args);
+    setBusy(null);
+    if (error) return toast.error(`${label}: ${error.message}`);
+    if (data?.error) return toast.error(`${label}: ${data.error}`);
+    toast.success(`${label} OK`);
+    refreshAll();
+    return data;
   };
 
   if (!route) return <PageBody>Carregando…</PageBody>;
   const r: any = route;
+  const state = r.state as string;
+
+  const can = {
+    changeVehicle: ["planning", "planned"].includes(state),
+    pickToDock: ["planning", "planned"].includes(state) && !!dockId,
+    loadVehicle: ["planning", "planned", "loading"].includes(state),
+    verifyLoad: state === "loading",
+    start: ["loading", "planned"].includes(state),
+    complete: ["in_progress", "in_transit"].includes(state),
+    close: ["return_pending", "awaiting_cash_closure", "done", "completed"].includes(state),
+  };
 
   return (
     <>
       <PageHeader
         title={`${r.delivery_zones?.name ?? "Rota"} · ${r.route_date}`}
         breadcrumb={[{ label: "Rotas", to: "/routes" }, { label: r.route_date }]}
-        actions={
-          editing ? (
-            <>
-              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
-              <Button size="sm" onClick={save}>Guardar</Button>
-            </>
-          ) : (
-            <>
-              <Button size="sm" variant="destructive" onClick={() => setConfirmOpen(true)}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Editar</Button>
-            </>
-          )
-        }
       />
       <PageBody>
+        <Card className="p-3 mb-3 bg-amber-50 border-amber-300 text-amber-900 text-xs flex items-start gap-2">
+          <Lock className="h-4 w-4 mt-0.5" />
+          <div>
+            <strong>UI-P0:</strong> a edição livre de campos da rota foi desativada. Use as ações abaixo
+            (RPCs oficiais) para alterar carrinha e progredir o ciclo de vida da rota.
+          </div>
+        </Card>
+
         <div className="grid gap-3 md:grid-cols-3 mb-4">
           <Card className="p-3">
             <div className="text-xs text-muted-foreground">Estado</div>
-            {editing ? (
-              <Select value={form.state} onValueChange={(v) => setForm({ ...form, state: v })}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planned">Planeada</SelectItem>
-                  <SelectItem value="in_progress">Em curso</SelectItem>
-                  <SelectItem value="done">Concluída</SelectItem>
-                  <SelectItem value="cancelled">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : <Badge className="mt-1 capitalize">{r.state}</Badge>}
-          </Card>
-          <Card className="p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><User2 className="h-3 w-3" />Motorista</div>
-            {editing ? (
-              <Select value={form.driver_id ?? "none"} onValueChange={(v) => setForm({ ...form, driver_id: v === "none" ? null : v })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {(drivers as any[]).map((d) => <SelectItem key={d.id} value={d.id}>{d.full_name || d.email}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : <div className="mt-1">{(drivers as any[]).find((d) => d.id === r.driver_id)?.full_name ?? "—"}</div>}
+            <Badge className="mt-1 capitalize">{state}</Badge>
           </Card>
           <Card className="p-3">
             <div className="text-xs text-muted-foreground flex items-center gap-1"><Truck className="h-3 w-3" />Carrinha</div>
-            {editing ? (
-              <Select value={form.vehicle_id ?? "none"} onValueChange={(v) => setForm({ ...form, vehicle_id: v === "none" ? null : v })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {(vehicles as any[]).map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : <div className="mt-1">{r.vehicles?.name ?? "—"}</div>}
+            <div className="mt-1 text-sm">{r.vehicles?.name ?? "—"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}</div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs text-muted-foreground">Capacidade</div>
-            {editing ? (
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <Input type="number" value={form.max_deliveries} onChange={(e) => setForm({ ...form, max_deliveries: Number(e.target.value) })} />
-                <Input type="number" value={form.max_assembly_minutes} onChange={(e) => setForm({ ...form, max_assembly_minutes: Number(e.target.value) })} />
-              </div>
-            ) : (
-              <div className="mt-1 text-sm">
-                {pickings.length}/{r.max_deliveries} entregas · {r.max_assembly_minutes} min
-              </div>
-            )}
+            <div className="text-xs text-muted-foreground flex items-center gap-1"><User2 className="h-3 w-3" />Motorista</div>
+            <div className="mt-1 text-sm">{r.driver_id ?? "—"}</div>
           </Card>
           <Card className="p-3">
             <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data</div>
-            {editing ? (
-              <Input type="date" className="mt-1" value={form.route_date ?? ""} onChange={(e) => setForm({ ...form, route_date: e.target.value })} />
-            ) : <div className="mt-1 text-sm">{r.route_date}</div>}
+            <div className="mt-1 text-sm">{r.route_date}</div>
           </Card>
           <Card className="p-3 md:col-span-2">
             <div className="text-xs text-muted-foreground">Zona</div>
-            {editing ? (
-              <Select value={form.zone_id} onValueChange={(v) => setForm({ ...form, zone_id: v })}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(zones as any[]).map((z) => (
-                    <SelectItem key={z.id} value={z.id}>{z.name} · {z.zip_from}–{z.zip_to}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="mt-1 text-sm">
-                {r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}
-              </div>
-            )}
-          </Card>
-          <Card className="p-3 md:col-span-3">
-            <Label className="text-xs text-muted-foreground">Notas</Label>
-            {editing ? (
-              <Input className="mt-1" value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            ) : <div className="mt-1 text-sm">{r.notes || "—"}</div>}
+            <div className="mt-1 text-sm">{r.delivery_zones?.name} · CP {r.delivery_zones?.zip_from}–{r.delivery_zones?.zip_to}</div>
           </Card>
         </div>
 
+        <Card className="p-3 mb-4 space-y-3">
+          <div className="font-semibold text-sm">Ações de rota</div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={newVehicleId} onValueChange={setNewVehicleId}>
+              <SelectTrigger className="h-8 w-64"><SelectValue placeholder="Trocar carrinha…" /></SelectTrigger>
+              <SelectContent>
+                {(vehicles as any[]).map((v) => <SelectItem key={v.id} value={v.id}>{v.name} {v.license_plate ? `· ${v.license_plate}` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" disabled={!can.changeVehicle || !newVehicleId || busy !== null}
+              onClick={() => callRpc("chv", "delivery_route_change_vehicle", { _route_id: id, _vehicle_id: newVehicleId }, "Trocar carrinha")}>
+              {busy === "chv" ? "..." : "Trocar"}
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={dockId} onValueChange={setDockId}>
+              <SelectTrigger className="h-8 w-64"><SelectValue placeholder="Cais…" /></SelectTrigger>
+              <SelectContent>
+                {(docks as any[]).map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" disabled={!can.pickToDock || busy !== null}
+              onClick={() => callRpc("ptd", "delivery_pick_to_dock", { _route_id: id, _dock_id: dockId }, "Pick to dock")}>
+              {busy === "ptd" ? "..." : "1. Mover para cais"}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!can.loadVehicle || busy !== null}
+              onClick={() => callRpc("lv", "delivery_load_vehicle", { _route_id: id }, "Carregar viatura")}>
+              {busy === "lv" ? "..." : "2. Carregar viatura"}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!can.verifyLoad || busy !== null}
+              onClick={() => callRpc("vl", "delivery_verify_load", { _route_id: id, _manifest_ids: [] as string[] }, "Verificar carga")}>
+              {busy === "vl" ? "..." : "3. Verificar carga"}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!can.start || busy !== null}
+              onClick={() => callRpc("st", "delivery_route_start", { _route_id: id }, "Iniciar rota")}>
+              {busy === "st" ? "..." : "4. Iniciar rota"}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!can.complete || busy !== null}
+              onClick={() => callRpc("cp", "delivery_route_complete", { _route_id: id }, "Completar rota")}>
+              {busy === "cp" ? "..." : "5. Completar"}
+            </Button>
+            <Button size="sm" variant="default" disabled={!can.close || busy !== null}
+              onClick={() => callRpc("cl", "delivery_route_close", { _route_id: id }, "Fechar rota")}>
+              {busy === "cl" ? "..." : "6. Fechar rota"}
+            </Button>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground flex items-start gap-2">
+            <AlertTriangle className="h-3 w-3 mt-0.5" />
+            Os botões só ficam activos quando o estado da rota o permite. Os erros das RPCs são apresentados no toast.
+          </div>
+        </Card>
+
         <Card>
-          <div className="px-3 py-2 border-b font-semibold text-sm">Entregas atribuídas</div>
+          <div className="px-3 py-2 border-b font-semibold text-sm">Entregas (route orders)</div>
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30">
+              <tr>
+                <th className="text-left px-3 py-2 w-12">#</th>
+                <th className="text-left px-3 py-2">Encomenda</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-left px-3 py-2 w-96">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(routeOrders as any[]).length === 0 ? (
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Sem orders na rota</td></tr>
+              ) : (routeOrders as any[]).map((o) => {
+                const canDeliver = ["loaded", "in_transit", "out_for_delivery", "pending"].includes(o.status);
+                return (
+                  <tr key={o.id} className="border-t">
+                    <td className="px-3 py-2">{o.sequence}</td>
+                    <td className="px-3 py-2">{o.delivery_schedules?.sale_orders?.name ?? o.schedule_id}</td>
+                    <td className="px-3 py-2"><Badge variant="outline">{o.status}</Badge></td>
+                    <td className="px-3 py-2 flex flex-wrap gap-1">
+                      <Button size="sm" variant="outline" disabled={!canDeliver || busy !== null}
+                        onClick={() => callRpc(`d-${o.id}`, "delivery_order_deliver", { _route_order_id: o.id, _lines: [] }, "Entregar")}>
+                        Entregar
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={!canDeliver || busy !== null}
+                        onClick={() => {
+                          const reason = prompt("Motivo da falha?") || "";
+                          if (!reason) return;
+                          callRpc(`f-${o.id}`, "delivery_order_fail", { _route_order_id: o.id, _reason: reason }, "Falha");
+                        }}>
+                        Falhar
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={busy !== null}
+                        onClick={() => callRpc(`r-${o.id}`, "delivery_return_to_warehouse", { _route_order_id: o.id, _lines: [] }, "Retornar ao armazém")}>
+                        Retornar
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Card>
+
+        <Card className="mt-3">
+          <div className="px-3 py-2 border-b font-semibold text-sm">Transferências/pickings atribuídos</div>
           <table className="w-full text-sm">
             <thead className="bg-muted/30">
               <tr>
                 <th className="text-left px-3 py-2">Transferência</th>
                 <th className="text-left px-3 py-2">Cliente</th>
                 <th className="text-left px-3 py-2">CP / Cidade</th>
-                <th className="text-left px-3 py-2">Origem</th>
                 <th className="text-left px-3 py-2">Estado</th>
               </tr>
             </thead>
             <tbody>
               {(pickings as any[]).length === 0 ? (
-                <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Sem entregas atribuídas</td></tr>
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">Sem pickings</td></tr>
               ) : (pickings as any[]).map((p) => (
                 <tr key={p.id} className="border-t hover:bg-accent/30">
-                  <td className="px-3 py-2">
-                    <Link to={`/inventory/transfers/${p.id}`} className="text-primary hover:underline">{p.name}</Link>
-                  </td>
+                  <td className="px-3 py-2"><Link to={`/inventory/transfers/${p.id}`} className="text-primary hover:underline">{p.name}</Link></td>
                   <td className="px-3 py-2">{p.partners?.name ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">{p.partners?.zip ?? ""} {p.partners?.city ?? ""}</td>
-                  <td className="px-3 py-2 text-xs">{p.origin ?? "—"}</td>
                   <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{p.state}</Badge></td>
                 </tr>
               ))}
@@ -229,35 +262,6 @@ export default function RouteDetail() {
           </table>
         </Card>
       </PageBody>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Apagar rota de {r.delivery_zones?.name ?? ""} · {r.route_date}?
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2">
-                <p>Esta ação não pode ser revertida.</p>
-                {pickings.length > 0 ? (
-                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-foreground">
-                    <strong>{pickings.length}</strong> {pickings.length === 1 ? "entrega ficará" : "entregas ficarão"} sem rota atribuída e voltarão para o estado <em>por agendar</em>.
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Não há entregas atribuídas a esta rota.</p>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Apagar rota
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
