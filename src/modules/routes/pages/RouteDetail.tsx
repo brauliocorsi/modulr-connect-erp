@@ -16,6 +16,8 @@ import { RouteManifestTable, type ManifestRow } from "../components/RouteManifes
 import { RouteDockSection, type DockTransferRow } from "../components/RouteDockSection";
 import { DeliverOrderDialog } from "../components/DeliverOrderDialog";
 import { ReturnPackageDialog } from "../components/ReturnPackageDialog";
+import { CashClosureCard } from "@/modules/m5/components/CashClosureCard";
+import { RescheduleDialog } from "@/modules/m5/components/RescheduleDialog";
 
 // UI-4: visão operacional da rota.
 // NOTA: continua a respeitar UI-P0 — sem .update()/.delete() directos em
@@ -107,6 +109,7 @@ export default function RouteDetail() {
   const [dockId, setDockId] = useState<string>("");
   const [deliverOpen, setDeliverOpen] = useState<string | null>(null);
   const [returnOpen, setReturnOpen] = useState<string | null>(null);
+  const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
 
   const refreshAll = () => {
