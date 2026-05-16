@@ -7872,6 +7872,7 @@ export type Database = {
       _test_phase15_m5: { Args: never; Returns: Json }
       _test_phase15_m5_safe: { Args: never; Returns: Json }
       _test_phase16_b0_2_readonly: { Args: never; Returns: Json }
+      _test_phase16_b0_3_allocation_engine: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -8510,6 +8511,16 @@ export type Database = {
           deliveries: number
         }[]
       }
+      run_inventory_allocation: {
+        Args: {
+          _location_id?: string
+          _product_id: string
+          _qty?: number
+          _reason?: string
+          _variant_id?: string
+        }
+        Returns: Json
+      }
       run_reordering_rules: { Args: never; Returns: number }
       sale_line_packages_ready: {
         Args: { _sale_order_line_id: string }
@@ -8626,6 +8637,15 @@ export type Database = {
           _qty: number
           _reason?: string
           _to_so: string
+        }
+        Returns: Json
+      }
+      transfer_sale_reservation: {
+        Args: {
+          _from_sale_order_line_id: string
+          _qty: number
+          _reason?: string
+          _to_sale_order_line_id: string
         }
         Returns: Json
       }
