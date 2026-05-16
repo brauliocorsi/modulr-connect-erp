@@ -2721,6 +2721,61 @@ export type Database = {
         }
         Relationships: []
       }
+      package_damage_report: {
+        Row: {
+          condition: string
+          id: string
+          reason: string | null
+          reported_at: string
+          reported_by: string | null
+          route_id: string | null
+          route_order_id: string | null
+          stock_package_id: string
+        }
+        Insert: {
+          condition: string
+          id?: string
+          reason?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          route_id?: string | null
+          route_order_id?: string | null
+          stock_package_id: string
+        }
+        Update: {
+          condition?: string
+          id?: string
+          reason?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          route_id?: string | null
+          route_order_id?: string | null
+          stock_package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_damage_report_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_report_route_order_id_fkey"
+            columns: ["route_order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_report_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       package_damage_reports: {
         Row: {
           created_at: string
@@ -6688,7 +6743,10 @@ export type Database = {
           assistance_required: boolean
           created_at: string
           damaged: boolean
+          fragile: boolean
+          height_cm: number | null
           id: string
+          length_cm: number | null
           loaded_at: string | null
           loaded_by: string | null
           package_group: string | null
@@ -6700,26 +6758,35 @@ export type Database = {
           qty_loaded: number
           qty_pending: number | null
           qty_returned: number
+          requires_flat_transport: boolean
           return_condition: Database["public"]["Enums"]["return_kind"] | null
           return_reason: string | null
           route_id: string
           route_order_id: string | null
           sale_order_line_id: string | null
           schedule_id: string | null
+          stackable: boolean
           stock_move_id: string | null
+          stock_package_id: string | null
           stop_sequence: number | null
           updated_at: string
           vehicle_location_id: string | null
           verification_required: boolean
           verified_at: string | null
           verified_by: string | null
+          volume_m3: number | null
+          weight_kg: number | null
+          width_cm: number | null
         }
         Insert: {
           assistance_case_id?: string | null
           assistance_required?: boolean
           created_at?: string
           damaged?: boolean
+          fragile?: boolean
+          height_cm?: number | null
           id?: string
+          length_cm?: number | null
           loaded_at?: string | null
           loaded_by?: string | null
           package_group?: string | null
@@ -6731,26 +6798,35 @@ export type Database = {
           qty_loaded?: number
           qty_pending?: number | null
           qty_returned?: number
+          requires_flat_transport?: boolean
           return_condition?: Database["public"]["Enums"]["return_kind"] | null
           return_reason?: string | null
           route_id: string
           route_order_id?: string | null
           sale_order_line_id?: string | null
           schedule_id?: string | null
+          stackable?: boolean
           stock_move_id?: string | null
+          stock_package_id?: string | null
           stop_sequence?: number | null
           updated_at?: string
           vehicle_location_id?: string | null
           verification_required?: boolean
           verified_at?: string | null
           verified_by?: string | null
+          volume_m3?: number | null
+          weight_kg?: number | null
+          width_cm?: number | null
         }
         Update: {
           assistance_case_id?: string | null
           assistance_required?: boolean
           created_at?: string
           damaged?: boolean
+          fragile?: boolean
+          height_cm?: number | null
           id?: string
+          length_cm?: number | null
           loaded_at?: string | null
           loaded_by?: string | null
           package_group?: string | null
@@ -6762,19 +6838,25 @@ export type Database = {
           qty_loaded?: number
           qty_pending?: number | null
           qty_returned?: number
+          requires_flat_transport?: boolean
           return_condition?: Database["public"]["Enums"]["return_kind"] | null
           return_reason?: string | null
           route_id?: string
           route_order_id?: string | null
           sale_order_line_id?: string | null
           schedule_id?: string | null
+          stackable?: boolean
           stock_move_id?: string | null
+          stock_package_id?: string | null
           stop_sequence?: number | null
           updated_at?: string
           vehicle_location_id?: string | null
           verification_required?: boolean
           verified_at?: string | null
           verified_by?: string | null
+          volume_m3?: number | null
+          weight_kg?: number | null
+          width_cm?: number | null
         }
         Relationships: [
           {
@@ -6831,6 +6913,13 @@ export type Database = {
             columns: ["stock_move_id"]
             isOneToOne: false
             referencedRelation: "stock_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
             referencedColumns: ["id"]
           },
           {
@@ -7394,6 +7483,19 @@ export type Database = {
         Args: { _payload: Json; _ref: string; _so: string; _step: string }
         Returns: undefined
       }
+      _m4_make_move: {
+        Args: {
+          _dst: string
+          _pkg: string
+          _product: string
+          _qty: number
+          _ref: string
+          _src: string
+        }
+        Returns: string
+      }
+      _m4_pick_lane: { Args: { _dock_id: string }; Returns: string }
+      _m4_return_loc: { Args: { _kind: string }; Returns: string }
       _so_ensure_mo_for_line: {
         Args: { _line_id: string; _qty: number }
         Returns: string
@@ -7426,6 +7528,7 @@ export type Database = {
       _test_phase15_2: { Args: never; Returns: Json }
       _test_phase15_2_m6: { Args: never; Returns: Json }
       _test_phase15_m3: { Args: never; Returns: Json }
+      _test_phase15_m4: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -7539,6 +7642,26 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      delivery_load_vehicle: {
+        Args: { _lines?: Json; _route_id: string }
+        Returns: Json
+      }
+      delivery_order_deliver: {
+        Args: { _lines: Json; _payment?: Json; _route_order_id: string }
+        Returns: Json
+      }
+      delivery_order_fail: {
+        Args: { _reason: string; _route_order_id: string }
+        Returns: Json
+      }
+      delivery_pick_to_dock: {
+        Args: { _dock_id: string; _lane_id?: string; _route_id: string }
+        Returns: Json
+      }
+      delivery_return_to_warehouse: {
+        Args: { _lines: Json; _mode?: string; _route_order_id: string }
+        Returns: Json
+      }
       delivery_route_assign_order: {
         Args: {
           _force?: boolean
@@ -7553,6 +7676,8 @@ export type Database = {
         Args: { _route_id: string; _vehicle_id: string }
         Returns: Json
       }
+      delivery_route_close: { Args: { _route_id: string }; Returns: Json }
+      delivery_route_complete: { Args: { _route_id: string }; Returns: Json }
       delivery_route_create_ad_hoc: {
         Args: {
           _assistant_id?: string
@@ -7564,6 +7689,7 @@ export type Database = {
         }
         Returns: Json
       }
+      delivery_route_start: { Args: { _route_id: string }; Returns: Json }
       delivery_schedule_assign: {
         Args: {
           _date: string
@@ -7587,6 +7713,10 @@ export type Database = {
           _window_end?: string
           _window_start?: string
         }
+        Returns: Json
+      }
+      delivery_verify_load: {
+        Args: { _manifest_ids: string[]; _route_id: string }
         Returns: Json
       }
       discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
@@ -7650,6 +7780,15 @@ export type Database = {
         Returns: Json
       }
       erp_m3_health_check: { Args: never; Returns: Json }
+      erp_m4_health_check: {
+        Args: never
+        Returns: {
+          code: string
+          detail: Json
+          ref: string
+          severity: string
+        }[]
+      }
       erp_package_health_check: { Args: never; Returns: Json }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
