@@ -65,6 +65,76 @@ export type Database = {
         }
         Relationships: []
       }
+      allocation_decisions: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json | null
+          product_id: string
+          qty: number
+          reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source_sale_order_line_id: string | null
+          state: string
+          suggested_target_line_id: string | null
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          product_id: string
+          qty: number
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_sale_order_line_id?: string | null
+          state?: string
+          suggested_target_line_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          product_id?: string
+          qty?: number
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_sale_order_line_id?: string | null
+          state?: string
+          suggested_target_line_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allocation_decisions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "allocation_decisions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allocation_decisions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           description: string | null
@@ -3609,6 +3679,8 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          allocation_policy: Database["public"]["Enums"]["allocation_policy"]
+          allocation_priority_weights: Json | null
           assembly_fee: number
           assembly_minutes: number
           auto_purchase: boolean
@@ -3660,6 +3732,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allocation_policy?: Database["public"]["Enums"]["allocation_policy"]
+          allocation_priority_weights?: Json | null
           assembly_fee?: number
           assembly_minutes?: number
           auto_purchase?: boolean
@@ -3711,6 +3785,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allocation_policy?: Database["public"]["Enums"]["allocation_policy"]
+          allocation_priority_weights?: Json | null
           assembly_fee?: number
           assembly_minutes?: number
           auto_purchase?: boolean
@@ -6390,49 +6466,61 @@ export type Database = {
         Row: {
           action: string
           created_at: string
+          from_sale_order_line_id: string | null
           id: string
           location_id: string | null
           lot_id: string | null
           notes: string | null
           origin_id: string | null
           origin_type: string
+          package_ids: string[] | null
+          payload: Json | null
           product_id: string
           qty: number
           qty_after: number | null
           qty_before: number | null
           reserved_by: string | null
+          to_sale_order_line_id: string | null
           variant_id: string | null
         }
         Insert: {
           action: string
           created_at?: string
+          from_sale_order_line_id?: string | null
           id?: string
           location_id?: string | null
           lot_id?: string | null
           notes?: string | null
           origin_id?: string | null
           origin_type: string
+          package_ids?: string[] | null
+          payload?: Json | null
           product_id: string
           qty: number
           qty_after?: number | null
           qty_before?: number | null
           reserved_by?: string | null
+          to_sale_order_line_id?: string | null
           variant_id?: string | null
         }
         Update: {
           action?: string
           created_at?: string
+          from_sale_order_line_id?: string | null
           id?: string
           location_id?: string | null
           lot_id?: string | null
           notes?: string | null
           origin_id?: string | null
           origin_type?: string
+          package_ids?: string[] | null
+          payload?: Json | null
           product_id?: string
           qty?: number
           qty_after?: number | null
           qty_before?: number | null
           reserved_by?: string | null
+          to_sale_order_line_id?: string | null
           variant_id?: string | null
         }
         Relationships: []
@@ -8288,6 +8376,14 @@ export type Database = {
       validate_wave: { Args: { _wave: string }; Returns: undefined }
     }
     Enums: {
+      allocation_policy:
+        | "strict_order"
+        | "stock_pool_first"
+        | "oldest_order_first"
+        | "delivery_date_first"
+        | "paid_priority"
+        | "manual_allocation"
+        | "custom_priority"
       app_module:
         | "core"
         | "products"
@@ -8541,6 +8637,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      allocation_policy: [
+        "strict_order",
+        "stock_pool_first",
+        "oldest_order_first",
+        "delivery_date_first",
+        "paid_priority",
+        "manual_allocation",
+        "custom_priority",
+      ],
       app_module: [
         "core",
         "products",
