@@ -9,7 +9,10 @@ H = {"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "applicati
 def rpc(name, body=None):
     req = urllib.request.Request(f"{URL}/rest/v1/rpc/{name}",
         data=json.dumps(body or {}).encode(), headers=H, method="POST")
-    return json.loads(urllib.request.urlopen(req).read())
+    try:
+        return json.loads(urllib.request.urlopen(req).read())
+    except urllib.error.HTTPError as e:
+        print("HTTP", e.code, e.read().decode()[:2000]); raise
 
 def main():
     res = rpc("_test_phase14")
