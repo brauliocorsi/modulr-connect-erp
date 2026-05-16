@@ -212,29 +212,65 @@ export type Database = {
       }
       bom_lines: {
         Row: {
+          applies_to_variant_rule: Json | null
           bom_id: string
           component_product_id: string
+          component_selector: Json | null
           component_variant_id: string | null
+          consumption_uom_id: string | null
+          conversion_factor: number | null
+          formula: string | null
+          formula_variables: Json | null
           id: string
+          inheritance_action: string
+          is_inherited: boolean
+          is_optional: boolean
+          parent_bom_line_id: string | null
+          qty_formula: string | null
           quantity: number
+          rounding_method: string
           sequence: number
           uom_id: string | null
         }
         Insert: {
+          applies_to_variant_rule?: Json | null
           bom_id: string
           component_product_id: string
+          component_selector?: Json | null
           component_variant_id?: string | null
+          consumption_uom_id?: string | null
+          conversion_factor?: number | null
+          formula?: string | null
+          formula_variables?: Json | null
           id?: string
+          inheritance_action?: string
+          is_inherited?: boolean
+          is_optional?: boolean
+          parent_bom_line_id?: string | null
+          qty_formula?: string | null
           quantity?: number
+          rounding_method?: string
           sequence?: number
           uom_id?: string | null
         }
         Update: {
+          applies_to_variant_rule?: Json | null
           bom_id?: string
           component_product_id?: string
+          component_selector?: Json | null
           component_variant_id?: string | null
+          consumption_uom_id?: string | null
+          conversion_factor?: number | null
+          formula?: string | null
+          formula_variables?: Json | null
           id?: string
+          inheritance_action?: string
+          is_inherited?: boolean
+          is_optional?: boolean
+          parent_bom_line_id?: string | null
+          qty_formula?: string | null
           quantity?: number
+          rounding_method?: string
           sequence?: number
           uom_id?: string | null
         }
@@ -272,6 +308,20 @@ export type Database = {
             columns: ["component_variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_consumption_uom_id_fkey"
+            columns: ["consumption_uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_parent_bom_line_id_fkey"
+            columns: ["parent_bom_line_id"]
+            isOneToOne: false
+            referencedRelation: "bom_lines"
             referencedColumns: ["id"]
           },
           {
@@ -318,41 +368,236 @@ export type Database = {
           },
         ]
       }
+      bom_variant_rules: {
+        Row: {
+          active: boolean
+          attribute_name: string | null
+          attribute_value: string | null
+          bom_id: string
+          created_at: string
+          formula: string | null
+          id: string
+          priority: number
+          product_id: string | null
+          qty: number | null
+          rule_type: string
+          source_component_id: string | null
+          target_component_id: string | null
+          uom_id: string | null
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          attribute_name?: string | null
+          attribute_value?: string | null
+          bom_id: string
+          created_at?: string
+          formula?: string | null
+          id?: string
+          priority?: number
+          product_id?: string | null
+          qty?: number | null
+          rule_type: string
+          source_component_id?: string | null
+          target_component_id?: string | null
+          uom_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          attribute_name?: string | null
+          attribute_value?: string | null
+          bom_id?: string
+          created_at?: string
+          formula?: string | null
+          id?: string
+          priority?: number
+          product_id?: string | null
+          qty?: number | null
+          rule_type?: string
+          source_component_id?: string | null
+          target_component_id?: string | null
+          uom_id?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bom_variant_rules_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_source_component_id_fkey"
+            columns: ["source_component_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_source_component_id_fkey"
+            columns: ["source_component_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_source_component_id_fkey"
+            columns: ["source_component_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_target_component_id_fkey"
+            columns: ["target_component_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_target_component_id_fkey"
+            columns: ["target_component_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_target_component_id_fkey"
+            columns: ["target_component_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_variant_rules_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boms: {
         Row: {
           active: boolean
+          applies_to_product_id: string | null
+          applies_to_variant_id: string | null
           code: string | null
           created_at: string
           id: string
+          inheritance_mode: string
+          is_master: boolean
+          parent_bom_id: string | null
           product_id: string
           quantity: number
           type: Database["public"]["Enums"]["bom_type"]
           uom_id: string | null
           variant_id: string | null
+          variant_rule: Json | null
         }
         Insert: {
           active?: boolean
+          applies_to_product_id?: string | null
+          applies_to_variant_id?: string | null
           code?: string | null
           created_at?: string
           id?: string
+          inheritance_mode?: string
+          is_master?: boolean
+          parent_bom_id?: string | null
           product_id: string
           quantity?: number
           type?: Database["public"]["Enums"]["bom_type"]
           uom_id?: string | null
           variant_id?: string | null
+          variant_rule?: Json | null
         }
         Update: {
           active?: boolean
+          applies_to_product_id?: string | null
+          applies_to_variant_id?: string | null
           code?: string | null
           created_at?: string
           id?: string
+          inheritance_mode?: string
+          is_master?: boolean
+          parent_bom_id?: string | null
           product_id?: string
           quantity?: number
           type?: Database["public"]["Enums"]["bom_type"]
           uom_id?: string | null
           variant_id?: string | null
+          variant_rule?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "boms_applies_to_product_id_fkey"
+            columns: ["applies_to_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "boms_applies_to_product_id_fkey"
+            columns: ["applies_to_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boms_applies_to_product_id_fkey"
+            columns: ["applies_to_product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "boms_applies_to_variant_id_fkey"
+            columns: ["applies_to_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boms_parent_bom_id_fkey"
+            columns: ["parent_bom_id"]
+            isOneToOne: false
+            referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "boms_product_id_fkey"
             columns: ["product_id"]
@@ -2288,6 +2533,113 @@ export type Database = {
           },
         ]
       }
+      manufacturing_bom_outputs: {
+        Row: {
+          active: boolean
+          bom_id: string
+          bom_line_id: string | null
+          condition: string
+          cost_allocation_percent: number | null
+          created_at: string
+          formula: string | null
+          id: string
+          operation_id: string | null
+          output_type: string
+          product_id: string
+          qty: number
+          stockable: boolean
+          uom_id: string | null
+          updated_at: string
+          work_center_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          bom_id: string
+          bom_line_id?: string | null
+          condition?: string
+          cost_allocation_percent?: number | null
+          created_at?: string
+          formula?: string | null
+          id?: string
+          operation_id?: string | null
+          output_type: string
+          product_id: string
+          qty?: number
+          stockable?: boolean
+          uom_id?: string | null
+          updated_at?: string
+          work_center_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          bom_id?: string
+          bom_line_id?: string | null
+          condition?: string
+          cost_allocation_percent?: number | null
+          created_at?: string
+          formula?: string | null
+          id?: string
+          operation_id?: string | null
+          output_type?: string
+          product_id?: string
+          qty?: number
+          stockable?: boolean
+          uom_id?: string | null
+          updated_at?: string
+          work_center_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_bom_outputs_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_bom_line_id_fkey"
+            columns: ["bom_line_id"]
+            isOneToOne: false
+            referencedRelation: "bom_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_bom_outputs_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manufacturing_machines: {
         Row: {
           active: boolean
@@ -2387,6 +2739,100 @@ export type Database = {
             columns: ["default_work_center_id"]
             isOneToOne: false
             referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manufacturing_order_outputs: {
+        Row: {
+          condition: string
+          cost_allocation_percent: number | null
+          created_at: string
+          created_stock_package_id: string | null
+          id: string
+          manufacturing_order_id: string
+          operation_id: string | null
+          output_type: string
+          product_id: string
+          qty_done: number
+          qty_expected: number
+          stock_location_id: string | null
+          uom_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          condition?: string
+          cost_allocation_percent?: number | null
+          created_at?: string
+          created_stock_package_id?: string | null
+          id?: string
+          manufacturing_order_id: string
+          operation_id?: string | null
+          output_type: string
+          product_id: string
+          qty_done?: number
+          qty_expected?: number
+          stock_location_id?: string | null
+          uom_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condition?: string
+          cost_allocation_percent?: number | null
+          created_at?: string
+          created_stock_package_id?: string | null
+          id?: string
+          manufacturing_order_id?: string
+          operation_id?: string | null
+          output_type?: string
+          product_id?: string
+          qty_done?: number
+          qty_expected?: number
+          stock_location_id?: string | null
+          uom_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_order_outputs_manufacturing_order_id_fkey"
+            columns: ["manufacturing_order_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_order_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_order_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_order_outputs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_order_outputs_stock_location_id_fkey"
+            columns: ["stock_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_order_outputs_uom_id_fkey"
+            columns: ["uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
             referencedColumns: ["id"]
           },
         ]
@@ -8382,6 +8828,14 @@ export type Database = {
         Returns: Json
       }
       _test_phase16_b0_6_allocation_hooks: { Args: never; Returns: Json }
+      _test_phase16_c1_bom_resolution_readonly: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -8829,6 +9283,10 @@ export type Database = {
       }
       mfg_create_needs_for_mo: { Args: { _mo: string }; Returns: number }
       mfg_create_orders_for_sale: { Args: { _so: string }; Returns: number }
+      mfg_eval_formula: {
+        Args: { _formula: string; _vars?: Json }
+        Returns: number
+      }
       mfg_finish_operation: {
         Args: {
           _attachments?: Json
@@ -9047,6 +9505,15 @@ export type Database = {
       }
       reserve_mo: { Args: { _mo: string }; Returns: Json }
       reserve_picking_strict: { Args: { _picking: string }; Returns: Json }
+      resolve_bom_for_variant: {
+        Args: {
+          _context?: Json
+          _product_id: string
+          _qty?: number
+          _variant_id?: string
+        }
+        Returns: Json
+      }
       route_capacity_used: {
         Args: { _route: string }
         Returns: {
