@@ -7942,6 +7942,11 @@ export type Database = {
         }
         Returns: string
       }
+      _test_inventory_allocation_policy: { Args: never; Returns: Json }
+      _test_inventory_allocation_policy_impl: {
+        Args: { v_prefix: string }
+        Returns: Json
+      }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
@@ -8277,6 +8282,14 @@ export type Database = {
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
         Returns: string
+      }
+      erp_allocation_health_check: {
+        Args: { _threshold_hours?: number }
+        Returns: Json
+      }
+      erp_allocation_safe_remediation: {
+        Args: { _dry_run?: boolean }
+        Returns: Json
       }
       erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
       erp_health_check_run: {
