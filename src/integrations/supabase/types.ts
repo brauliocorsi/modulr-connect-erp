@@ -7642,10 +7642,9 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
-      delivery_load_vehicle: {
-        Args: { _lines?: Json; _route_id: string }
-        Returns: Json
-      }
+      delivery_load_vehicle:
+        | { Args: { _route_id: string }; Returns: Json }
+        | { Args: { _lines?: Json; _route_id: string }; Returns: Json }
       delivery_order_deliver: {
         Args: { _lines: Json; _payment?: Json; _route_order_id: string }
         Returns: Json
