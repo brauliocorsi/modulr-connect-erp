@@ -7874,6 +7874,10 @@ export type Database = {
       _test_phase15_m5_safe: { Args: never; Returns: Json }
       _test_phase16_b0_2_readonly: { Args: never; Returns: Json }
       _test_phase16_b0_3_allocation_engine: { Args: never; Returns: Json }
+      _test_phase16_b0_4_close_mo_finished_reservation: {
+        Args: never
+        Returns: Json
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
