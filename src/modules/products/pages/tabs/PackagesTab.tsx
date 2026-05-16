@@ -1,139 +1,230 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Printer } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { printColisLabels } from "@/modules/barcode/printBarcodes";
 
-type Pkg = {
+type Tpl = {
   id: string;
   product_id: string;
-  sequence: number;
-  label: string;
-  barcode: string | null;
-  weight_kg: number | null;
-  notes: string | null;
+  name: string;
+  description: string | null;
+  package_sequence: number;
+  package_total: number;
+  package_group: string | null;
+  default_length_cm: number | null;
+  default_width_cm: number | null;
+  default_height_cm: number | null;
+  default_volume_m3: number | null;
+  default_weight_kg: number | null;
+  default_assembly_minutes: number | null;
+  stackable: boolean;
+  fragile: boolean;
+  requires_flat_transport: boolean;
+  requires_assembly: boolean;
+  is_required: boolean;
+  barcode_pattern: string | null;
+  active: boolean;
 };
 
+const num = (v: string) => (v === "" ? null : Number(v));
+
 export function PackagesTab({ productId }: { productId: string }) {
-  const [items, setItems] = useState<Pkg[]>([]);
+  const [items, setItems] = useState<Tpl[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("product_packages")
+    const { data, error } = await supabase
+      .from("product_package_templates")
       .select("*")
       .eq("product_id", productId)
-      .order("sequence");
-    setItems((data as any) ?? []);
+      .order("package_sequence");
+    if (error) toast.error(error.message);
+    setItems(((data as any) ?? []) as Tpl[]);
   };
   useEffect(() => { load(); }, [productId]);
 
+  const resequence = async (list: Tpl[]) => {
+    await Promise.all(
+      list.map((p, i) =>
+        supabase
+          .from("product_package_templates")
+          .update({ package_sequence: i + 1, package_total: list.length })
+          .eq("id", p.id),
+      ),
+    );
+  };
+
   const add = async () => {
     setLoading(true);
-    const next = (items[items.length - 1]?.sequence ?? 0) + 1;
-    const total = items.length + 1;
-    const label = `Caixa ${next}/${total}`;
-    const { error } = await supabase.from("product_packages").insert({
-      product_id: productId, sequence: next, label,
-    });
+    const next = items.length + 1;
+    const { error } = await supabase.from("product_package_templates").insert({
+      product_id: productId,
+      name: `Colis ${next}`,
+      package_sequence: next,
+      package_total: next,
+      active: true,
+    } as any);
     setLoading(false);
     if (error) return toast.error(error.message);
-    // Re-label all to N/total
-    const { data: fresh } = await supabase.from("product_packages").select("*").eq("product_id", productId).order("sequence");
-    const list = (fresh as any[]) ?? [];
-    await Promise.all(list.map((p, i) =>
-      supabase.from("product_packages").update({ label: `Caixa ${i + 1}/${list.length}`, sequence: i + 1 }).eq("id", p.id)
-    ));
+    const { data } = await supabase
+      .from("product_package_templates")
+      .select("*")
+      .eq("product_id", productId)
+      .order("package_sequence");
+    await resequence(((data as any) ?? []) as Tpl[]);
     load();
   };
 
-  const update = async (id: string, patch: Partial<Pkg>) => {
+  const update = async (id: string, patch: Partial<Tpl>) => {
     setItems((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    const { error } = await supabase.from("product_packages").update(patch).eq("id", id);
+    const { error } = await supabase
+      .from("product_package_templates")
+      .update(patch as any)
+      .eq("id", id);
     if (error) toast.error(error.message);
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Remover este colis?")) return;
-    const { error } = await supabase.from("product_packages").delete().eq("id", id);
+    if (!confirm("Remover este template de colis?")) return;
+    const { error } = await supabase
+      .from("product_package_templates")
+      .delete()
+      .eq("id", id);
     if (error) return toast.error(error.message);
     const remaining = items.filter((x) => x.id !== id);
-    await Promise.all(remaining.map((p, i) =>
-      supabase.from("product_packages").update({ label: `Caixa ${i + 1}/${remaining.length}`, sequence: i + 1 }).eq("id", p.id)
-    ));
+    await resequence(remaining);
     load();
   };
 
-  const printLabels = async () => {
-    if (!items.length) return;
-    await printColisLabels(items.map((p) => p.id));
-  };
-
-  const printOne = async (id: string) => {
-    await printColisLabels([id]);
-  };
+  const summary = useMemo(() => {
+    const active = items.filter((i) => i.active);
+    const volTotal = active.reduce((s, i) => s + Number(i.default_volume_m3 ?? 0), 0);
+    const wTotal = active.reduce((s, i) => s + Number(i.default_weight_kg ?? 0), 0);
+    const maxL = Math.max(0, ...active.map((i) => Number(i.default_length_cm ?? 0)));
+    const maxW = Math.max(0, ...active.map((i) => Number(i.default_width_cm ?? 0)));
+    const maxH = Math.max(0, ...active.map((i) => Number(i.default_height_cm ?? 0)));
+    const asmTotal = active.reduce((s, i) => s + Number(i.default_assembly_minutes ?? 0), 0);
+    return { count: active.length, volTotal, wTotal, maxL, maxW, maxH, asmTotal };
+  }, [items]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="font-semibold">Colis / Caixas do produto</h3>
+          <h3 className="font-semibold">Templates de colis (logística)</h3>
           <p className="text-sm text-muted-foreground">
-            Quando o produto é entregue em vários volumes (ex.: Caixa 1/2 + Caixa 2/2), defina aqui cada colis com o seu próprio código de barras.
-            Compras e vendas continuam unitárias; receção e picking trabalham por colis.
+            Define os volumes físicos com que o produto é entregue. Alimenta cubicagem, capacidade de rota,
+            package tracking e snapshot dos colis físicos criados em receção/produção.
           </p>
         </div>
-        <div className="flex gap-2">
-          {items.length > 0 && <Button variant="outline" size="sm" onClick={printLabels}><Printer className="h-4 w-4 mr-1" /> Etiquetas</Button>}
-          <Button size="sm" onClick={add} disabled={loading}><Plus className="h-4 w-4 mr-1" /> Adicionar colis</Button>
-        </div>
+        <Button size="sm" onClick={add} disabled={loading}>
+          <Plus className="h-4 w-4 mr-1" /> Adicionar template
+        </Button>
       </div>
 
       {items.length === 0 ? (
         <div className="text-sm text-muted-foreground border rounded-md p-6 text-center">
-          Sem colis definidos — produto tratado como volume único.
+          Sem templates definidos — o produto é tratado como volume único.
         </div>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className="text-left px-3 py-2 w-16">Seq</th>
-              <th className="text-left px-3 py-2">Etiqueta</th>
-              <th className="text-left px-3 py-2">Código de barras</th>
-              <th className="text-left px-3 py-2 w-32">Peso (kg)</th>
-              <th className="text-left px-3 py-2">Notas</th>
-              <th className="px-3 py-2 w-12"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((p) => (
-              <tr key={p.id} className="border-t">
-                <td className="px-3 py-1">{p.sequence}</td>
-                <td className="px-2 py-1">
-                  <Input className="h-8" value={p.label} onChange={(e) => update(p.id, { label: e.target.value })} />
-                </td>
-                <td className="px-2 py-1">
-                  <Input className="h-8 font-mono" value={p.barcode ?? ""} placeholder="Scan…"
-                    onChange={(e) => update(p.id, { barcode: e.target.value || null })} />
-                </td>
-                <td className="px-2 py-1">
-                  <Input className="h-8" type="number" step="0.01" value={p.weight_kg ?? ""}
-                    onChange={(e) => update(p.id, { weight_kg: e.target.value === "" ? null : Number(e.target.value) })} />
-                </td>
-                <td className="px-2 py-1">
-                  <Input className="h-8" value={p.notes ?? ""} onChange={(e) => update(p.id, { notes: e.target.value || null })} />
-                </td>
-                <td className="px-2 py-1 flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => printOne(p.id)} title="Imprimir etiqueta"><Printer className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-2 text-xs bg-muted/40 rounded-md p-3">
+            <Cell label="Colis activos" value={summary.count} />
+            <Cell label="Volume total" value={`${summary.volTotal.toFixed(3)} m³`} />
+            <Cell label="Peso total" value={`${summary.wTotal.toFixed(2)} kg`} />
+            <Cell label="Maior L" value={`${summary.maxL} cm`} />
+            <Cell label="Maior W" value={`${summary.maxW} cm`} />
+            <Cell label="Maior H" value={`${summary.maxH} cm`} />
+            <Cell label="Montagem" value={`${summary.asmTotal} min`} />
+          </div>
+
+          <div className="overflow-x-auto border rounded-md">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="px-2 py-2 text-left w-10">#</th>
+                  <th className="px-2 py-2 text-left">Nome</th>
+                  <th className="px-2 py-2 text-left w-20">L (cm)</th>
+                  <th className="px-2 py-2 text-left w-20">W (cm)</th>
+                  <th className="px-2 py-2 text-left w-20">H (cm)</th>
+                  <th className="px-2 py-2 text-left w-24">Vol m³</th>
+                  <th className="px-2 py-2 text-left w-20">Peso kg</th>
+                  <th className="px-2 py-2 text-left w-20">Mont. min</th>
+                  <th className="px-2 py-2 text-center w-12" title="Empilhável">Stk</th>
+                  <th className="px-2 py-2 text-center w-12" title="Frágil">Frg</th>
+                  <th className="px-2 py-2 text-center w-12" title="Transporte horizontal">Flat</th>
+                  <th className="px-2 py-2 text-center w-12" title="Requer montagem">Mnt</th>
+                  <th className="px-2 py-2 text-center w-12" title="Obrigatório">Req</th>
+                  <th className="px-2 py-2 text-left">Barcode pattern</th>
+                  <th className="px-2 py-2 text-center w-12">Act</th>
+                  <th className="px-2 py-2 w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((p) => (
+                  <tr key={p.id} className="border-t">
+                    <td className="px-2 py-1">{p.package_sequence}/{p.package_total}</td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" value={p.name} onChange={(e) => update(p.id, { name: e.target.value })} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" type="number" step="0.1" value={p.default_length_cm ?? ""} onChange={(e) => update(p.id, { default_length_cm: num(e.target.value) })} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" type="number" step="0.1" value={p.default_width_cm ?? ""} onChange={(e) => update(p.id, { default_width_cm: num(e.target.value) })} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" type="number" step="0.1" value={p.default_height_cm ?? ""} onChange={(e) => update(p.id, { default_height_cm: num(e.target.value) })} />
+                    </td>
+                    <td className="px-1 py-1 text-muted-foreground" title="Calculado automaticamente por L×W×H">
+                      {p.default_volume_m3 != null ? Number(p.default_volume_m3).toFixed(4) : "—"}
+                    </td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" type="number" step="0.01" value={p.default_weight_kg ?? ""} onChange={(e) => update(p.id, { default_weight_kg: num(e.target.value) })} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7" type="number" value={p.default_assembly_minutes ?? ""} onChange={(e) => update(p.id, { default_assembly_minutes: num(e.target.value) as any })} />
+                    </td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.stackable} onCheckedChange={(v) => update(p.id, { stackable: !!v })} /></td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.fragile} onCheckedChange={(v) => update(p.id, { fragile: !!v })} /></td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.requires_flat_transport} onCheckedChange={(v) => update(p.id, { requires_flat_transport: !!v })} /></td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.requires_assembly} onCheckedChange={(v) => update(p.id, { requires_assembly: !!v })} /></td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.is_required} onCheckedChange={(v) => update(p.id, { is_required: !!v })} /></td>
+                    <td className="px-1 py-1">
+                      <Input className="h-7 font-mono" value={p.barcode_pattern ?? ""} placeholder="opcional" onChange={(e) => update(p.id, { barcode_pattern: e.target.value || null })} />
+                    </td>
+                    <td className="px-1 py-1 text-center"><Checkbox checked={p.active} onCheckedChange={(v) => update(p.id, { active: !!v })} /></td>
+                    <td className="px-1 py-1">
+                      <Button variant="ghost" size="sm" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-xs text-muted-foreground flex items-start gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
+            <span>
+              O volume é calculado automaticamente (L×W×H/1.000.000) por trigger do backend.
+              Os snapshots de colis físicos (<code>stock_packages</code>) preservam as medidas no momento da criação,
+              mesmo que o template seja alterado depois.
+            </span>
+          </div>
+        </>
       )}
+    </div>
+  );
+}
+
+function Cell({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="font-semibold">{value}</div>
     </div>
   );
 }
