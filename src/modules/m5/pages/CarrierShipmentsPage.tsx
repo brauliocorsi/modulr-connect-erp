@@ -98,7 +98,7 @@ function CarrierActionDialog({ id, action, onClose }: { id: string; action: Acti
   const { data: carriers = [] } = useQuery({
     queryKey: ["carriers-active"],
     enabled: action === "handover",
-    queryFn: async () => (await supabase.from("carriers").select("id,name,stock_location_id").eq("active", true)).data ?? [],
+    queryFn: async () => (await (supabase as any).from("carriers").select("id,name,stock_location_id").eq("active", true)).data ?? [],
   });
 
   async function submit() {

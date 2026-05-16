@@ -38,19 +38,19 @@ export function RescheduleDialog(p: Props) {
         .limit(40)).data ?? [],
   });
 
-  // Pre-check: status dos packages do schedule
+  // Pre-check: status dos packages via vehicle_route_manifest do schedule
   const { data: precheck } = useQuery({
     queryKey: ["reschedule-precheck", p.scheduleId],
     enabled: p.open && !!p.scheduleId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("stock_packages")
-        .select("id,status,current_location_id, locations:current_location_id(usage,code)")
-        .eq("schedule_id", p.scheduleId);
+      const { data } = await (supabase as any)
+        .from("vehicle_route_manifest")
+        .select("id, damaged, qty_pending, stock_packages(status, locations:current_location_id(usage,code)), delivery_route_orders!inner(schedule_id)")
+        .eq("delivery_route_orders.schedule_id", p.scheduleId);
       const list = (data as any[]) ?? [];
       return {
-        onVehicle: list.filter((x) => x.locations?.usage === "vehicle" || x.locations?.code?.startsWith("VEHICLE/")).length,
-        damaged: list.filter((x) => ["damaged", "quarantine"].includes(x.status)).length,
+        onVehicle: list.filter((x) => Number(x.qty_pending ?? 0) > 0 && (x.stock_packages?.locations?.usage === "vehicle" || (x.stock_packages?.locations?.code ?? "").startsWith("VEHICLE/"))).length,
+        damaged: list.filter((x) => x.damaged || ["damaged", "quarantine"].includes(x.stock_packages?.status)).length,
         total: list.length,
       };
     },

@@ -113,7 +113,7 @@ function CreatePickupDialog({ onClose }: { onClose: () => void }) {
       (await supabase
         .from("sale_orders")
         .select("id,name,state,partners(name)")
-        .in("state", ["confirmed", "in_progress", "to_invoice"])
+        .in("state", ["confirmed", "sent"])
         .order("name", { ascending: false })
         .limit(80)).data ?? [],
   });
