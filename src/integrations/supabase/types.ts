@@ -135,6 +135,51 @@ export type Database = {
           },
         ]
       }
+      allocation_hook_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          location_id: string | null
+          product_id: string | null
+          qty: number | null
+          result: Json | null
+          source_event_id: string
+          source_id: string
+          status: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          location_id?: string | null
+          product_id?: string | null
+          qty?: number | null
+          result?: Json | null
+          source_event_id: string
+          source_id: string
+          status?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          location_id?: string | null
+          product_id?: string | null
+          qty?: number | null
+          result?: Json | null
+          source_event_id?: string
+          source_id?: string
+          status?: string
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           description: string | null
@@ -7806,6 +7851,26 @@ export type Database = {
     }
     Functions: {
       __test_phase16_b0_3_impl: { Args: never; Returns: Json }
+      _alloc_hook_is_package_eligible: {
+        Args: { _package_id: string }
+        Returns: boolean
+      }
+      _alloc_hook_is_safe_location: {
+        Args: { _location_id: string }
+        Returns: boolean
+      }
+      _alloc_hook_register_event: {
+        Args: {
+          _event_type: string
+          _location_id: string
+          _product_id: string
+          _qty: number
+          _source_event_id: string
+          _source_id: string
+          _variant_id: string
+        }
+        Returns: boolean
+      }
       _m25_backfill_real_packages: { Args: never; Returns: Json }
       _m3_apply_vehicle_capacity: {
         Args: { _route_id: string }
@@ -7882,6 +7947,7 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      _test_phase16_b0_6_allocation_hooks: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -7893,6 +7959,25 @@ export type Database = {
       allocate_payment_to_schedules: {
         Args: { _so: string }
         Returns: undefined
+      }
+      allocation_on_inventory_adjustment_positive: {
+        Args: { _adj_id: string }
+        Returns: Json
+      }
+      allocation_on_manual_release: {
+        Args: {
+          _location_id: string
+          _product_id: string
+          _qty: number
+          _source_event_id?: string
+          _variant_id: string
+        }
+        Returns: Json
+      }
+      allocation_on_po_receipt: { Args: { _picking_id: string }; Returns: Json }
+      allocation_on_return_good: {
+        Args: { _mode?: string; _package_id: string }
+        Returns: Json
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
       assert_lines_have_variant: {
