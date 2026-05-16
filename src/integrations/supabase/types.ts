@@ -1060,7 +1060,10 @@ export type Database = {
           id: string
           max_assembly_minutes: number | null
           max_deliveries: number | null
+          max_volume_m3: number | null
+          max_weight_kg: number | null
           name: string
+          route_type: string
           slot_end: string | null
           slot_start: string | null
           updated_at: string
@@ -1075,7 +1078,10 @@ export type Database = {
           id?: string
           max_assembly_minutes?: number | null
           max_deliveries?: number | null
+          max_volume_m3?: number | null
+          max_weight_kg?: number | null
           name: string
+          route_type?: string
           slot_end?: string | null
           slot_start?: string | null
           updated_at?: string
@@ -1090,7 +1096,10 @@ export type Database = {
           id?: string
           max_assembly_minutes?: number | null
           max_deliveries?: number | null
+          max_volume_m3?: number | null
+          max_weight_kg?: number | null
           name?: string
+          route_type?: string
           slot_end?: string | null
           slot_start?: string | null
           updated_at?: string
@@ -1127,6 +1136,7 @@ export type Database = {
           cap_deliveries: number | null
           cap_volume_m3: number | null
           cap_weight_kg: number | null
+          capacity_status: string
           created_at: string
           current_assembly_minutes: number
           current_deliveries: number
@@ -1138,9 +1148,13 @@ export type Database = {
           max_assembly_minutes: number
           max_deliveries: number
           notes: string | null
+          overridden_by: string | null
+          override_reason: string | null
           requires_load_verification: boolean
           route_date: string
+          route_type: string
           state: string
+          template_id: string | null
           updated_at: string
           vehicle_id: string | null
           zone_id: string
@@ -1150,6 +1164,7 @@ export type Database = {
           cap_deliveries?: number | null
           cap_volume_m3?: number | null
           cap_weight_kg?: number | null
+          capacity_status?: string
           created_at?: string
           current_assembly_minutes?: number
           current_deliveries?: number
@@ -1161,9 +1176,13 @@ export type Database = {
           max_assembly_minutes?: number
           max_deliveries?: number
           notes?: string | null
+          overridden_by?: string | null
+          override_reason?: string | null
           requires_load_verification?: boolean
           route_date: string
+          route_type?: string
           state?: string
+          template_id?: string | null
           updated_at?: string
           vehicle_id?: string | null
           zone_id: string
@@ -1173,6 +1192,7 @@ export type Database = {
           cap_deliveries?: number | null
           cap_volume_m3?: number | null
           cap_weight_kg?: number | null
+          capacity_status?: string
           created_at?: string
           current_assembly_minutes?: number
           current_deliveries?: number
@@ -1184,9 +1204,13 @@ export type Database = {
           max_assembly_minutes?: number
           max_deliveries?: number
           notes?: string | null
+          overridden_by?: string | null
+          override_reason?: string | null
           requires_load_verification?: boolean
           route_date?: string
+          route_type?: string
           state?: string
+          template_id?: string | null
           updated_at?: string
           vehicle_id?: string | null
           zone_id?: string
@@ -1207,6 +1231,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "delivery_routes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_templates"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "delivery_routes_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
@@ -1224,10 +1255,15 @@ export type Database = {
       }
       delivery_schedules: {
         Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           carrier_id: string | null
           created_at: string
           created_by: string | null
+          delivery_address_id: string | null
           dock_id: string | null
+          fulfillment_type: string | null
           id: string
           lane_id: string | null
           notes: string | null
@@ -1241,12 +1277,18 @@ export type Database = {
           status: string
           updated_at: string
           vehicle_id: string | null
+          zone_id: string | null
         }
         Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           carrier_id?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_address_id?: string | null
           dock_id?: string | null
+          fulfillment_type?: string | null
           id?: string
           lane_id?: string | null
           notes?: string | null
@@ -1260,12 +1302,18 @@ export type Database = {
           status?: string
           updated_at?: string
           vehicle_id?: string | null
+          zone_id?: string | null
         }
         Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           carrier_id?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_address_id?: string | null
           dock_id?: string | null
+          fulfillment_type?: string | null
           id?: string
           lane_id?: string | null
           notes?: string | null
@@ -1279,6 +1327,7 @@ export type Database = {
           status?: string
           updated_at?: string
           vehicle_id?: string | null
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -1335,6 +1384,13 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -7244,6 +7300,14 @@ export type Database = {
     }
     Functions: {
       _m25_backfill_real_packages: { Args: never; Returns: Json }
+      _m3_apply_vehicle_capacity: {
+        Args: { _route_id: string }
+        Returns: undefined
+      }
+      _m3_log: {
+        Args: { _payload: Json; _ref: string; _so: string; _step: string }
+        Returns: undefined
+      }
       _so_ensure_mo_for_line: {
         Args: { _line_id: string; _qty: number }
         Returns: string
@@ -7293,6 +7357,20 @@ export type Database = {
         Returns: undefined
       }
       assert_so_has_lines: { Args: { _order: string }; Returns: undefined }
+      available_delivery_slots: {
+        Args: { _from: string; _to: string; _zone_id: string }
+        Returns: {
+          remaining_assembly_minutes: number
+          remaining_deliveries: number
+          remaining_volume_m3: number
+          remaining_weight_kg: number
+          route_date: string
+          route_id: string
+          status: string
+          vehicle_id: string
+          zone_id: string
+        }[]
+      }
       bootstrap_carrier_location: {
         Args: { _carrier: string }
         Returns: string
@@ -7374,6 +7452,56 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      delivery_route_assign_order: {
+        Args: {
+          _force?: boolean
+          _override_reason?: string
+          _route_id: string
+          _schedule_id: string
+        }
+        Returns: Json
+      }
+      delivery_route_capacity: { Args: { _route_id: string }; Returns: Json }
+      delivery_route_change_vehicle: {
+        Args: { _route_id: string; _vehicle_id: string }
+        Returns: Json
+      }
+      delivery_route_create_ad_hoc: {
+        Args: {
+          _assistant_id?: string
+          _driver_id?: string
+          _notes?: string
+          _route_date: string
+          _vehicle_id: string
+          _zone_id: string
+        }
+        Returns: Json
+      }
+      delivery_schedule_assign: {
+        Args: {
+          _date: string
+          _schedule_id: string
+          _window_end?: string
+          _window_start?: string
+          _zone_id: string
+        }
+        Returns: Json
+      }
+      delivery_schedule_cancel: {
+        Args: { _reason: string; _schedule_id: string }
+        Returns: Json
+      }
+      delivery_schedule_create: {
+        Args: {
+          _delivery_address_id?: string
+          _fulfillment_type: string
+          _preferred_date: string
+          _so_id: string
+          _window_end?: string
+          _window_start?: string
+        }
+        Returns: Json
+      }
       discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
       discuss_open_dm: { Args: { _other: string }; Returns: string }
       driver_assign_batch: {
@@ -7434,6 +7562,7 @@ export type Database = {
         Args: { _mode?: string; _run_id: string }
         Returns: Json
       }
+      erp_m3_health_check: { Args: never; Returns: Json }
       erp_package_health_check: { Args: never; Returns: Json }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
@@ -7441,6 +7570,10 @@ export type Database = {
       }
       find_zone_for_zip: { Args: { _zip: string }; Returns: string }
       generate_product_variants: { Args: { _product: string }; Returns: number }
+      generate_recurring_delivery_routes: {
+        Args: { _from: string; _to: string }
+        Returns: Json
+      }
       generate_routes: { Args: { _horizon_days?: number }; Returns: number }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
@@ -7759,6 +7892,7 @@ export type Database = {
         Args: { _lot?: string; _move: string; _qty: number }
         Returns: Json
       }
+      schedule_footprint: { Args: { _sale_order_id: string }; Returns: Json }
       schedule_picking_to_route: {
         Args: { _picking: string; _route: string }
         Returns: undefined
@@ -7845,6 +7979,10 @@ export type Database = {
         }[]
       }
       supplier_location_id: { Args: never; Returns: string }
+      tg_route_recompute_current_manual: {
+        Args: { _route_id: string }
+        Returns: undefined
+      }
       transfer_reservation: {
         Args: {
           _from_move: string
