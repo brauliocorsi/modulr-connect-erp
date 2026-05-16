@@ -157,6 +157,8 @@ export const MODULES: ModuleDef[] = [
     description: "Cronograma de rotas, zonas e entregas agendadas",
     menu: [
       { section: "Rotas", label: "Cronograma", to: "/routes" },
+      { section: "Operações", label: "Levantamentos", to: "/m5/pickups" },
+      { section: "Operações", label: "Transportadora externa", to: "/m5/carrier" },
       { section: "Configuração", label: "Zonas", to: "/routes/zones" },
     ],
   },
