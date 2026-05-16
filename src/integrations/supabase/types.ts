@@ -2288,6 +2288,109 @@ export type Database = {
           },
         ]
       }
+      manufacturing_machines: {
+        Row: {
+          active: boolean
+          capacity_per_hour: number | null
+          code: string
+          cost_per_hour: number | null
+          created_at: string
+          id: string
+          machine_type: string | null
+          name: string
+          notes: string | null
+          status: Database["public"]["Enums"]["machine_status"]
+          updated_at: string
+          work_center_id: string
+        }
+        Insert: {
+          active?: boolean
+          capacity_per_hour?: number | null
+          code: string
+          cost_per_hour?: number | null
+          created_at?: string
+          id?: string
+          machine_type?: string | null
+          name: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["machine_status"]
+          updated_at?: string
+          work_center_id: string
+        }
+        Update: {
+          active?: boolean
+          capacity_per_hour?: number | null
+          code?: string
+          cost_per_hour?: number | null
+          created_at?: string
+          id?: string
+          machine_type?: string | null
+          name?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["machine_status"]
+          updated_at?: string
+          work_center_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_machines_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manufacturing_operations: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          default_work_center_id: string | null
+          description: string | null
+          id: string
+          name: string
+          requires_employee: boolean
+          requires_machine: boolean
+          requires_quality_check: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          default_work_center_id?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          requires_employee?: boolean
+          requires_machine?: boolean
+          requires_quality_check?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          default_work_center_id?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          requires_employee?: boolean
+          requires_machine?: boolean
+          requires_quality_check?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_operations_default_work_center_id_fkey"
+            columns: ["default_work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manufacturing_orders: {
         Row: {
           actual_end: string | null
@@ -2460,6 +2563,134 @@ export type Database = {
           },
         ]
       }
+      manufacturing_routing_operations: {
+        Row: {
+          active: boolean
+          cleanup_time_minutes: number
+          created_at: string
+          default_duration_minutes: number | null
+          id: string
+          instructions: string | null
+          operation_id: string
+          requires_quality_check: boolean
+          routing_id: string
+          sequence: number
+          setup_time_minutes: number
+          updated_at: string
+          work_center_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          cleanup_time_minutes?: number
+          created_at?: string
+          default_duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          operation_id: string
+          requires_quality_check?: boolean
+          routing_id: string
+          sequence: number
+          setup_time_minutes?: number
+          updated_at?: string
+          work_center_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          cleanup_time_minutes?: number
+          created_at?: string
+          default_duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          operation_id?: string
+          requires_quality_check?: boolean
+          routing_id?: string
+          sequence?: number
+          setup_time_minutes?: number
+          updated_at?: string
+          work_center_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_routing_operations_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_routing_operations_routing_id_fkey"
+            columns: ["routing_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_routings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_routing_operations_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manufacturing_routings: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          product_id: string
+          updated_at: string
+          variant_id: string | null
+          version: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          product_id: string
+          updated_at?: string
+          variant_id?: string | null
+          version?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          product_id?: string
+          updated_at?: string
+          variant_id?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_routings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_routings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_routings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       mo_components: {
         Row: {
           created_at: string
@@ -2610,13 +2841,16 @@ export type Database = {
       }
       mo_operations: {
         Row: {
+          assigned_employee_id: string | null
           created_at: string
           finished_at: string | null
           id: string
           is_qc: boolean
           is_rework: boolean
+          machine_id: string | null
           mo_id: string
           name: string
+          operation_id: string | null
           operator_id: string | null
           planned_minutes: number
           qty_done: number
@@ -2624,16 +2858,20 @@ export type Database = {
           sequence: number
           started_at: string | null
           state: Database["public"]["Enums"]["mo_op_state"]
+          work_center_id: string | null
           workcenter: string | null
         }
         Insert: {
+          assigned_employee_id?: string | null
           created_at?: string
           finished_at?: string | null
           id?: string
           is_qc?: boolean
           is_rework?: boolean
+          machine_id?: string | null
           mo_id: string
           name: string
+          operation_id?: string | null
           operator_id?: string | null
           planned_minutes?: number
           qty_done?: number
@@ -2641,16 +2879,20 @@ export type Database = {
           sequence?: number
           started_at?: string | null
           state?: Database["public"]["Enums"]["mo_op_state"]
+          work_center_id?: string | null
           workcenter?: string | null
         }
         Update: {
+          assigned_employee_id?: string | null
           created_at?: string
           finished_at?: string | null
           id?: string
           is_qc?: boolean
           is_rework?: boolean
+          machine_id?: string | null
           mo_id?: string
           name?: string
+          operation_id?: string | null
           operator_id?: string | null
           planned_minutes?: number
           qty_done?: number
@@ -2658,14 +2900,36 @@ export type Database = {
           sequence?: number
           started_at?: string | null
           state?: Database["public"]["Enums"]["mo_op_state"]
+          work_center_id?: string | null
           workcenter?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "mo_operations_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_machines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mo_operations_mo_id_fkey"
             columns: ["mo_id"]
             isOneToOne: false
             referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_operations_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_operations_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -2876,6 +3140,50 @@ export type Database = {
           prefix?: string
         }
         Relationships: []
+      }
+      operation_employee_skills: {
+        Row: {
+          active: boolean
+          can_execute: boolean
+          created_at: string
+          employee_id: string | null
+          id: string
+          operation_id: string
+          skill_level: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          can_execute?: boolean
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          operation_id: string
+          skill_level?: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          can_execute?: boolean
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          operation_id?: string
+          skill_level?: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operation_employee_skills_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_operations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       package_damage_report: {
         Row: {
@@ -3815,6 +4123,10 @@ export type Database = {
           sales_description: string | null
           short_description: string | null
           standard_cost: number
+          supply_priority: string | null
+          supply_route:
+            | Database["public"]["Enums"]["product_supply_route"]
+            | null
           tracking: Database["public"]["Enums"]["product_tracking"]
           type: Database["public"]["Enums"]["product_type"]
           uom_id: string | null
@@ -3868,6 +4180,10 @@ export type Database = {
           sales_description?: string | null
           short_description?: string | null
           standard_cost?: number
+          supply_priority?: string | null
+          supply_route?:
+            | Database["public"]["Enums"]["product_supply_route"]
+            | null
           tracking?: Database["public"]["Enums"]["product_tracking"]
           type?: Database["public"]["Enums"]["product_type"]
           uom_id?: string | null
@@ -3921,6 +4237,10 @@ export type Database = {
           sales_description?: string | null
           short_description?: string | null
           standard_cost?: number
+          supply_priority?: string | null
+          supply_route?:
+            | Database["public"]["Enums"]["product_supply_route"]
+            | null
           tracking?: Database["public"]["Enums"]["product_tracking"]
           type?: Database["public"]["Enums"]["product_type"]
           uom_id?: string | null
@@ -7578,6 +7898,98 @@ export type Database = {
         }
         Relationships: []
       }
+      work_center_employees: {
+        Row: {
+          active: boolean
+          created_at: string
+          employee_id: string | null
+          id: string
+          role: string | null
+          skill_level: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at: string
+          user_id: string | null
+          work_center_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          role?: string | null
+          skill_level?: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at?: string
+          user_id?: string | null
+          work_center_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          role?: string | null
+          skill_level?: Database["public"]["Enums"]["mfg_skill_level"]
+          updated_at?: string
+          user_id?: string | null
+          work_center_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_center_employees_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_centers: {
+        Row: {
+          active: boolean
+          capacity_per_day: number | null
+          code: string
+          company_id: string | null
+          cost_per_hour: number | null
+          created_at: string
+          efficiency_percent: number
+          id: string
+          name: string
+          notes: string | null
+          type: Database["public"]["Enums"]["work_center_type"]
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          capacity_per_day?: number | null
+          code: string
+          company_id?: string | null
+          cost_per_hour?: number | null
+          created_at?: string
+          efficiency_percent?: number
+          id?: string
+          name: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["work_center_type"]
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          capacity_per_day?: number | null
+          code?: string
+          company_id?: string | null
+          cost_per_hour?: number | null
+          created_at?: string
+          efficiency_percent?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["work_center_type"]
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       product_stock_forecast: {
@@ -7958,6 +8370,7 @@ export type Database = {
       _test_phase15_m4: { Args: never; Returns: Json }
       _test_phase15_m5: { Args: never; Returns: Json }
       _test_phase15_m5_safe: { Args: never; Returns: Json }
+      _test_phase16_b_schema: { Args: never; Returns: Json }
       _test_phase16_b0_2_readonly: { Args: never; Returns: Json }
       _test_phase16_b0_3_allocation_engine: { Args: never; Returns: Json }
       _test_phase16_b0_4_close_mo_finished_reservation: {
@@ -8542,6 +8955,10 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      product_manufacturing_configuration_check: {
+        Args: { _product_id: string }
+        Returns: Json
+      }
       purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
       purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
       putaway_stock: {
@@ -8818,6 +9235,8 @@ export type Database = {
         | "inventory_loss"
         | "production"
         | "view"
+      machine_status: "available" | "busy" | "maintenance" | "inactive"
+      mfg_skill_level: "trainee" | "normal" | "skilled" | "specialist"
       mo_component_status:
         | "pending"
         | "reserved"
@@ -8885,6 +9304,11 @@ export type Database = {
         | "manufacturing"
         | "return"
       picking_state: "draft" | "waiting" | "ready" | "done" | "cancelled"
+      product_supply_route:
+        | "buy"
+        | "manufacture"
+        | "buy_or_manufacture"
+        | "manual"
       product_tracking: "none" | "lot" | "serial"
       product_type: "storable" | "consumable" | "service"
       purchase_need_origin:
@@ -8919,6 +9343,16 @@ export type Database = {
         | "manufacturing_order"
         | "stock_reservation"
       supply_link_state: "active" | "consumed" | "cancelled"
+      work_center_type:
+        | "manual"
+        | "machine"
+        | "cutting"
+        | "sewing"
+        | "upholstery"
+        | "assembly"
+        | "quality"
+        | "packing"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -9082,6 +9516,8 @@ export const Constants = {
         "production",
         "view",
       ],
+      machine_status: ["available", "busy", "maintenance", "inactive"],
+      mfg_skill_level: ["trainee", "normal", "skilled", "specialist"],
       mo_component_status: [
         "pending",
         "reserved",
@@ -9157,6 +9593,12 @@ export const Constants = {
         "return",
       ],
       picking_state: ["draft", "waiting", "ready", "done", "cancelled"],
+      product_supply_route: [
+        "buy",
+        "manufacture",
+        "buy_or_manufacture",
+        "manual",
+      ],
       product_tracking: ["none", "lot", "serial"],
       product_type: ["storable", "consumable", "service"],
       purchase_need_origin: [
@@ -9195,6 +9637,17 @@ export const Constants = {
         "stock_reservation",
       ],
       supply_link_state: ["active", "consumed", "cancelled"],
+      work_center_type: [
+        "manual",
+        "machine",
+        "cutting",
+        "sewing",
+        "upholstery",
+        "assembly",
+        "quality",
+        "packing",
+        "other",
+      ],
     },
   },
 } as const
