@@ -7947,6 +7947,7 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      _test_phase16_b0_6_allocation_hooks: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
