@@ -1,4 +1,6 @@
 import { useState } from "react";
+// NOTE: gravação direta em `cash_movements` foi substituída por RPC
+// `cash_movement_create` (valida sessão aberta, regista autor, impede bypass).
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
