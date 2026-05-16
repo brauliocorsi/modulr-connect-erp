@@ -7805,6 +7805,7 @@ export type Database = {
       }
     }
     Functions: {
+      __test_phase16_b0_3_impl: { Args: never; Returns: Json }
       _m25_backfill_real_packages: { Args: never; Returns: Json }
       _m3_apply_vehicle_capacity: {
         Args: { _route_id: string }
