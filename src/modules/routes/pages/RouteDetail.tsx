@@ -357,6 +357,11 @@ export default function RouteDetail() {
           <RouteManifestTable rows={manifestRows} />
         </div>
 
+        {/* UI M5 — Cash closure */}
+        <div className="mb-3">
+          <CashClosureCard routeId={id!} routeState={state} onClosed={refreshAll} />
+        </div>
+
         <Card>
           <div className="px-3 py-2 border-b font-semibold text-sm">Pedidos da rota</div>
           <table className="w-full text-xs">
@@ -417,6 +422,11 @@ export default function RouteDetail() {
                         <Button size="sm" variant="ghost" disabled={!canReturn || busy !== null}
                           onClick={() => setReturnOpen(o.id)} aria-label={`retornar-${o.sequence}`}>
                           Retornar
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={busy !== null}
+                          onClick={() => setRescheduleOpen({ scheduleId: o.schedule_id, soName: so?.name })}
+                          aria-label={`reagendar-${o.sequence}`} data-testid={`reschedule-btn-${o.id}`}>
+                          Reagendar
                         </Button>
                       </div>
 
