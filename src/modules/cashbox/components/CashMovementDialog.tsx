@@ -84,7 +84,7 @@ export function CashMovementDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={save}>Registar</Button>
+          <Button onClick={save} disabled={saving}>{saving ? "A registar…" : "Registar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
