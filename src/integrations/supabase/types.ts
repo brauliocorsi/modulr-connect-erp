@@ -831,6 +831,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customer_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "customer_payments_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
@@ -924,6 +931,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
           },
         ]
       }
@@ -1466,6 +1480,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "delivery_schedules_vehicle_id_fkey"
@@ -2352,11 +2373,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "manufacturing_orders_sale_order_line_id_fkey"
             columns: ["sale_order_line_id"]
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
           {
             foreignKeyName: "manufacturing_orders_uom_id_fkey"
@@ -2908,11 +2943,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "package_damage_reports_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "package_damage_reports_sale_order_line_id_fkey"
             columns: ["sale_order_line_id"]
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
           {
             foreignKeyName: "package_damage_reports_stock_package_id_fkey"
@@ -4020,6 +4069,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_needs_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "purchase_needs_suggested_partner_id_fkey"
             columns: ["suggested_partner_id"]
             isOneToOne: false
@@ -4118,6 +4174,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
+            columns: ["source_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "purchase_order_lines_uom_id_fkey"
             columns: ["uom_id"]
             isOneToOne: false
@@ -4170,6 +4233,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
           },
         ]
       }
@@ -4558,6 +4628,13 @@ export type Database = {
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
         ]
       }
       sale_order_line_supply_links: {
@@ -4618,6 +4695,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_order_line_supply_links_inherited_from_line_id_fkey"
+            columns: ["inherited_from_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
             foreignKeyName: "sale_order_line_supply_links_manufacturing_order_id_fkey"
             columns: ["manufacturing_order_id"]
             isOneToOne: false
@@ -4632,6 +4716,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_order_line_supply_links_origin_line_id_fkey"
+            columns: ["origin_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
             foreignKeyName: "sale_order_line_supply_links_purchase_need_id_fkey"
             columns: ["purchase_need_id"]
             isOneToOne: false
@@ -4644,6 +4735,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_line_supply_links_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
         ]
       }
@@ -4745,11 +4843,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "sale_order_lines_parent_line_id_fkey"
             columns: ["parent_line_id"]
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_parent_line_id_fkey"
+            columns: ["parent_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
           {
             foreignKeyName: "sale_order_lines_product_id_fkey"
@@ -4841,11 +4953,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "sale_order_timeline_sale_order_line_id_fkey"
             columns: ["sale_order_line_id"]
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
         ]
       }
@@ -5022,6 +5148,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
+            columns: ["parent_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "sale_orders_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
@@ -5048,6 +5181,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_root_sale_order_id_fkey"
+            columns: ["root_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "sale_orders_store_id_fkey"
@@ -5130,6 +5270,13 @@ export type Database = {
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sale_payment_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
         ]
       }
       sale_split_payment_allocations: {
@@ -5188,6 +5335,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
+            columns: ["deferred_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
             columns: ["parent_order_id"]
             isOneToOne: false
@@ -5200,6 +5354,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
           },
         ]
       }
@@ -6100,11 +6261,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_packages_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
             foreignKeyName: "stock_packages_sale_order_line_id_fkey"
             columns: ["sale_order_line_id"]
             isOneToOne: false
             referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
         ]
       }
@@ -6990,6 +7165,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vehicle_route_manifest_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
             foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
             columns: ["schedule_id"]
             isOneToOne: false
@@ -7435,6 +7617,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vehicle_route_manifest_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
             foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
             columns: ["schedule_id"]
             isOneToOne: false
@@ -7558,6 +7747,62 @@ export type Database = {
         }
         Relationships: []
       }
+      v_sale_line_allocation_demand: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          expected_delivery_date: string | null
+          operational_status: string | null
+          paid_amount: number | null
+          product_id: string | null
+          qty_delivered: number | null
+          qty_missing: number | null
+          qty_ordered: number | null
+          qty_reserved: number | null
+          qty_split_out: number | null
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          sale_order_state: Database["public"]["Enums"]["sale_state"] | null
+          variant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_partner_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _m25_backfill_real_packages: { Args: never; Returns: Json }
@@ -7626,6 +7871,7 @@ export type Database = {
       _test_phase15_m4: { Args: never; Returns: Json }
       _test_phase15_m5: { Args: never; Returns: Json }
       _test_phase15_m5_safe: { Args: never; Returns: Json }
+      _test_phase16_b0_2_readonly: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -7968,6 +8214,18 @@ export type Database = {
         Args: { _product_id: string }
         Returns: boolean
       }
+      is_product_allocation_compatible: {
+        Args: {
+          _product_id: string
+          _target_line_id: string
+          _variant_id: string
+        }
+        Returns: boolean
+      }
+      is_sale_line_compatible_for_allocation: {
+        Args: { _source_line_id: string; _target_line_id: string }
+        Returns: boolean
+      }
       lock_cash_session: { Args: { _session: string }; Returns: undefined }
       lock_order_payments: { Args: { _order: string }; Returns: undefined }
       lock_quant: {
@@ -8257,6 +8515,7 @@ export type Database = {
         Args: { _sale_order_line_id: string }
         Returns: Json
       }
+      sale_line_qty_missing: { Args: { _line_id: string }; Returns: number }
       sale_order_reconciliation: { Args: { _order_id: string }; Returns: Json }
       scan_increment_move: {
         Args: { _delta?: number; _move: string }
@@ -8336,6 +8595,10 @@ export type Database = {
         Returns: Json
       }
       so_split_partial_delivery: { Args: { _order_id: string }; Returns: Json }
+      suggest_inventory_allocation: {
+        Args: { _product_id: string; _qty?: number; _variant_id?: string }
+        Returns: Json
+      }
       suggest_route: {
         Args: { _from_date?: string; _so: string }
         Returns: {
