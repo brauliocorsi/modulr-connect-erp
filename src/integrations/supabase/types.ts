@@ -3486,6 +3486,7 @@ export type Database = {
           min_stock: number
           name: string
           net_weight: number | null
+          package_tracking_enabled: boolean
           product_kind: string | null
           published_woo: boolean
           purchase_description: string | null
@@ -3536,6 +3537,7 @@ export type Database = {
           min_stock?: number
           name: string
           net_weight?: number | null
+          package_tracking_enabled?: boolean
           product_kind?: string | null
           published_woo?: boolean
           purchase_description?: string | null
@@ -3586,6 +3588,7 @@ export type Database = {
           min_stock?: number
           name?: string
           net_weight?: number | null
+          package_tracking_enabled?: boolean
           product_kind?: string | null
           published_woo?: boolean
           purchase_description?: string | null
@@ -7271,6 +7274,7 @@ export type Database = {
       _test_phase13: { Args: never; Returns: Json }
       _test_phase14: { Args: never; Returns: Json }
       _test_phase15_2: { Args: never; Returns: Json }
+      _test_phase15_2_m6: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -7453,6 +7457,10 @@ export type Database = {
         Returns: boolean
       }
       is_package_tracking_enabled: { Args: never; Returns: boolean }
+      is_package_tracking_enabled_for_product: {
+        Args: { _product_id: string }
+        Returns: boolean
+      }
       lock_cash_session: { Args: { _session: string }; Returns: undefined }
       lock_order_payments: { Args: { _order: string }; Returns: undefined }
       lock_quant: {
