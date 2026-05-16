@@ -139,6 +139,8 @@ export type Database = {
         Row: {
           created_at: string
           error: string | null
+          error_detail: Json | null
+          error_message: string | null
           event_type: string
           id: string
           location_id: string | null
@@ -153,6 +155,8 @@ export type Database = {
         Insert: {
           created_at?: string
           error?: string | null
+          error_detail?: Json | null
+          error_message?: string | null
           event_type: string
           id?: string
           location_id?: string | null
@@ -167,6 +171,8 @@ export type Database = {
         Update: {
           created_at?: string
           error?: string | null
+          error_detail?: Json | null
+          error_message?: string | null
           event_type?: string
           id?: string
           location_id?: string | null
@@ -7858,6 +7864,16 @@ export type Database = {
       _alloc_hook_is_safe_location: {
         Args: { _location_id: string }
         Returns: boolean
+      }
+      _alloc_hook_mark_failed: {
+        Args: {
+          _context: string
+          _event_type: string
+          _source_event_id: string
+          _sqlerrm: string
+          _sqlstate: string
+        }
+        Returns: undefined
       }
       _alloc_hook_register_event: {
         Args: {
