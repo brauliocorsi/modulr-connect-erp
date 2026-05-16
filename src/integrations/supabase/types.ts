@@ -3091,9 +3091,13 @@ export type Database = {
           barcode_pattern: string | null
           created_at: string
           default_assembly_minutes: number | null
+          default_height_cm: number | null
+          default_length_cm: number | null
           default_volume_m3: number | null
           default_weight_kg: number | null
+          default_width_cm: number | null
           description: string | null
+          fragile: boolean
           id: string
           is_required: boolean
           name: string
@@ -3102,6 +3106,8 @@ export type Database = {
           package_total: number
           product_id: string
           requires_assembly: boolean
+          requires_flat_transport: boolean
+          stackable: boolean
           updated_at: string
         }
         Insert: {
@@ -3109,9 +3115,13 @@ export type Database = {
           barcode_pattern?: string | null
           created_at?: string
           default_assembly_minutes?: number | null
+          default_height_cm?: number | null
+          default_length_cm?: number | null
           default_volume_m3?: number | null
           default_weight_kg?: number | null
+          default_width_cm?: number | null
           description?: string | null
+          fragile?: boolean
           id?: string
           is_required?: boolean
           name: string
@@ -3120,6 +3130,8 @@ export type Database = {
           package_total: number
           product_id: string
           requires_assembly?: boolean
+          requires_flat_transport?: boolean
+          stackable?: boolean
           updated_at?: string
         }
         Update: {
@@ -3127,9 +3139,13 @@ export type Database = {
           barcode_pattern?: string | null
           created_at?: string
           default_assembly_minutes?: number | null
+          default_height_cm?: number | null
+          default_length_cm?: number | null
           default_volume_m3?: number | null
           default_weight_kg?: number | null
+          default_width_cm?: number | null
           description?: string | null
+          fragile?: boolean
           id?: string
           is_required?: boolean
           name?: string
@@ -3138,6 +3154,8 @@ export type Database = {
           package_total?: number
           product_id?: string
           requires_assembly?: boolean
+          requires_flat_transport?: boolean
+          stackable?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -5773,9 +5791,12 @@ export type Database = {
           current_bin_id: string | null
           current_location_id: string
           current_pallet_id: string | null
+          fragile: boolean
           generated_virtual_package: boolean
+          height_cm: number | null
           id: string
           is_virtual: boolean
+          length_cm: number | null
           manufacturing_order_id: string | null
           package_group: string | null
           package_ref: string | null
@@ -5786,10 +5807,15 @@ export type Database = {
           purchase_order_id: string | null
           purchase_order_line_id: string | null
           qty: number
+          requires_flat_transport: boolean
           sale_order_id: string | null
           sale_order_line_id: string | null
+          stackable: boolean
           status: Database["public"]["Enums"]["package_status"]
           updated_at: string
+          volume_m3: number | null
+          weight_kg: number | null
+          width_cm: number | null
         }
         Insert: {
           barcode?: string | null
@@ -5798,9 +5824,12 @@ export type Database = {
           current_bin_id?: string | null
           current_location_id: string
           current_pallet_id?: string | null
+          fragile?: boolean
           generated_virtual_package?: boolean
+          height_cm?: number | null
           id?: string
           is_virtual?: boolean
+          length_cm?: number | null
           manufacturing_order_id?: string | null
           package_group?: string | null
           package_ref?: string | null
@@ -5811,10 +5840,15 @@ export type Database = {
           purchase_order_id?: string | null
           purchase_order_line_id?: string | null
           qty?: number
+          requires_flat_transport?: boolean
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          stackable?: boolean
           status?: Database["public"]["Enums"]["package_status"]
           updated_at?: string
+          volume_m3?: number | null
+          weight_kg?: number | null
+          width_cm?: number | null
         }
         Update: {
           barcode?: string | null
@@ -5823,9 +5857,12 @@ export type Database = {
           current_bin_id?: string | null
           current_location_id?: string
           current_pallet_id?: string | null
+          fragile?: boolean
           generated_virtual_package?: boolean
+          height_cm?: number | null
           id?: string
           is_virtual?: boolean
+          length_cm?: number | null
           manufacturing_order_id?: string | null
           package_group?: string | null
           package_ref?: string | null
@@ -5836,10 +5873,15 @@ export type Database = {
           purchase_order_id?: string | null
           purchase_order_line_id?: string | null
           qty?: number
+          requires_flat_transport?: boolean
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          stackable?: boolean
           status?: Database["public"]["Enums"]["package_status"]
           updated_at?: string
+          volume_m3?: number | null
+          weight_kg?: number | null
+          width_cm?: number | null
         }
         Relationships: [
           {
@@ -6810,11 +6852,19 @@ export type Database = {
           driver_id: string | null
           id: string
           license_plate: string | null
+          max_assembly_minutes: number | null
+          max_stops: number | null
+          max_weight_kg: number | null
           name: string
           notes: string | null
           requires_load_verification: boolean
           stock_location_id: string | null
+          supports_flat_transport: boolean
           updated_at: string
+          usable_height_cm: number | null
+          usable_length_cm: number | null
+          usable_volume_m3: number | null
+          usable_width_cm: number | null
           volume_m3: number | null
           weight_kg: number | null
         }
@@ -6827,11 +6877,19 @@ export type Database = {
           driver_id?: string | null
           id?: string
           license_plate?: string | null
+          max_assembly_minutes?: number | null
+          max_stops?: number | null
+          max_weight_kg?: number | null
           name: string
           notes?: string | null
           requires_load_verification?: boolean
           stock_location_id?: string | null
+          supports_flat_transport?: boolean
           updated_at?: string
+          usable_height_cm?: number | null
+          usable_length_cm?: number | null
+          usable_volume_m3?: number | null
+          usable_width_cm?: number | null
           volume_m3?: number | null
           weight_kg?: number | null
         }
@@ -6844,11 +6902,19 @@ export type Database = {
           driver_id?: string | null
           id?: string
           license_plate?: string | null
+          max_assembly_minutes?: number | null
+          max_stops?: number | null
+          max_weight_kg?: number | null
           name?: string
           notes?: string | null
           requires_load_verification?: boolean
           stock_location_id?: string | null
+          supports_flat_transport?: boolean
           updated_at?: string
+          usable_height_cm?: number | null
+          usable_length_cm?: number | null
+          usable_volume_m3?: number | null
+          usable_width_cm?: number | null
           volume_m3?: number | null
           weight_kg?: number | null
         }
