@@ -7536,6 +7536,7 @@ export type Database = {
       _test_phase15_2_m6: { Args: never; Returns: Json }
       _test_phase15_m3: { Args: never; Returns: Json }
       _test_phase15_m4: { Args: never; Returns: Json }
+      _test_phase15_m5: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
