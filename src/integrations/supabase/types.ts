@@ -7940,9 +7940,10 @@ export type Database = {
         Returns: undefined
       }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
-      cancel_sale_order:
-        | { Args: { _order_id: string }; Returns: undefined }
-        | { Args: { _options?: Json; _order_id: string }; Returns: Json }
+      cancel_sale_order: {
+        Args: { _options?: Json; _order_id: string }
+        Returns: Json
+      }
       cancel_wave: { Args: { _wave: string }; Returns: undefined }
       carrier_confirm_delivered: {
         Args: { _schedule_id: string }
