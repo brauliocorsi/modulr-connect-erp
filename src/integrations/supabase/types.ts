@@ -7589,6 +7589,16 @@ export type Database = {
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
       cancel_wave: { Args: { _wave: string }; Returns: undefined }
+      cash_movement_create: {
+        Args: {
+          _amount: number
+          _kind: string
+          _notes?: string
+          _reference?: string
+          _session_id: string
+        }
+        Returns: Json
+      }
       cash_session_balance: { Args: { _session: string }; Returns: number }
       cash_session_summary: { Args: { _session: string }; Returns: Json }
       close_cash_session: {
