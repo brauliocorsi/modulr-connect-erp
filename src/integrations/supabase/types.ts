@@ -7496,6 +7496,13 @@ export type Database = {
       }
       _m4_pick_lane: { Args: { _dock_id: string }; Returns: string }
       _m4_return_loc: { Args: { _kind: string }; Returns: string }
+      _m5_carrier_loc: { Args: { _carrier_id: string }; Returns: string }
+      _m5_customer_loc: { Args: never; Returns: string }
+      _m5_pickup_loc: { Args: never; Returns: string }
+      _m5_record_payment: {
+        Args: { _payment: Json; _route: string; _schedule: string; _so: string }
+        Returns: Json
+      }
       _so_ensure_mo_for_line: {
         Args: { _line_id: string; _qty: number }
         Returns: string
@@ -7589,6 +7596,14 @@ export type Database = {
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: { Args: { _order: string }; Returns: undefined }
       cancel_wave: { Args: { _wave: string }; Returns: undefined }
+      carrier_confirm_delivered: {
+        Args: { _schedule_id: string }
+        Returns: Json
+      }
+      carrier_mark_failed_or_returned: {
+        Args: { _condition?: string; _reason: string; _schedule_id: string }
+        Returns: Json
+      }
       cash_movement_create: {
         Args: {
           _amount: number
@@ -7613,6 +7628,10 @@ export type Database = {
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
+      create_customer_pickup: {
+        Args: { _sale_order_id: string; _scheduled_date?: string }
+        Returns: Json
+      }
       create_internal_transfer: {
         Args: {
           _destination: string
@@ -7652,6 +7671,14 @@ export type Database = {
         Returns: string
       }
       default_warehouse_id: { Args: never; Returns: string }
+      delivery_handover_to_carrier: {
+        Args: {
+          _carrier_id: string
+          _schedule_id: string
+          _tracking_code?: string
+        }
+        Returns: Json
+      }
       delivery_load_vehicle: {
         Args: { _lines?: Json; _route_id: string }
         Returns: Json
@@ -7668,6 +7695,10 @@ export type Database = {
         Args: { _dock_id: string; _lane_id?: string; _route_id: string }
         Returns: Json
       }
+      delivery_pick_to_pickup_area: {
+        Args: { _pickup_id: string }
+        Returns: Json
+      }
       delivery_return_to_warehouse: {
         Args: { _lines: Json; _mode?: string; _route_order_id: string }
         Returns: Json
@@ -7682,6 +7713,14 @@ export type Database = {
         Returns: Json
       }
       delivery_route_capacity: { Args: { _route_id: string }; Returns: Json }
+      delivery_route_cash_close: {
+        Args: { _actuals: Json; _notes?: string; _route_id: string }
+        Returns: Json
+      }
+      delivery_route_cash_summary: {
+        Args: { _route_id: string }
+        Returns: Json
+      }
       delivery_route_change_vehicle: {
         Args: { _route_id: string; _vehicle_id: string }
         Returns: Json
@@ -7722,6 +7761,15 @@ export type Database = {
           _so_id: string
           _window_end?: string
           _window_start?: string
+        }
+        Returns: Json
+      }
+      delivery_schedule_reschedule: {
+        Args: {
+          _new_date: string
+          _new_route_id?: string
+          _reason?: string
+          _schedule_id: string
         }
         Returns: Json
       }
@@ -8230,6 +8278,10 @@ export type Database = {
       }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
       validate_batch: { Args: { _batch: string }; Returns: Json }
+      validate_customer_pickup: {
+        Args: { _payment?: Json; _pickup_id: string }
+        Returns: Json
+      }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
       validate_wave: { Args: { _wave: string }; Returns: undefined }
     }
