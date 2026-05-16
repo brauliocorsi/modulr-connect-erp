@@ -110,6 +110,8 @@ import ManufacturingPlanning from "@/modules/manufacturing/pages/ManufacturingPl
 import ShopFloorBoard from "@/modules/shopfloor/pages/ShopFloorBoard";
 import ShopFloorOrder from "@/modules/shopfloor/pages/ShopFloorOrder";
 import ShopFloorQuality from "@/modules/shopfloor/pages/ShopFloorQuality";
+import PickupsPage from "@/modules/m5/pages/PickupsPage";
+import CarrierShipmentsPage from "@/modules/m5/pages/CarrierShipmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -313,6 +315,10 @@ const App = () => (
                 <Route path="zones/:id" element={<ZoneForm />} />
                 <Route path=":id" element={<RouteDetail />} />
               </Route>
+
+              {/* M5 — Pickups & Carriers */}
+              <Route path="m5/pickups" element={<PickupsPage />} />
+              <Route path="m5/carrier" element={<CarrierShipmentsPage />} />
 
               {/* Manufacturing */}
               <Route path="manufacturing" element={<ManufacturingDashboard />} />

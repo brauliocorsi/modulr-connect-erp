@@ -459,6 +459,17 @@ export default function RouteDetail() {
           </table>
         </Card>
 
+        {rescheduleOpen && (
+          <RescheduleDialog
+            open
+            onOpenChange={(v) => !v && setRescheduleOpen(null)}
+            scheduleId={rescheduleOpen.scheduleId}
+            saleOrderName={rescheduleOpen.soName}
+            currentDate={r.route_date}
+            onDone={refreshAll}
+          />
+        )}
+
         <Card className="mt-3">
           <div className="px-3 py-2 border-b font-semibold text-sm">Transferências/pickings atribuídos</div>
           <table className="w-full text-xs">
