@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       bom_lines: {
         Row: {
           bom_id: string
@@ -2623,6 +2647,83 @@ export type Database = {
         }
         Relationships: []
       }
+      package_damage_reports: {
+        Row: {
+          created_at: string
+          damage_type: string | null
+          delivery_schedule_id: string | null
+          description: string | null
+          id: string
+          photos: Json | null
+          reported_by: string | null
+          route_id: string | null
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          status: Database["public"]["Enums"]["package_damage_status"]
+          stock_package_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          damage_type?: string | null
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          photos?: Json | null
+          reported_by?: string | null
+          route_id?: string | null
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          status?: Database["public"]["Enums"]["package_damage_status"]
+          stock_package_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          damage_type?: string | null
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          photos?: Json | null
+          reported_by?: string | null
+          route_id?: string | null
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          status?: Database["public"]["Enums"]["package_damage_status"]
+          stock_package_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_damage_reports_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           active: boolean
@@ -2907,6 +3008,85 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "product_categories"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_package_templates: {
+        Row: {
+          active: boolean
+          barcode_pattern: string | null
+          created_at: string
+          default_assembly_minutes: number | null
+          default_volume_m3: number | null
+          default_weight_kg: number | null
+          description: string | null
+          id: string
+          is_required: boolean
+          name: string
+          package_group: string | null
+          package_sequence: number
+          package_total: number
+          product_id: string
+          requires_assembly: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          barcode_pattern?: string | null
+          created_at?: string
+          default_assembly_minutes?: number | null
+          default_volume_m3?: number | null
+          default_weight_kg?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name: string
+          package_group?: string | null
+          package_sequence: number
+          package_total: number
+          product_id: string
+          requires_assembly?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          barcode_pattern?: string | null
+          created_at?: string
+          default_assembly_minutes?: number | null
+          default_volume_m3?: number | null
+          default_weight_kg?: number | null
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          name?: string
+          package_group?: string | null
+          package_sequence?: number
+          package_total?: number
+          product_id?: string
+          requires_assembly?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_package_templates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_package_templates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_package_templates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
           },
         ]
       }
@@ -5403,6 +5583,281 @@ export type Database = {
           },
         ]
       }
+      stock_package_movements: {
+        Row: {
+          created_at: string
+          from_bin_id: string | null
+          from_location_id: string | null
+          from_pallet_id: string | null
+          id: string
+          moved_by: string | null
+          moved_qty: number
+          reason: string | null
+          stock_move_id: string | null
+          stock_package_id: string
+          to_bin_id: string | null
+          to_location_id: string
+          to_pallet_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_bin_id?: string | null
+          from_location_id?: string | null
+          from_pallet_id?: string | null
+          id?: string
+          moved_by?: string | null
+          moved_qty?: number
+          reason?: string | null
+          stock_move_id?: string | null
+          stock_package_id: string
+          to_bin_id?: string | null
+          to_location_id: string
+          to_pallet_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_bin_id?: string | null
+          from_location_id?: string | null
+          from_pallet_id?: string | null
+          id?: string
+          moved_by?: string | null
+          moved_qty?: number
+          reason?: string | null
+          stock_move_id?: string | null
+          stock_package_id?: string
+          to_bin_id?: string | null
+          to_location_id?: string
+          to_pallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_package_movements_from_bin_id_fkey"
+            columns: ["from_bin_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_bins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_from_location_id_fkey"
+            columns: ["from_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_from_pallet_id_fkey"
+            columns: ["from_pallet_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_pallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_stock_move_id_fkey"
+            columns: ["stock_move_id"]
+            isOneToOne: false
+            referencedRelation: "stock_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_to_bin_id_fkey"
+            columns: ["to_bin_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_bins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_to_location_id_fkey"
+            columns: ["to_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_package_movements_to_pallet_id_fkey"
+            columns: ["to_pallet_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_pallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_packages: {
+        Row: {
+          barcode: string | null
+          condition: Database["public"]["Enums"]["package_condition"]
+          created_at: string
+          current_bin_id: string | null
+          current_location_id: string
+          current_pallet_id: string | null
+          generated_virtual_package: boolean
+          id: string
+          is_virtual: boolean
+          manufacturing_order_id: string | null
+          package_group: string | null
+          package_ref: string | null
+          package_sequence: number | null
+          package_template_id: string | null
+          package_total: number | null
+          product_id: string
+          purchase_order_id: string | null
+          purchase_order_line_id: string | null
+          qty: number
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          status: Database["public"]["Enums"]["package_status"]
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          condition?: Database["public"]["Enums"]["package_condition"]
+          created_at?: string
+          current_bin_id?: string | null
+          current_location_id: string
+          current_pallet_id?: string | null
+          generated_virtual_package?: boolean
+          id?: string
+          is_virtual?: boolean
+          manufacturing_order_id?: string | null
+          package_group?: string | null
+          package_ref?: string | null
+          package_sequence?: number | null
+          package_template_id?: string | null
+          package_total?: number | null
+          product_id: string
+          purchase_order_id?: string | null
+          purchase_order_line_id?: string | null
+          qty?: number
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          status?: Database["public"]["Enums"]["package_status"]
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          condition?: Database["public"]["Enums"]["package_condition"]
+          created_at?: string
+          current_bin_id?: string | null
+          current_location_id?: string
+          current_pallet_id?: string | null
+          generated_virtual_package?: boolean
+          id?: string
+          is_virtual?: boolean
+          manufacturing_order_id?: string | null
+          package_group?: string | null
+          package_ref?: string | null
+          package_sequence?: number | null
+          package_template_id?: string | null
+          package_total?: number | null
+          product_id?: string
+          purchase_order_id?: string | null
+          purchase_order_line_id?: string | null
+          qty?: number
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          status?: Database["public"]["Enums"]["package_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_packages_current_bin_id_fkey"
+            columns: ["current_bin_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_bins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_current_location_id_fkey"
+            columns: ["current_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_current_pallet_id_fkey"
+            columns: ["current_pallet_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_pallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_manufacturing_order_id_fkey"
+            columns: ["manufacturing_order_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_package_template_id_fkey"
+            columns: ["package_template_id"]
+            isOneToOne: false
+            referencedRelation: "product_package_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_packages_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_purchase_order_line_id_fkey"
+            columns: ["purchase_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_picking_batches: {
         Row: {
           created_at: string
@@ -6337,6 +6792,135 @@ export type Database = {
           },
         ]
       }
+      warehouse_bins: {
+        Row: {
+          active: boolean
+          barcode: string | null
+          code: string
+          created_at: string
+          id: string
+          level: string | null
+          location_id: string
+          position: string | null
+          rack: string | null
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          active?: boolean
+          barcode?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          level?: string | null
+          location_id: string
+          position?: string | null
+          rack?: string | null
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          active?: boolean
+          barcode?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          level?: string | null
+          location_id?: string
+          position?: string | null
+          rack?: string | null
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_bins_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_bins_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "warehouse_bins_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_pallets: {
+        Row: {
+          barcode: string | null
+          code: string
+          created_at: string
+          current_bin_id: string | null
+          current_location_id: string
+          id: string
+          status: Database["public"]["Enums"]["pallet_status"]
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          code: string
+          created_at?: string
+          current_bin_id?: string | null
+          current_location_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["pallet_status"]
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          barcode?: string | null
+          code?: string
+          created_at?: string
+          current_bin_id?: string | null
+          current_location_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["pallet_status"]
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_pallets_current_bin_id_fkey"
+            columns: ["current_bin_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_bins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_pallets_current_location_id_fkey"
+            columns: ["current_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_pallets_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "warehouse_pallets_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           active: boolean
@@ -6819,6 +7403,7 @@ export type Database = {
         Args: { _module: Database["public"]["Enums"]["app_module"] }
         Returns: boolean
       }
+      is_package_tracking_enabled: { Args: never; Returns: boolean }
       lock_cash_session: { Args: { _session: string }; Returns: undefined }
       lock_order_payments: { Args: { _order: string }; Returns: undefined }
       lock_quant: {
@@ -6954,6 +7539,18 @@ export type Database = {
       }
       open_cash_session: {
         Args: { _opening?: number; _register: string }
+        Returns: string
+      }
+      package_move: {
+        Args: {
+          _moved_qty?: number
+          _package_id: string
+          _reason?: string
+          _stock_move_id?: string
+          _to_bin_id?: string
+          _to_location_id: string
+          _to_pallet_id?: string
+        }
         Returns: string
       }
       picking_return_status: { Args: { _picking_id: string }; Returns: Json }
@@ -7234,6 +7831,32 @@ export type Database = {
         | "qc"
         | "done"
         | "cancelled"
+      package_condition:
+        | "good"
+        | "damaged"
+        | "quarantine"
+        | "missing"
+        | "repaired"
+      package_damage_status:
+        | "reported"
+        | "in_quarantine"
+        | "in_repair"
+        | "repaired"
+        | "scrapped"
+        | "replaced"
+      package_status:
+        | "expected"
+        | "received"
+        | "produced"
+        | "available"
+        | "reserved"
+        | "picked"
+        | "at_dock"
+        | "loaded"
+        | "delivered"
+        | "returned"
+        | "cancelled"
+      pallet_status: "active" | "moved" | "closed" | "damaged"
       partner_kind: "individual" | "company"
       permission_action: "view" | "create" | "edit" | "delete" | "export"
       picking_kind:
@@ -7467,6 +8090,35 @@ export const Constants = {
         "done",
         "cancelled",
       ],
+      package_condition: [
+        "good",
+        "damaged",
+        "quarantine",
+        "missing",
+        "repaired",
+      ],
+      package_damage_status: [
+        "reported",
+        "in_quarantine",
+        "in_repair",
+        "repaired",
+        "scrapped",
+        "replaced",
+      ],
+      package_status: [
+        "expected",
+        "received",
+        "produced",
+        "available",
+        "reserved",
+        "picked",
+        "at_dock",
+        "loaded",
+        "delivered",
+        "returned",
+        "cancelled",
+      ],
+      pallet_status: ["active", "moved", "closed", "damaged"],
       partner_kind: ["individual", "company"],
       permission_action: ["view", "create", "edit", "delete", "export"],
       picking_kind: [
