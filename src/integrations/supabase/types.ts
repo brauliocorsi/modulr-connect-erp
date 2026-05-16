@@ -7123,6 +7123,27 @@ export type Database = {
           },
         ]
       }
+      v_package_backfill_preview: {
+        Row: {
+          divergence: boolean | null
+          existing_packages: number | null
+          has_real_template: boolean | null
+          internal_ref: string | null
+          is_multi_location: boolean | null
+          location_id: string | null
+          location_name: string | null
+          lot_id: string | null
+          note: string | null
+          packages_previstos: number | null
+          product_id: string | null
+          product_name: string | null
+          qty_in_stock: number | null
+          risco: string | null
+          source: string | null
+          template_total: number | null
+        }
+        Relationships: []
+      }
       v_picking_exceptions: {
         Row: {
           batch_id: string | null
@@ -7540,6 +7561,27 @@ export type Database = {
       open_cash_session: {
         Args: { _opening?: number; _register: string }
         Returns: string
+      }
+      package_backfill_dryrun: {
+        Args: never
+        Returns: {
+          divergence: boolean
+          existing_packages: number
+          has_real_template: boolean
+          internal_ref: string
+          is_multi_location: boolean
+          location_id: string
+          location_name: string
+          lot_id: string
+          note: string
+          packages_previstos: number
+          product_id: string
+          product_name: string
+          qty_in_stock: number
+          risco: string
+          source: string
+          template_total: number
+        }[]
       }
       package_move: {
         Args: {
