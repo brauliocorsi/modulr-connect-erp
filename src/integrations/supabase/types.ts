@@ -7878,6 +7878,10 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      _test_phase16_b0_5_cancel_allocation_policy: {
+        Args: never
+        Returns: Json
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
