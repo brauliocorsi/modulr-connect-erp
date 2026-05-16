@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      _m3_test_result: {
+        Row: {
+          id: number
+          ran_at: string | null
+          result: Json | null
+        }
+        Insert: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Update: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Relationships: []
+      }
       account_journals: {
         Row: {
           active: boolean
