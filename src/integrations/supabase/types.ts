@@ -3510,6 +3510,93 @@ export type Database = {
           },
         ]
       }
+      sale_order_line_supply_links: {
+        Row: {
+          created_at: string
+          id: string
+          inherited_from_line_id: string | null
+          link_kind: Database["public"]["Enums"]["supply_link_kind"]
+          manufacturing_order_id: string | null
+          moved_at: string | null
+          origin_line_id: string
+          purchase_need_id: string | null
+          purchase_order_line_id: string | null
+          qty: number
+          reservation_ref: string | null
+          sale_order_line_id: string
+          state: Database["public"]["Enums"]["supply_link_state"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inherited_from_line_id?: string | null
+          link_kind: Database["public"]["Enums"]["supply_link_kind"]
+          manufacturing_order_id?: string | null
+          moved_at?: string | null
+          origin_line_id: string
+          purchase_need_id?: string | null
+          purchase_order_line_id?: string | null
+          qty: number
+          reservation_ref?: string | null
+          sale_order_line_id: string
+          state?: Database["public"]["Enums"]["supply_link_state"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inherited_from_line_id?: string | null
+          link_kind?: Database["public"]["Enums"]["supply_link_kind"]
+          manufacturing_order_id?: string | null
+          moved_at?: string | null
+          origin_line_id?: string
+          purchase_need_id?: string | null
+          purchase_order_line_id?: string | null
+          qty?: number
+          reservation_ref?: string | null
+          sale_order_line_id?: string
+          state?: Database["public"]["Enums"]["supply_link_state"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_order_line_supply_links_inherited_from_line_id_fkey"
+            columns: ["inherited_from_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_line_supply_links_manufacturing_order_id_fkey"
+            columns: ["manufacturing_order_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_line_supply_links_origin_line_id_fkey"
+            columns: ["origin_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_line_supply_links_purchase_need_id_fkey"
+            columns: ["purchase_need_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_line_supply_links_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_order_lines: {
         Row: {
           availability_source: string | null
@@ -3523,8 +3610,11 @@ export type Database = {
           manufacturing_status: Database["public"]["Enums"]["sol_mfg_status"]
           operational_status: string | null
           order_id: string
+          parent_line_id: string | null
           product_id: string | null
+          qty_delivered: number
           qty_reserved: number
+          qty_split_out: number
           qty_to_manufacture: number
           qty_to_purchase: number
           quantity: number
@@ -3547,8 +3637,11 @@ export type Database = {
           manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
           operational_status?: string | null
           order_id: string
+          parent_line_id?: string | null
           product_id?: string | null
+          qty_delivered?: number
           qty_reserved?: number
+          qty_split_out?: number
           qty_to_manufacture?: number
           qty_to_purchase?: number
           quantity?: number
@@ -3571,8 +3664,11 @@ export type Database = {
           manufacturing_status?: Database["public"]["Enums"]["sol_mfg_status"]
           operational_status?: string | null
           order_id?: string
+          parent_line_id?: string | null
           product_id?: string | null
+          qty_delivered?: number
           qty_reserved?: number
+          qty_split_out?: number
           qty_to_manufacture?: number
           qty_to_purchase?: number
           quantity?: number
@@ -3596,6 +3692,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_parent_line_id_fkey"
+            columns: ["parent_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
             referencedColumns: ["id"]
           },
           {
@@ -3709,6 +3812,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           date_order: string
+          deferred_reason: string | null
           delivery_mode: string
           delivery_region_rule_id: string | null
           delivery_zip_rule_id: string | null
@@ -3722,14 +3826,19 @@ export type Database = {
           invoice_notes: string | null
           invoice_number: string | null
           invoice_status: string
+          is_deferred: boolean
           last_planned_at: string | null
           name: string
           notes: string | null
           operational_status: string | null
+          parent_sale_order_id: string | null
           partner_id: string
           payment_status: string
           pricelist_id: string | null
+          root_sale_order_id: string | null
           salesperson_id: string | null
+          split_at: string | null
+          split_by: string | null
           state: Database["public"]["Enums"]["sale_state"]
           store_id: string | null
           updated_at: string
@@ -3748,6 +3857,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          deferred_reason?: string | null
           delivery_mode?: string
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
@@ -3761,14 +3871,19 @@ export type Database = {
           invoice_notes?: string | null
           invoice_number?: string | null
           invoice_status?: string
+          is_deferred?: boolean
           last_planned_at?: string | null
           name: string
           notes?: string | null
           operational_status?: string | null
+          parent_sale_order_id?: string | null
           partner_id: string
           payment_status?: string
           pricelist_id?: string | null
+          root_sale_order_id?: string | null
           salesperson_id?: string | null
+          split_at?: string | null
+          split_by?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
           store_id?: string | null
           updated_at?: string
@@ -3787,6 +3902,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date_order?: string
+          deferred_reason?: string | null
           delivery_mode?: string
           delivery_region_rule_id?: string | null
           delivery_zip_rule_id?: string | null
@@ -3800,14 +3916,19 @@ export type Database = {
           invoice_notes?: string | null
           invoice_number?: string | null
           invoice_status?: string
+          is_deferred?: boolean
           last_planned_at?: string | null
           name?: string
           notes?: string | null
           operational_status?: string | null
+          parent_sale_order_id?: string | null
           partner_id?: string
           payment_status?: string
           pricelist_id?: string | null
+          root_sale_order_id?: string | null
           salesperson_id?: string | null
+          split_at?: string | null
+          split_by?: string | null
           state?: Database["public"]["Enums"]["sale_state"]
           store_id?: string | null
           updated_at?: string
@@ -3837,6 +3958,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
+            columns: ["parent_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
+            columns: ["parent_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sale_orders_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
@@ -3848,6 +3983,20 @@ export type Database = {
             columns: ["pricelist_id"]
             isOneToOne: false
             referencedRelation: "pricelists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_root_sale_order_id_fkey"
+            columns: ["root_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_orders_root_sale_order_id_fkey"
+            columns: ["root_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
             referencedColumns: ["id"]
           },
           {
@@ -3927,6 +4076,77 @@ export type Database = {
           {
             foreignKeyName: "sale_payment_schedules_order_id_fkey"
             columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_split_payment_allocations: {
+        Row: {
+          amount_total_deferred: number
+          amount_total_original: number
+          amount_total_parent_after: number
+          created_at: string
+          created_by: string | null
+          deferred_order_id: string
+          delta_rounding: number
+          id: string
+          paid_so_far: number
+          parent_order_id: string
+          sinal_applied_to_deferred: number
+        }
+        Insert: {
+          amount_total_deferred: number
+          amount_total_original: number
+          amount_total_parent_after: number
+          created_at?: string
+          created_by?: string | null
+          deferred_order_id: string
+          delta_rounding?: number
+          id?: string
+          paid_so_far?: number
+          parent_order_id: string
+          sinal_applied_to_deferred?: number
+        }
+        Update: {
+          amount_total_deferred?: number
+          amount_total_original?: number
+          amount_total_parent_after?: number
+          created_at?: string
+          created_by?: string | null
+          deferred_order_id?: string
+          delta_rounding?: number
+          id?: string
+          paid_so_far?: number
+          parent_order_id?: string
+          sinal_applied_to_deferred?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
+            columns: ["deferred_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
+            columns: ["deferred_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
+            columns: ["parent_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
@@ -5988,6 +6208,7 @@ export type Database = {
         Returns: number
       }
       so_rollup_operational_status: { Args: { _so: string }; Returns: string }
+      so_root_id: { Args: { _order_id: string }; Returns: string }
       so_run_operational_plan: {
         Args: { _mode?: string; _order_id: string }
         Returns: Json
@@ -6117,6 +6338,12 @@ export type Database = {
         | "qc"
         | "ready_for_delivery"
         | "cancelled"
+      supply_link_kind:
+        | "purchase_need"
+        | "purchase_order_line"
+        | "manufacturing_order"
+        | "stock_reservation"
+      supply_link_state: "active" | "consumed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6347,6 +6574,13 @@ export const Constants = {
         "ready_for_delivery",
         "cancelled",
       ],
+      supply_link_kind: [
+        "purchase_need",
+        "purchase_order_line",
+        "manufacturing_order",
+        "stock_reservation",
+      ],
+      supply_link_state: ["active", "consumed", "cancelled"],
     },
   },
 } as const
