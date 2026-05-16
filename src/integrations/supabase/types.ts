@@ -7943,6 +7943,10 @@ export type Database = {
         Returns: string
       }
       _test_inventory_allocation_policy: { Args: never; Returns: Json }
+      _test_inventory_allocation_policy_impl: {
+        Args: { v_prefix: string }
+        Returns: Json
+      }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
