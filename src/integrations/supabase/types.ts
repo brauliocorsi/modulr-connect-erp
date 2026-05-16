@@ -7222,6 +7222,22 @@ export type Database = {
         }
         Relationships: []
       }
+      v_quant_vs_package_diff: {
+        Row: {
+          difference: number | null
+          expected_package_count: number | null
+          location_id: string | null
+          package_count: number | null
+          package_damaged_count: number | null
+          package_good_count: number | null
+          package_missing_count: number | null
+          package_quarantine_count: number | null
+          product_id: string | null
+          quant_qty: number | null
+          status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _m25_backfill_real_packages: { Args: never; Returns: Json }
@@ -7254,6 +7270,7 @@ export type Database = {
       _test_phase12: { Args: never; Returns: Json }
       _test_phase13: { Args: never; Returns: Json }
       _test_phase14: { Args: never; Returns: Json }
+      _test_phase15_2: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -7391,6 +7408,15 @@ export type Database = {
         Returns: string
       }
       ensure_balance_schedule: { Args: { _so: string }; Returns: undefined }
+      ensure_packages_for_quant: {
+        Args: {
+          _force?: boolean
+          _location_id: string
+          _product_id: string
+          _qty: number
+        }
+        Returns: Json
+      }
       ensure_step_location: {
         Args: { _name: string; _warehouse: string }
         Returns: string
@@ -7404,6 +7430,7 @@ export type Database = {
         Args: { _mode?: string; _run_id: string }
         Returns: Json
       }
+      erp_package_health_check: { Args: never; Returns: Json }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
         Returns: undefined
@@ -7596,6 +7623,10 @@ export type Database = {
         }
         Returns: string
       }
+      package_tracking_diagnostic: {
+        Args: { _product_id: string }
+        Returns: Json
+      }
       picking_return_status: { Args: { _picking_id: string }; Returns: Json }
       picking_shortages: {
         Args: { _picking: string }
@@ -7707,6 +7738,10 @@ export type Database = {
         }[]
       }
       run_reordering_rules: { Args: never; Returns: number }
+      sale_line_packages_ready: {
+        Args: { _sale_order_line_id: string }
+        Returns: Json
+      }
       sale_order_reconciliation: { Args: { _order_id: string }; Returns: Json }
       scan_increment_move: {
         Args: { _delta?: number; _move: string }
