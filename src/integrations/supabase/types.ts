@@ -8278,6 +8278,14 @@ export type Database = {
         Args: { _name: string; _warehouse: string }
         Returns: string
       }
+      erp_allocation_health_check: {
+        Args: { _threshold_hours?: number }
+        Returns: Json
+      }
+      erp_allocation_safe_remediation: {
+        Args: { _dry_run?: boolean }
+        Returns: Json
+      }
       erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
       erp_health_check_run: {
         Args: { _threshold_days?: number }
