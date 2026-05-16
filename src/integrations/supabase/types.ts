@@ -741,6 +741,80 @@ export type Database = {
           },
         ]
       }
+      customer_pickups: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          picked_up_at: string | null
+          picked_up_by_doc: string | null
+          picked_up_by_name: string | null
+          picking_id: string | null
+          sale_order_id: string
+          scheduled_date: string | null
+          status: string
+          updated_at: string
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          picked_up_at?: string | null
+          picked_up_by_doc?: string | null
+          picked_up_by_name?: string | null
+          picking_id?: string | null
+          sale_order_id: string
+          scheduled_date?: string | null
+          status?: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          picked_up_at?: string | null
+          picked_up_by_doc?: string | null
+          picked_up_by_name?: string | null
+          picking_id?: string | null
+          sale_order_id?: string
+          scheduled_date?: string | null
+          status?: string
+          updated_at?: string
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_pickups_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_carriers: {
         Row: {
           active: boolean
@@ -749,6 +823,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          stock_location_id: string | null
           tracking_url_template: string | null
           updated_at: string
         }
@@ -759,6 +834,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          stock_location_id?: string | null
           tracking_url_template?: string | null
           updated_at?: string
         }
@@ -769,10 +845,19 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          stock_location_id?: string | null
           tracking_url_template?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_carriers_stock_location_id_fkey"
+            columns: ["stock_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_region_rules: {
         Row: {
@@ -804,14 +889,224 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_route_cash_closure: {
+        Row: {
+          actual_cash: number
+          actual_mbway: number
+          actual_other: number
+          actual_transfer: number
+          cash_register_id: string | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          expected_cash: number
+          expected_mbway: number
+          expected_other: number
+          expected_transfer: number
+          id: string
+          notes: string | null
+          reconciled_at: string | null
+          reconciled_by: string | null
+          route_id: string
+          updated_at: string
+          variance: number | null
+        }
+        Insert: {
+          actual_cash?: number
+          actual_mbway?: number
+          actual_other?: number
+          actual_transfer?: number
+          cash_register_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          expected_cash?: number
+          expected_mbway?: number
+          expected_other?: number
+          expected_transfer?: number
+          id?: string
+          notes?: string | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          route_id: string
+          updated_at?: string
+          variance?: number | null
+        }
+        Update: {
+          actual_cash?: number
+          actual_mbway?: number
+          actual_other?: number
+          actual_transfer?: number
+          cash_register_id?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          expected_cash?: number
+          expected_mbway?: number
+          expected_other?: number
+          expected_transfer?: number
+          id?: string
+          notes?: string | null
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          route_id?: string
+          updated_at?: string
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_route_cash_closure_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_route_cash_closure_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_route_orders: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          failed_reason: string | null
+          id: string
+          loaded_at: string | null
+          returned_at: string | null
+          route_id: string
+          schedule_id: string
+          sequence: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          failed_reason?: string | null
+          id?: string
+          loaded_at?: string | null
+          returned_at?: string | null
+          route_id: string
+          schedule_id: string
+          sequence?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          failed_reason?: string | null
+          id?: string
+          loaded_at?: string | null
+          returned_at?: string | null
+          route_id?: string
+          schedule_id?: string
+          sequence?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_route_orders_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_route_orders_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_route_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          default_driver_id: string | null
+          default_vehicle_id: string | null
+          id: string
+          max_assembly_minutes: number | null
+          max_deliveries: number | null
+          name: string
+          slot_end: string | null
+          slot_start: string | null
+          updated_at: string
+          weekday: number
+          zone_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          default_driver_id?: string | null
+          default_vehicle_id?: string | null
+          id?: string
+          max_assembly_minutes?: number | null
+          max_deliveries?: number | null
+          name: string
+          slot_end?: string | null
+          slot_start?: string | null
+          updated_at?: string
+          weekday: number
+          zone_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          default_driver_id?: string | null
+          default_vehicle_id?: string | null
+          id?: string
+          max_assembly_minutes?: number | null
+          max_deliveries?: number | null
+          name?: string
+          slot_end?: string | null
+          slot_start?: string | null
+          updated_at?: string
+          weekday?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_route_templates_default_driver_id_fkey"
+            columns: ["default_driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_route_templates_default_vehicle_id_fkey"
+            columns: ["default_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_route_templates_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_routes: {
         Row: {
           created_at: string
+          dock_id: string | null
           driver_id: string | null
           id: string
           max_assembly_minutes: number
           max_deliveries: number
           notes: string | null
+          requires_load_verification: boolean
           route_date: string
           state: string
           updated_at: string
@@ -820,11 +1115,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dock_id?: string | null
           driver_id?: string | null
           id?: string
           max_assembly_minutes?: number
           max_deliveries?: number
           notes?: string | null
+          requires_load_verification?: boolean
           route_date: string
           state?: string
           updated_at?: string
@@ -833,11 +1130,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dock_id?: string | null
           driver_id?: string | null
           id?: string
           max_assembly_minutes?: number
           max_deliveries?: number
           notes?: string | null
+          requires_load_verification?: boolean
           route_date?: string
           state?: string
           updated_at?: string
@@ -845,6 +1144,13 @@ export type Database = {
           zone_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "delivery_routes_dock_fk"
+            columns: ["dock_id"]
+            isOneToOne: false
+            referencedRelation: "loading_docks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "delivery_routes_driver_id_fkey"
             columns: ["driver_id"]
@@ -864,6 +1170,123 @@ export type Database = {
             columns: ["zone_id"]
             isOneToOne: false
             referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_schedules: {
+        Row: {
+          carrier_id: string | null
+          created_at: string
+          created_by: string | null
+          dock_id: string | null
+          id: string
+          lane_id: string | null
+          notes: string | null
+          partner_id: string | null
+          physical_state: string
+          route_id: string | null
+          sale_order_id: string
+          scheduled_date: string
+          slot_end: string | null
+          slot_start: string | null
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          carrier_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dock_id?: string | null
+          id?: string
+          lane_id?: string | null
+          notes?: string | null
+          partner_id?: string | null
+          physical_state?: string
+          route_id?: string | null
+          sale_order_id: string
+          scheduled_date: string
+          slot_end?: string | null
+          slot_start?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          carrier_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dock_id?: string | null
+          id?: string
+          lane_id?: string | null
+          notes?: string | null
+          partner_id?: string | null
+          physical_state?: string
+          route_id?: string | null
+          sale_order_id?: string
+          scheduled_date?: string
+          slot_end?: string | null
+          slot_start?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_schedules_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_dock_id_fkey"
+            columns: ["dock_id"]
+            isOneToOne: false
+            referencedRelation: "loading_docks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "loading_dock_lanes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -963,6 +1386,94 @@ export type Database = {
             columns: ["default_vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dock_transfers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dock_id: string | null
+          id: string
+          lane_id: string | null
+          loaded_at: string | null
+          moved_at: string | null
+          picking_id: string | null
+          route_id: string | null
+          schedule_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dock_id?: string | null
+          id?: string
+          lane_id?: string | null
+          loaded_at?: string | null
+          moved_at?: string | null
+          picking_id?: string | null
+          route_id?: string | null
+          schedule_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dock_id?: string | null
+          id?: string
+          lane_id?: string | null
+          loaded_at?: string | null
+          moved_at?: string | null
+          picking_id?: string | null
+          route_id?: string | null
+          schedule_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dock_transfers_dock_id_fkey"
+            columns: ["dock_id"]
+            isOneToOne: false
+            referencedRelation: "loading_docks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "loading_dock_lanes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "stock_pickings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_picking_id_fkey"
+            columns: ["picking_id"]
+            isOneToOne: false
+            referencedRelation: "v_picking_exceptions"
+            referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -1406,6 +1917,109 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loading_dock_lanes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          dock_id: string
+          id: string
+          notes: string | null
+          stock_location_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          dock_id: string
+          id?: string
+          notes?: string | null
+          stock_location_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          dock_id?: string
+          id?: string
+          notes?: string | null
+          stock_location_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loading_dock_lanes_dock_id_fkey"
+            columns: ["dock_id"]
+            isOneToOne: false
+            referencedRelation: "loading_docks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loading_dock_lanes_stock_location_id_fkey"
+            columns: ["stock_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loading_docks: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          stock_location_id: string | null
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          stock_location_id?: string | null
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          stock_location_id?: string | null
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loading_docks_stock_location_id_fkey"
+            columns: ["stock_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loading_docks_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "loading_docks_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -4499,6 +5113,7 @@ export type Database = {
           removal_strategy:
             | Database["public"]["Enums"]["removal_strategy"]
             | null
+          return_kind: Database["public"]["Enums"]["return_kind"] | null
           type: Database["public"]["Enums"]["location_type"]
           warehouse_id: string | null
         }
@@ -4515,6 +5130,7 @@ export type Database = {
           removal_strategy?:
             | Database["public"]["Enums"]["removal_strategy"]
             | null
+          return_kind?: Database["public"]["Enums"]["return_kind"] | null
           type?: Database["public"]["Enums"]["location_type"]
           warehouse_id?: string | null
         }
@@ -4531,6 +5147,7 @@ export type Database = {
           removal_strategy?:
             | Database["public"]["Enums"]["removal_strategy"]
             | null
+          return_kind?: Database["public"]["Enums"]["return_kind"] | null
           type?: Database["public"]["Enums"]["location_type"]
           warehouse_id?: string | null
         }
@@ -5461,9 +6078,170 @@ export type Database = {
           },
         ]
       }
+      vehicle_route_manifest: {
+        Row: {
+          assistance_case_id: string | null
+          assistance_required: boolean
+          created_at: string
+          damaged: boolean
+          id: string
+          loaded_at: string | null
+          loaded_by: string | null
+          package_group: string | null
+          package_ref: string | null
+          package_sequence: number | null
+          package_total: number | null
+          product_id: string | null
+          qty_delivered: number
+          qty_loaded: number
+          qty_pending: number | null
+          qty_returned: number
+          return_condition: Database["public"]["Enums"]["return_kind"] | null
+          return_reason: string | null
+          route_id: string
+          route_order_id: string | null
+          sale_order_line_id: string | null
+          schedule_id: string | null
+          stock_move_id: string | null
+          stop_sequence: number | null
+          updated_at: string
+          vehicle_location_id: string | null
+          verification_required: boolean
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          assistance_case_id?: string | null
+          assistance_required?: boolean
+          created_at?: string
+          damaged?: boolean
+          id?: string
+          loaded_at?: string | null
+          loaded_by?: string | null
+          package_group?: string | null
+          package_ref?: string | null
+          package_sequence?: number | null
+          package_total?: number | null
+          product_id?: string | null
+          qty_delivered?: number
+          qty_loaded?: number
+          qty_pending?: number | null
+          qty_returned?: number
+          return_condition?: Database["public"]["Enums"]["return_kind"] | null
+          return_reason?: string | null
+          route_id: string
+          route_order_id?: string | null
+          sale_order_line_id?: string | null
+          schedule_id?: string | null
+          stock_move_id?: string | null
+          stop_sequence?: number | null
+          updated_at?: string
+          vehicle_location_id?: string | null
+          verification_required?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          assistance_case_id?: string | null
+          assistance_required?: boolean
+          created_at?: string
+          damaged?: boolean
+          id?: string
+          loaded_at?: string | null
+          loaded_by?: string | null
+          package_group?: string | null
+          package_ref?: string | null
+          package_sequence?: number | null
+          package_total?: number | null
+          product_id?: string | null
+          qty_delivered?: number
+          qty_loaded?: number
+          qty_pending?: number | null
+          qty_returned?: number
+          return_condition?: Database["public"]["Enums"]["return_kind"] | null
+          return_reason?: string | null
+          route_id?: string
+          route_order_id?: string | null
+          sale_order_line_id?: string | null
+          schedule_id?: string | null
+          stock_move_id?: string | null
+          stop_sequence?: number | null
+          updated_at?: string
+          vehicle_location_id?: string | null
+          verification_required?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_route_order_id_fkey"
+            columns: ["route_order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_stock_move_id_fkey"
+            columns: ["stock_move_id"]
+            isOneToOne: false
+            referencedRelation: "stock_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_vehicle_location_id_fkey"
+            columns: ["vehicle_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           active: boolean
+          assembly_minutes_capacity: number | null
           barcode: string | null
           cash_register_id: string | null
           created_at: string
@@ -5472,10 +6250,15 @@ export type Database = {
           license_plate: string | null
           name: string
           notes: string | null
+          requires_load_verification: boolean
+          stock_location_id: string | null
           updated_at: string
+          volume_m3: number | null
+          weight_kg: number | null
         }
         Insert: {
           active?: boolean
+          assembly_minutes_capacity?: number | null
           barcode?: string | null
           cash_register_id?: string | null
           created_at?: string
@@ -5484,10 +6267,15 @@ export type Database = {
           license_plate?: string | null
           name: string
           notes?: string | null
+          requires_load_verification?: boolean
+          stock_location_id?: string | null
           updated_at?: string
+          volume_m3?: number | null
+          weight_kg?: number | null
         }
         Update: {
           active?: boolean
+          assembly_minutes_capacity?: number | null
           barcode?: string | null
           cash_register_id?: string | null
           created_at?: string
@@ -5496,7 +6284,11 @@ export type Database = {
           license_plate?: string | null
           name?: string
           notes?: string | null
+          requires_load_verification?: boolean
+          stock_location_id?: string | null
           updated_at?: string
+          volume_m3?: number | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -5504,6 +6296,13 @@ export type Database = {
             columns: ["cash_register_id"]
             isOneToOne: false
             referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_stock_location_id_fkey"
+            columns: ["stock_location_id"]
+            isOneToOne: false
+            referencedRelation: "stock_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -5769,6 +6568,18 @@ export type Database = {
         Returns: undefined
       }
       assert_so_has_lines: { Args: { _order: string }; Returns: undefined }
+      bootstrap_carrier_location: {
+        Args: { _carrier: string }
+        Returns: string
+      }
+      bootstrap_vehicle_location: {
+        Args: { _vehicle: string }
+        Returns: string
+      }
+      bootstrap_warehouse_logistics_locations: {
+        Args: { _wh: string }
+        Returns: undefined
+      }
       calc_delivery_price: {
         Args: { _order: string }
         Returns: {
@@ -6351,6 +7162,7 @@ export type Database = {
         | "cancelled"
       purchase_state: "draft" | "rfq_sent" | "confirmed" | "done" | "cancelled"
       removal_strategy: "fifo" | "lifo" | "fefo" | "closest"
+      return_kind: "good" | "damaged" | "quarantine"
       sale_state: "draft" | "sent" | "confirmed" | "done" | "cancelled"
       sol_mfg_status:
         | "none"
@@ -6586,6 +7398,7 @@ export const Constants = {
       ],
       purchase_state: ["draft", "rfq_sent", "confirmed", "done", "cancelled"],
       removal_strategy: ["fifo", "lifo", "fefo", "closest"],
+      return_kind: ["good", "damaged", "quarantine"],
       sale_state: ["draft", "sent", "confirmed", "done", "cancelled"],
       sol_mfg_status: [
         "none",
