@@ -5730,6 +5730,22 @@ export type Database = {
         Args: { _line_id: string; _qty: number }
         Returns: number
       }
+      _so_split_finance: {
+        Args: { _deferred: string; _parent: string }
+        Returns: Json
+      }
+      _soss_inherited_qty: { Args: { _line_id: string }; Returns: number }
+      _soss_record: {
+        Args: {
+          _kind: Database["public"]["Enums"]["supply_link_kind"]
+          _line_id: string
+          _mo_id: string
+          _need_id: string
+          _pol_id: string
+          _qty: number
+        }
+        Returns: string
+      }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
@@ -6192,6 +6208,10 @@ export type Database = {
         }
         Returns: string
       }
+      so_generate_delivery_picking: {
+        Args: { _order_id: string }
+        Returns: string
+      }
       so_has_active_backorder: { Args: { _so: string }; Returns: boolean }
       so_is_scheduled: { Args: { _so: string }; Returns: boolean }
       so_is_settled: { Args: { _so: string }; Returns: boolean }
@@ -6213,6 +6233,7 @@ export type Database = {
         Args: { _mode?: string; _order_id: string }
         Returns: Json
       }
+      so_split_partial_delivery: { Args: { _order_id: string }; Returns: Json }
       suggest_route: {
         Args: { _from_date?: string; _so: string }
         Returns: {
