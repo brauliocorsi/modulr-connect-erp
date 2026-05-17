@@ -42,13 +42,20 @@ export function BomResolvedPreview({ bomId, productId, defaultVariantId, default
     queryKey: ["product-variants", productId],
     enabled: !!productId && open,
     queryFn: async () =>
-      (await supabase.from("product_variants").select("id,name").eq("product_id", productId).order("name")).data ?? [],
+      (await supabase.from("product_variants").select("id,sku").eq("product_id", productId).order("sku")).data ?? [],
   });
   const { data: products = [] } = useQuery({
     queryKey: ["products-min"],
     enabled: open,
     queryFn: async () => (await supabase.from("products").select("id,name")).data ?? [],
   });
+  const { data: allVariants = [] } = useQuery({
+    queryKey: ["product-variants-min"],
+    enabled: open,
+    queryFn: async () => (await supabase.from("product_variants").select("id,sku")).data ?? [],
+  });
+  const variantSku = (id: string | null) =>
+    id ? ((allVariants as any[]).find((v) => v.id === id)?.sku ?? id.slice(0, 8)) : null;
 
   const run = async () => {
     setLoading(true);
