@@ -9113,6 +9113,7 @@ export type Database = {
         Args: { _mo: string }
         Returns: undefined
       }
+      _phase17_diag_seed: { Args: never; Returns: Json }
       _seed_golden_upm: { Args: never; Returns: Json }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
