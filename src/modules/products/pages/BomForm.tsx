@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Save, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { VariantRulesSection } from "./bom/VariantRulesSection";
+import { OutputsSection } from "./bom/OutputsSection";
 
 type BomRow = {
   id?: string;
