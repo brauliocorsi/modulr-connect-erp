@@ -16,6 +16,7 @@ import { Plus, Save, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { VariantRulesSection } from "./bom/VariantRulesSection";
 import { OutputsSection } from "./bom/OutputsSection";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type BomRow = {
   id?: string;
@@ -277,7 +278,13 @@ export default function BomForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Modo de herança</Label>
+              <Label className="flex items-center gap-1">
+                Modo de herança
+                <FieldInfoTooltip
+                  title="Modo de herança"
+                  description="Define como esta BOM se relaciona com a BOM pai.\n• Herda: usa as linhas da BOM pai e permite override/remove.\n• Sobrescreve: ignora as linhas do pai e usa apenas as próprias.\n• Estende: junta as próprias linhas às do pai."
+                />
+              </Label>
               <Select value={bom.inheritance_mode} onValueChange={(v: any) => setBom({ ...bom, inheritance_mode: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -288,7 +295,14 @@ export default function BomForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>BOM pai</Label>
+              <Label className="flex items-center gap-1">
+                BOM pai
+                <FieldInfoTooltip
+                  title="BOM pai"
+                  description="Permite herdar componentes de outra BOM, evitando duplicar listas de materiais."
+                  example="Sofá 3 lugares herda da BOM Master de Sofá."
+                />
+              </Label>
               <Select
                 value={bom.parent_bom_id ?? "__none__"}
                 onValueChange={(v) => setBom({ ...bom, parent_bom_id: v === "__none__" ? null : v })}
@@ -309,6 +323,10 @@ export default function BomForm() {
                 onCheckedChange={(v) => setBom({ ...bom, is_master: !!v })}
               />
               <Label htmlFor="is_master" className="cursor-pointer">BOM Master</Label>
+              <FieldInfoTooltip
+                title="BOM Master"
+                description="BOM principal usada como base para outras BOMs filhas. Útil para variantes que compartilham a maioria dos componentes."
+              />
             </div>
             <div className="flex items-center gap-2 mt-6">
               <Checkbox
@@ -351,12 +369,52 @@ export default function BomForm() {
                   <tr>
                     <th className="text-left px-2 py-2">Componente</th>
                     <th className="text-left px-2 py-2 w-28">Qtd</th>
-                    <th className="text-left px-2 py-2 w-32">Operação</th>
-                    <th className="text-left px-2 py-2 w-32">Centro</th>
-                    <th className="text-left px-2 py-2 w-32">Fórmula qty</th>
-                    <th className="text-left px-2 py-2 w-24">Ação</th>
-                    <th className="text-center px-2 py-2 w-16">Opt</th>
-                    <th className="text-center px-2 py-2 w-16">Crítico</th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Operação
+                        <FieldInfoTooltip title="Operação" description="Operação onde este componente será consumido." example="Corte, Estofamento ou Montagem." />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Centro
+                        <FieldInfoTooltip title="Centro de trabalho" description="Centro responsável por esta etapa." example="Corte, Costura ou Embalagem." />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Fórmula qty
+                        <FieldInfoTooltip
+                          title="Fórmula de quantidade"
+                          description="Fórmula para calcular a quantidade necessária automaticamente. Variáveis disponíveis: base, largura, comprimento, medida_colchao, qty_encomendada."
+                          example="largura * comprimento * 1.05"
+                        />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-24">
+                      <span className="inline-flex items-center gap-1">
+                        Ação
+                        <FieldInfoTooltip
+                          title="Ação de herança"
+                          description={"own: linha própria desta BOM.\nadd: adiciona componente extra em relação ao pai.\noverride: substitui linha herdada do pai.\nremove: remove linha herdada do pai."}
+                        />
+                      </span>
+                    </th>
+                    <th className="text-center px-2 py-2 w-16">
+                      <span className="inline-flex items-center gap-1">
+                        Opt
+                        <FieldInfoTooltip title="Opcional" description="Componente opcional. Só entra se uma regra ou condição mandar." />
+                      </span>
+                    </th>
+                    <th className="text-center px-2 py-2 w-16">
+                      <span className="inline-flex items-center gap-1">
+                        Crítico
+                        <FieldInfoTooltip
+                          title="Componente crítico"
+                          description="Se faltar, a produção deve ficar bloqueada ou em waiting_components."
+                        />
+                      </span>
+                    </th>
                     <th className="w-10" />
                   </tr>
                 </thead>

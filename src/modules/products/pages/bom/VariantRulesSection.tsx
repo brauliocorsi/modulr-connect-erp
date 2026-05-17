@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, X, Save } from "lucide-react";
 import { toast } from "sonner";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type Rule = {
   id: string;
@@ -128,7 +129,14 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
   return (
     <Card>
       <div className="px-4 py-3 border-b flex items-center justify-between">
-        <div className="font-semibold">Regras por Variante</div>
+        <div className="font-semibold flex items-center gap-2">
+          Regras por Variante
+          <FieldInfoTooltip
+            title="Regras por Variante"
+            description="Permite alterar a BOM consoante atributos da variante (tecido, base, cor, etc.) sem duplicar listas de materiais."
+            example="Se base = Elevatória, adicionar mecanismo elevatório."
+          />
+        </div>
         <Button size="sm" variant="outline" onClick={startNew}>
           <Plus className="h-4 w-4 mr-1" /> Nova regra
         </Button>
@@ -198,7 +206,14 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
       {editing && (
         <div className="border-t bg-muted/20 p-4 grid sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label>Prioridade *</Label>
+            <Label className="flex items-center gap-1">
+              Prioridade *
+              <FieldInfoTooltip
+                title="Prioridade"
+                description="Ordem de aplicação das regras. Números menores aplicam primeiro."
+                example="10 aplica antes de 20."
+              />
+            </Label>
             <Input
               type="number"
               value={editing.priority ?? ""}
@@ -206,7 +221,13 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Tipo *</Label>
+            <Label className="flex items-center gap-1">
+              Tipo *
+              <FieldInfoTooltip
+                title="Tipo de regra"
+                description="Tipo de alteração que a regra faz na BOM (adicionar, substituir, remover, mudar quantidade, fórmula ou operação)."
+              />
+            </Label>
             <Select value={editing.rule_type} onValueChange={(v) => setEditing({ ...editing, rule_type: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -223,7 +244,14 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
             <Label htmlFor="r-active">Ativa</Label>
           </div>
           <div className="space-y-1">
-            <Label>Atributo (nome)</Label>
+            <Label className="flex items-center gap-1">
+              Atributo (nome)
+              <FieldInfoTooltip
+                title="Nome do atributo"
+                description="Define quando esta regra será aplicada, em conjunto com o valor."
+                example="tecido, base, cor"
+              />
+            </Label>
             <Input
               value={editing.attribute_name ?? ""}
               onChange={(e) => setEditing({ ...editing, attribute_name: e.target.value })}
@@ -231,7 +259,14 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Atributo (valor)</Label>
+            <Label className="flex items-center gap-1">
+              Atributo (valor)
+              <FieldInfoTooltip
+                title="Valor do atributo"
+                description="Valor exato do atributo que dispara a regra."
+                example="Veludo, Elevatória, Azul"
+              />
+            </Label>
             <Input
               value={editing.attribute_value ?? ""}
               onChange={(e) => setEditing({ ...editing, attribute_value: e.target.value })}
@@ -246,7 +281,13 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Componente origem</Label>
+            <Label className="flex items-center gap-1">
+              Componente origem
+              <FieldInfoTooltip
+                title="Componente origem"
+                description="Componente original que será substituído ou removido pela regra."
+              />
+            </Label>
             <Select
               value={editing.source_component_id ?? "__none__"}
               onValueChange={(v) => setEditing({ ...editing, source_component_id: v === "__none__" ? null : v })}
@@ -259,7 +300,13 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Componente alvo</Label>
+            <Label className="flex items-center gap-1">
+              Componente alvo
+              <FieldInfoTooltip
+                title="Componente alvo"
+                description="Novo componente que será usado quando a regra disparar."
+              />
+            </Label>
             <Select
               value={editing.target_component_id ?? "__none__"}
               onValueChange={(v) => setEditing({ ...editing, target_component_id: v === "__none__" ? null : v })}

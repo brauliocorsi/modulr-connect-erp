@@ -27,6 +27,7 @@ import { PackageTrackingToggle } from "./tabs/PackageTrackingToggle";
 import { OperationalConfigTab } from "./tabs/OperationalConfigTab";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -187,6 +188,10 @@ export default function ProductForm() {
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_sold} onCheckedChange={(v) => setForm({ ...form, can_be_sold: v })} />
                     <Label>Pode ser vendido</Label>
+                    <FieldInfoTooltip
+                      title="Pode ser vendido"
+                      description="Permite vender este produto em orçamentos e encomendas."
+                    />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -203,7 +208,14 @@ export default function ProductForm() {
                       <Input type="number" step="0.01" value={form.delivery_surcharge ?? 0} onChange={(e) => setForm({ ...form, delivery_surcharge: Number(e.target.value) })} />
                       <p className="text-xs text-muted-foreground">Somado à entrega base por unidade (ex.: produto volumoso).</p>
                     <div className="space-y-2">
-                      <Label>Tempo de montagem (min)</Label>
+                      <Label className="flex items-center gap-1">
+                        Tempo de montagem (min)
+                        <FieldInfoTooltip
+                          title="Tempo de montagem (min)"
+                          description="Tempo médio de montagem/instalação por unidade. Usado para calcular a capacidade da rota."
+                          example="Sofá: 45 min. Cama: 30 min."
+                        />
+                      </Label>
                       <Input type="number" step="1" min={0} value={form.assembly_minutes ?? 0} onChange={(e) => setForm({ ...form, assembly_minutes: Number(e.target.value) })} />
                       <p className="text-xs text-muted-foreground">Minutos por unidade. Usado para calcular a capacidade da rota.</p>
                     </div>
@@ -221,6 +233,10 @@ export default function ProductForm() {
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_purchased} onCheckedChange={(v) => setForm({ ...form, can_be_purchased: v })} />
                     <Label>Pode ser comprado</Label>
+                    <FieldInfoTooltip
+                      title="Pode ser comprado"
+                      description="Permite comprar este produto a fornecedores. Use para produtos acabados comprados ou componentes/matérias-primas."
+                    />
                   </div>
                   <div className="flex items-center gap-3">
                     <Switch checked={!!form.auto_purchase} onCheckedChange={(v) => setForm({ ...form, auto_purchase: v })} />
@@ -262,11 +278,20 @@ export default function ProductForm() {
                     <div className="flex items-center gap-3">
                       <Switch checked={form.can_be_manufactured} onCheckedChange={(v) => setForm({ ...form, can_be_manufactured: v })} />
                       <Label>Pode ser fabricado</Label>
+                      <FieldInfoTooltip
+                        title="Pode ser fabricado"
+                        description="Indica que este produto pode ser fabricado internamente através de uma BOM."
+                      />
                     </div>
                     {form.can_be_manufactured && (
                       <div className="flex items-center gap-3">
                         <Switch checked={!!form.requires_bom} onCheckedChange={(v) => setForm({ ...form, requires_bom: v })} />
                         <Label>Requer BOM</Label>
+                        <FieldInfoTooltip
+                          title="Requer BOM"
+                          description="Exige que o produto tenha uma lista de materiais válida antes de ser fabricado."
+                          warning="Sem BOM, as ordens de produção não podem ser criadas."
+                        />
                       </div>
                     )}
                     <div className="space-y-2">
@@ -290,10 +315,28 @@ export default function ProductForm() {
                 <Card className="p-6 space-y-4">
                   <div className="o-section-title">Físico</div>
                   <div className="grid sm:grid-cols-3 gap-4">
-                    <div className="space-y-2"><Label>Peso (kg)</Label><Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} /></div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        Peso (kg)
+                        <FieldInfoTooltip
+                          title="Peso (kg)"
+                          description="Usado como fallback de logística quando o produto não tem templates de colis definidos."
+                        />
+                      </Label>
+                      <Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} />
+                    </div>
                     <div className="space-y-2"><Label>Peso bruto (kg)</Label><Input type="number" step="0.001" value={form.gross_weight ?? 0} onChange={(e) => setForm({ ...form, gross_weight: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Peso líquido (kg)</Label><Input type="number" step="0.001" value={form.net_weight ?? 0} onChange={(e) => setForm({ ...form, net_weight: Number(e.target.value) })} /></div>
-                    <div className="space-y-2"><Label>Volume (m³)</Label><Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} /></div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        Volume (m³)
+                        <FieldInfoTooltip
+                          title="Volume (m³)"
+                          description="Usado como fallback de logística quando o produto não tem templates de colis definidos."
+                        />
+                      </Label>
+                      <Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} />
+                    </div>
                     <div className="space-y-2"><Label>Altura (cm)</Label><Input type="number" step="0.1" value={form.height ?? 0} onChange={(e) => setForm({ ...form, height: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Largura (cm)</Label><Input type="number" step="0.1" value={form.width ?? 0} onChange={(e) => setForm({ ...form, width: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Profundidade (cm)</Label><Input type="number" step="0.1" value={form.depth ?? 0} onChange={(e) => setForm({ ...form, depth: Number(e.target.value) })} /></div>

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, X, Save, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type Output = {
   id: string;
@@ -125,9 +126,17 @@ export function OutputsSection({ bomId }: { bomId: string }) {
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div className="font-semibold flex items-center gap-2">
           Outputs da BOM
+          <FieldInfoTooltip
+            title="Outputs da BOM"
+            description={"Produtos que saem do processo de fabrico.\n• main_product: produto principal produzido pela MO.\n• co_product: outro produto principal produzido junto.\n• byproduct: subproduto gerado no processo.\n• reusable_scrap: sobra reaproveitável que pode voltar ao stock.\n• waste: perda/resíduo, não entra em stock."}
+          />
           <Badge variant={totalAlloc > 100.001 ? "destructive" : "outline"}>
             cost alloc: {totalAlloc.toFixed(2)}%
           </Badge>
+          <FieldInfoTooltip
+            title="Cost allocation %"
+            description="Percentual do custo da produção atribuído a cada output. A soma de todos os outputs ativos não pode exceder 100%."
+          />
           {totalAlloc > 100.001 && (
             <span className="text-xs text-destructive flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> Excede 100%
@@ -181,7 +190,14 @@ export function OutputsSection({ bomId }: { bomId: string }) {
       {editing && (
         <div className="border-t bg-muted/20 p-4 grid sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label>Tipo *</Label>
+            <Label className="flex items-center gap-1">
+              Tipo *
+              <FieldInfoTooltip
+                title="Tipo de output"
+                description={"main_product: produto principal produzido pela MO.\nco_product: outro produto principal produzido junto.\nbyproduct: subproduto gerado no processo.\nreusable_scrap: sobra reaproveitável que pode voltar ao stock se tiver produto definido.\nwaste: perda/resíduo. Não entra em stock disponível."}
+                warning={editing?.output_type === "waste" ? "Outputs do tipo waste não podem ser stockable." : undefined}
+              />
+            </Label>
             <Select
               value={editing.output_type}
               onValueChange={(v: any) =>
@@ -216,7 +232,14 @@ export function OutputsSection({ bomId }: { bomId: string }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Cost allocation %</Label>
+            <Label className="flex items-center gap-1">
+              Cost allocation %
+              <FieldInfoTooltip
+                title="Cost allocation %"
+                description="Percentual do custo da produção atribuído a este output. A soma de todos os outputs ativos não pode exceder 100%."
+                example="main_product: 90%, byproduct: 10%."
+              />
+            </Label>
             <Input
               type="number"
               step="0.01"
@@ -232,7 +255,14 @@ export function OutputsSection({ bomId }: { bomId: string }) {
             />
           </div>
           <div className="space-y-1">
-            <Label>Condição</Label>
+            <Label className="flex items-center gap-1">
+              Condição
+              <FieldInfoTooltip
+                title="Condição"
+                description="Condição para o output ser gerado durante a produção."
+                example="always — sempre que esta BOM for usada."
+              />
+            </Label>
             <Input
               value={editing.condition ?? "always"}
               onChange={(e) => setEditing({ ...editing, condition: e.target.value })}
@@ -247,6 +277,11 @@ export function OutputsSection({ bomId }: { bomId: string }) {
                 disabled={editing.output_type === "waste"}
               />
               <Label htmlFor="o-stockable">Stockable</Label>
+              <FieldInfoTooltip
+                title="Stockable"
+                description="Indica se este output entra em stock após a produção."
+                warning={editing?.output_type === "waste" ? "waste nunca pode ser stockable." : undefined}
+              />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
