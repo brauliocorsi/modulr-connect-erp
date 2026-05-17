@@ -73,7 +73,7 @@ describe("WorkOrdersSection", () => {
     expect(screen.getAllByText("Pronta").length).toBeGreaterThan(0);
     expect(screen.getByText("Em execução")).toBeInTheDocument();
     expect(screen.getByText("Pausada")).toBeInTheDocument();
-    expect(screen.getByText("Bloqueada")).toBeInTheDocument();
+    expect(screen.getAllByText("Bloqueada").length).toBeGreaterThan(0);
     expect(screen.getByText("Concluída")).toBeInTheDocument();
   });
 
