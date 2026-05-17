@@ -9023,6 +9023,14 @@ export type Database = {
         }
         Returns: string
       }
+      _test_phase16_c4_close_mo_outputs: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
