@@ -126,9 +126,17 @@ export function OutputsSection({ bomId }: { bomId: string }) {
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div className="font-semibold flex items-center gap-2">
           Outputs da BOM
+          <FieldInfoTooltip
+            title="Outputs da BOM"
+            description={"Produtos que saem do processo de fabrico.\n• main_product: produto principal produzido pela MO.\n• co_product: outro produto principal produzido junto.\n• byproduct: subproduto gerado no processo.\n• reusable_scrap: sobra reaproveitável que pode voltar ao stock.\n• waste: perda/resíduo, não entra em stock."}
+          />
           <Badge variant={totalAlloc > 100.001 ? "destructive" : "outline"}>
             cost alloc: {totalAlloc.toFixed(2)}%
           </Badge>
+          <FieldInfoTooltip
+            title="Cost allocation %"
+            description="Percentual do custo da produção atribuído a cada output. A soma de todos os outputs ativos não pode exceder 100%."
+          />
           {totalAlloc > 100.001 && (
             <span className="text-xs text-destructive flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> Excede 100%
