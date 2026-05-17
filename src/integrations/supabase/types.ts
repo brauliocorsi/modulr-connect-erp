@@ -9106,6 +9106,8 @@ export type Database = {
         }[]
       }
       bom_delete_line: { Args: { p_id: string }; Returns: boolean }
+      bom_delete_output: { Args: { p_id: string }; Returns: boolean }
+      bom_delete_variant_rule: { Args: { p_id: string }; Returns: boolean }
       bom_upsert_line: {
         Args: {
           p_applies_to_variant_rule: Json
@@ -9148,6 +9150,44 @@ export type Database = {
           p_uom_id: string
           p_variant_id: string
           p_variant_rule: Json
+        }
+        Returns: string
+      }
+      bom_upsert_output: {
+        Args: {
+          p_active: boolean
+          p_bom_id: string
+          p_bom_line_id: string
+          p_condition: string
+          p_cost_allocation_percent: number
+          p_formula: string
+          p_id: string
+          p_operation_id: string
+          p_output_type: string
+          p_product_id: string
+          p_qty: number
+          p_stockable: boolean
+          p_uom_id: string
+          p_work_center_id: string
+        }
+        Returns: string
+      }
+      bom_upsert_variant_rule: {
+        Args: {
+          p_active: boolean
+          p_attribute_name: string
+          p_attribute_value: string
+          p_bom_id: string
+          p_formula: string
+          p_id: string
+          p_priority: number
+          p_product_id: string
+          p_qty: number
+          p_rule_type: string
+          p_source_component_id: string
+          p_target_component_id: string
+          p_uom_id: string
+          p_variant_id: string
         }
         Returns: string
       }
