@@ -35,7 +35,11 @@ export default function RfqKanban() {
 
   const move = useMutation({
     mutationFn: async ({ id, state }: { id: string; state: string }) => {
-      const { error } = await supabase.from("purchase_orders").update({ state: state as any }).eq("id", id);
+      const { error } = await supabase.rpc("purchase_order_change_state", {
+        _po_id: id,
+        _new_state: state,
+        _reason: "kanban_drag",
+      });
       if (error) throw error;
     },
     onSuccess: () => {
