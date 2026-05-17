@@ -27,6 +27,7 @@ import { PackageTrackingToggle } from "./tabs/PackageTrackingToggle";
 import { OperationalConfigTab } from "./tabs/OperationalConfigTab";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 export default function ProductForm() {
   const { id } = useParams();
