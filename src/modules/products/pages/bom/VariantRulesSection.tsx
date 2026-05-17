@@ -129,7 +129,14 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
   return (
     <Card>
       <div className="px-4 py-3 border-b flex items-center justify-between">
-        <div className="font-semibold">Regras por Variante</div>
+        <div className="font-semibold flex items-center gap-2">
+          Regras por Variante
+          <FieldInfoTooltip
+            title="Regras por Variante"
+            description="Permite alterar a BOM consoante atributos da variante (tecido, base, cor, etc.) sem duplicar listas de materiais."
+            example="Se base = Elevatória, adicionar mecanismo elevatório."
+          />
+        </div>
         <Button size="sm" variant="outline" onClick={startNew}>
           <Plus className="h-4 w-4 mr-1" /> Nova regra
         </Button>
