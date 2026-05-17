@@ -9944,6 +9944,10 @@ export type Database = {
         }
         Returns: Json
       }
+      purchase_order_change_state: {
+        Args: { _new_state: string; _po_id: string; _reason?: string }
+        Returns: Json
+      }
       purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
       putaway_stock: {
         Args: {
