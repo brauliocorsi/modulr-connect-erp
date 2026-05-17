@@ -9883,6 +9883,16 @@ export type Database = {
         Returns: Json
       }
       try_reserve_picking: { Args: { _picking: string }; Returns: undefined }
+      update_product_operational_config: {
+        Args: {
+          _allocation_policy: string
+          _component_allocation_policy: string
+          _package_tracking_enabled: boolean
+          _product_id: string
+          _supply_route: string
+        }
+        Returns: Json
+      }
       validate_batch: { Args: { _batch: string }; Returns: Json }
       validate_customer_pickup: {
         Args: { _payment?: Json; _pickup_id: string }
