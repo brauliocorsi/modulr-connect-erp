@@ -357,6 +357,9 @@ function IssueDialog({ wo, onClose, onDone }: { wo: WO | null; onClose: () => vo
             <SelectItem value="wrong_measure">Erro de medida</SelectItem>
             <SelectItem value="defect">Defeito de fabricação</SelectItem>
             <SelectItem value="priority_blocked">Prioridade bloqueada</SelectItem>
+            <SelectItem value="machine_unavailable">Máquina indisponível</SelectItem>
+            <SelectItem value="employee_unavailable">Funcionário indisponível</SelectItem>
+            <SelectItem value="quality_failed">Falha de qualidade</SelectItem>
             <SelectItem value="other">Outro</SelectItem>
           </SelectContent>
         </Select>
