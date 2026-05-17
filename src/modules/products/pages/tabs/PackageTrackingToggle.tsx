@@ -60,6 +60,11 @@ export function PackageTrackingToggle({ productId }: { productId: string }) {
           <div className="font-semibold flex items-center gap-2">
             Package tracking por produto
             {enabled ? <Badge>ON</Badge> : <Badge variant="outline">OFF</Badge>}
+            <FieldInfoTooltip
+              title="package_tracking_enabled"
+              description="Ativa o controlo físico por colis. Use quando este produto precisa ser separado, carregado, entregue ou devolvido por volumes individuais."
+              warning="Só pode ser ativado quando o diagnóstico passa."
+            />
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Ativa o rastreio físico colis-a-colis para este produto. Só pode ser ativado quando o diagnóstico passa.
