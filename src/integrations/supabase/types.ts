@@ -9003,6 +9003,26 @@ export type Database = {
           test_name: string
         }[]
       }
+      _test_phase16_c3_component_purchase_reservation: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
+      _test_phase16_c3_make_incoming_done: {
+        Args: {
+          _dst: string
+          _need?: string
+          _po_line?: string
+          _product: string
+          _qty: number
+          _ref?: string
+          _src: string
+        }
+        Returns: string
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
