@@ -32,6 +32,24 @@ export type Database = {
         }
         Relationships: []
       }
+      _phase17_runs: {
+        Row: {
+          id: number
+          result: Json | null
+          run_at: string | null
+        }
+        Insert: {
+          id?: number
+          result?: Json | null
+          run_at?: string | null
+        }
+        Update: {
+          id?: number
+          result?: Json | null
+          run_at?: string | null
+        }
+        Relationships: []
+      }
       account_journals: {
         Row: {
           active: boolean
@@ -9095,6 +9113,8 @@ export type Database = {
         Args: { _mo: string }
         Returns: undefined
       }
+      _phase17_diag_seed: { Args: never; Returns: Json }
+      _phase17_diag_spine: { Args: never; Returns: Json }
       _seed_golden_upm: { Args: never; Returns: Json }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
