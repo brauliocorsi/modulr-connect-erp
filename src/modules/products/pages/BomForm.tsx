@@ -461,13 +461,38 @@ export default function BomForm() {
                         <td className="px-2 py-1">
                           <Select
                             value={l.component_product_id ?? ""}
-                            onValueChange={(v) => setLine(i, { component_product_id: v })}
+                            onValueChange={(v) => setLine(i, { component_product_id: v, component_variant_id: null })}
                           >
                             <SelectTrigger className="h-8"><SelectValue placeholder="Produto…" /></SelectTrigger>
                             <SelectContent>
                               {products?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                        </td>
+                        <td className="px-2 py-1">
+                          {(() => {
+                            const vs = l.component_product_id ? (variantsByProduct[l.component_product_id] ?? []) : [];
+                            if (!l.component_product_id) {
+                              return <span className="text-xs text-muted-foreground">—</span>;
+                            }
+                            if (vs.length === 0) {
+                              return <span className="text-xs text-muted-foreground">(sem variantes)</span>;
+                            }
+                            return (
+                              <Select
+                                value={l.component_variant_id ?? "__none__"}
+                                onValueChange={(v) => setLine(i, { component_variant_id: v === "__none__" ? null : v })}
+                              >
+                                <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">(qualquer)</SelectItem>
+                                  {vs.map((v: any) => (
+                                    <SelectItem key={v.id} value={v.id}>{v.sku || v.id.slice(0, 8)}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          })()}
                         </td>
                         <td className="px-2 py-1">
                           <Input
