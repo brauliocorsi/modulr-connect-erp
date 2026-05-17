@@ -9218,6 +9218,14 @@ export type Database = {
       _test_phase7: { Args: never; Returns: Json }
       _test_phase8: { Args: never; Returns: Json }
       _test_phase9: { Args: never; Returns: Json }
+      _test_purchase_need_to_po_flow: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          scenario: string
+        }[]
+      }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -9383,6 +9391,7 @@ export type Database = {
         Args: { _cascade?: boolean; _picking: string }
         Returns: undefined
       }
+      cancel_purchase_need: { Args: { _id: string }; Returns: Json }
       cancel_purchase_order: { Args: { _order: string }; Returns: undefined }
       cancel_sale_order: {
         Args: { _options?: Json; _order_id: string }
@@ -9927,6 +9936,14 @@ export type Database = {
       }
       purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
       purchase_need_remaining_qty: { Args: { _id: string }; Returns: number }
+      purchase_needs_create_po: {
+        Args: {
+          _expected_date?: string
+          _need_ids: string[]
+          _supplier_id?: string
+        }
+        Returns: Json
+      }
       purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
       putaway_stock: {
         Args: {
