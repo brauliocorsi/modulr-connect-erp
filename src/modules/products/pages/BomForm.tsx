@@ -120,6 +120,15 @@ export default function BomForm() {
     queryKey: ["products-all"],
     queryFn: async () => (await supabase.from("products").select("id,name").order("name")).data ?? [],
   });
+  const { data: allVariants } = useQuery({
+    queryKey: ["product-variants-all"],
+    queryFn: async () =>
+      (await supabase.from("product_variants").select("id,product_id,sku").eq("active", true)).data ?? [],
+  });
+  const variantsByProduct = (allVariants ?? []).reduce<Record<string, any[]>>((acc, v: any) => {
+    (acc[v.product_id] ||= []).push(v);
+    return acc;
+  }, {});
   const { data: parentBoms } = useQuery({
     queryKey: ["boms-masters"],
     queryFn: async () => (await supabase.from("boms").select("id,code,product_id").order("code")).data ?? [],
