@@ -35,7 +35,13 @@ export function PackageTrackingToggle({ productId }: { productId: string }) {
       }
     }
     setBusy(true);
-    const { error } = await supabase.from("products").update({ package_tracking_enabled: next }).eq("id", productId);
+    const { error } = await supabase.rpc("update_product_operational_config", {
+      _product_id: productId,
+      _supply_route: null as any,
+      _allocation_policy: null as any,
+      _component_allocation_policy: null as any,
+      _package_tracking_enabled: next,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     setEnabled(next);
