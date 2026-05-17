@@ -9108,6 +9108,16 @@ export type Database = {
       bom_delete_line: { Args: { p_id: string }; Returns: boolean }
       bom_delete_output: { Args: { p_id: string }; Returns: boolean }
       bom_delete_variant_rule: { Args: { p_id: string }; Returns: boolean }
+      bom_preview_resolved: {
+        Args: {
+          _bom_id: string
+          _context?: Json
+          _product_id: string
+          _qty?: number
+          _variant_id?: string
+        }
+        Returns: Json
+      }
       bom_upsert_line: {
         Args: {
           p_applies_to_variant_rule: Json

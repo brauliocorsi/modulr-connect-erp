@@ -16,6 +16,7 @@ import { Plus, Save, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { VariantRulesSection } from "./bom/VariantRulesSection";
 import { OutputsSection } from "./bom/OutputsSection";
+import { BomResolvedPreview } from "./bom/BomResolvedPreview";
 import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type BomRow = {
@@ -238,9 +239,23 @@ export default function BomForm() {
         ]}
         backTo="/products/bom"
         actions={
-          <Button size="sm" onClick={save} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
-          </Button>
+          <div className="flex gap-2">
+            {!isNew && id && bom.product_id && (
+              <BomResolvedPreview
+                bomId={id}
+                productId={bom.product_id}
+                defaultVariantId={bom.variant_id}
+                defaultQty={Number(bom.quantity || 1)}
+                onChanged={async () => {
+                  const { data: ls } = await supabase.from("bom_lines").select("*").eq("bom_id", id).order("sequence");
+                  setLines((ls ?? []) as any);
+                }}
+              />
+            )}
+            <Button size="sm" onClick={save} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
+            </Button>
+          </div>
         }
       />
       <PageBody>
