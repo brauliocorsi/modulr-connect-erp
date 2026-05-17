@@ -9426,6 +9426,16 @@ export type Database = {
         Args: { _sources: string[]; _target: string }
         Returns: undefined
       }
+      mfg_allocate_components_from_stock: {
+        Args: {
+          _location_id: string
+          _product_id: string
+          _qty: number
+          _reason?: string
+          _variant_id: string
+        }
+        Returns: Json
+      }
       mfg_available_qty: {
         Args: { _product: string; _variant: string }
         Returns: number
@@ -9500,6 +9510,15 @@ export type Database = {
         Returns: undefined
       }
       mfg_start_operation: { Args: { _op: string }; Returns: undefined }
+      mfg_suggest_component_allocation: {
+        Args: { _product_id: string; _qty: number; _variant_id: string }
+        Returns: {
+          mo_component_id: string
+          mo_id: string
+          priority_rank: number
+          suggested_qty: number
+        }[]
+      }
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
       notify_group: {
