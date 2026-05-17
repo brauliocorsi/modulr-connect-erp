@@ -9226,6 +9226,11 @@ export type Database = {
           scenario: string
         }[]
       }
+      _tpntpo_internal_neg: { Args: { _prod: string }; Returns: number }
+      _tpntpo_internal_qty: {
+        Args: { _prod: string; _var: string }
+        Returns: number
+      }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
       allocate_payment_to_schedules: {
         Args: { _so: string }
@@ -9942,6 +9947,10 @@ export type Database = {
           _need_ids: string[]
           _supplier_id?: string
         }
+        Returns: Json
+      }
+      purchase_order_change_state: {
+        Args: { _new_state: string; _po_id: string; _reason?: string }
         Returns: Json
       }
       purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
