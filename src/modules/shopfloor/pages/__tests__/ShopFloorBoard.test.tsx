@@ -23,11 +23,9 @@ beforeEach(() => {
       table === "work_centers" ? [{ id: "wc1", name: "WC1" }, { id: "wc2", name: "WC2" }] :
       table === "manufacturing_machines" ? [{ id: "m1", name: "M1" }] : [];
     const builder: any = {};
-    builder.select = () => builder;
-    builder.eq = () => builder;
-    builder.order = () => Promise.resolve({ data });
-    builder.limit = () => Promise.resolve({ data });
-    builder.then = (fn: any) => Promise.resolve({ data }).then(fn);
+    const ret = () => builder;
+    builder.select = ret; builder.eq = ret; builder.order = ret; builder.limit = ret; builder.is = ret;
+    builder.then = (fn: any, rej?: any) => Promise.resolve({ data }).then(fn, rej);
     return builder;
   });
 });
