@@ -141,8 +141,8 @@ describe("WorkOrdersSection", () => {
   it("invokes work_order_quality_check from QC button", async () => {
     rpcMock.mockResolvedValue({ error: null });
     renderWO();
-    await waitFor(() => screen.getAllByText("QC").length);
-    const row = screen.getByText("QC", { selector: "div" }).closest("tr")!;
+    await waitFor(() => screen.getByText("Verif Qualidade"));
+    const row = screen.getByText("Verif Qualidade").closest("tr")!;
     const btns = within(row).getAllByRole("button");
     // For a ready+QC row: Start, QC, Issue
     fireEvent.click(btns[1]);
