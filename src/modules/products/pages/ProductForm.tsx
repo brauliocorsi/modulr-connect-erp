@@ -233,6 +233,10 @@ export default function ProductForm() {
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_purchased} onCheckedChange={(v) => setForm({ ...form, can_be_purchased: v })} />
                     <Label>Pode ser comprado</Label>
+                    <FieldInfoTooltip
+                      title="Pode ser comprado"
+                      description="Permite comprar este produto a fornecedores. Use para produtos acabados comprados ou componentes/matérias-primas."
+                    />
                   </div>
                   <div className="flex items-center gap-3">
                     <Switch checked={!!form.auto_purchase} onCheckedChange={(v) => setForm({ ...form, auto_purchase: v })} />
