@@ -139,7 +139,7 @@ export default function WorkOrdersSection({ moId, compact }: Props) {
                   </td>
                   {!compact && <td>{o.work_center?.name ?? o.workcenter ?? "—"}</td>}
                   {!compact && <td>{o.machine?.name ?? "—"}</td>}
-                  {!compact && <td>{o.employee?.full_name ?? "—"}</td>}
+                  {!compact && <td className="text-xs">{o.assigned_employee_id ? o.assigned_employee_id.slice(0, 8) : "—"}</td>}
                   <td><WorkOrderStateBadge state={o.state} /></td>
                   <td className="text-xs">
                     {Number(o.planned_minutes)} / {o.actual_duration_minutes ? Number(o.actual_duration_minutes).toFixed(1) : "—"}
