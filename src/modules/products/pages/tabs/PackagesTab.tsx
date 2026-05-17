@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type Tpl = {
   id: string;
