@@ -194,7 +194,7 @@ export function BomResolvedPreview({ bomId, productId, defaultVariantId, default
               <SelectTrigger><SelectValue placeholder="(nenhuma)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">(nenhuma)</SelectItem>
-                {variants.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                {variants.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.sku || v.id.slice(0, 8)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
