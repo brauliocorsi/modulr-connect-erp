@@ -146,19 +146,102 @@ export function PackagesTab({ productId }: { productId: string }) {
             <table className="w-full text-xs">
               <thead className="bg-muted/40">
                 <tr>
-                  <th className="px-2 py-2 text-left w-10">#</th>
-                  <th className="px-2 py-2 text-left">Nome</th>
-                  <th className="px-2 py-2 text-left w-20">L (cm)</th>
-                  <th className="px-2 py-2 text-left w-20">W (cm)</th>
-                  <th className="px-2 py-2 text-left w-20">H (cm)</th>
-                  <th className="px-2 py-2 text-left w-24">Vol m³</th>
-                  <th className="px-2 py-2 text-left w-20">Peso kg</th>
+                  <th className="px-2 py-2 text-left w-10">
+                    <span className="inline-flex items-center gap-1">
+                      #
+                      <FieldInfoTooltip
+                        title="Sequência / Total"
+                        description="Número deste colis dentro do conjunto e total de colis que compõem uma unidade do produto."
+                        example="1/3 = primeiro colis de três."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left">
+                    <span className="inline-flex items-center gap-1">
+                      Nome
+                      <FieldInfoTooltip
+                        title="Grupo lógico (nome)"
+                        description="Identifica este colis dentro do conjunto. Útil para agrupar partes do produto."
+                        example="Cabeceira, Base, Ferragens."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left w-20">
+                    <span className="inline-flex items-center gap-1">
+                      L (cm)
+                      <FieldInfoTooltip title="Comprimento (cm)" description="Medida física do colis. Usada para saber se cabe na viatura." />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left w-20">
+                    <span className="inline-flex items-center gap-1">
+                      W (cm)
+                      <FieldInfoTooltip title="Largura (cm)" description="Medida física do colis. Usada para saber se cabe na viatura." />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left w-20">
+                    <span className="inline-flex items-center gap-1">
+                      H (cm)
+                      <FieldInfoTooltip title="Altura (cm)" description="Medida física do colis. Usada para saber se cabe na viatura." />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left w-24">
+                    <span className="inline-flex items-center gap-1">
+                      Vol m³
+                      <FieldInfoTooltip
+                        title="Volume (m³)"
+                        description="Calculado automaticamente por comprimento × largura × altura."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-left w-20">
+                    <span className="inline-flex items-center gap-1">
+                      Peso kg
+                      <FieldInfoTooltip title="Peso do colis (kg)" description="Peso do colis. Usado para capacidade da carrinha." />
+                    </span>
+                  </th>
                   <th className="px-2 py-2 text-left w-20">Mont. min</th>
-                  <th className="px-2 py-2 text-center w-12" title="Empilhável">Stk</th>
-                  <th className="px-2 py-2 text-center w-12" title="Frágil">Frg</th>
-                  <th className="px-2 py-2 text-center w-12" title="Transporte horizontal">Flat</th>
-                  <th className="px-2 py-2 text-center w-12" title="Requer montagem">Mnt</th>
-                  <th className="px-2 py-2 text-center w-12" title="Obrigatório">Req</th>
+                  <th className="px-2 py-2 text-center w-12">
+                    <span className="inline-flex items-center gap-1">
+                      Stk
+                      <FieldInfoTooltip
+                        title="Stackable (empilhável)"
+                        description="Marque apenas se este colis pode receber outros volumes por cima sem dano."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-center w-12">
+                    <span className="inline-flex items-center gap-1">
+                      Frg
+                      <FieldInfoTooltip title="Frágil" description="Indica que o colis deve ser manuseado com cuidado." />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-center w-12">
+                    <span className="inline-flex items-center gap-1">
+                      Flat
+                      <FieldInfoTooltip
+                        title="Transporte horizontal"
+                        description="Use quando o colis precisa ser transportado plano, sem ficar em pé ou inclinado."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-center w-12">
+                    <span className="inline-flex items-center gap-1">
+                      Mnt
+                      <FieldInfoTooltip
+                        title="Requer montagem"
+                        description="Indica que este colis faz parte de um produto que exige montagem no cliente."
+                      />
+                    </span>
+                  </th>
+                  <th className="px-2 py-2 text-center w-12">
+                    <span className="inline-flex items-center gap-1">
+                      Req
+                      <FieldInfoTooltip
+                        title="Obrigatório"
+                        description="Se ativo, este colis é obrigatório para considerar o produto pronto para entrega."
+                      />
+                    </span>
+                  </th>
                   <th className="px-2 py-2 text-left">Barcode pattern</th>
                   <th className="px-2 py-2 text-center w-12">Act</th>
                   <th className="px-2 py-2 w-8"></th>
