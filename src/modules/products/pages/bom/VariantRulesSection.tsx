@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, X, Save } from "lucide-react";
 import { toast } from "sonner";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type Rule = {
   id: string;
