@@ -36,19 +36,16 @@ export type Database = {
         Row: {
           detail: string | null
           passed: boolean | null
-          run_at: string | null
           scenario: string | null
         }
         Insert: {
           detail?: string | null
           passed?: boolean | null
-          run_at?: string | null
           scenario?: string | null
         }
         Update: {
           detail?: string | null
           passed?: boolean | null
-          run_at?: string | null
           scenario?: string | null
         }
         Relationships: []
