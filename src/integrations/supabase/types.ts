@@ -9187,6 +9187,14 @@ export type Database = {
           test_name: string
         }[]
       }
+      _test_phase16_component_variant_flow: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          scenario: string
+        }[]
+      }
       _test_phase16_multilevel_bom_subassembly: {
         Args: never
         Returns: {
