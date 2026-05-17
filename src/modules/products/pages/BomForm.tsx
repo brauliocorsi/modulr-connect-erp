@@ -369,12 +369,52 @@ export default function BomForm() {
                   <tr>
                     <th className="text-left px-2 py-2">Componente</th>
                     <th className="text-left px-2 py-2 w-28">Qtd</th>
-                    <th className="text-left px-2 py-2 w-32">Operação</th>
-                    <th className="text-left px-2 py-2 w-32">Centro</th>
-                    <th className="text-left px-2 py-2 w-32">Fórmula qty</th>
-                    <th className="text-left px-2 py-2 w-24">Ação</th>
-                    <th className="text-center px-2 py-2 w-16">Opt</th>
-                    <th className="text-center px-2 py-2 w-16">Crítico</th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Operação
+                        <FieldInfoTooltip title="Operação" description="Operação onde este componente será consumido." example="Corte, Estofamento ou Montagem." />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Centro
+                        <FieldInfoTooltip title="Centro de trabalho" description="Centro responsável por esta etapa." example="Corte, Costura ou Embalagem." />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Fórmula qty
+                        <FieldInfoTooltip
+                          title="Fórmula de quantidade"
+                          description="Fórmula para calcular a quantidade necessária automaticamente. Variáveis disponíveis: base, largura, comprimento, medida_colchao, qty_encomendada."
+                          example="largura * comprimento * 1.05"
+                        />
+                      </span>
+                    </th>
+                    <th className="text-left px-2 py-2 w-24">
+                      <span className="inline-flex items-center gap-1">
+                        Ação
+                        <FieldInfoTooltip
+                          title="Ação de herança"
+                          description={"own: linha própria desta BOM.\nadd: adiciona componente extra em relação ao pai.\noverride: substitui linha herdada do pai.\nremove: remove linha herdada do pai."}
+                        />
+                      </span>
+                    </th>
+                    <th className="text-center px-2 py-2 w-16">
+                      <span className="inline-flex items-center gap-1">
+                        Opt
+                        <FieldInfoTooltip title="Opcional" description="Componente opcional. Só entra se uma regra ou condição mandar." />
+                      </span>
+                    </th>
+                    <th className="text-center px-2 py-2 w-16">
+                      <span className="inline-flex items-center gap-1">
+                        Crítico
+                        <FieldInfoTooltip
+                          title="Componente crítico"
+                          description="Se faltar, a produção deve ficar bloqueada ou em waiting_components."
+                        />
+                      </span>
+                    </th>
                     <th className="w-10" />
                   </tr>
                 </thead>
