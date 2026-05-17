@@ -392,6 +392,15 @@ export default function BomForm() {
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="text-left px-2 py-2">Componente</th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Variante
+                        <FieldInfoTooltip
+                          title="Variante do componente"
+                          description="Se o componente tiver variantes (ex: cores), escolha qual variante usar. Mantém a cadeia: bom_lines → mo_components → purchase_needs → POs → stock."
+                        />
+                      </span>
+                    </th>
                     <th className="text-left px-2 py-2 w-28">Qtd</th>
                     <th className="text-left px-2 py-2 w-32">
                       <span className="inline-flex items-center gap-1">
