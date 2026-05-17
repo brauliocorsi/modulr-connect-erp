@@ -188,6 +188,10 @@ export default function ProductForm() {
                   <div className="flex items-center gap-3">
                     <Switch checked={form.can_be_sold} onCheckedChange={(v) => setForm({ ...form, can_be_sold: v })} />
                     <Label>Pode ser vendido</Label>
+                    <FieldInfoTooltip
+                      title="Pode ser vendido"
+                      description="Permite vender este produto em orçamentos e encomendas."
+                    />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
