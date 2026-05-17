@@ -278,7 +278,13 @@ export default function BomForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Modo de herança</Label>
+              <Label className="flex items-center gap-1">
+                Modo de herança
+                <FieldInfoTooltip
+                  title="Modo de herança"
+                  description="Define como esta BOM se relaciona com a BOM pai.\n• Herda: usa as linhas da BOM pai e permite override/remove.\n• Sobrescreve: ignora as linhas do pai e usa apenas as próprias.\n• Estende: junta as próprias linhas às do pai."
+                />
+              </Label>
               <Select value={bom.inheritance_mode} onValueChange={(v: any) => setBom({ ...bom, inheritance_mode: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -289,7 +295,14 @@ export default function BomForm() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>BOM pai</Label>
+              <Label className="flex items-center gap-1">
+                BOM pai
+                <FieldInfoTooltip
+                  title="BOM pai"
+                  description="Permite herdar componentes de outra BOM, evitando duplicar listas de materiais."
+                  example="Sofá 3 lugares herda da BOM Master de Sofá."
+                />
+              </Label>
               <Select
                 value={bom.parent_bom_id ?? "__none__"}
                 onValueChange={(v) => setBom({ ...bom, parent_bom_id: v === "__none__" ? null : v })}
@@ -310,6 +323,10 @@ export default function BomForm() {
                 onCheckedChange={(v) => setBom({ ...bom, is_master: !!v })}
               />
               <Label htmlFor="is_master" className="cursor-pointer">BOM Master</Label>
+              <FieldInfoTooltip
+                title="BOM Master"
+                description="BOM principal usada como base para outras BOMs filhas. Útil para variantes que compartilham a maioria dos componentes."
+              />
             </div>
             <div className="flex items-center gap-2 mt-6">
               <Checkbox
