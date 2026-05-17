@@ -4615,6 +4615,7 @@ export type Database = {
           can_be_sold: boolean
           category_id: string | null
           company_id: string | null
+          component_allocation_policy: Database["public"]["Enums"]["component_allocation_policy"]
           created_at: string
           delivery_surcharge: number
           depth: number | null
@@ -4672,6 +4673,7 @@ export type Database = {
           can_be_sold?: boolean
           category_id?: string | null
           company_id?: string | null
+          component_allocation_policy?: Database["public"]["Enums"]["component_allocation_policy"]
           created_at?: string
           delivery_surcharge?: number
           depth?: number | null
@@ -4729,6 +4731,7 @@ export type Database = {
           can_be_sold?: boolean
           category_id?: string | null
           company_id?: string | null
+          component_allocation_policy?: Database["public"]["Enums"]["component_allocation_policy"]
           created_at?: string
           delivery_surcharge?: number
           depth?: number | null
@@ -4856,62 +4859,106 @@ export type Database = {
       }
       purchase_needs: {
         Row: {
+          bom_line_id: string | null
           created_at: string
           created_by: string | null
+          fulfillment_payload: Json | null
           id: string
           manufacturing_order_id: string | null
+          mo_component_id: string | null
           needed_by: string | null
           notes: string | null
           origin_kind: Database["public"]["Enums"]["purchase_need_origin"]
           priority: number
           product_id: string
           purchase_order_id: string | null
+          purchase_order_line_id: string | null
+          purpose: string | null
           qty_needed: number
           sale_order_id: string | null
+          sale_order_line_id: string | null
+          satisfied_at: string | null
+          satisfied_by: string | null
+          satisfied_qty: number | null
+          satisfied_source_id: string | null
           state: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id: string | null
           updated_at: string
         }
         Insert: {
+          bom_line_id?: string | null
           created_at?: string
           created_by?: string | null
+          fulfillment_payload?: Json | null
           id?: string
           manufacturing_order_id?: string | null
+          mo_component_id?: string | null
           needed_by?: string | null
           notes?: string | null
           origin_kind: Database["public"]["Enums"]["purchase_need_origin"]
           priority?: number
           product_id: string
           purchase_order_id?: string | null
+          purchase_order_line_id?: string | null
+          purpose?: string | null
           qty_needed: number
           sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          satisfied_at?: string | null
+          satisfied_by?: string | null
+          satisfied_qty?: number | null
+          satisfied_source_id?: string | null
           state?: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id?: string | null
           updated_at?: string
         }
         Update: {
+          bom_line_id?: string | null
           created_at?: string
           created_by?: string | null
+          fulfillment_payload?: Json | null
           id?: string
           manufacturing_order_id?: string | null
+          mo_component_id?: string | null
           needed_by?: string | null
           notes?: string | null
           origin_kind?: Database["public"]["Enums"]["purchase_need_origin"]
           priority?: number
           product_id?: string
           purchase_order_id?: string | null
+          purchase_order_line_id?: string | null
+          purpose?: string | null
           qty_needed?: number
           sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          satisfied_at?: string | null
+          satisfied_by?: string | null
+          satisfied_qty?: number | null
+          satisfied_source_id?: string | null
           state?: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "purchase_needs_bom_line_id_fkey"
+            columns: ["bom_line_id"]
+            isOneToOne: false
+            referencedRelation: "bom_lines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchase_needs_manufacturing_order_id_fkey"
             columns: ["manufacturing_order_id"]
             isOneToOne: false
             referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_mo_component_id_fkey"
+            columns: ["mo_component_id"]
+            isOneToOne: false
+            referencedRelation: "mo_components"
             referencedColumns: ["id"]
           },
           {
@@ -4943,6 +4990,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchase_needs_purchase_order_line_id_fkey"
+            columns: ["purchase_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchase_needs_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
@@ -4962,6 +5016,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
           },
           {
             foreignKeyName: "purchase_needs_suggested_partner_id_fkey"
@@ -6725,6 +6793,8 @@ export type Database = {
           package_id: string | null
           picking_id: string | null
           product_id: string
+          purchase_need_id: string | null
+          purchase_order_line_id: string | null
           quantity: number
           quantity_done: number
           reference: string | null
@@ -6743,6 +6813,8 @@ export type Database = {
           package_id?: string | null
           picking_id?: string | null
           product_id: string
+          purchase_need_id?: string | null
+          purchase_order_line_id?: string | null
           quantity?: number
           quantity_done?: number
           reference?: string | null
@@ -6761,6 +6833,8 @@ export type Database = {
           package_id?: string | null
           picking_id?: string | null
           product_id?: string
+          purchase_need_id?: string | null
+          purchase_order_line_id?: string | null
           quantity?: number
           quantity_done?: number
           reference?: string | null
@@ -6827,6 +6901,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_product_stock_full"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_moves_purchase_need_id_fkey"
+            columns: ["purchase_need_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_moves_purchase_order_line_id_fkey"
+            columns: ["purchase_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stock_moves_source_location_id_fkey"
@@ -9278,6 +9366,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_manufacturing_component: {
+        Args: { _product_id: string }
+        Returns: boolean
+      }
       is_module_installed: {
         Args: { _module: Database["public"]["Enums"]["app_module"] }
         Returns: boolean
@@ -9333,6 +9425,16 @@ export type Database = {
       merge_purchase_orders: {
         Args: { _sources: string[]; _target: string }
         Returns: undefined
+      }
+      mfg_allocate_components_from_stock: {
+        Args: {
+          _location_id: string
+          _product_id: string
+          _qty: number
+          _reason?: string
+          _variant_id: string
+        }
+        Returns: Json
       }
       mfg_available_qty: {
         Args: { _product: string; _variant: string }
@@ -9408,6 +9510,15 @@ export type Database = {
         Returns: undefined
       }
       mfg_start_operation: { Args: { _op: string }; Returns: undefined }
+      mfg_suggest_component_allocation: {
+        Args: { _product_id: string; _qty: number; _variant_id: string }
+        Returns: {
+          mo_component_id: string
+          mo_id: string
+          priority_rank: number
+          suggested_qty: number
+        }[]
+      }
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
       notify_group: {
@@ -9497,6 +9608,7 @@ export type Database = {
         Returns: Json
       }
       purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
+      purchase_need_remaining_qty: { Args: { _id: string }; Returns: number }
       purchase_order_receipt_status: { Args: { _po_id: string }; Returns: Json }
       putaway_stock: {
         Args: {
@@ -9773,6 +9885,11 @@ export type Database = {
         | "manufacturing"
         | "shop_floor"
       bom_type: "normal" | "phantom" | "subcontract"
+      component_allocation_policy:
+        | "manufacturing_first"
+        | "sales_first"
+        | "oldest_need_first"
+        | "manual"
       location_type:
         | "internal"
         | "supplier"
@@ -10053,6 +10170,12 @@ export const Constants = {
         "shop_floor",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
+      component_allocation_policy: [
+        "manufacturing_first",
+        "sales_first",
+        "oldest_need_first",
+        "manual",
+      ],
       location_type: [
         "internal",
         "supplier",
