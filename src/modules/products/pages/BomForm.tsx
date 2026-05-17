@@ -16,6 +16,7 @@ import { Plus, Save, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { VariantRulesSection } from "./bom/VariantRulesSection";
 import { OutputsSection } from "./bom/OutputsSection";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 type BomRow = {
   id?: string;
