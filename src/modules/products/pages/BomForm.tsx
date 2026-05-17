@@ -460,6 +460,13 @@ export default function BomForm() {
               <Badge variant="outline">remove</Badge> exclui linha herdada
             </div>
           </Card>
+
+          {!isNew && id && (
+            <>
+              <VariantRulesSection bomId={id} />
+              <OutputsSection bomId={id} />
+            </>
+          )}
         </div>
       </PageBody>
     </>
