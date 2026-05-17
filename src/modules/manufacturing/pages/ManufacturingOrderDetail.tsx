@@ -10,6 +10,20 @@ import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "../components
 import { MOOriginBadge } from "../components/MOOriginBadge";
 import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
+import WorkOrdersSection from "../components/WorkOrdersSection";
+
+const CLOSE_ERROR_MESSAGES: Record<string, string> = {
+  WORK_ORDERS_NOT_DONE: "Ainda existem operações abertas.",
+  QUALITY_CHECK_REQUIRED: "Existe controlo de qualidade obrigatório pendente.",
+  OPEN_BLOCKING_ISSUES: "Existem problemas bloqueantes abertos.",
+};
+
+function closeErrorMessage(raw: string) {
+  for (const k of Object.keys(CLOSE_ERROR_MESSAGES)) {
+    if (raw.includes(k)) return CLOSE_ERROR_MESSAGES[k];
+  }
+  return raw;
+}
 
 export default function ManufacturingOrderDetail() {
   const { id } = useParams();
