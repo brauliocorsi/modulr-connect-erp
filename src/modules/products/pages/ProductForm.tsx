@@ -24,6 +24,7 @@ import { WooTab } from "./tabs/WooTab";
 import { ReorderingTab } from "./tabs/ReorderingTab";
 import { PackagesTab } from "./tabs/PackagesTab";
 import { PackageTrackingToggle } from "./tabs/PackageTrackingToggle";
+import { OperationalConfigTab } from "./tabs/OperationalConfigTab";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
 
