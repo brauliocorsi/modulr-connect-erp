@@ -32,6 +32,27 @@ export type Database = {
         }
         Relationships: []
       }
+      _t16c5_regress: {
+        Row: {
+          failed_detail: string | null
+          passed: number | null
+          suite: string | null
+          total: number | null
+        }
+        Insert: {
+          failed_detail?: string | null
+          passed?: number | null
+          suite?: string | null
+          total?: number | null
+        }
+        Update: {
+          failed_detail?: string | null
+          passed?: number | null
+          suite?: string | null
+          total?: number | null
+        }
+        Relationships: []
+      }
       _t16c5_results: {
         Row: {
           detail: string | null
