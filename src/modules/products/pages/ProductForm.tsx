@@ -318,6 +318,7 @@ export default function ProductForm() {
               {!isNew && <TabsContent value="reordering" className="pt-4"><Card className="p-6"><ReorderingTab productId={id!} /></Card></TabsContent>}
               <TabsContent value="woo" className="pt-4"><Card className="p-6"><WooTab form={form} setForm={setForm} /></Card></TabsContent>
               {!isNew && <TabsContent value="packages" className="pt-4 space-y-4"><Card className="p-6"><PackageTrackingToggle productId={id!} /></Card><Card className="p-6"><PackagesTab productId={id!} /></Card></TabsContent>}
+              {!isNew && <TabsContent value="ops" className="pt-4"><OperationalConfigTab productId={id!} /></TabsContent>}
             </Tabs>
 
             {!isNew && <RecordSidebar recordType="product" recordId={id!} />}
