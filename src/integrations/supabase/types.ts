@@ -3139,56 +3139,120 @@ export type Database = {
       }
       mo_components: {
         Row: {
+          bom_line_id: string | null
+          consumption_uom_id: string | null
+          conversion_factor: number | null
           created_at: string
+          formula: string | null
           id: string
+          inheritance_action: string
+          is_critical: boolean
+          is_optional: boolean
           mo_id: string
+          operation_id: string | null
+          parent_bom_line_id: string | null
           product_id: string
           qty_available: number
           qty_consumed: number
           qty_required: number
           qty_reserved: number
+          rounding_method: string
           scrap_pct: number
           sequence: number
           status: Database["public"]["Enums"]["mo_component_status"]
           uom_id: string | null
           variant_id: string | null
+          variant_rule_id: string | null
+          work_center_id: string | null
         }
         Insert: {
+          bom_line_id?: string | null
+          consumption_uom_id?: string | null
+          conversion_factor?: number | null
           created_at?: string
+          formula?: string | null
           id?: string
+          inheritance_action?: string
+          is_critical?: boolean
+          is_optional?: boolean
           mo_id: string
+          operation_id?: string | null
+          parent_bom_line_id?: string | null
           product_id: string
           qty_available?: number
           qty_consumed?: number
           qty_required?: number
           qty_reserved?: number
+          rounding_method?: string
           scrap_pct?: number
           sequence?: number
           status?: Database["public"]["Enums"]["mo_component_status"]
           uom_id?: string | null
           variant_id?: string | null
+          variant_rule_id?: string | null
+          work_center_id?: string | null
         }
         Update: {
+          bom_line_id?: string | null
+          consumption_uom_id?: string | null
+          conversion_factor?: number | null
           created_at?: string
+          formula?: string | null
           id?: string
+          inheritance_action?: string
+          is_critical?: boolean
+          is_optional?: boolean
           mo_id?: string
+          operation_id?: string | null
+          parent_bom_line_id?: string | null
           product_id?: string
           qty_available?: number
           qty_consumed?: number
           qty_required?: number
           qty_reserved?: number
+          rounding_method?: string
           scrap_pct?: number
           sequence?: number
           status?: Database["public"]["Enums"]["mo_component_status"]
           uom_id?: string | null
           variant_id?: string | null
+          variant_rule_id?: string | null
+          work_center_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "mo_components_bom_line_id_fkey"
+            columns: ["bom_line_id"]
+            isOneToOne: false
+            referencedRelation: "bom_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_consumption_uom_id_fkey"
+            columns: ["consumption_uom_id"]
+            isOneToOne: false
+            referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mo_components_mo_id_fkey"
             columns: ["mo_id"]
             isOneToOne: false
             referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_parent_bom_line_id_fkey"
+            columns: ["parent_bom_line_id"]
+            isOneToOne: false
+            referencedRelation: "bom_lines"
             referencedColumns: ["id"]
           },
           {
@@ -3224,6 +3288,13 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -8829,6 +8900,14 @@ export type Database = {
       }
       _test_phase16_b0_6_allocation_hooks: { Args: never; Returns: Json }
       _test_phase16_c1_bom_resolution_readonly: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test_name: string
+        }[]
+      }
+      _test_phase16_c2_mo_materialization: {
         Args: never
         Returns: {
           detail: string
