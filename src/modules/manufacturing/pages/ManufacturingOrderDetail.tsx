@@ -10,6 +10,20 @@ import { MOStateBadge, MOPriorityBadge, ComponentStockChip } from "../components
 import { MOOriginBadge } from "../components/MOOriginBadge";
 import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
+import WorkOrdersSection from "../components/WorkOrdersSection";
+
+const CLOSE_ERROR_MESSAGES: Record<string, string> = {
+  WORK_ORDERS_NOT_DONE: "Ainda existem operações abertas.",
+  QUALITY_CHECK_REQUIRED: "Existe controlo de qualidade obrigatório pendente.",
+  OPEN_BLOCKING_ISSUES: "Existem problemas bloqueantes abertos.",
+};
+
+function closeErrorMessage(raw: string) {
+  for (const k of Object.keys(CLOSE_ERROR_MESSAGES)) {
+    if (raw.includes(k)) return CLOSE_ERROR_MESSAGES[k];
+  }
+  return raw;
+}
 
 export default function ManufacturingOrderDetail() {
   const { id } = useParams();
@@ -66,6 +80,13 @@ export default function ManufacturingOrderDetail() {
             <MOOriginBadge origin={mo.origin} />
             <MOPriorityBadge priority={mo.priority} />
             <MOStateBadge state={mo.state} />
+            {mo.state !== "done" && mo.state !== "cancelled" && (
+              <Button size="sm" variant="outline" onClick={async () => {
+                const { error } = await supabase.rpc("close_mo", { _mo: id! });
+                if (error) toast.error(closeErrorMessage(error.message));
+                else { toast.success("Ordem fechada"); qc.invalidateQueries({ queryKey: ["mo", id] }); }
+              }}>Fechar OF</Button>
+            )}
           </div>
         }
       />
@@ -124,24 +145,7 @@ export default function ManufacturingOrderDetail() {
               </TabsContent>
 
               <TabsContent value="operations">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground border-b">
-                    <tr><th className="py-2">#</th><th>Etapa</th><th>Centro</th><th>Min.</th><th>Estado</th><th>Início</th><th>Fim</th></tr>
-                  </thead>
-                  <tbody>
-                    {ops?.map((o: any) => (
-                      <tr key={o.id} className="border-b last:border-0">
-                        <td className="py-2">{o.sequence}</td>
-                        <td>{o.name}{o.is_qc && " (QC)"}{o.is_rework && " (retrabalho)"}</td>
-                        <td>{o.workcenter ?? "—"}</td>
-                        <td>{Number(o.planned_minutes)}</td>
-                        <td>{o.state}</td>
-                        <td>{o.started_at ? fmtDateTime(o.started_at) : "—"}</td>
-                        <td>{o.finished_at ? fmtDateTime(o.finished_at) : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <WorkOrdersSection moId={id!} />
               </TabsContent>
 
               <TabsContent value="quality">
