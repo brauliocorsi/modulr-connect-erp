@@ -179,6 +179,7 @@ export default function ProductForm() {
                 <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
                 <TabsTrigger value="packages" disabled={isNew}>Colis</TabsTrigger>
+                <TabsTrigger value="ops" disabled={isNew}>Config. Operacional</TabsTrigger>
               </TabsList>
 
               <TabsContent value="sales" className="pt-4">
