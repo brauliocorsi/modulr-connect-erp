@@ -120,6 +120,15 @@ export default function BomForm() {
     queryKey: ["products-all"],
     queryFn: async () => (await supabase.from("products").select("id,name").order("name")).data ?? [],
   });
+  const { data: allVariants } = useQuery({
+    queryKey: ["product-variants-all"],
+    queryFn: async () =>
+      (await supabase.from("product_variants").select("id,product_id,sku").eq("active", true)).data ?? [],
+  });
+  const variantsByProduct = (allVariants ?? []).reduce<Record<string, any[]>>((acc, v: any) => {
+    (acc[v.product_id] ||= []).push(v);
+    return acc;
+  }, {});
   const { data: parentBoms } = useQuery({
     queryKey: ["boms-masters"],
     queryFn: async () => (await supabase.from("boms").select("id,code,product_id").order("code")).data ?? [],
@@ -383,6 +392,15 @@ export default function BomForm() {
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="text-left px-2 py-2">Componente</th>
+                    <th className="text-left px-2 py-2 w-32">
+                      <span className="inline-flex items-center gap-1">
+                        Variante
+                        <FieldInfoTooltip
+                          title="Variante do componente"
+                          description="Se o componente tiver variantes (ex: cores), escolha qual variante usar. Mantém a cadeia: bom_lines → mo_components → purchase_needs → POs → stock."
+                        />
+                      </span>
+                    </th>
                     <th className="text-left px-2 py-2 w-28">Qtd</th>
                     <th className="text-left px-2 py-2 w-32">
                       <span className="inline-flex items-center gap-1">
@@ -435,7 +453,7 @@ export default function BomForm() {
                 </thead>
                 <tbody>
                   {ownLines.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Sem componentes</td></tr>
+                    <tr><td colSpan={10} className="text-center text-muted-foreground py-6">Sem componentes</td></tr>
                   ) : ownLines.map((l) => {
                     const i = lines.indexOf(l);
                     return (
@@ -443,13 +461,38 @@ export default function BomForm() {
                         <td className="px-2 py-1">
                           <Select
                             value={l.component_product_id ?? ""}
-                            onValueChange={(v) => setLine(i, { component_product_id: v })}
+                            onValueChange={(v) => setLine(i, { component_product_id: v, component_variant_id: null })}
                           >
                             <SelectTrigger className="h-8"><SelectValue placeholder="Produto…" /></SelectTrigger>
                             <SelectContent>
                               {products?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                        </td>
+                        <td className="px-2 py-1">
+                          {(() => {
+                            const vs = l.component_product_id ? (variantsByProduct[l.component_product_id] ?? []) : [];
+                            if (!l.component_product_id) {
+                              return <span className="text-xs text-muted-foreground">—</span>;
+                            }
+                            if (vs.length === 0) {
+                              return <span className="text-xs text-muted-foreground">(sem variantes)</span>;
+                            }
+                            return (
+                              <Select
+                                value={l.component_variant_id ?? "__none__"}
+                                onValueChange={(v) => setLine(i, { component_variant_id: v === "__none__" ? null : v })}
+                              >
+                                <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">(qualquer)</SelectItem>
+                                  {vs.map((v: any) => (
+                                    <SelectItem key={v.id} value={v.id}>{v.sku || v.id.slice(0, 8)}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          })()}
                         </td>
                         <td className="px-2 py-1">
                           <Input

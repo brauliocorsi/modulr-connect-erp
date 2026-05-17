@@ -42,13 +42,20 @@ export function BomResolvedPreview({ bomId, productId, defaultVariantId, default
     queryKey: ["product-variants", productId],
     enabled: !!productId && open,
     queryFn: async () =>
-      (await supabase.from("product_variants").select("id,name").eq("product_id", productId).order("name")).data ?? [],
+      (await supabase.from("product_variants").select("id,sku").eq("product_id", productId).order("sku")).data ?? [],
   });
   const { data: products = [] } = useQuery({
     queryKey: ["products-min"],
     enabled: open,
     queryFn: async () => (await supabase.from("products").select("id,name")).data ?? [],
   });
+  const { data: allVariants = [] } = useQuery({
+    queryKey: ["product-variants-min"],
+    enabled: open,
+    queryFn: async () => (await supabase.from("product_variants").select("id,sku")).data ?? [],
+  });
+  const variantSku = (id: string | null) =>
+    id ? ((allVariants as any[]).find((v) => v.id === id)?.sku ?? id.slice(0, 8)) : null;
 
   const run = async () => {
     setLoading(true);
@@ -187,7 +194,7 @@ export function BomResolvedPreview({ bomId, productId, defaultVariantId, default
               <SelectTrigger><SelectValue placeholder="(nenhuma)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">(nenhuma)</SelectItem>
-                {variants.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                {variants.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.sku || v.id.slice(0, 8)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -279,7 +286,14 @@ export function BomResolvedPreview({ bomId, productId, defaultVariantId, default
                         : "inherited";
                       return (
                         <tr key={i} className="border-t align-top">
-                          <td className="px-2 py-1">{productName(l.component_product_id)}</td>
+                          <td className="px-2 py-1">
+                            {productName(l.component_product_id)}
+                            {l.component_variant_id && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                {variantSku(l.component_variant_id)}
+                              </Badge>
+                            )}
+                          </td>
                           <td className="px-2 py-1 font-mono">{l.qty_required}</td>
                           <td className="px-2 py-1 font-mono text-xs">{l.formula_used ?? "—"}</td>
                           <td className="px-2 py-1">
