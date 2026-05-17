@@ -9084,6 +9084,10 @@ export type Database = {
         Args: { _mo: string }
         Returns: undefined
       }
+      _sf_assert: {
+        Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
+        Returns: Json
+      }
       _so_ensure_mo_for_line: {
         Args: { _line_id: string; _qty: number }
         Returns: string
@@ -9188,6 +9192,7 @@ export type Database = {
           scenario: string
         }[]
       }
+      _test_phase16_shopfloor_workorders: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -9610,6 +9615,10 @@ export type Database = {
       erp_health_check_run: {
         Args: { _threshold_days?: number }
         Returns: string
+      }
+      erp_health_check_shopfloor: {
+        Args: { _threshold_days?: number }
+        Returns: Json
       }
       erp_health_remediate: {
         Args: { _mode?: string; _run_id: string }
