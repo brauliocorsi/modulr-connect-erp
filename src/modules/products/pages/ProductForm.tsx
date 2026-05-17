@@ -278,11 +278,20 @@ export default function ProductForm() {
                     <div className="flex items-center gap-3">
                       <Switch checked={form.can_be_manufactured} onCheckedChange={(v) => setForm({ ...form, can_be_manufactured: v })} />
                       <Label>Pode ser fabricado</Label>
+                      <FieldInfoTooltip
+                        title="Pode ser fabricado"
+                        description="Indica que este produto pode ser fabricado internamente através de uma BOM."
+                      />
                     </div>
                     {form.can_be_manufactured && (
                       <div className="flex items-center gap-3">
                         <Switch checked={!!form.requires_bom} onCheckedChange={(v) => setForm({ ...form, requires_bom: v })} />
                         <Label>Requer BOM</Label>
+                        <FieldInfoTooltip
+                          title="Requer BOM"
+                          description="Exige que o produto tenha uma lista de materiais válida antes de ser fabricado."
+                          warning="Sem BOM, as ordens de produção não podem ser criadas."
+                        />
                       </div>
                     )}
                     <div className="space-y-2">
