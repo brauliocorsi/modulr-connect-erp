@@ -9505,6 +9505,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      mfg_reserve_components_on_receipt: {
+        Args: { _stock_move_id: string }
+        Returns: Json
+      }
       mfg_resolve_issue: {
         Args: { _issue: string; _resolution: string }
         Returns: undefined
