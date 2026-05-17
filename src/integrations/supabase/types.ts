@@ -68,6 +68,27 @@ export type Database = {
         }
         Relationships: []
       }
+      _test_regression_log: {
+        Row: {
+          id: number
+          ran_at: string | null
+          result: Json | null
+          test: string | null
+        }
+        Insert: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+          test?: string | null
+        }
+        Update: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+          test?: string | null
+        }
+        Relationships: []
+      }
       account_journals: {
         Row: {
           active: boolean
