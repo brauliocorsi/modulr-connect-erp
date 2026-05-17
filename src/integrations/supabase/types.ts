@@ -358,27 +358,54 @@ export type Database = {
       }
       bom_operations: {
         Row: {
+          active: boolean
           bom_id: string
+          cleanup_time_minutes: number
+          code: string | null
           duration_minutes: number
           id: string
+          instructions: string | null
           name: string
+          requires_employee: boolean
+          requires_machine: boolean
+          requires_quality_check: boolean
           sequence: number
+          setup_time_minutes: number
+          work_center_id: string | null
           workcenter: string | null
         }
         Insert: {
+          active?: boolean
           bom_id: string
+          cleanup_time_minutes?: number
+          code?: string | null
           duration_minutes?: number
           id?: string
+          instructions?: string | null
           name: string
+          requires_employee?: boolean
+          requires_machine?: boolean
+          requires_quality_check?: boolean
           sequence?: number
+          setup_time_minutes?: number
+          work_center_id?: string | null
           workcenter?: string | null
         }
         Update: {
+          active?: boolean
           bom_id?: string
+          cleanup_time_minutes?: number
+          code?: string | null
           duration_minutes?: number
           id?: string
+          instructions?: string | null
           name?: string
+          requires_employee?: boolean
+          requires_machine?: boolean
+          requires_quality_check?: boolean
           sequence?: number
+          setup_time_minutes?: number
+          work_center_id?: string | null
           workcenter?: string | null
         }
         Relationships: [
@@ -387,6 +414,13 @@ export type Database = {
             columns: ["bom_id"]
             isOneToOne: false
             referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_operations_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -3439,7 +3473,11 @@ export type Database = {
       }
       mo_operations: {
         Row: {
+          actual_duration_minutes: number | null
+          actual_end_at: string | null
+          actual_start_at: string | null
           assigned_employee_id: string | null
+          block_reason: string | null
           created_at: string
           finished_at: string | null
           id: string
@@ -3448,19 +3486,27 @@ export type Database = {
           machine_id: string | null
           mo_id: string
           name: string
+          notes: string | null
           operation_id: string | null
           operator_id: string | null
+          planned_end_at: string | null
           planned_minutes: number
+          planned_start_at: string | null
           qty_done: number
           qty_scrap: number
           sequence: number
           started_at: string | null
           state: Database["public"]["Enums"]["mo_op_state"]
+          updated_at: string
           work_center_id: string | null
           workcenter: string | null
         }
         Insert: {
+          actual_duration_minutes?: number | null
+          actual_end_at?: string | null
+          actual_start_at?: string | null
           assigned_employee_id?: string | null
+          block_reason?: string | null
           created_at?: string
           finished_at?: string | null
           id?: string
@@ -3469,19 +3515,27 @@ export type Database = {
           machine_id?: string | null
           mo_id: string
           name: string
+          notes?: string | null
           operation_id?: string | null
           operator_id?: string | null
+          planned_end_at?: string | null
           planned_minutes?: number
+          planned_start_at?: string | null
           qty_done?: number
           qty_scrap?: number
           sequence?: number
           started_at?: string | null
           state?: Database["public"]["Enums"]["mo_op_state"]
+          updated_at?: string
           work_center_id?: string | null
           workcenter?: string | null
         }
         Update: {
+          actual_duration_minutes?: number | null
+          actual_end_at?: string | null
+          actual_start_at?: string | null
           assigned_employee_id?: string | null
+          block_reason?: string | null
           created_at?: string
           finished_at?: string | null
           id?: string
@@ -3490,14 +3544,18 @@ export type Database = {
           machine_id?: string | null
           mo_id?: string
           name?: string
+          notes?: string | null
           operation_id?: string | null
           operator_id?: string | null
+          planned_end_at?: string | null
           planned_minutes?: number
+          planned_start_at?: string | null
           qty_done?: number
           qty_scrap?: number
           sequence?: number
           started_at?: string | null
           state?: Database["public"]["Enums"]["mo_op_state"]
+          updated_at?: string
           work_center_id?: string | null
           workcenter?: string | null
         }
@@ -9701,6 +9759,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mfg_materialize_work_orders: { Args: { _mo_id: string }; Returns: number }
       mfg_next_code: { Args: never; Returns: string }
       mfg_pause_operation: {
         Args: { _op: string; _reason: string }
@@ -10099,6 +10158,40 @@ export type Database = {
       }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
       validate_wave: { Args: { _wave: string }; Returns: undefined }
+      work_order_finish: {
+        Args: {
+          _notes?: string
+          _qty_done: number
+          _qty_scrap?: number
+          _work_order_id: string
+        }
+        Returns: Json
+      }
+      work_order_pause: {
+        Args: { _reason?: string; _work_order_id: string }
+        Returns: Json
+      }
+      work_order_quality_check: {
+        Args: { _notes?: string; _result: string; _work_order_id: string }
+        Returns: Json
+      }
+      work_order_report_issue: {
+        Args: {
+          _description: string
+          _issue_kind: string
+          _work_order_id: string
+        }
+        Returns: Json
+      }
+      work_order_resume: { Args: { _work_order_id: string }; Returns: Json }
+      work_order_start: {
+        Args: {
+          _employee_id?: string
+          _machine_id?: string
+          _work_order_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       allocation_policy:
