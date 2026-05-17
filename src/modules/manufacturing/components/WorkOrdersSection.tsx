@@ -55,7 +55,7 @@ export default function WorkOrdersSection({ moId, compact }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("mo_operations")
-        .select("*, work_center:work_centers(name,code), machine:manufacturing_machines(name,status), employee:hr_employees!mo_operations_assigned_employee_id_fkey(full_name)")
+        .select("*, work_center:work_centers(name,code), machine:manufacturing_machines(name,status)")
         .eq("mo_id", moId)
         .order("sequence");
       if (error) throw error;
