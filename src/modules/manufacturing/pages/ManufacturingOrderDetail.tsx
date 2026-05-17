@@ -80,6 +80,13 @@ export default function ManufacturingOrderDetail() {
             <MOOriginBadge origin={mo.origin} />
             <MOPriorityBadge priority={mo.priority} />
             <MOStateBadge state={mo.state} />
+            {mo.state !== "done" && mo.state !== "cancelled" && (
+              <Button size="sm" variant="outline" onClick={async () => {
+                const { error } = await supabase.rpc("close_mo", { _mo: id! });
+                if (error) toast.error(closeErrorMessage(error.message));
+                else { toast.success("Ordem fechada"); qc.invalidateQueries({ queryKey: ["mo", id] }); }
+              }}>Fechar OF</Button>
+            )}
           </div>
         }
       />
