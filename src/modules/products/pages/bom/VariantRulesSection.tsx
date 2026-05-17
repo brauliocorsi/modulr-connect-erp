@@ -306,6 +306,7 @@ export function VariantRulesSection({ bomId }: { bomId: string }) {
                 title="Componente alvo"
                 description="Novo componente que será usado quando a regra disparar."
               />
+            </Label>
             <Select
               value={editing.target_component_id ?? "__none__"}
               onValueChange={(v) => setEditing({ ...editing, target_component_id: v === "__none__" ? null : v })}
