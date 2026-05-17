@@ -145,24 +145,7 @@ export default function ManufacturingOrderDetail() {
               </TabsContent>
 
               <TabsContent value="operations">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground border-b">
-                    <tr><th className="py-2">#</th><th>Etapa</th><th>Centro</th><th>Min.</th><th>Estado</th><th>Início</th><th>Fim</th></tr>
-                  </thead>
-                  <tbody>
-                    {ops?.map((o: any) => (
-                      <tr key={o.id} className="border-b last:border-0">
-                        <td className="py-2">{o.sequence}</td>
-                        <td>{o.name}{o.is_qc && " (QC)"}{o.is_rework && " (retrabalho)"}</td>
-                        <td>{o.workcenter ?? "—"}</td>
-                        <td>{Number(o.planned_minutes)}</td>
-                        <td>{o.state}</td>
-                        <td>{o.started_at ? fmtDateTime(o.started_at) : "—"}</td>
-                        <td>{o.finished_at ? fmtDateTime(o.finished_at) : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <WorkOrdersSection moId={id!} />
               </TabsContent>
 
               <TabsContent value="quality">
