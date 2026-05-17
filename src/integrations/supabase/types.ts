@@ -5010,6 +5010,7 @@ export type Database = {
           origin_kind: Database["public"]["Enums"]["purchase_need_origin"]
           priority: number
           product_id: string
+          product_variant_id: string | null
           purchase_order_id: string | null
           purchase_order_line_id: string | null
           purpose: string | null
@@ -5037,6 +5038,7 @@ export type Database = {
           origin_kind: Database["public"]["Enums"]["purchase_need_origin"]
           priority?: number
           product_id: string
+          product_variant_id?: string | null
           purchase_order_id?: string | null
           purchase_order_line_id?: string | null
           purpose?: string | null
@@ -5064,6 +5066,7 @@ export type Database = {
           origin_kind?: Database["public"]["Enums"]["purchase_need_origin"]
           priority?: number
           product_id?: string
+          product_variant_id?: string | null
           purchase_order_id?: string | null
           purchase_order_line_id?: string | null
           purpose?: string | null
@@ -9427,6 +9430,7 @@ export type Database = {
           _product: string
           _qty: number
           _sale?: string
+          _variant?: string
         }
         Returns: string
       }
