@@ -45,7 +45,7 @@ describe("ShopFloorBoard", () => {
   it("groups work orders by state across columns", async () => {
     renderBoard();
     await waitFor(() => expect(screen.getAllByText("MO-001").length).toBeGreaterThan(0));
-    expect(screen.getByText("Aguardando")).toBeInTheDocument();
+    expect(screen.getAllByText("Aguardando").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Em execução").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Bloqueada").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Concluída").length).toBeGreaterThan(0);
