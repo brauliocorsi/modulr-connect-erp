@@ -1,0 +1,1 @@
+INSERT INTO public._test_phase17_log(result) SELECT public._test_phase17_golden_flow(false);
