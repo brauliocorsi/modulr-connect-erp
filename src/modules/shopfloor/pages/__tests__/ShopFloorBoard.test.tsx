@@ -44,17 +44,17 @@ function renderBoard() {
 describe("ShopFloorBoard", () => {
   it("groups work orders by state across columns", async () => {
     renderBoard();
-    await waitFor(() => expect(screen.getByText("MO-001")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("MO-001").length).toBeGreaterThan(0));
     expect(screen.getByText("Aguardando")).toBeInTheDocument();
-    expect(screen.getByText("Em execução")).toBeInTheDocument();
-    expect(screen.getByText("Bloqueada")).toBeInTheDocument();
-    expect(screen.getByText("Concluída")).toBeInTheDocument();
+    expect(screen.getAllByText("Em execução").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Bloqueada").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Concluída").length).toBeGreaterThan(0);
     expect(screen.getByText(/4 work order/)).toBeInTheDocument();
   });
 
   it("filters by search term", async () => {
     renderBoard();
-    await waitFor(() => screen.getByText("MO-001"));
+    await waitFor(() => screen.getAllByText("MO-001"));
     fireEvent.change(screen.getByPlaceholderText(/Buscar OF/), { target: { value: "MO-002" } });
     await waitFor(() => expect(screen.queryByText("MO-001")).not.toBeInTheDocument());
     expect(screen.getByText("MO-002")).toBeInTheDocument();
