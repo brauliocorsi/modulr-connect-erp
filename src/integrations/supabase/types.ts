@@ -9059,6 +9059,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      _cleanup_golden_upm: { Args: never; Returns: undefined }
       _m25_backfill_real_packages: { Args: never; Returns: Json }
       _m3_apply_vehicle_capacity: {
         Args: { _route_id: string }
@@ -9094,6 +9095,7 @@ export type Database = {
         Args: { _mo: string }
         Returns: undefined
       }
+      _seed_golden_upm: { Args: never; Returns: Json }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
         Returns: Json
@@ -9211,6 +9213,7 @@ export type Database = {
         }[]
       }
       _test_phase16_shopfloor_workorders: { Args: never; Returns: Json }
+      _test_phase17_golden_flow: { Args: { _cleanup?: boolean }; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
