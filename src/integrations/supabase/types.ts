@@ -50,6 +50,24 @@ export type Database = {
         }
         Relationships: []
       }
+      _test_phase17_log: {
+        Row: {
+          id: number
+          ran_at: string | null
+          result: Json | null
+        }
+        Insert: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Update: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Relationships: []
+      }
       account_journals: {
         Row: {
           active: boolean

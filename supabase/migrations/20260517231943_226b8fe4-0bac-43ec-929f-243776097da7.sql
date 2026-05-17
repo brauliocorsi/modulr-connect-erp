@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS public._test_phase17_log(id serial primary key, ran_at timestamptz default now(), result jsonb);
+INSERT INTO public._test_phase17_log(result) SELECT public._test_phase17_golden_flow(true);
