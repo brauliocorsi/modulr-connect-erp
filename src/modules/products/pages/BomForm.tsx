@@ -453,7 +453,7 @@ export default function BomForm() {
                 </thead>
                 <tbody>
                   {ownLines.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center text-muted-foreground py-6">Sem componentes</td></tr>
+                    <tr><td colSpan={10} className="text-center text-muted-foreground py-6">Sem componentes</td></tr>
                   ) : ownLines.map((l) => {
                     const i = lines.indexOf(l);
                     return (
