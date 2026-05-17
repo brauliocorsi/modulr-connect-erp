@@ -223,14 +223,17 @@ export type Database = {
           formula_variables: Json | null
           id: string
           inheritance_action: string
+          is_critical: boolean | null
           is_inherited: boolean
           is_optional: boolean
+          operation_id: string | null
           parent_bom_line_id: string | null
           qty_formula: string | null
           quantity: number
           rounding_method: string
           sequence: number
           uom_id: string | null
+          work_center_id: string | null
         }
         Insert: {
           applies_to_variant_rule?: Json | null
@@ -244,14 +247,17 @@ export type Database = {
           formula_variables?: Json | null
           id?: string
           inheritance_action?: string
+          is_critical?: boolean | null
           is_inherited?: boolean
           is_optional?: boolean
+          operation_id?: string | null
           parent_bom_line_id?: string | null
           qty_formula?: string | null
           quantity?: number
           rounding_method?: string
           sequence?: number
           uom_id?: string | null
+          work_center_id?: string | null
         }
         Update: {
           applies_to_variant_rule?: Json | null
@@ -265,14 +271,17 @@ export type Database = {
           formula_variables?: Json | null
           id?: string
           inheritance_action?: string
+          is_critical?: boolean | null
           is_inherited?: boolean
           is_optional?: boolean
+          operation_id?: string | null
           parent_bom_line_id?: string | null
           qty_formula?: string | null
           quantity?: number
           rounding_method?: string
           sequence?: number
           uom_id?: string | null
+          work_center_id?: string | null
         }
         Relationships: [
           {
@@ -318,6 +327,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bom_lines_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "bom_operations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bom_lines_parent_bom_line_id_fkey"
             columns: ["parent_bom_line_id"]
             isOneToOne: false
@@ -329,6 +345,13 @@ export type Database = {
             columns: ["uom_id"]
             isOneToOne: false
             referencedRelation: "product_uom"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_work_center_id_fkey"
+            columns: ["work_center_id"]
+            isOneToOne: false
+            referencedRelation: "work_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -9081,6 +9104,52 @@ export type Database = {
           vehicle_id: string
           zone_id: string
         }[]
+      }
+      bom_delete_line: { Args: { p_id: string }; Returns: boolean }
+      bom_upsert_line: {
+        Args: {
+          p_applies_to_variant_rule: Json
+          p_bom_id: string
+          p_component_product_id: string
+          p_component_selector: Json
+          p_component_variant_id: string
+          p_consumption_uom_id: string
+          p_conversion_factor: number
+          p_formula: string
+          p_formula_variables: Json
+          p_id: string
+          p_inheritance_action: string
+          p_is_critical: boolean
+          p_is_optional: boolean
+          p_operation_id: string
+          p_parent_bom_line_id: string
+          p_qty_formula: string
+          p_quantity: number
+          p_rounding_method: string
+          p_sequence: number
+          p_uom_id: string
+          p_work_center_id: string
+        }
+        Returns: string
+      }
+      bom_upsert_master: {
+        Args: {
+          p_active: boolean
+          p_applies_to_product_id: string
+          p_applies_to_variant_id: string
+          p_code: string
+          p_id: string
+          p_inheritance_mode: string
+          p_is_master: boolean
+          p_parent_bom_id: string
+          p_product_id: string
+          p_quantity: number
+          p_type: string
+          p_uom_id: string
+          p_variant_id: string
+          p_variant_rule: Json
+        }
+        Returns: string
       }
       bootstrap_carrier_location: {
         Args: { _carrier: string }
