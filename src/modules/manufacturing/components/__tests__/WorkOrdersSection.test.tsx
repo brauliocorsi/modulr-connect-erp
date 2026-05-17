@@ -30,7 +30,7 @@ const WOS = [
   { id: "wo-paused", sequence: 4, name: "Embalagem", state: "paused", planned_minutes: 10, actual_duration_minutes: 3, qty_done: 0, qty_scrap: 0, is_qc: false, work_center: { name: "WC1" }, machine: null, work_center_id: "wc1" },
   { id: "wo-blocked", sequence: 5, name: "Bloqueada", state: "blocked", planned_minutes: 10, actual_duration_minutes: 0, qty_done: 0, qty_scrap: 0, is_qc: false, block_reason: "Falta material", work_center: { name: "WC1" }, machine: null, work_center_id: "wc1" },
   { id: "wo-done", sequence: 6, name: "Done", state: "done", planned_minutes: 5, actual_duration_minutes: 4, qty_done: 1, qty_scrap: 0, is_qc: false, work_center: { name: "WC1" }, machine: null, work_center_id: "wc1" },
-  { id: "wo-qc", sequence: 7, name: "QC", state: "ready", planned_minutes: 5, actual_duration_minutes: null, qty_done: 0, qty_scrap: 0, is_qc: true, work_center: { name: "WC1" }, machine: null, work_center_id: "wc1" },
+  { id: "wo-qc", sequence: 7, name: "Verif Qualidade", state: "ready", planned_minutes: 5, actual_duration_minutes: null, qty_done: 0, qty_scrap: 0, is_qc: true, work_center: { name: "WC1" }, machine: null, work_center_id: "wc1" },
 ];
 
 function setupFrom() {
