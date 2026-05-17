@@ -315,10 +315,28 @@ export default function ProductForm() {
                 <Card className="p-6 space-y-4">
                   <div className="o-section-title">Físico</div>
                   <div className="grid sm:grid-cols-3 gap-4">
-                    <div className="space-y-2"><Label>Peso (kg)</Label><Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} /></div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        Peso (kg)
+                        <FieldInfoTooltip
+                          title="Peso (kg)"
+                          description="Usado como fallback de logística quando o produto não tem templates de colis definidos."
+                        />
+                      </Label>
+                      <Input type="number" step="0.001" value={form.weight ?? 0} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} />
+                    </div>
                     <div className="space-y-2"><Label>Peso bruto (kg)</Label><Input type="number" step="0.001" value={form.gross_weight ?? 0} onChange={(e) => setForm({ ...form, gross_weight: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Peso líquido (kg)</Label><Input type="number" step="0.001" value={form.net_weight ?? 0} onChange={(e) => setForm({ ...form, net_weight: Number(e.target.value) })} /></div>
-                    <div className="space-y-2"><Label>Volume (m³)</Label><Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} /></div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        Volume (m³)
+                        <FieldInfoTooltip
+                          title="Volume (m³)"
+                          description="Usado como fallback de logística quando o produto não tem templates de colis definidos."
+                        />
+                      </Label>
+                      <Input type="number" step="0.001" value={form.volume ?? 0} onChange={(e) => setForm({ ...form, volume: Number(e.target.value) })} />
+                    </div>
                     <div className="space-y-2"><Label>Altura (cm)</Label><Input type="number" step="0.1" value={form.height ?? 0} onChange={(e) => setForm({ ...form, height: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Largura (cm)</Label><Input type="number" step="0.1" value={form.width ?? 0} onChange={(e) => setForm({ ...form, width: Number(e.target.value) })} /></div>
                     <div className="space-y-2"><Label>Profundidade (cm)</Label><Input type="number" step="0.1" value={form.depth ?? 0} onChange={(e) => setForm({ ...form, depth: Number(e.target.value) })} /></div>
