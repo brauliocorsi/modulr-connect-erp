@@ -3699,6 +3699,13 @@ export type Database = {
             referencedRelation: "mo_operations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mo_workorder_logs_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
+            referencedColumns: ["id"]
+          },
         ]
       }
       module_events: {
