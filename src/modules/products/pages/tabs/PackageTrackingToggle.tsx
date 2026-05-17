@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
 
 export function PackageTrackingToggle({ productId }: { productId: string }) {
   const [enabled, setEnabled] = useState(false);
