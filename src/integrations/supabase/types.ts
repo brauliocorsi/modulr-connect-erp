@@ -2865,6 +2865,7 @@ export type Database = {
           actual_end: string | null
           actual_start: string | null
           blocked_reason: string | null
+          bom_depth: number
           bom_id: string | null
           code: string
           created_at: string
@@ -2874,6 +2875,8 @@ export type Database = {
           id: string
           notes: string | null
           origin: Database["public"]["Enums"]["mo_origin"]
+          parent_mo_component_id: string | null
+          parent_mo_id: string | null
           partner_id: string | null
           planned_end: string | null
           planned_start: string | null
@@ -2881,6 +2884,9 @@ export type Database = {
           product_id: string
           qty: number
           responsible_id: string | null
+          root_mo_id: string | null
+          root_sale_order_id: string | null
+          root_sale_order_line_id: string | null
           sale_order_id: string | null
           sale_order_line_id: string | null
           state: Database["public"]["Enums"]["mo_state"]
@@ -2893,6 +2899,7 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           blocked_reason?: string | null
+          bom_depth?: number
           bom_id?: string | null
           code: string
           created_at?: string
@@ -2902,6 +2909,8 @@ export type Database = {
           id?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["mo_origin"]
+          parent_mo_component_id?: string | null
+          parent_mo_id?: string | null
           partner_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
@@ -2909,6 +2918,9 @@ export type Database = {
           product_id: string
           qty: number
           responsible_id?: string | null
+          root_mo_id?: string | null
+          root_sale_order_id?: string | null
+          root_sale_order_line_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
           state?: Database["public"]["Enums"]["mo_state"]
@@ -2921,6 +2933,7 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           blocked_reason?: string | null
+          bom_depth?: number
           bom_id?: string | null
           code?: string
           created_at?: string
@@ -2930,6 +2943,8 @@ export type Database = {
           id?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["mo_origin"]
+          parent_mo_component_id?: string | null
+          parent_mo_id?: string | null
           partner_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
@@ -2937,6 +2952,9 @@ export type Database = {
           product_id?: string
           qty?: number
           responsible_id?: string | null
+          root_mo_id?: string | null
+          root_sale_order_id?: string | null
+          root_sale_order_line_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
           state?: Database["public"]["Enums"]["mo_state"]
@@ -2951,6 +2969,20 @@ export type Database = {
             columns: ["bom_id"]
             isOneToOne: false
             referencedRelation: "boms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_parent_mo_component_id_fkey"
+            columns: ["parent_mo_component_id"]
+            isOneToOne: false
+            referencedRelation: "mo_components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_parent_mo_id_fkey"
+            columns: ["parent_mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
             referencedColumns: ["id"]
           },
           {
@@ -2980,6 +3012,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_product_stock_full"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_root_mo_id_fkey"
+            columns: ["root_mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
@@ -3163,6 +3202,7 @@ export type Database = {
       mo_components: {
         Row: {
           bom_line_id: string | null
+          child_mo_id: string | null
           consumption_uom_id: string | null
           conversion_factor: number | null
           created_at: string
@@ -3179,10 +3219,13 @@ export type Database = {
           qty_consumed: number
           qty_required: number
           qty_reserved: number
+          qty_to_manufacture: number
+          qty_to_purchase: number
           rounding_method: string
           scrap_pct: number
           sequence: number
           status: Database["public"]["Enums"]["mo_component_status"]
+          supply_method: string | null
           uom_id: string | null
           variant_id: string | null
           variant_rule_id: string | null
@@ -3190,6 +3233,7 @@ export type Database = {
         }
         Insert: {
           bom_line_id?: string | null
+          child_mo_id?: string | null
           consumption_uom_id?: string | null
           conversion_factor?: number | null
           created_at?: string
@@ -3206,10 +3250,13 @@ export type Database = {
           qty_consumed?: number
           qty_required?: number
           qty_reserved?: number
+          qty_to_manufacture?: number
+          qty_to_purchase?: number
           rounding_method?: string
           scrap_pct?: number
           sequence?: number
           status?: Database["public"]["Enums"]["mo_component_status"]
+          supply_method?: string | null
           uom_id?: string | null
           variant_id?: string | null
           variant_rule_id?: string | null
@@ -3217,6 +3264,7 @@ export type Database = {
         }
         Update: {
           bom_line_id?: string | null
+          child_mo_id?: string | null
           consumption_uom_id?: string | null
           conversion_factor?: number | null
           created_at?: string
@@ -3233,10 +3281,13 @@ export type Database = {
           qty_consumed?: number
           qty_required?: number
           qty_reserved?: number
+          qty_to_manufacture?: number
+          qty_to_purchase?: number
           rounding_method?: string
           scrap_pct?: number
           sequence?: number
           status?: Database["public"]["Enums"]["mo_component_status"]
+          supply_method?: string | null
           uom_id?: string | null
           variant_id?: string | null
           variant_rule_id?: string | null
@@ -3248,6 +3299,13 @@ export type Database = {
             columns: ["bom_line_id"]
             isOneToOne: false
             referencedRelation: "bom_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mo_components_child_mo_id_fkey"
+            columns: ["child_mo_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
             referencedColumns: ["id"]
           },
           {
@@ -7654,6 +7712,8 @@ export type Database = {
           qty_after: number | null
           qty_before: number | null
           reserved_by: string | null
+          to_manufacturing_order_id: string | null
+          to_mo_component_id: string | null
           to_sale_order_line_id: string | null
           variant_id: string | null
         }
@@ -7674,6 +7734,8 @@ export type Database = {
           qty_after?: number | null
           qty_before?: number | null
           reserved_by?: string | null
+          to_manufacturing_order_id?: string | null
+          to_mo_component_id?: string | null
           to_sale_order_line_id?: string | null
           variant_id?: string | null
         }
@@ -7694,6 +7756,8 @@ export type Database = {
           qty_after?: number | null
           qty_before?: number | null
           reserved_by?: string | null
+          to_manufacturing_order_id?: string | null
+          to_mo_component_id?: string | null
           to_sale_order_line_id?: string | null
           variant_id?: string | null
         }
@@ -8958,6 +9022,10 @@ export type Database = {
         Args: { _payment: Json; _route: string; _schedule: string; _so: string }
         Returns: Json
       }
+      _mfg_materialize_child_components: {
+        Args: { _mo: string }
+        Returns: undefined
+      }
       _so_ensure_mo_for_line: {
         Args: { _line_id: string; _qty: number }
         Returns: string
@@ -9052,6 +9120,14 @@ export type Database = {
           detail: string
           passed: boolean
           test_name: string
+        }[]
+      }
+      _test_phase16_multilevel_bom_subassembly: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          scenario: string
         }[]
       }
       _test_phase3: { Args: never; Returns: Json }
@@ -9629,6 +9705,10 @@ export type Database = {
       mfg_pause_operation: {
         Args: { _op: string; _reason: string }
         Returns: undefined
+      }
+      mfg_plan_components: {
+        Args: { _depth?: number; _mo: string }
+        Returns: Json
       }
       mfg_quality_check: {
         Args: {
