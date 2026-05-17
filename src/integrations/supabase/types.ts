@@ -10301,6 +10301,9 @@ export type Database = {
         | "defect"
         | "priority_blocked"
         | "other"
+        | "machine_unavailable"
+        | "employee_unavailable"
+        | "quality_failed"
       mo_op_state:
         | "pending"
         | "ready"
@@ -10589,6 +10592,9 @@ export const Constants = {
         "defect",
         "priority_blocked",
         "other",
+        "machine_unavailable",
+        "employee_unavailable",
+        "quality_failed",
       ],
       mo_op_state: [
         "pending",
