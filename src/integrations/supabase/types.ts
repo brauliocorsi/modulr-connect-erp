@@ -9624,19 +9624,34 @@ export type Database = {
         Args: { _case_id: string; _payload: Json; _ref: string; _step: string }
         Returns: undefined
       }
-      _service_reserve_quant: {
-        Args: {
-          _case: string
-          _item: string
-          _location: string
-          _origin: string
-          _origin_type: string
-          _product: string
-          _qty: number
-          _variant: string
-        }
-        Returns: undefined
-      }
+      _service_reserve_quant:
+        | {
+            Args: {
+              _case: string
+              _item: string
+              _location: string
+              _origin: string
+              _origin_type: string
+              _product: string
+              _qty: number
+              _variant: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _case: string
+              _item: string
+              _location: string
+              _origin: string
+              _origin_type: string
+              _payload?: Json
+              _product: string
+              _qty: number
+              _variant: string
+            }
+            Returns: undefined
+          }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
         Returns: Json
