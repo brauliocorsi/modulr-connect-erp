@@ -10074,82 +10074,44 @@ export type Database = {
         Args: { _payment: string; _reason?: string }
         Returns: string
       }
-      register_customer_payment:
-        | {
-            Args: {
-              _amount: number
-              _idempotency_key?: string
-              _journal?: string
-              _method: string
-              _order: string
-              _payment_date?: string
-              _reference?: string
-              _schedule?: string
-            }
-            Returns: {
-              amount: number
-              cost_center_id: string | null
-              created_at: string
-              created_by: string | null
-              id: string
-              idempotency_key: string | null
-              journal_id: string | null
-              method_id: string | null
-              name: string
-              notes: string | null
-              order_id: string | null
-              partner_id: string | null
-              payment_date: string
-              reference: string | null
-              refund_of: string | null
-              schedule_id: string | null
-              state: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "customer_payments"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              _amount: number
-              _idempotency_key?: string
-              _journal?: string
-              _method: string
-              _notes?: string
-              _order: string
-              _payment_date?: string
-              _reference?: string
-              _schedule?: string
-            }
-            Returns: {
-              amount: number
-              cost_center_id: string | null
-              created_at: string
-              created_by: string | null
-              id: string
-              idempotency_key: string | null
-              journal_id: string | null
-              method_id: string | null
-              name: string
-              notes: string | null
-              order_id: string | null
-              partner_id: string | null
-              payment_date: string
-              reference: string | null
-              refund_of: string | null
-              schedule_id: string | null
-              state: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "customer_payments"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      register_customer_payment: {
+        Args: {
+          _amount: number
+          _idempotency_key?: string
+          _journal?: string
+          _method: string
+          _notes?: string
+          _order: string
+          _payment_date?: string
+          _reference?: string
+          _schedule?: string
+        }
+        Returns: {
+          amount: number
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          idempotency_key: string | null
+          journal_id: string | null
+          method_id: string | null
+          name: string
+          notes: string | null
+          order_id: string | null
+          partner_id: string | null
+          payment_date: string
+          reference: string | null
+          refund_of: string | null
+          schedule_id: string | null
+          state: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       release_mo_reservation: { Args: { _mo: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       release_move_reservation_partial: {

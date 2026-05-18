@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.register_customer_payment(uuid, numeric, uuid, uuid, uuid, text, text, date);
