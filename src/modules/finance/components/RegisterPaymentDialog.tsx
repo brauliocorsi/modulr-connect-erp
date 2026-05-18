@@ -106,25 +106,18 @@ export function RegisterPaymentDialog({
     if (!form.journal_id) return toast.error("Escolha um diário");
     const method = methods.find((x) => x.id === form.method_id);
     if (method?.requires_reference && !form.reference) return toast.error("Este método exige referência");
-    const initialState =
-      method?.confirmation_mode === "pending_finance" ? "pending"
-      : method?.confirmation_mode === "pending_delivery" ? "pending_delivery"
-      : "posted";
-    const { data: seq } = await supabase.rpc("next_sequence", { _code: "customer_payment" });
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("customer_payments").insert({
-      name: seq ?? "PAY",
-      partner_id: partnerId ?? null,
-      order_id: orderId,
-      schedule_id: scheduleId ?? null,
-      payment_date: form.payment_date,
-      amount: form.amount,
-      method_id: form.method_id,
-      journal_id: form.journal_id,
-      reference: form.reference || null,
-      notes: form.notes || null,
-      state: initialState,
-      created_by: user?.id,
+    // Idempotency: previne duplo clique e duplicação por reentrância da UI.
+    const idem = `ui:${orderId}:${scheduleId ?? "none"}:${form.payment_date}:${form.amount}:${form.method_id}`;
+    const { error } = await supabase.rpc("register_customer_payment", {
+      _order: orderId,
+      _amount: form.amount,
+      _method: form.method_id,
+      _journal: form.journal_id || null,
+      _schedule: scheduleId ?? null,
+      _reference: form.reference || null,
+      _idempotency_key: idem,
+      _payment_date: form.payment_date,
+      _notes: form.notes || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Recebimento registado");
