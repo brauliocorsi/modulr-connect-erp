@@ -156,7 +156,9 @@ export function PaymentsTab({
 
   const cancelPayment = async (id: string) => {
     if (!confirm("Cancelar este recebimento?")) return;
-    await supabase.from("customer_payments").update({ state: "cancelled" }).eq("id", id);
+    const { error } = await supabase.rpc("cancel_customer_payment", { _payment_id: id });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Recebimento cancelado");
     load();
   };
 
