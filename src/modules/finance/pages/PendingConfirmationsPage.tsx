@@ -28,8 +28,10 @@ export default function PendingConfirmationsPage() {
     load();
   };
   const cancel = async (id: string) => {
-    if (!confirm("Cancelar este recebimento?")) return;
-    await supabase.from("customer_payments").update({ state: "cancelled" }).eq("id", id);
+    if (!window.confirm("Cancelar este recebimento?")) return;
+    const { error } = await supabase.rpc("cancel_customer_payment", { _payment_id: id });
+    if (error) return toast.error(error.message);
+    toast.success("Recebimento cancelado");
     load();
   };
 
