@@ -1351,6 +1351,312 @@ export type Database = {
           },
         ]
       }
+      customer_portal_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          sale_order_id: string | null
+          scope: string
+          service_case_id: string | null
+          status: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          sale_order_id?: string | null
+          scope?: string
+          service_case_id?: string | null
+          status?: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          sale_order_id?: string | null
+          scope?: string
+          service_case_id?: string | null
+          status?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_portal_tokens_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_ticket_attachments: {
+        Row: {
+          attachment_type: string
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string | null
+          id: string
+          message_id: string | null
+          ticket_id: string
+          uploaded_by_customer: boolean
+          uploaded_by_user_id: string | null
+        }
+        Insert: {
+          attachment_type?: string
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          message_id?: string | null
+          ticket_id: string
+          uploaded_by_customer?: boolean
+          uploaded_by_user_id?: string | null
+        }
+        Update: {
+          attachment_type?: string
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          message_id?: string | null
+          ticket_id?: string
+          uploaded_by_customer?: boolean
+          uploaded_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_ticket_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "customer_ticket_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_ticket_messages: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          internal: boolean
+          message: string
+          sender_type: string
+          sender_user_id: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          internal?: boolean
+          message: string
+          sender_type: string
+          sender_user_id?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          internal?: boolean
+          message?: string
+          sender_type?: string
+          sender_user_id?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_ticket_messages_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          created_by_customer: boolean
+          customer_id: string
+          delivery_schedule_id: string | null
+          description: string | null
+          id: string
+          priority: string
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          service_case_id: string | null
+          source: string
+          status: string
+          subject: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_customer?: boolean
+          customer_id: string
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          priority?: string
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          service_case_id?: string | null
+          source?: string
+          status?: string
+          subject: string
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_customer?: boolean
+          customer_id?: string
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          priority?: string
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          service_case_id?: string | null
+          source?: string
+          status?: string
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_delivery_schedule_id_fkey"
+            columns: ["delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_carriers: {
         Row: {
           active: boolean
@@ -9657,6 +9963,37 @@ export type Database = {
       }
       _phase17_diag_seed: { Args: never; Returns: Json }
       _phase17_diag_spine: { Args: never; Returns: Json }
+      _portal_generate_token: { Args: never; Returns: string }
+      _portal_hash_token: { Args: { _token: string }; Returns: string }
+      _portal_is_agent: { Args: { _uid: string }; Returns: boolean }
+      _portal_public_case_status: { Args: { _status: string }; Returns: string }
+      _portal_public_order_status: {
+        Args: { _fulfillment: string; _op_status: string; _state: string }
+        Returns: string
+      }
+      _portal_resolve_token: {
+        Args: { _required_scope?: string; _token: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          sale_order_id: string | null
+          scope: string
+          service_case_id: string | null
+          status: string
+          token_hash: string
+          used_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_portal_tokens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       _seed_golden_upm: { Args: never; Returns: Json }
       _service_log: {
         Args: { _case_id: string; _payload: Json; _ref: string; _step: string }
@@ -10110,7 +10447,51 @@ export type Database = {
         Returns: string
       }
       create_wave: { Args: { _moves: string[] }; Returns: string }
+      customer_delivery_request_schedule: {
+        Args: {
+          _notes?: string
+          _preferred_date: string
+          _sale_order_id: string
+          _token: string
+        }
+        Returns: string
+      }
       customer_location_id: { Args: never; Returns: string }
+      customer_portal_order_status: { Args: { _token: string }; Returns: Json }
+      customer_portal_token_create: {
+        Args: {
+          _customer_id: string
+          _expires_at?: string
+          _sale_order_id?: string
+          _scope?: string
+          _service_case_id?: string
+        }
+        Returns: Json
+      }
+      customer_portal_validate_token: {
+        Args: { _scope?: string; _token: string }
+        Returns: Json
+      }
+      customer_service_case_status: {
+        Args: { _service_case_id: string; _token: string }
+        Returns: Json
+      }
+      customer_ticket_add_attachment_metadata: {
+        Args: { _payload: Json; _ticket_id: string; _token: string }
+        Returns: string
+      }
+      customer_ticket_add_message: {
+        Args: { _message: string; _ticket_id: string; _token: string }
+        Returns: string
+      }
+      customer_ticket_close: {
+        Args: { _reason?: string; _ticket_id: string; _token: string }
+        Returns: Json
+      }
+      customer_ticket_create: {
+        Args: { _payload: Json; _token: string }
+        Returns: string
+      }
       daily_finance_snapshot: { Args: { _date: string }; Returns: Json }
       dedupe_notifications_for_entity: {
         Args: { _entity_id: string; _entity_type: string; _type: string }
@@ -10286,6 +10667,10 @@ export type Database = {
         Args: { _dry_run?: boolean }
         Returns: Json
       }
+      erp_customer_portal_health_check: {
+        Args: { _threshold_days?: number }
+        Returns: Json
+      }
       erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
       erp_health_check_run: {
         Args: { _threshold_days?: number }
@@ -10338,6 +10723,22 @@ export type Database = {
           _uid: string
         }
         Returns: boolean
+      }
+      helpdesk_ticket_add_message: {
+        Args: { _internal?: boolean; _message: string; _ticket_id: string }
+        Returns: string
+      }
+      helpdesk_ticket_assign: {
+        Args: { _assigned_to: string; _ticket_id: string }
+        Returns: Json
+      }
+      helpdesk_ticket_close: {
+        Args: { _resolution: string; _ticket_id: string }
+        Returns: Json
+      }
+      helpdesk_ticket_convert_to_service_case: {
+        Args: { _payload?: Json; _ticket_id: string }
+        Returns: string
       }
       is_manufacturing_component: {
         Args: { _product_id: string }
@@ -10504,6 +10905,7 @@ export type Database = {
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
       next_service_case_number: { Args: never; Returns: string }
+      next_ticket_number: { Args: never; Returns: string }
       notify_group: {
         Args: {
           _body?: string
