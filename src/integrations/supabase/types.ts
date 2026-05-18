@@ -10162,10 +10162,16 @@ export type Database = {
         Args: { _cleanup?: boolean }
         Returns: Json
       }
-      _test_phase19_customer_portal_helpdesk: {
-        Args: { _cleanup?: boolean }
-        Returns: Json
-      }
+      _test_phase19_customer_portal_helpdesk:
+        | {
+            Args: never
+            Returns: {
+              check_name: string
+              detail: string
+              ok: boolean
+            }[]
+          }
+        | { Args: { _cleanup?: boolean }; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
