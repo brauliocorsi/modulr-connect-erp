@@ -9619,6 +9619,23 @@ export type Database = {
       _phase17_diag_seed: { Args: never; Returns: Json }
       _phase17_diag_spine: { Args: never; Returns: Json }
       _seed_golden_upm: { Args: never; Returns: Json }
+      _service_log: {
+        Args: { _case_id: string; _payload: Json; _ref: string; _step: string }
+        Returns: undefined
+      }
+      _service_reserve_quant: {
+        Args: {
+          _case: string
+          _item: string
+          _location: string
+          _origin: string
+          _origin_type: string
+          _product: string
+          _qty: number
+          _variant: string
+        }
+        Returns: undefined
+      }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
         Returns: Json
@@ -10649,6 +10666,39 @@ export type Database = {
       seed_default_schedule: { Args: { _so: string }; Returns: undefined }
       service_can_manage: { Args: { _uid: string }; Returns: boolean }
       service_can_view: { Args: { _uid: string }; Returns: boolean }
+      service_case_add_attachment_metadata: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: string
+      }
+      service_case_add_item: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: string
+      }
+      service_case_cancel: {
+        Args: { _case_id: string; _reason: string }
+        Returns: Json
+      }
+      service_case_close: {
+        Args: { _case_id: string; _resolution: string }
+        Returns: Json
+      }
+      service_case_create: { Args: { _payload: Json }; Returns: string }
+      service_case_create_manufacturing_order: {
+        Args: { _case_item_id: string }
+        Returns: string
+      }
+      service_case_create_purchase_need: {
+        Args: { _case_item_id: string }
+        Returns: string
+      }
+      service_case_schedule_assistance: {
+        Args: { _case_id: string; _preferred_date: string; _zone_id?: string }
+        Returns: string
+      }
+      service_case_triage: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: Json
+      }
       service_sla_adjust: {
         Args: { _new_due: string; _reason: string; _request_id: string }
         Returns: undefined
