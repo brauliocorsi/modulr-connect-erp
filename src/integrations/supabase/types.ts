@@ -10243,6 +10243,10 @@ export type Database = {
         }[]
       }
       erp_package_health_check: { Args: never; Returns: Json }
+      erp_service_health_check: {
+        Args: { _threshold_days?: number }
+        Returns: Json
+      }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
         Returns: undefined
