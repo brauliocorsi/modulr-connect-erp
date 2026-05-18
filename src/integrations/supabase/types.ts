@@ -6661,6 +6661,11 @@ export type Database = {
           qty: number
           qty_ready: number
           qty_reserved: number
+          repair_completed_at: string | null
+          repair_notes: string | null
+          repair_result: string | null
+          repair_started_at: string | null
+          repair_status: string | null
           required_action:
             | Database["public"]["Enums"]["service_case_item_action"]
             | null
@@ -6680,6 +6685,11 @@ export type Database = {
           qty?: number
           qty_ready?: number
           qty_reserved?: number
+          repair_completed_at?: string | null
+          repair_notes?: string | null
+          repair_result?: string | null
+          repair_started_at?: string | null
+          repair_status?: string | null
           required_action?:
             | Database["public"]["Enums"]["service_case_item_action"]
             | null
@@ -6699,6 +6709,11 @@ export type Database = {
           qty?: number
           qty_ready?: number
           qty_reserved?: number
+          repair_completed_at?: string | null
+          repair_notes?: string | null
+          repair_result?: string | null
+          repair_started_at?: string | null
+          repair_status?: string | null
           required_action?:
             | Database["public"]["Enums"]["service_case_item_action"]
             | null
@@ -7722,6 +7737,7 @@ export type Database = {
           current_bin_id: string | null
           current_location_id: string
           current_pallet_id: string | null
+          disposition_status: string | null
           fragile: boolean
           generated_virtual_package: boolean
           height_cm: number | null
@@ -7741,6 +7757,8 @@ export type Database = {
           requires_flat_transport: boolean
           sale_order_id: string | null
           sale_order_line_id: string | null
+          service_case_id: string | null
+          service_case_item_id: string | null
           stackable: boolean
           status: Database["public"]["Enums"]["package_status"]
           updated_at: string
@@ -7755,6 +7773,7 @@ export type Database = {
           current_bin_id?: string | null
           current_location_id: string
           current_pallet_id?: string | null
+          disposition_status?: string | null
           fragile?: boolean
           generated_virtual_package?: boolean
           height_cm?: number | null
@@ -7774,6 +7793,8 @@ export type Database = {
           requires_flat_transport?: boolean
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           stackable?: boolean
           status?: Database["public"]["Enums"]["package_status"]
           updated_at?: string
@@ -7788,6 +7809,7 @@ export type Database = {
           current_bin_id?: string | null
           current_location_id?: string
           current_pallet_id?: string | null
+          disposition_status?: string | null
           fragile?: boolean
           generated_virtual_package?: boolean
           height_cm?: number | null
@@ -7807,6 +7829,8 @@ export type Database = {
           requires_flat_transport?: boolean
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           stackable?: boolean
           status?: Database["public"]["Enums"]["package_status"]
           updated_at?: string
@@ -7919,6 +7943,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "stock_packages_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_service_case_item_id_fkey"
+            columns: ["service_case_item_id"]
+            isOneToOne: false
+            referencedRelation: "service_case_items"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -9680,6 +9718,11 @@ export type Database = {
         }
         Returns: string
       }
+      _svc_pkg_quant_relocate: {
+        Args: { _package_id: string; _to_location: string }
+        Returns: undefined
+      }
+      _svc_repair_loc: { Args: { _name: string }; Returns: string }
       _test_inventory_allocation_policy: { Args: never; Returns: Json }
       _test_inventory_allocation_policy_impl: {
         Args: { v_prefix: string }
@@ -9771,6 +9814,10 @@ export type Database = {
       _test_phase16_shopfloor_workorders: { Args: never; Returns: Json }
       _test_phase17_golden_flow: { Args: { _cleanup?: boolean }; Returns: Json }
       _test_phase17_payment_subcases: {
+        Args: { _cleanup?: boolean }
+        Returns: Json
+      }
+      _test_phase18_repair_disposition_flow: {
         Args: { _cleanup?: boolean }
         Returns: Json
       }
@@ -10267,6 +10314,10 @@ export type Database = {
         Args: { _threshold_days?: number }
         Returns: Json
       }
+      erp_service_repair_health_check: {
+        Args: { _threshold_days?: number }
+        Returns: Json
+      }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
         Returns: undefined
@@ -10707,6 +10758,14 @@ export type Database = {
         Returns: Json
       }
       service_case_create: { Args: { _payload: Json }; Returns: string }
+      service_case_create_from_damaged_package: {
+        Args: {
+          _action?: string
+          _description?: string
+          _stock_package_id: string
+        }
+        Returns: string
+      }
       service_case_create_manufacturing_order: {
         Args: { _case_item_id: string }
         Returns: string
@@ -10714,6 +10773,22 @@ export type Database = {
       service_case_create_purchase_need: {
         Args: { _case_item_id: string }
         Returns: string
+      }
+      service_case_dispose_package: {
+        Args: { _case_item_id: string; _reason: string }
+        Returns: Json
+      }
+      service_case_release_repaired_to_stock: {
+        Args: { _case_item_id: string; _target_location_id?: string }
+        Returns: Json
+      }
+      service_case_repair_complete: {
+        Args: { _case_item_id: string; _notes?: string; _result: string }
+        Returns: Json
+      }
+      service_case_repair_start: {
+        Args: { _case_item_id: string; _notes?: string }
+        Returns: Json
       }
       service_case_schedule_assistance: {
         Args: { _case_id: string; _preferred_date: string; _zone_id?: string }
