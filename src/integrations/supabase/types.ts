@@ -10204,6 +10204,7 @@ export type Database = {
         }
         Returns: number
       }
+      so_apply_delivery_rollup: { Args: { _so: string }; Returns: Json }
       so_classify_line: { Args: { _line_id: string }; Returns: Json }
       so_emit_timeline: {
         Args: {
