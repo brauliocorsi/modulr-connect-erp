@@ -1784,6 +1784,7 @@ export type Database = {
           route_id: string | null
           sale_order_id: string
           scheduled_date: string
+          service_case_id: string | null
           slot_end: string | null
           slot_start: string | null
           status: string
@@ -1809,6 +1810,7 @@ export type Database = {
           route_id?: string | null
           sale_order_id: string
           scheduled_date: string
+          service_case_id?: string | null
           slot_end?: string | null
           slot_start?: string | null
           status?: string
@@ -1834,6 +1836,7 @@ export type Database = {
           route_id?: string | null
           sale_order_id?: string
           scheduled_date?: string
+          service_case_id?: string | null
           slot_end?: string | null
           slot_start?: string | null
           status?: string
@@ -1897,6 +1900,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "delivery_schedules_vehicle_id_fkey"
@@ -2980,6 +2990,8 @@ export type Database = {
           root_sale_order_line_id: string | null
           sale_order_id: string | null
           sale_order_line_id: string | null
+          service_case_id: string | null
+          service_case_item_id: string | null
           state: Database["public"]["Enums"]["mo_state"]
           uom_id: string | null
           updated_at: string
@@ -3014,6 +3026,8 @@ export type Database = {
           root_sale_order_line_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           state?: Database["public"]["Enums"]["mo_state"]
           uom_id?: string | null
           updated_at?: string
@@ -3048,6 +3062,8 @@ export type Database = {
           root_sale_order_line_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           state?: Database["public"]["Enums"]["mo_state"]
           uom_id?: string | null
           updated_at?: string
@@ -3145,6 +3161,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_service_case_item_id_fkey"
+            columns: ["service_case_item_id"]
+            isOneToOne: false
+            referencedRelation: "service_case_items"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "manufacturing_orders_uom_id_fkey"
@@ -5085,6 +5115,8 @@ export type Database = {
           satisfied_by: string | null
           satisfied_qty: number | null
           satisfied_source_id: string | null
+          service_case_id: string | null
+          service_case_item_id: string | null
           state: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id: string | null
           updated_at: string
@@ -5113,6 +5145,8 @@ export type Database = {
           satisfied_by?: string | null
           satisfied_qty?: number | null
           satisfied_source_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           state?: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id?: string | null
           updated_at?: string
@@ -5141,6 +5175,8 @@ export type Database = {
           satisfied_by?: string | null
           satisfied_qty?: number | null
           satisfied_source_id?: string | null
+          service_case_id?: string | null
+          service_case_item_id?: string | null
           state?: Database["public"]["Enums"]["purchase_need_state"]
           suggested_partner_id?: string | null
           updated_at?: string
@@ -5236,6 +5272,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_service_case_item_id_fkey"
+            columns: ["service_case_item_id"]
+            isOneToOne: false
+            referencedRelation: "service_case_items"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "purchase_needs_suggested_partner_id_fkey"
@@ -6559,6 +6609,329 @@ export type Database = {
         }
         Relationships: []
       }
+      service_case_attachments: {
+        Row: {
+          attachment_type: Database["public"]["Enums"]["service_case_attachment_type"]
+          created_at: string
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          service_case_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          attachment_type?: Database["public"]["Enums"]["service_case_attachment_type"]
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          service_case_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          attachment_type?: Database["public"]["Enums"]["service_case_attachment_type"]
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          service_case_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_case_attachments_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_case_items: {
+        Row: {
+          created_at: string
+          id: string
+          issue_type: Database["public"]["Enums"]["service_case_item_issue_type"]
+          notes: string | null
+          product_id: string | null
+          product_variant_id: string | null
+          qty: number
+          qty_ready: number
+          qty_reserved: number
+          required_action:
+            | Database["public"]["Enums"]["service_case_item_action"]
+            | null
+          sale_order_line_id: string | null
+          service_case_id: string
+          status: Database["public"]["Enums"]["service_case_item_status"]
+          stock_package_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue_type?: Database["public"]["Enums"]["service_case_item_issue_type"]
+          notes?: string | null
+          product_id?: string | null
+          product_variant_id?: string | null
+          qty?: number
+          qty_ready?: number
+          qty_reserved?: number
+          required_action?:
+            | Database["public"]["Enums"]["service_case_item_action"]
+            | null
+          sale_order_line_id?: string | null
+          service_case_id: string
+          status?: Database["public"]["Enums"]["service_case_item_status"]
+          stock_package_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue_type?: Database["public"]["Enums"]["service_case_item_issue_type"]
+          notes?: string | null
+          product_id?: string | null
+          product_variant_id?: string | null
+          qty?: number
+          qty_ready?: number
+          qty_reserved?: number
+          required_action?:
+            | Database["public"]["Enums"]["service_case_item_action"]
+            | null
+          sale_order_line_id?: string | null
+          service_case_id?: string
+          status?: Database["public"]["Enums"]["service_case_item_status"]
+          stock_package_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_case_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "service_case_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "service_case_items_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_items_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "service_case_items_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_items_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_cases: {
+        Row: {
+          assigned_to: string | null
+          case_number: string
+          case_type: Database["public"]["Enums"]["service_case_type"]
+          closed_at: string | null
+          closed_resolution: string | null
+          created_at: string
+          customer_id: string | null
+          customer_notes: string | null
+          delivery_route_order_id: string | null
+          delivery_schedule_id: string | null
+          description: string | null
+          id: string
+          internal_notes: string | null
+          priority: Database["public"]["Enums"]["service_case_priority"]
+          product_id: string | null
+          product_variant_id: string | null
+          reported_at: string
+          reported_by: string | null
+          responsibility: Database["public"]["Enums"]["service_case_responsibility"]
+          sale_order_id: string | null
+          sale_order_line_id: string | null
+          source: Database["public"]["Enums"]["service_case_source"]
+          status: Database["public"]["Enums"]["service_case_status"]
+          stock_package_id: string | null
+          updated_at: string
+          warranty_status: Database["public"]["Enums"]["service_case_warranty_status"]
+        }
+        Insert: {
+          assigned_to?: string | null
+          case_number: string
+          case_type?: Database["public"]["Enums"]["service_case_type"]
+          closed_at?: string | null
+          closed_resolution?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          delivery_route_order_id?: string | null
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          priority?: Database["public"]["Enums"]["service_case_priority"]
+          product_id?: string | null
+          product_variant_id?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          responsibility?: Database["public"]["Enums"]["service_case_responsibility"]
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          source?: Database["public"]["Enums"]["service_case_source"]
+          status?: Database["public"]["Enums"]["service_case_status"]
+          stock_package_id?: string | null
+          updated_at?: string
+          warranty_status?: Database["public"]["Enums"]["service_case_warranty_status"]
+        }
+        Update: {
+          assigned_to?: string | null
+          case_number?: string
+          case_type?: Database["public"]["Enums"]["service_case_type"]
+          closed_at?: string | null
+          closed_resolution?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_notes?: string | null
+          delivery_route_order_id?: string | null
+          delivery_schedule_id?: string | null
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          priority?: Database["public"]["Enums"]["service_case_priority"]
+          product_id?: string | null
+          product_variant_id?: string | null
+          reported_at?: string
+          reported_by?: string | null
+          responsibility?: Database["public"]["Enums"]["service_case_responsibility"]
+          sale_order_id?: string | null
+          sale_order_line_id?: string | null
+          source?: Database["public"]["Enums"]["service_case_source"]
+          status?: Database["public"]["Enums"]["service_case_status"]
+          stock_package_id?: string | null
+          updated_at?: string
+          warranty_status?: Database["public"]["Enums"]["service_case_warranty_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_cases_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_delivery_route_order_id_fkey"
+            columns: ["delivery_route_order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_delivery_schedule_id_fkey"
+            columns: ["delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "service_cases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_line_id_fkey"
+            columns: ["sale_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "service_cases_stock_package_id_fkey"
+            columns: ["stock_package_id"]
+            isOneToOne: false
+            referencedRelation: "stock_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           assigned_to: string | null
@@ -6857,6 +7230,90 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          linked_delivery_schedule_id: string | null
+          linked_manufacturing_order_id: string | null
+          linked_purchase_need_id: string | null
+          notes: string | null
+          service_case_id: string
+          service_case_item_id: string | null
+          status: Database["public"]["Enums"]["service_task_status"]
+          task_type: Database["public"]["Enums"]["service_task_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_delivery_schedule_id?: string | null
+          linked_manufacturing_order_id?: string | null
+          linked_purchase_need_id?: string | null
+          notes?: string | null
+          service_case_id: string
+          service_case_item_id?: string | null
+          status?: Database["public"]["Enums"]["service_task_status"]
+          task_type: Database["public"]["Enums"]["service_task_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          linked_delivery_schedule_id?: string | null
+          linked_manufacturing_order_id?: string | null
+          linked_purchase_need_id?: string | null
+          notes?: string | null
+          service_case_id?: string
+          service_case_item_id?: string | null
+          status?: Database["public"]["Enums"]["service_task_status"]
+          task_type?: Database["public"]["Enums"]["service_task_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_tasks_linked_delivery_schedule_id_fkey"
+            columns: ["linked_delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_linked_manufacturing_order_id_fkey"
+            columns: ["linked_manufacturing_order_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_linked_purchase_need_id_fkey"
+            columns: ["linked_purchase_need_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_service_case_item_id_fkey"
+            columns: ["service_case_item_id"]
+            isOneToOne: false
+            referencedRelation: "service_case_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_locations: {
         Row: {
@@ -7840,6 +8297,8 @@ export type Database = {
           to_manufacturing_order_id: string | null
           to_mo_component_id: string | null
           to_sale_order_line_id: string | null
+          to_service_case_id: string | null
+          to_service_case_item_id: string | null
           variant_id: string | null
         }
         Insert: {
@@ -7862,6 +8321,8 @@ export type Database = {
           to_manufacturing_order_id?: string | null
           to_mo_component_id?: string | null
           to_sale_order_line_id?: string | null
+          to_service_case_id?: string | null
+          to_service_case_item_id?: string | null
           variant_id?: string | null
         }
         Update: {
@@ -7884,6 +8345,8 @@ export type Database = {
           to_manufacturing_order_id?: string | null
           to_mo_component_id?: string | null
           to_sale_order_line_id?: string | null
+          to_service_case_id?: string | null
+          to_service_case_item_id?: string | null
           variant_id?: string | null
         }
         Relationships: []
@@ -9156,6 +9619,23 @@ export type Database = {
       _phase17_diag_seed: { Args: never; Returns: Json }
       _phase17_diag_spine: { Args: never; Returns: Json }
       _seed_golden_upm: { Args: never; Returns: Json }
+      _service_log: {
+        Args: { _case_id: string; _payload: Json; _ref: string; _step: string }
+        Returns: undefined
+      }
+      _service_reserve_quant: {
+        Args: {
+          _case: string
+          _item: string
+          _location: string
+          _origin: string
+          _origin_type: string
+          _product: string
+          _qty: number
+          _variant: string
+        }
+        Returns: undefined
+      }
       _sf_assert: {
         Args: { _arr: Json; _name: string; _obs: string; _ok: boolean }
         Returns: Json
@@ -9763,6 +10243,10 @@ export type Database = {
         }[]
       }
       erp_package_health_check: { Args: never; Returns: Json }
+      erp_service_health_check: {
+        Args: { _threshold_days?: number }
+        Returns: Json
+      }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
         Returns: undefined
@@ -9948,6 +10432,7 @@ export type Database = {
       }
       mfg_sync_sol_status: { Args: { _mo: string }; Returns: undefined }
       next_sequence: { Args: { _code: string }; Returns: string }
+      next_service_case_number: { Args: never; Returns: string }
       notify_group: {
         Args: {
           _body?: string
@@ -10183,6 +10668,41 @@ export type Database = {
         Returns: undefined
       }
       seed_default_schedule: { Args: { _so: string }; Returns: undefined }
+      service_can_manage: { Args: { _uid: string }; Returns: boolean }
+      service_can_view: { Args: { _uid: string }; Returns: boolean }
+      service_case_add_attachment_metadata: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: string
+      }
+      service_case_add_item: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: string
+      }
+      service_case_cancel: {
+        Args: { _case_id: string; _reason: string }
+        Returns: Json
+      }
+      service_case_close: {
+        Args: { _case_id: string; _resolution: string }
+        Returns: Json
+      }
+      service_case_create: { Args: { _payload: Json }; Returns: string }
+      service_case_create_manufacturing_order: {
+        Args: { _case_item_id: string }
+        Returns: string
+      }
+      service_case_create_purchase_need: {
+        Args: { _case_item_id: string }
+        Returns: string
+      }
+      service_case_schedule_assistance: {
+        Args: { _case_id: string; _preferred_date: string; _zone_id?: string }
+        Returns: string
+      }
+      service_case_triage: {
+        Args: { _case_id: string; _payload: Json }
+        Returns: Json
+      }
       service_sla_adjust: {
         Args: { _new_due: string; _reason: string; _request_id: string }
         Returns: undefined
@@ -10408,7 +10928,13 @@ export type Database = {
         | "paused"
         | "done"
         | "blocked"
-      mo_origin: "sale" | "manual" | "replenishment" | "rework" | "other"
+      mo_origin:
+        | "sale"
+        | "manual"
+        | "replenishment"
+        | "rework"
+        | "other"
+        | "service_case"
       mo_priority: "low" | "normal" | "high" | "urgent"
       mo_qc_result: "pass" | "fail" | "rework"
       mo_state:
@@ -10468,6 +10994,7 @@ export type Database = {
         | "min_stock"
         | "manual"
         | "forecast"
+        | "service_case"
       purchase_need_state:
         | "pending"
         | "quoting"
@@ -10480,6 +11007,91 @@ export type Database = {
       removal_strategy: "fifo" | "lifo" | "fefo" | "closest"
       return_kind: "good" | "damaged" | "quarantine"
       sale_state: "draft" | "sent" | "confirmed" | "done" | "cancelled"
+      service_case_attachment_type:
+        | "customer_photo"
+        | "delivery_photo"
+        | "warehouse_photo"
+        | "before_repair"
+        | "after_repair"
+        | "supplier_evidence"
+        | "other"
+      service_case_item_action:
+        | "repair"
+        | "replace"
+        | "send_part"
+        | "pickup_return"
+        | "inspect"
+        | "refund"
+        | "supplier_claim"
+        | "manufacture_part"
+        | "buy_part"
+      service_case_item_issue_type:
+        | "damaged"
+        | "missing"
+        | "defective"
+        | "wrong_item"
+        | "wear_and_tear"
+        | "other"
+      service_case_item_status:
+        | "open"
+        | "waiting_part"
+        | "part_ready"
+        | "scheduled"
+        | "done"
+        | "cancelled"
+      service_case_priority: "low" | "normal" | "high" | "urgent"
+      service_case_responsibility:
+        | "supplier"
+        | "internal_manufacturing"
+        | "delivery_team"
+        | "customer"
+        | "unknown"
+      service_case_source:
+        | "customer"
+        | "delivery_team"
+        | "warehouse"
+        | "manufacturing"
+        | "quality"
+        | "internal"
+        | "other"
+      service_case_status:
+        | "new"
+        | "triage"
+        | "waiting_photos"
+        | "waiting_supplier"
+        | "waiting_parts"
+        | "waiting_manufacturing"
+        | "waiting_schedule"
+        | "scheduled"
+        | "in_route"
+        | "done"
+        | "cancelled"
+        | "rejected"
+      service_case_type:
+        | "delivery_issue"
+        | "customer_claim"
+        | "warranty"
+        | "supplier_defect"
+        | "internal_rework"
+        | "damaged_return"
+        | "missing_part"
+        | "other"
+      service_case_warranty_status:
+        | "in_warranty"
+        | "out_of_warranty"
+        | "goodwill"
+        | "unknown"
+      service_task_status: "open" | "in_progress" | "done" | "cancelled"
+      service_task_type:
+        | "triage"
+        | "request_photos"
+        | "buy_part"
+        | "manufacture_part"
+        | "repair"
+        | "schedule_assistance"
+        | "pickup"
+        | "supplier_claim"
+        | "close_case"
       sol_mfg_status:
         | "none"
         | "pending"
@@ -10701,7 +11313,14 @@ export const Constants = {
         "done",
         "blocked",
       ],
-      mo_origin: ["sale", "manual", "replenishment", "rework", "other"],
+      mo_origin: [
+        "sale",
+        "manual",
+        "replenishment",
+        "rework",
+        "other",
+        "service_case",
+      ],
       mo_priority: ["low", "normal", "high", "urgent"],
       mo_qc_result: ["pass", "fail", "rework"],
       mo_state: [
@@ -10767,6 +11386,7 @@ export const Constants = {
         "min_stock",
         "manual",
         "forecast",
+        "service_case",
       ],
       purchase_need_state: [
         "pending",
@@ -10781,6 +11401,101 @@ export const Constants = {
       removal_strategy: ["fifo", "lifo", "fefo", "closest"],
       return_kind: ["good", "damaged", "quarantine"],
       sale_state: ["draft", "sent", "confirmed", "done", "cancelled"],
+      service_case_attachment_type: [
+        "customer_photo",
+        "delivery_photo",
+        "warehouse_photo",
+        "before_repair",
+        "after_repair",
+        "supplier_evidence",
+        "other",
+      ],
+      service_case_item_action: [
+        "repair",
+        "replace",
+        "send_part",
+        "pickup_return",
+        "inspect",
+        "refund",
+        "supplier_claim",
+        "manufacture_part",
+        "buy_part",
+      ],
+      service_case_item_issue_type: [
+        "damaged",
+        "missing",
+        "defective",
+        "wrong_item",
+        "wear_and_tear",
+        "other",
+      ],
+      service_case_item_status: [
+        "open",
+        "waiting_part",
+        "part_ready",
+        "scheduled",
+        "done",
+        "cancelled",
+      ],
+      service_case_priority: ["low", "normal", "high", "urgent"],
+      service_case_responsibility: [
+        "supplier",
+        "internal_manufacturing",
+        "delivery_team",
+        "customer",
+        "unknown",
+      ],
+      service_case_source: [
+        "customer",
+        "delivery_team",
+        "warehouse",
+        "manufacturing",
+        "quality",
+        "internal",
+        "other",
+      ],
+      service_case_status: [
+        "new",
+        "triage",
+        "waiting_photos",
+        "waiting_supplier",
+        "waiting_parts",
+        "waiting_manufacturing",
+        "waiting_schedule",
+        "scheduled",
+        "in_route",
+        "done",
+        "cancelled",
+        "rejected",
+      ],
+      service_case_type: [
+        "delivery_issue",
+        "customer_claim",
+        "warranty",
+        "supplier_defect",
+        "internal_rework",
+        "damaged_return",
+        "missing_part",
+        "other",
+      ],
+      service_case_warranty_status: [
+        "in_warranty",
+        "out_of_warranty",
+        "goodwill",
+        "unknown",
+      ],
+      service_task_status: ["open", "in_progress", "done", "cancelled"],
+      service_task_type: [
+        "triage",
+        "request_photos",
+        "buy_part",
+        "manufacture_part",
+        "repair",
+        "schedule_assistance",
+        "pickup",
+        "supplier_claim",
+        "close_case",
+      ],
       sol_mfg_status: [
         "none",
         "pending",
