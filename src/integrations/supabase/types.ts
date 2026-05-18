@@ -9581,6 +9581,7 @@ export type Database = {
       }
       _cleanup_golden_upm: { Args: never; Returns: undefined }
       _cleanup_phase17_payment_subcases: { Args: never; Returns: undefined }
+      _cleanup_phase18_service_flow: { Args: never; Returns: undefined }
       _m25_backfill_real_packages: { Args: never; Returns: Json }
       _m3_apply_vehicle_capacity: {
         Args: { _route_id: string }
@@ -9755,6 +9756,10 @@ export type Database = {
       _test_phase16_shopfloor_workorders: { Args: never; Returns: Json }
       _test_phase17_golden_flow: { Args: { _cleanup?: boolean }; Returns: Json }
       _test_phase17_payment_subcases: {
+        Args: { _cleanup?: boolean }
+        Returns: Json
+      }
+      _test_phase18_service_assistance_flow: {
         Args: { _cleanup?: boolean }
         Returns: Json
       }
