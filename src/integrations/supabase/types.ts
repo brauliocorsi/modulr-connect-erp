@@ -10408,7 +10408,13 @@ export type Database = {
         | "paused"
         | "done"
         | "blocked"
-      mo_origin: "sale" | "manual" | "replenishment" | "rework" | "other"
+      mo_origin:
+        | "sale"
+        | "manual"
+        | "replenishment"
+        | "rework"
+        | "other"
+        | "service_case"
       mo_priority: "low" | "normal" | "high" | "urgent"
       mo_qc_result: "pass" | "fail" | "rework"
       mo_state:
@@ -10468,6 +10474,7 @@ export type Database = {
         | "min_stock"
         | "manual"
         | "forecast"
+        | "service_case"
       purchase_need_state:
         | "pending"
         | "quoting"
@@ -10701,7 +10708,14 @@ export const Constants = {
         "done",
         "blocked",
       ],
-      mo_origin: ["sale", "manual", "replenishment", "rework", "other"],
+      mo_origin: [
+        "sale",
+        "manual",
+        "replenishment",
+        "rework",
+        "other",
+        "service_case",
+      ],
       mo_priority: ["low", "normal", "high", "urgent"],
       mo_qc_result: ["pass", "fail", "rework"],
       mo_state: [
@@ -10767,6 +10781,7 @@ export const Constants = {
         "min_stock",
         "manual",
         "forecast",
+        "service_case",
       ],
       purchase_need_state: [
         "pending",
