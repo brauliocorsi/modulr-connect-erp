@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const rpcMock = vi.fn();
 const fromMock = vi.fn();
@@ -61,13 +62,16 @@ function setupFrom(ticket: any, messages: any[] = []) {
 }
 
 function renderAt(id: string) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={[`/helpdesk/tickets/${id}`]}>
-      <Routes>
-        <Route path="/helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
-        <Route path="/service/requests/:id" element={<div>service-case-page</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[`/helpdesk/tickets/${id}`]}>
+        <Routes>
+          <Route path="/helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
+          <Route path="/service/requests/:id" element={<div>service-case-page</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -148,10 +152,13 @@ describe("CustomerTicketDetail", () => {
     expect(btn).toBeDisabled();
   });
 
-  it("closes ticket via helpdesk_ticket_close", async () => {
+  it("closes ticket via helpdesk_ticket_close after confirm", async () => {
     setupFrom(makeTicket());
     renderAt("t1");
     fireEvent.click(await screen.findByRole("button", { name: /Encerrar/ }));
+    // confirm dialog opens — second "Encerrar" button is the confirm
+    const confirmBtn = await screen.findByRole("button", { name: "Encerrar" });
+    fireEvent.click(confirmBtn);
     await waitFor(() =>
       expect(rpcMock).toHaveBeenCalledWith("helpdesk_ticket_close", expect.objectContaining({ _ticket_id: "t1" })),
     );

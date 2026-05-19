@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader, PageBody } from "@/core/layout/PageHeader";
+import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  TicketStatusBadge,
   TicketCategoryBadge,
   TicketPriorityBadge,
   CONVERTIBLE_CATEGORIES,
@@ -16,6 +15,13 @@ import {
 import { RecordTimeline } from "@/core/timeline/RecordTimeline";
 import { RecordTasks } from "@/core/tasks/RecordTasks";
 import { RecordConversations } from "@/core/conversations/RecordConversations";
+import {
+  EntityHeader,
+  OperationalStatusBadge,
+  useRpcMutation,
+  useEntityRefresh,
+  type OperationalAction,
+} from "@/core/operational";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Wrench, X, Send, EyeOff, Eye } from "lucide-react";
@@ -55,7 +61,6 @@ export default function CustomerTicketDetail() {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [isInternal, setIsInternal] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -78,6 +83,11 @@ export default function CustomerTicketDetail() {
 
   useEffect(() => { load(); }, [load]);
 
+  const { refresh, lastUpdated, isFetching } = useEntityRefresh({
+    entityType: "customer_ticket",
+    entityId: id,
+  });
+
   useEffect(() => {
     if (!id) return;
     const ch = supabase
@@ -94,109 +104,121 @@ export default function CustomerTicketDetail() {
     return () => { supabase.removeChannel(ch); };
   }, [id, load]);
 
-  const sendMessage = async () => {
-    if (!id || !text.trim()) return;
-    setBusy("send");
-    const { error } = await supabase.rpc("helpdesk_ticket_add_message", {
-      _ticket_id: id, _message: text, _internal: isInternal,
-    });
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    setText("");
-    toast.success(isInternal ? "Nota interna adicionada" : "Mensagem enviada");
-  };
+  const sendMutation = useRpcMutation({
+    rpc: "helpdesk_ticket_add_message",
+    successMessage: undefined,
+    onSuccess: async () => {
+      toast.success(isInternal ? "Nota interna adicionada" : "Mensagem enviada");
+      setText("");
+      await load();
+      await refresh();
+    },
+  });
 
-  const convertToCase = async () => {
-    if (!id || !ticket) return;
-    setBusy("convert");
-    const { data, error } = await supabase.rpc("helpdesk_ticket_convert_to_service_case", {
-      _ticket_id: id, _payload: {},
-    });
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    toast.success("Convertido em service case");
-    if (data) nav(`/service/requests/${data}`);
-    else load();
-  };
+  const convertMutation = useRpcMutation<{ _ticket_id: string; _payload: Record<string, unknown> }, string>({
+    rpc: "helpdesk_ticket_convert_to_service_case",
+    successMessage: "Convertido em service case",
+    onSuccess: async (data) => {
+      if (data) nav(`/service/requests/${data}`);
+      else await load();
+      await refresh();
+    },
+  });
 
-  const closeTicket = async () => {
-    if (!id) return;
-    setBusy("close");
-    const { error } = await supabase.rpc("helpdesk_ticket_close", {
-      _ticket_id: id, _resolution: "Encerrado via helpdesk",
-    });
-    setBusy(null);
-    if (error) return toast.error(error.message);
-    toast.success("Ticket encerrado");
-  };
+  const closeMutation = useRpcMutation({
+    rpc: "helpdesk_ticket_close",
+    successMessage: "Ticket encerrado",
+    onSuccess: async () => { await load(); await refresh(); },
+  });
+
+  const isConvertible = ticket ? CONVERTIBLE_CATEGORIES.has(ticket.category) : false;
+  const alreadyLinked = !!ticket?.service_case_id;
+  const isClosed = ticket ? ["closed", "cancelled"].includes(ticket.status) : false;
+
+  const headerActions: OperationalAction[] = useMemo(() => {
+    if (!ticket) return [];
+    return [
+      alreadyLinked
+        ? {
+            key: "linked",
+            label: `Service Case ${ticket.service_case?.case_number ?? ""}`.trim(),
+            icon: <Wrench className="h-4 w-4" />,
+            variant: "outline",
+            onClick: () => nav(`/service/requests/${ticket.service_case_id}`),
+          }
+        : {
+            key: "convert",
+            label: "Converter em assistência",
+            icon: <Wrench className="h-4 w-4" />,
+            variant: "outline",
+            disabled: !isConvertible || isClosed,
+            disabledReason: isClosed
+              ? "O ticket já está encerrado."
+              : !isConvertible
+              ? "Esta categoria não pode virar assistência sem force."
+              : null,
+            loading: convertMutation.isPending,
+            onClick: () => convertMutation.mutate({ _ticket_id: ticket.id, _payload: {} }),
+          },
+      {
+        key: "close",
+        label: "Encerrar",
+        icon: <X className="h-4 w-4" />,
+        destructive: true,
+        disabled: isClosed,
+        disabledReason: isClosed ? "O ticket já está encerrado." : null,
+        loading: closeMutation.isPending,
+        confirm: {
+          title: "Encerrar ticket?",
+          description: "Esta ação fecha o ticket e impede novas mensagens.",
+          confirmLabel: "Encerrar",
+        },
+        onClick: () => closeMutation.mutate({ _ticket_id: ticket.id, _resolution: "Encerrado via helpdesk" }),
+      },
+    ];
+  }, [ticket, alreadyLinked, isConvertible, isClosed, convertMutation, closeMutation, nav]);
 
   if (loading || !ticket) {
-    return (
-      <PageBody><div className="text-sm text-muted-foreground">A carregar…</div></PageBody>
-    );
+    return <PageBody><div className="text-sm text-muted-foreground">A carregar…</div></PageBody>;
   }
-
-  const isConvertible = CONVERTIBLE_CATEGORIES.has(ticket.category);
-  const alreadyLinked = !!ticket.service_case_id;
-  const isClosed = ["closed", "cancelled"].includes(ticket.status);
 
   return (
     <>
-      <PageHeader
+      <EntityHeader
         title={`Ticket ${ticket.ticket_number}`}
+        subtitle={ticket.subject}
         breadcrumb={[{ label: "Helpdesk", to: "/helpdesk/tickets" }, { label: ticket.ticket_number }]}
-        actions={
-          <div className="flex gap-2">
-            {alreadyLinked ? (
-              <Button size="sm" variant="outline" asChild>
-                <Link to={`/service/requests/${ticket.service_case_id}`}>
-                  <Wrench className="h-4 w-4 mr-1" /> Service Case {ticket.service_case?.case_number}
-                </Link>
-              </Button>
-            ) : (
-              <Button
-                size="sm" variant="outline"
-                disabled={!isConvertible || busy === "convert" || isClosed}
-                title={!isConvertible ? "Categoria não convertível sem force" : ""}
-                onClick={convertToCase}
-              >
-                <Wrench className="h-4 w-4 mr-1" /> Converter em assistência
-              </Button>
-            )}
-            <Button
-              size="sm" variant="destructive"
-              disabled={isClosed || busy === "close"}
-              onClick={closeTicket}
-            >
-              <X className="h-4 w-4 mr-1" /> Encerrar
-            </Button>
-          </div>
+        statusBadges={
+          <>
+            <OperationalStatusBadge domain="ticket" status={ticket.status} />
+            <TicketCategoryBadge category={ticket.category} />
+            <TicketPriorityBadge priority={ticket.priority} />
+          </>
         }
+        metadata={[
+          { label: "Cliente", value: ticket.customer?.name ?? "—" },
+          {
+            label: "Pedido",
+            value: ticket.sale_order ? (
+              <Link className="underline text-primary" to={`/sales/orders/${ticket.sale_order_id}`}>{ticket.sale_order.name}</Link>
+            ) : "—",
+          },
+          { label: "Criado", value: formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR }) },
+          { label: "Origem", value: ticket.source },
+        ]}
+        primaryActions={headerActions}
+        onRefresh={refresh}
+        isFetching={isFetching}
+        lastUpdated={lastUpdated}
       />
       <PageBody>
-        <Card className="p-4 mb-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <Field label="Status"><TicketStatusBadge status={ticket.status} /></Field>
-          <Field label="Categoria"><TicketCategoryBadge category={ticket.category} /></Field>
-          <Field label="Prioridade"><TicketPriorityBadge priority={ticket.priority} /></Field>
-          <Field label="Cliente">{ticket.customer?.name ?? "—"}</Field>
-          <Field label="Pedido">
-            {ticket.sale_order ? (
-              <Link className="underline text-primary" to={`/sales/orders/${ticket.sale_order_id}`}>{ticket.sale_order.name}</Link>
-            ) : "—"}
-          </Field>
-          <Field label="Criado">
-            {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR })}
-          </Field>
-          <Field label="Origem">{ticket.source}</Field>
-          <Field label="Atribuído a">{ticket.assigned_to ? <span className="font-mono text-xs">{ticket.assigned_to.slice(0, 8)}…</span> : "—"}</Field>
-        </Card>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-3">
-            <Card className="p-4">
-              <h3 className="font-semibold mb-1">{ticket.subject}</h3>
-              {ticket.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ticket.description}</p>}
-            </Card>
+            {ticket.description && (
+              <Card className="p-4">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ticket.description}</p>
+              </Card>
+            )}
 
             <Card className="p-4">
               <Tabs defaultValue="public">
@@ -223,15 +245,21 @@ export default function CustomerTicketDetail() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex gap-1 text-xs">
                     <button
+                      type="button"
                       className={"px-2 py-1 rounded " + (!isInternal ? "bg-primary text-primary-foreground" : "bg-muted")}
                       onClick={() => setIsInternal(false)} disabled={isClosed}
                     >Pública</button>
                     <button
+                      type="button"
                       className={"px-2 py-1 rounded " + (isInternal ? "bg-primary text-primary-foreground" : "bg-muted")}
                       onClick={() => setIsInternal(true)} disabled={isClosed}
                     >Interna</button>
                   </div>
-                  <Button size="sm" onClick={sendMessage} disabled={!text.trim() || busy === "send" || isClosed}>
+                  <Button
+                    size="sm"
+                    onClick={() => sendMutation.mutate({ _ticket_id: ticket.id, _message: text, _internal: isInternal })}
+                    disabled={!text.trim() || sendMutation.isPending || isClosed}
+                  >
                     <Send className="h-4 w-4 mr-1" /> Enviar
                   </Button>
                 </div>
@@ -248,15 +276,6 @@ export default function CustomerTicketDetail() {
         </div>
       </PageBody>
     </>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[11px] uppercase text-muted-foreground">{label}</div>
-      <div className="mt-0.5">{children}</div>
-    </div>
   );
 }
 
