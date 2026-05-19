@@ -28,7 +28,8 @@ export function useRpcMutation<TArgs extends Record<string, unknown> = Record<st
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: async (args: TArgs) => {
-      const { data, error } = await (supabase.rpc as (n: string, a?: unknown) => Promise<{ data: unknown; error: { message: string } | null }>)(rpc, args);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)(rpc, args);
       if (error) throw new Error(error.message);
       return data as TData;
     },
