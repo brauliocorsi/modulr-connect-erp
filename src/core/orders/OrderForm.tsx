@@ -451,73 +451,130 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     setOrder((o: any) => ({ ...o, state: (data as any)?.state }));
   };
 
-  const cancelOrder = async () => {
-    if (!confirm("Cancelar?")) return;
-    const fn = kind === "sale" ? "cancel_sale_order" : "cancel_purchase_order";
-    await supabase.rpc(fn as any, { _order: id });
-    toast.success("Cancelado");
-    setOrder((o: any) => ({ ...o, state: "cancelled" }));
-  };
-
   const isLocked = ["confirmed", "done", "cancelled"].includes(order.state);
   const [invDlg, setInvDlg] = useState(false);
 
-  const revertInvoice = async () => {
-    if (!confirm("Reverter faturação?")) return;
-    const { error } = await supabase.rpc("sale_order_revert_invoice_status" as any, { _order_id: id!, _reason: null });
-    if (error) return toast.error(error.message);
-    const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", id!).maybeSingle();
-    if (data) setOrder((o: any) => ({ ...o, ...data }));
-  };
+  // ---------- Operational action bar ----------
+  const cancelDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : ["cancelled", "done"].includes(order.state) ? "Pedido já está finalizado"
+    : null;
+
+  const confirmDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : isLocked ? `Pedido já está em "${order.state}"`
+    : !order.partner_id ? (kind === "sale" ? "Selecione um cliente" : "Selecione um fornecedor")
+    : null;
+
+  const markInvoicedDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : order.state === "cancelled" ? "Pedido cancelado"
+    : order.invoice_status === "invoiced" ? "Pedido já está faturado"
+    : null;
+
+  const primaryActions: OperationalAction[] = [];
+  const secondaryActions: OperationalAction[] = [];
+
+  if (!isLocked) {
+    primaryActions.push({
+      key: "save",
+      label: "Salvar",
+      icon: <Save className="h-4 w-4 mr-1" />,
+      variant: "outline",
+      onClick: save,
+    });
+  }
+  if (!isNew) {
+    primaryActions.push({
+      key: "confirm",
+      label: kind === "sale" ? "Confirmar venda" : "Confirmar compra",
+      icon: <CheckCircle2 className="h-4 w-4 mr-1" />,
+      variant: "default",
+      onClick: confirmOrder,
+      disabled: !!confirmDisabledReason,
+      disabledReason: confirmDisabledReason,
+      hidden: isLocked,
+    });
+  }
+  if (kind === "sale" && !isNew) {
+    if (order.invoice_status !== "invoiced") {
+      secondaryActions.push({
+        key: "mark-invoiced",
+        label: "Marcar faturado",
+        icon: <FileCheck2 className="h-4 w-4 mr-1" />,
+        variant: "outline",
+        onClick: () => setInvDlg(true),
+        disabled: !!markInvoicedDisabledReason,
+        disabledReason: markInvoicedDisabledReason,
+      });
+    } else {
+      secondaryActions.push({
+        key: "revert-invoice",
+        label: "Reverter fatura",
+        icon: <RotateCcw className="h-4 w-4 mr-1" />,
+        variant: "ghost",
+        onClick: () => revertInvoiceMut.mutate({ _order_id: id!, _reason: null }),
+        loading: revertInvoiceMut.isPending,
+        confirm: {
+          title: "Reverter faturação?",
+          description: "Esta ação devolve o pedido ao estado anterior à faturação.",
+          confirmLabel: "Reverter",
+        },
+      });
+    }
+    secondaryActions.push({
+      key: "print",
+      label: "Imprimir / PDF",
+      icon: <Printer className="h-4 w-4 mr-1" />,
+      variant: "outline",
+      onClick: () => printSaleOrder(id!),
+    });
+  }
+  secondaryActions.push({
+    key: "cancel",
+    label: "Cancelar",
+    icon: <X className="h-4 w-4 mr-1" />,
+    variant: "ghost",
+    destructive: true,
+    onClick: () => cancelOrderMut.mutate({ _order: id! }),
+    loading: cancelOrderMut.isPending,
+    disabled: !!cancelDisabledReason,
+    disabledReason: cancelDisabledReason,
+    hidden: isNew,
+    confirm: {
+      title: kind === "sale" ? "Cancelar venda?" : "Cancelar compra?",
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Cancelar pedido",
+      cancelLabel: "Voltar",
+    },
+  });
 
   return (
     <>
-      <FormHeader
+      <EntityHeader
         title={order.name || "Novo"}
         breadcrumb={[
           { label: moduleLabel, to: kind === "sale" ? "/sales" : "/purchase" },
           { label: kind === "sale" ? "Pedidos" : "Pedidos de Compra", to: basePath },
           { label: order.name || "Novo" },
         ]}
-        backTo={basePath}
-        state={{ label: order.state, tone: STATE_TONES[order.state] ?? "default" }}
-        actions={
-          <div className="flex gap-2 items-center">
+        statusBadges={
+          <div className="flex flex-wrap items-center gap-1.5">
+            <OperationalStatusBadge domain="sale" status={order.state} />
+            {kind === "sale" && order.payment_status && (
+              <OperationalStatusBadge domain="finance" status={order.payment_status} />
+            )}
             {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
-            {kind === "sale" && <PaymentStatusBadge status={order.payment_status} />}
             {kind === "sale" && !isNew && <InvoiceStatusBadge status={order.invoice_status} />}
-            {kind === "sale" && !isNew && order.invoice_status !== "invoiced" && (
-              <Button size="sm" variant="outline" onClick={() => setInvDlg(true)}>
-                <FileCheck2 className="h-4 w-4 mr-1" /> Marcar faturado
-              </Button>
-            )}
-            {kind === "sale" && !isNew && order.invoice_status === "invoiced" && (
-              <Button size="sm" variant="ghost" onClick={revertInvoice}>Reverter fatura</Button>
-            )}
-            {kind === "sale" && !isNew && (
-              <Button size="sm" variant="outline" onClick={() => printSaleOrder(id!)}>
-                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
-              </Button>
-            )}
-            {!isLocked && (
-              <Button size="sm" variant="outline" onClick={save}>
-                Salvar
-              </Button>
-            )}
-            {!isLocked && !isNew && (
-              <Button size="sm" onClick={confirmOrder}>
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                {kind === "sale" ? "Confirmar venda" : "Confirmar compra"}
-              </Button>
-            )}
-            {!["cancelled", "done"].includes(order.state) && !isNew && (
-              <Button size="sm" variant="ghost" onClick={cancelOrder}>
-                <X className="h-4 w-4 mr-1" /> Cancelar
-              </Button>
-            )}
           </div>
         }
+        onRefresh={isNew ? undefined : () => void refresh()}
+        isFetching={isFetching}
+        lastUpdated={lastUpdated}
+        primaryActions={primaryActions}
+        secondaryActions={secondaryActions}
       />
+
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
