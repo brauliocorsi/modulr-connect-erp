@@ -239,26 +239,36 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
+    const next = { ...order, [key]: value };
     setOrder((o: any) => ({ ...o, [key]: value }));
-    await supabase.from("sale_orders").update({ [key]: value } as any).eq("id", id!);
+    const { error } = await supabase.rpc("sale_order_set_services" as any, {
+      _order_id: id!,
+      _include_assembly: !!next.include_assembly,
+      _include_delivery: !!next.include_delivery,
+    });
+    if (error) return toast.error(error.message);
     await refreshServices(id!);
   };
 
   const setDeliveryMode = async (mode: "delivery" | "pickup" | "direct") => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     setOrder((o: any) => ({ ...o, delivery_mode: mode }));
-    const { error } = await supabase.from("sale_orders").update({ delivery_mode: mode } as any).eq("id", id!);
+    const { error } = await supabase.rpc("sale_order_set_delivery_mode" as any, { _order_id: id!, _delivery_mode: mode });
     if (error) toast.error(error.message);
   };
 
   const setDeliveryZone = async (value: string) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
-    // value format: "zip:<id>" | "region:<id>" | "auto"
     const patch: any = { delivery_zip_rule_id: null, delivery_region_rule_id: null };
     if (value.startsWith("zip:")) patch.delivery_zip_rule_id = value.slice(4);
     else if (value.startsWith("region:")) patch.delivery_region_rule_id = value.slice(7);
     setOrder((o: any) => ({ ...o, ...patch }));
-    await supabase.from("sale_orders").update(patch).eq("id", id!);
+    const { error } = await supabase.rpc("sale_order_set_delivery_zone" as any, {
+      _order_id: id!,
+      _delivery_zip_rule_id: patch.delivery_zip_rule_id,
+      _delivery_region_rule_id: patch.delivery_region_rule_id,
+    });
+    if (error) return toast.error(error.message);
     if (order.include_delivery) await refreshServices(id!);
   };
 
