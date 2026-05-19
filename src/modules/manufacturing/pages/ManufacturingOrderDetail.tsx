@@ -11,6 +11,8 @@ import { MOOriginBadge } from "../components/MOOriginBadge";
 import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import WorkOrdersSection from "../components/WorkOrdersSection";
+import { RecordTimeline } from "@/core/timeline/RecordTimeline";
+import { RecordTasks } from "@/core/tasks/RecordTasks";
 
 const CLOSE_ERROR_MESSAGES: Record<string, string> = {
   WORK_ORDERS_NOT_DONE: "Ainda existem operações abertas.",
@@ -173,6 +175,10 @@ export default function ManufacturingOrderDetail() {
               </TabsContent>
             </Tabs>
           </Card>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          <RecordTasks entityType="manufacturing_order" entityId={id!} />
+          <RecordTimeline entityType="manufacturing_order" entityId={id!} />
         </div>
       </PageBody>
     </>

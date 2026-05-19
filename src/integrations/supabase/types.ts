@@ -11986,7 +11986,40 @@ export type Database = {
         Returns: Json
       }
       sale_line_qty_missing: { Args: { _line_id: string }; Returns: number }
+      sale_order_mark_invoiced: {
+        Args: {
+          _invoice_date?: string
+          _invoice_notes?: string
+          _invoice_number?: string
+          _order_id: string
+        }
+        Returns: Json
+      }
       sale_order_reconciliation: { Args: { _order_id: string }; Returns: Json }
+      sale_order_revert_invoice_status: {
+        Args: { _order_id: string; _reason?: string }
+        Returns: Json
+      }
+      sale_order_set_delivery_mode: {
+        Args: { _delivery_mode: string; _order_id: string }
+        Returns: Json
+      }
+      sale_order_set_delivery_zone: {
+        Args: {
+          _delivery_region_rule_id?: string
+          _delivery_zip_rule_id?: string
+          _order_id: string
+        }
+        Returns: Json
+      }
+      sale_order_set_services: {
+        Args: {
+          _include_assembly: boolean
+          _include_delivery: boolean
+          _order_id: string
+        }
+        Returns: Json
+      }
       scan_increment_move: {
         Args: { _delta?: number; _move: string }
         Returns: Json
