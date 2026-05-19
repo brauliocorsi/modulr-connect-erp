@@ -140,6 +140,45 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_events: {
+        Row: {
+          actor_type: string
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          message: string | null
+          metadata: Json
+          visibility: string
+        }
+        Insert: {
+          actor_type?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          visibility?: string
+        }
+        Update: {
+          actor_type?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          visibility?: string
+        }
+        Relationships: []
+      }
       allocation_decisions: {
         Row: {
           created_at: string
@@ -1139,6 +1178,171 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      conversation_attachments: {
+        Row: {
+          attachment_type: string | null
+          created_at: string
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          message_id: string
+        }
+        Insert: {
+          attachment_type?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          message_id: string
+        }
+        Update: {
+          attachment_type?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_messages: {
+        Row: {
+          created_at: string
+          edited_at: string | null
+          id: string
+          message: string
+          metadata: Json
+          sender_partner_id: string | null
+          sender_type: string
+          sender_user_id: string | null
+          thread_id: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json
+          sender_partner_id?: string | null
+          sender_type: string
+          sender_user_id?: string | null
+          thread_id: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json
+          sender_partner_id?: string | null
+          sender_type?: string
+          sender_user_id?: string | null
+          thread_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          left_at: string | null
+          participant_type: string
+          partner_id: string | null
+          role: string
+          thread_id: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          participant_type: string
+          partner_id?: string | null
+          role?: string
+          thread_id: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          participant_type?: string
+          partner_id?: string | null
+          role?: string
+          thread_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_threads: {
+        Row: {
+          close_reason: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          status: string
+          title: string
+          visibility: string
+        }
+        Insert: {
+          close_reason?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          status?: string
+          title: string
+          visibility?: string
+        }
+        Update: {
+          close_reason?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          status?: string
+          title?: string
+          visibility?: string
         }
         Relationships: []
       }
@@ -2690,6 +2894,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      erp_tasks: {
+        Row: {
+          assigned_group: string | null
+          assigned_to: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_group?: string | null
+          assigned_to?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_group?: string | null
+          assigned_to?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       group_permissions: {
         Row: {
@@ -4304,51 +4568,140 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_delivery_log: {
+        Row: {
+          attempted_at: string
+          channel: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          notification_id: string
+          status: string
+        }
+        Insert: {
+          attempted_at?: string
+          channel: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          notification_id: string
+          status: string
+        }
+        Update: {
+          attempted_at?: string
+          channel?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          notification_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_log_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          category: string
+          channel: string
+          created_at: string
+          enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          channel: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          channel?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
+          action_url: string | null
           body: string | null
+          category: string | null
           created_at: string
+          dismissed_at: string | null
           entity_id: string | null
           entity_type: string | null
           id: string
           link: string | null
+          metadata: Json
           module: Database["public"]["Enums"]["app_module"]
           payload: Json | null
           priority: string
           read_at: string | null
+          recipient_group: string | null
+          severity: string
+          status: string
           title: string
           type: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          action_url?: string | null
           body?: string | null
+          category?: string | null
           created_at?: string
+          dismissed_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
           link?: string | null
+          metadata?: Json
           module: Database["public"]["Enums"]["app_module"]
           payload?: Json | null
           priority?: string
           read_at?: string | null
+          recipient_group?: string | null
+          severity?: string
+          status?: string
           title: string
           type: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          action_url?: string | null
           body?: string | null
+          category?: string | null
           created_at?: string
+          dismissed_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
           link?: string | null
+          metadata?: Json
           module?: Database["public"]["Enums"]["app_module"]
           payload?: Json | null
           priority?: string
           read_at?: string | null
+          recipient_group?: string | null
+          severity?: string
+          status?: string
           title?: string
           type?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -10576,6 +10929,25 @@ export type Database = {
         Returns: number
       }
       _wh_main_internal_loc: { Args: { _wh: string }; Returns: string }
+      activity_list_for_entity: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _include_customer_visible?: boolean
+        }
+        Returns: Json
+      }
+      activity_log_event: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _event_type: string
+          _message: string
+          _metadata?: Json
+          _visibility?: string
+        }
+        Returns: string
+      }
       allocate_payment_to_schedules: {
         Args: { _so: string }
         Returns: undefined
@@ -10820,6 +11192,32 @@ export type Database = {
       }
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
+      conversation_add_message: {
+        Args: {
+          _message: string
+          _metadata?: Json
+          _thread_id: string
+          _visibility?: string
+        }
+        Returns: string
+      }
+      conversation_add_participant: {
+        Args: { _payload: Json; _thread_id: string }
+        Returns: string
+      }
+      conversation_close: {
+        Args: { _reason?: string; _thread_id: string }
+        Returns: Json
+      }
+      conversation_create: { Args: { _payload: Json }; Returns: string }
+      conversation_list_for_entity: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: Json
+      }
+      conversation_messages: {
+        Args: { _thread_id: string; _visibility_filter?: string }
+        Returns: Json
+      }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
       create_customer_credit: {
         Args: {
@@ -11085,6 +11483,10 @@ export type Database = {
         Args: { _dry_run?: boolean }
         Returns: Json
       }
+      erp_communication_health_check: {
+        Args: { _threshold_hours?: number }
+        Returns: Json
+      }
       erp_customer_portal_health_check: {
         Args: { _threshold_days?: number }
         Returns: Json
@@ -11122,6 +11524,28 @@ export type Database = {
         Args: { _threshold_days?: number }
         Returns: Json
       }
+      erp_task_assign: {
+        Args: {
+          _assigned_group?: string
+          _assigned_to: string
+          _task_id: string
+        }
+        Returns: Json
+      }
+      erp_task_cancel: {
+        Args: { _reason: string; _task_id: string }
+        Returns: Json
+      }
+      erp_task_complete: {
+        Args: { _notes?: string; _task_id: string }
+        Returns: Json
+      }
+      erp_task_create: { Args: { _payload: Json }; Returns: string }
+      erp_task_list_for_user: {
+        Args: { _limit?: number; _status?: string }
+        Returns: Json
+      }
+      erp_task_start: { Args: { _task_id: string }; Returns: Json }
       finance_reconcile_session: {
         Args: { _notes?: string; _session: string }
         Returns: undefined
@@ -11325,6 +11749,19 @@ export type Database = {
       next_sequence: { Args: { _code: string }; Returns: string }
       next_service_case_number: { Args: never; Returns: string }
       next_ticket_number: { Args: never; Returns: string }
+      notification_create: { Args: { _payload: Json }; Returns: string }
+      notification_list_for_user: {
+        Args: { _category?: string; _limit?: number; _status?: string }
+        Returns: Json
+      }
+      notification_mark_all_read: {
+        Args: { _category?: string }
+        Returns: Json
+      }
+      notification_mark_read: {
+        Args: { _notification_id: string }
+        Returns: Json
+      }
       notify_group: {
         Args: {
           _body?: string
