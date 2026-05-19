@@ -3,29 +3,26 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { RecordTimeline } from "@/core/timeline/RecordTimeline";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
-import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 import { MarkInvoicedDialog } from "@/core/orders/MarkInvoicedDialog";
-import { FileCheck2 } from "lucide-react";
+import { FileCheck2, RotateCcw } from "lucide-react";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { SaleProductionPanel } from "@/modules/manufacturing/components/SaleProductionPanel";
 import SaleAvailabilityPanel from "@/modules/purchase/components/SaleAvailabilityPanel";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, CheckCircle2, X, Printer, Check } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, X, Printer, Check, Save } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +30,13 @@ import { toast } from "sonner";
 import { printSaleOrder } from "./printSaleOrder";
 import { DeliveryStatusBadge } from "@/modules/inventory/components/DeliveryStatusBadge";
 import { NumberField } from "@/core/forms/NumberField";
+import {
+  EntityHeader,
+  OperationalStatusBadge,
+  useRpcMutation,
+  useEntityRefresh,
+  type OperationalAction,
+} from "@/core/operational";
 
 type Line = {
   id?: string;
