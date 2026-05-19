@@ -3,29 +3,26 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
 import { RecordTimeline } from "@/core/timeline/RecordTimeline";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
-import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 import { MarkInvoicedDialog } from "@/core/orders/MarkInvoicedDialog";
-import { FileCheck2 } from "lucide-react";
+import { FileCheck2, RotateCcw } from "lucide-react";
 import { OrderTraceability } from "@/core/orders/OrderTraceability";
 import { SmartButtons } from "@/core/orders/SmartButtons";
 import { PurchaseBillsPanel } from "@/core/orders/PurchaseBillsPanel";
 import { PaymentsTab } from "@/core/orders/PaymentsTab";
 import { SaleProductionPanel } from "@/modules/manufacturing/components/SaleProductionPanel";
 import SaleAvailabilityPanel from "@/modules/purchase/components/SaleAvailabilityPanel";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, CheckCircle2, X, Printer, Check } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, X, Printer, Check, Save } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +30,13 @@ import { toast } from "sonner";
 import { printSaleOrder } from "./printSaleOrder";
 import { DeliveryStatusBadge } from "@/modules/inventory/components/DeliveryStatusBadge";
 import { NumberField } from "@/core/forms/NumberField";
+import {
+  EntityHeader,
+  OperationalStatusBadge,
+  useRpcMutation,
+  useEntityRefresh,
+  type OperationalAction,
+} from "@/core/operational";
 
 type Line = {
   id?: string;
@@ -48,14 +52,7 @@ type Line = {
   source_sale_order_id?: string | null;
 };
 
-const STATE_TONES: Record<string, "default" | "success" | "warning" | "info" | "destructive"> = {
-  draft: "default",
-  sent: "info",
-  rfq_sent: "info",
-  confirmed: "warning",
-  done: "success",
-  cancelled: "destructive",
-};
+// Status tones now centralised in OperationalStatusBadge (domain 'sale').
 
 export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { id } = useParams();
@@ -229,49 +226,102 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     return { untaxed, tax: 0, total: untaxed };
   }, [lines]);
 
-  const refreshServices = async (oid: string) => {
-    const { error } = await supabase.rpc("refresh_order_services" as any, { _order: oid });
-    if (error) return toast.error(error.message);
+  // ---------- Operational refresh & RPC mutations (F22-R2) ----------
+  const entityType = kind === "sale" ? "sale_order" : "purchase_order";
+  const { refresh, lastUpdated, isFetching } = useEntityRefresh({
+    entityType,
+    entityId: isNew ? null : (id ?? null),
+    extraKeys: [
+      ["sale-shipment", order.name],
+      ["products-stock-agg"],
+      ["variants-stock-agg"],
+    ],
+  });
+
+  const invalidateOrder = [
+    [entityType, id],
+    ["activity_events", entityType, id],
+    ["erp_tasks", entityType, id],
+    ["conversation_messages", entityType, id],
+  ];
+
+  const reloadOrder = async (oid: string) => {
     const { data: o } = await supabase.from("sale_orders").select("*").eq("id", oid).maybeSingle();
     if (o) setOrder(o);
     const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", oid).order("sequence");
     setLines((ls ?? []) as unknown as Line[]);
   };
 
-  const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
+  const refreshServicesMut = useRpcMutation<{ _order: string }>({
+    rpc: "refresh_order_services",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => { await reloadOrder(args._order); },
+  });
+  const refreshServices = (oid: string) => refreshServicesMut.mutateAsync({ _order: oid });
+
+  const setServicesMut = useRpcMutation<{ _order_id: string; _include_assembly: boolean; _include_delivery: boolean }>({
+    rpc: "sale_order_set_services",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => { await refreshServices(args._order_id); },
+  });
+  const toggleService = (key: "include_assembly" | "include_delivery", value: boolean) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     const next = { ...order, [key]: value };
     setOrder((o: any) => ({ ...o, [key]: value }));
-    const { error } = await supabase.rpc("sale_order_set_services" as any, {
+    setServicesMut.mutate({
       _order_id: id!,
       _include_assembly: !!next.include_assembly,
       _include_delivery: !!next.include_delivery,
     });
-    if (error) return toast.error(error.message);
-    await refreshServices(id!);
   };
 
-  const setDeliveryMode = async (mode: "delivery" | "pickup" | "direct") => {
+  const setDeliveryModeMut = useRpcMutation<{ _order_id: string; _delivery_mode: string }>({
+    rpc: "sale_order_set_delivery_mode",
+    invalidateKeys: invalidateOrder,
+  });
+  const setDeliveryMode = (mode: "delivery" | "pickup" | "direct") => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     setOrder((o: any) => ({ ...o, delivery_mode: mode }));
-    const { error } = await supabase.rpc("sale_order_set_delivery_mode" as any, { _order_id: id!, _delivery_mode: mode });
-    if (error) toast.error(error.message);
+    setDeliveryModeMut.mutate({ _order_id: id!, _delivery_mode: mode });
   };
 
-  const setDeliveryZone = async (value: string) => {
+  const setDeliveryZoneMut = useRpcMutation<{ _order_id: string; _delivery_zip_rule_id: string | null; _delivery_region_rule_id: string | null }>({
+    rpc: "sale_order_set_delivery_zone",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => {
+      if (order.include_delivery) await refreshServices(args._order_id);
+    },
+  });
+  const setDeliveryZone = (value: string) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     const patch: any = { delivery_zip_rule_id: null, delivery_region_rule_id: null };
     if (value.startsWith("zip:")) patch.delivery_zip_rule_id = value.slice(4);
     else if (value.startsWith("region:")) patch.delivery_region_rule_id = value.slice(7);
     setOrder((o: any) => ({ ...o, ...patch }));
-    const { error } = await supabase.rpc("sale_order_set_delivery_zone" as any, {
+    setDeliveryZoneMut.mutate({
       _order_id: id!,
       _delivery_zip_rule_id: patch.delivery_zip_rule_id,
       _delivery_region_rule_id: patch.delivery_region_rule_id,
     });
-    if (error) return toast.error(error.message);
-    if (order.include_delivery) await refreshServices(id!);
   };
+
+  const revertInvoiceMut = useRpcMutation<{ _order_id: string; _reason: string | null }>({
+    rpc: "sale_order_revert_invoice_status",
+    successMessage: "Faturação revertida",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => {
+      const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", args._order_id).maybeSingle();
+      if (data) setOrder((o: any) => ({ ...o, ...data }));
+    },
+  });
+
+  const cancelOrderMut = useRpcMutation<{ _order: string }>({
+    rpc: kind === "sale" ? "cancel_sale_order" : "cancel_purchase_order",
+    successMessage: "Cancelado",
+    invalidateKeys: invalidateOrder,
+    onSuccess: () => { setOrder((o: any) => ({ ...o, state: "cancelled" })); },
+  });
+
 
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) => {
@@ -401,73 +451,130 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     setOrder((o: any) => ({ ...o, state: (data as any)?.state }));
   };
 
-  const cancelOrder = async () => {
-    if (!confirm("Cancelar?")) return;
-    const fn = kind === "sale" ? "cancel_sale_order" : "cancel_purchase_order";
-    await supabase.rpc(fn as any, { _order: id });
-    toast.success("Cancelado");
-    setOrder((o: any) => ({ ...o, state: "cancelled" }));
-  };
-
   const isLocked = ["confirmed", "done", "cancelled"].includes(order.state);
   const [invDlg, setInvDlg] = useState(false);
 
-  const revertInvoice = async () => {
-    if (!confirm("Reverter faturação?")) return;
-    const { error } = await supabase.rpc("sale_order_revert_invoice_status" as any, { _order_id: id!, _reason: null });
-    if (error) return toast.error(error.message);
-    const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", id!).maybeSingle();
-    if (data) setOrder((o: any) => ({ ...o, ...data }));
-  };
+  // ---------- Operational action bar ----------
+  const cancelDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : ["cancelled", "done"].includes(order.state) ? "Pedido já está finalizado"
+    : null;
+
+  const confirmDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : isLocked ? `Pedido já está em "${order.state}"`
+    : !order.partner_id ? (kind === "sale" ? "Selecione um cliente" : "Selecione um fornecedor")
+    : null;
+
+  const markInvoicedDisabledReason =
+    isNew ? "Salve o pedido primeiro"
+    : order.state === "cancelled" ? "Pedido cancelado"
+    : order.invoice_status === "invoiced" ? "Pedido já está faturado"
+    : null;
+
+  const primaryActions: OperationalAction[] = [];
+  const secondaryActions: OperationalAction[] = [];
+
+  if (!isLocked) {
+    primaryActions.push({
+      key: "save",
+      label: "Salvar",
+      icon: <Save className="h-4 w-4 mr-1" />,
+      variant: "outline",
+      onClick: async () => { await save(); },
+    });
+  }
+  if (!isNew) {
+    primaryActions.push({
+      key: "confirm",
+      label: kind === "sale" ? "Confirmar venda" : "Confirmar compra",
+      icon: <CheckCircle2 className="h-4 w-4 mr-1" />,
+      variant: "default",
+      onClick: async () => { await confirmOrder(); },
+      disabled: !!confirmDisabledReason,
+      disabledReason: confirmDisabledReason,
+      hidden: isLocked,
+    });
+  }
+  if (kind === "sale" && !isNew) {
+    if (order.invoice_status !== "invoiced") {
+      secondaryActions.push({
+        key: "mark-invoiced",
+        label: "Marcar faturado",
+        icon: <FileCheck2 className="h-4 w-4 mr-1" />,
+        variant: "outline",
+        onClick: () => setInvDlg(true),
+        disabled: !!markInvoicedDisabledReason,
+        disabledReason: markInvoicedDisabledReason,
+      });
+    } else {
+      secondaryActions.push({
+        key: "revert-invoice",
+        label: "Reverter fatura",
+        icon: <RotateCcw className="h-4 w-4 mr-1" />,
+        variant: "ghost",
+        onClick: () => revertInvoiceMut.mutate({ _order_id: id!, _reason: null }),
+        loading: revertInvoiceMut.isPending,
+        confirm: {
+          title: "Reverter faturação?",
+          description: "Esta ação devolve o pedido ao estado anterior à faturação.",
+          confirmLabel: "Reverter",
+        },
+      });
+    }
+    secondaryActions.push({
+      key: "print",
+      label: "Imprimir / PDF",
+      icon: <Printer className="h-4 w-4 mr-1" />,
+      variant: "outline",
+      onClick: () => printSaleOrder(id!),
+    });
+  }
+  secondaryActions.push({
+    key: "cancel",
+    label: "Cancelar",
+    icon: <X className="h-4 w-4 mr-1" />,
+    variant: "ghost",
+    destructive: true,
+    onClick: () => cancelOrderMut.mutate({ _order: id! }),
+    loading: cancelOrderMut.isPending,
+    disabled: !!cancelDisabledReason,
+    disabledReason: cancelDisabledReason,
+    hidden: isNew,
+    confirm: {
+      title: kind === "sale" ? "Cancelar venda?" : "Cancelar compra?",
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Cancelar pedido",
+      cancelLabel: "Voltar",
+    },
+  });
 
   return (
     <>
-      <FormHeader
+      <EntityHeader
         title={order.name || "Novo"}
         breadcrumb={[
           { label: moduleLabel, to: kind === "sale" ? "/sales" : "/purchase" },
           { label: kind === "sale" ? "Pedidos" : "Pedidos de Compra", to: basePath },
           { label: order.name || "Novo" },
         ]}
-        backTo={basePath}
-        state={{ label: order.state, tone: STATE_TONES[order.state] ?? "default" }}
-        actions={
-          <div className="flex gap-2 items-center">
+        statusBadges={
+          <div className="flex flex-wrap items-center gap-1.5">
+            <OperationalStatusBadge domain="sale" status={order.state} />
+            {kind === "sale" && order.payment_status && (
+              <OperationalStatusBadge domain="finance" status={order.payment_status} />
+            )}
             {kind === "sale" && <FulfillmentBadge status={order.fulfillment_status} />}
-            {kind === "sale" && <PaymentStatusBadge status={order.payment_status} />}
             {kind === "sale" && !isNew && <InvoiceStatusBadge status={order.invoice_status} />}
-            {kind === "sale" && !isNew && order.invoice_status !== "invoiced" && (
-              <Button size="sm" variant="outline" onClick={() => setInvDlg(true)}>
-                <FileCheck2 className="h-4 w-4 mr-1" /> Marcar faturado
-              </Button>
-            )}
-            {kind === "sale" && !isNew && order.invoice_status === "invoiced" && (
-              <Button size="sm" variant="ghost" onClick={revertInvoice}>Reverter fatura</Button>
-            )}
-            {kind === "sale" && !isNew && (
-              <Button size="sm" variant="outline" onClick={() => printSaleOrder(id!)}>
-                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
-              </Button>
-            )}
-            {!isLocked && (
-              <Button size="sm" variant="outline" onClick={save}>
-                Salvar
-              </Button>
-            )}
-            {!isLocked && !isNew && (
-              <Button size="sm" onClick={confirmOrder}>
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                {kind === "sale" ? "Confirmar venda" : "Confirmar compra"}
-              </Button>
-            )}
-            {!["cancelled", "done"].includes(order.state) && !isNew && (
-              <Button size="sm" variant="ghost" onClick={cancelOrder}>
-                <X className="h-4 w-4 mr-1" /> Cancelar
-              </Button>
-            )}
           </div>
         }
+        onRefresh={isNew ? undefined : () => void refresh()}
+        isFetching={isFetching}
+        lastUpdated={lastUpdated}
+        primaryActions={primaryActions}
+        secondaryActions={secondaryActions}
       />
+
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
@@ -911,6 +1018,20 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
           </aside>
         </div>
       </PageBody>
+      {kind === "sale" && !isNew && id && (
+        <MarkInvoicedDialog
+          open={invDlg}
+          onOpenChange={setInvDlg}
+          orderId={id}
+          current={{
+            invoice_number: order.invoice_number,
+            invoice_date: order.invoice_date,
+            invoice_notes: order.invoice_notes,
+          }}
+          onSaved={() => void refresh()}
+        />
+      )}
     </>
+
   );
 }
