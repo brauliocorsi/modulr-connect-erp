@@ -41,7 +41,8 @@ describe("RecordTimeline", () => {
   it("renders events with labels, visibility and metadata", async () => {
     rpcMock.mockResolvedValue({ data: EVENTS, error: null });
     render(<RecordTimeline entityType="sale_order" entityId="so-1" includeCustomerVisible />);
-    expect(await screen.findByText("Faturado")).toBeInTheDocument();
+    // "Faturado" appears both as badge label and as message body
+    expect((await screen.findAllByText("Faturado")).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Serviços atualizados")).toBeInTheDocument();
     expect(screen.getByText(/público/)).toBeInTheDocument();
     expect(screen.getByText(/interno/)).toBeInTheDocument();

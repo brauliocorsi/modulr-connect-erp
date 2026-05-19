@@ -12,8 +12,9 @@ vi.mock("@/integrations/supabase/client", () => ({
     removeChannel: vi.fn(),
   },
 }));
+const STABLE_USER = { id: "user-1" };
 vi.mock("@/core/auth/AuthProvider", () => ({
-  useAuth: () => ({ user: { id: "user-1" } }),
+  useAuth: () => ({ user: STABLE_USER }),
 }));
 
 import { NotificationsBell } from "../NotificationsBell";
