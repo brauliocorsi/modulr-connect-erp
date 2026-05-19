@@ -62,13 +62,16 @@ function setupFrom(ticket: any, messages: any[] = []) {
 }
 
 function renderAt(id: string) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={[`/helpdesk/tickets/${id}`]}>
-      <Routes>
-        <Route path="/helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
-        <Route path="/service/requests/:id" element={<div>service-case-page</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[`/helpdesk/tickets/${id}`]}>
+        <Routes>
+          <Route path="/helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
+          <Route path="/service/requests/:id" element={<div>service-case-page</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
