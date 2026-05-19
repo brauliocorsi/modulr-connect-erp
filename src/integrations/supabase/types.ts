@@ -32,6 +32,24 @@ export type Database = {
         }
         Relationships: []
       }
+      _p20_run_log: {
+        Row: {
+          id: number
+          ran_at: string | null
+          result: Json | null
+        }
+        Insert: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Update: {
+          id?: number
+          ran_at?: string | null
+          result?: Json | null
+        }
+        Relationships: []
+      }
       _phase17_runs: {
         Row: {
           id: number
