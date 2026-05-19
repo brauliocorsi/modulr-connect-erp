@@ -220,6 +220,19 @@ export const MODULES: ModuleDef[] = [
     ],
   },
   {
+    id: "helpdesk" as any,
+    name: "Helpdesk",
+    shortName: "Helpdesk",
+    icon: Wrench,
+    color: "bg-[hsl(35_90%_55%)]",
+    basePath: "/helpdesk",
+    description: "Tickets de clientes e atendimento",
+    menu: [
+      { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
+      { section: "Assistência", label: "Pedidos de assistência", to: "/service/requests" },
+    ],
+  },
+  {
     id: "manufacturing" as any,
     name: "Manufatura",
     shortName: "MRP",
