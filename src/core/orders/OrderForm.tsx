@@ -490,7 +490,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       label: kind === "sale" ? "Confirmar venda" : "Confirmar compra",
       icon: <CheckCircle2 className="h-4 w-4 mr-1" />,
       variant: "default",
-      onClick: confirmOrder,
+      onClick: async () => { await confirmOrder(); },
       disabled: !!confirmDisabledReason,
       disabledReason: confirmDisabledReason,
       hidden: isLocked,
