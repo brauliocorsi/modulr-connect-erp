@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
+import { RecordTimeline } from "@/core/timeline/RecordTimeline";
 import { FulfillmentBadge } from "@/core/orders/FulfillmentBadge";
 import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
