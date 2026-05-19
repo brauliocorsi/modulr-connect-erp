@@ -84,9 +84,9 @@ describe("CustomerPortalPage", () => {
     });
     renderPortal();
     fireEvent.click(await screen.findByRole("button", { name: /Abrir pedido/ }));
-    fireEvent.change(screen.getByLabelText(/Assunto/i) ?? screen.getAllByRole("textbox")[0], { target: { value: "Problema" } });
-    const textareas = screen.getAllByRole("textbox");
-    fireEvent.change(textareas[textareas.length - 1], { target: { value: "Detalhes do problema" } });
+    const tbs = screen.getAllByRole("textbox");
+    fireEvent.change(tbs[0], { target: { value: "Problema" } });
+    fireEvent.change(tbs[1], { target: { value: "Detalhes do problema" } });
     fireEvent.click(screen.getByRole("button", { name: /^Enviar$/ }));
     await waitFor(() =>
       expect(rpcMock).toHaveBeenCalledWith("customer_ticket_create", expect.objectContaining({
