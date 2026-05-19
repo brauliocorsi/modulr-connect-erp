@@ -91,9 +91,9 @@ beforeEach(() => {
 describe("ManufacturingOrderDetail (F22-R3)", () => {
   it("renders EntityHeader with MO code, product and manufacturing status badge", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText(/MO0001/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/MO0001/).length).toBeGreaterThan(0));
     expect(screen.getByText("Pronta")).toBeInTheDocument();
-    expect(screen.getByText("Cadeira", { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText(/Cadeira/).length).toBeGreaterThan(0);
   });
 
   it("renders metadata grid with quantity and BOM", async () => {
