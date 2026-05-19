@@ -176,6 +176,10 @@ export default function ManufacturingOrderDetail() {
             </Tabs>
           </Card>
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          <RecordTasks entityType="manufacturing_order" entityId={id!} />
+          <RecordTimeline entityType="manufacturing_order" entityId={id!} />
+        </div>
       </PageBody>
     </>
   );
