@@ -1,3 +1,8 @@
+/**
+ * @deprecated Componente legado baseado em `record_messages`.
+ * Substituir por `@/core/conversations/RecordConversations` (F21-B).
+ * Não expandir o uso. Mantido apenas para retrocompatibilidade até migração completa.
+ */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/core/auth/AuthProvider";
