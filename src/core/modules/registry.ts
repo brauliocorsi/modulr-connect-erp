@@ -213,9 +213,23 @@ export const MODULES: ModuleDef[] = [
     icon: Wrench,
     color: "bg-[hsl(35_90%_55%)]",
     basePath: "/service",
-    description: "Pedidos de assistência pós-entrega",
+    description: "Assistência, helpdesk e portal cliente",
     menu: [
       { section: "Assistência", label: "Pedidos", to: "/service/requests" },
+      { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
+    ],
+  },
+  {
+    id: "helpdesk" as any,
+    name: "Helpdesk",
+    shortName: "Helpdesk",
+    icon: Wrench,
+    color: "bg-[hsl(35_90%_55%)]",
+    basePath: "/helpdesk",
+    description: "Tickets de clientes e atendimento",
+    menu: [
+      { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
+      { section: "Assistência", label: "Pedidos de assistência", to: "/service/requests" },
     ],
   },
   {

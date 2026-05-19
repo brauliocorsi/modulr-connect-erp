@@ -33,7 +33,7 @@ export default function AppShell() {
   }, []);
 
   const activeModule = getModuleByPath(loc.pathname);
-  const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox"]);
+  const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox", "service", "helpdesk"]);
   const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
 
   const sectionedMenu = activeModule
