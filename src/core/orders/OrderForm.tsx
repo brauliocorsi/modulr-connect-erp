@@ -226,49 +226,102 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     return { untaxed, tax: 0, total: untaxed };
   }, [lines]);
 
-  const refreshServices = async (oid: string) => {
-    const { error } = await supabase.rpc("refresh_order_services" as any, { _order: oid });
-    if (error) return toast.error(error.message);
+  // ---------- Operational refresh & RPC mutations (F22-R2) ----------
+  const entityType = kind === "sale" ? "sale_order" : "purchase_order";
+  const { refresh, lastUpdated, isFetching } = useEntityRefresh({
+    entityType,
+    entityId: isNew ? null : (id ?? null),
+    extraKeys: [
+      ["sale-shipment", order.name],
+      ["products-stock-agg"],
+      ["variants-stock-agg"],
+    ],
+  });
+
+  const invalidateOrder = [
+    [entityType, id],
+    ["activity_events", entityType, id],
+    ["erp_tasks", entityType, id],
+    ["conversation_messages", entityType, id],
+  ];
+
+  const reloadOrder = async (oid: string) => {
     const { data: o } = await supabase.from("sale_orders").select("*").eq("id", oid).maybeSingle();
     if (o) setOrder(o);
     const { data: ls } = await supabase.from(linesTable as any).select("*").eq("order_id", oid).order("sequence");
     setLines((ls ?? []) as unknown as Line[]);
   };
 
-  const toggleService = async (key: "include_assembly" | "include_delivery", value: boolean) => {
+  const refreshServicesMut = useRpcMutation<{ _order: string }>({
+    rpc: "refresh_order_services",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => { await reloadOrder(args._order); },
+  });
+  const refreshServices = (oid: string) => refreshServicesMut.mutateAsync({ _order: oid });
+
+  const setServicesMut = useRpcMutation<{ _order_id: string; _include_assembly: boolean; _include_delivery: boolean }>({
+    rpc: "sale_order_set_services",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => { await refreshServices(args._order_id); },
+  });
+  const toggleService = (key: "include_assembly" | "include_delivery", value: boolean) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     const next = { ...order, [key]: value };
     setOrder((o: any) => ({ ...o, [key]: value }));
-    const { error } = await supabase.rpc("sale_order_set_services" as any, {
+    setServicesMut.mutate({
       _order_id: id!,
       _include_assembly: !!next.include_assembly,
       _include_delivery: !!next.include_delivery,
     });
-    if (error) return toast.error(error.message);
-    await refreshServices(id!);
   };
 
-  const setDeliveryMode = async (mode: "delivery" | "pickup" | "direct") => {
+  const setDeliveryModeMut = useRpcMutation<{ _order_id: string; _delivery_mode: string }>({
+    rpc: "sale_order_set_delivery_mode",
+    invalidateKeys: invalidateOrder,
+  });
+  const setDeliveryMode = (mode: "delivery" | "pickup" | "direct") => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     setOrder((o: any) => ({ ...o, delivery_mode: mode }));
-    const { error } = await supabase.rpc("sale_order_set_delivery_mode" as any, { _order_id: id!, _delivery_mode: mode });
-    if (error) toast.error(error.message);
+    setDeliveryModeMut.mutate({ _order_id: id!, _delivery_mode: mode });
   };
 
-  const setDeliveryZone = async (value: string) => {
+  const setDeliveryZoneMut = useRpcMutation<{ _order_id: string; _delivery_zip_rule_id: string | null; _delivery_region_rule_id: string | null }>({
+    rpc: "sale_order_set_delivery_zone",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => {
+      if (order.include_delivery) await refreshServices(args._order_id);
+    },
+  });
+  const setDeliveryZone = (value: string) => {
     if (isNew) return toast.error("Salve o pedido primeiro");
     const patch: any = { delivery_zip_rule_id: null, delivery_region_rule_id: null };
     if (value.startsWith("zip:")) patch.delivery_zip_rule_id = value.slice(4);
     else if (value.startsWith("region:")) patch.delivery_region_rule_id = value.slice(7);
     setOrder((o: any) => ({ ...o, ...patch }));
-    const { error } = await supabase.rpc("sale_order_set_delivery_zone" as any, {
+    setDeliveryZoneMut.mutate({
       _order_id: id!,
       _delivery_zip_rule_id: patch.delivery_zip_rule_id,
       _delivery_region_rule_id: patch.delivery_region_rule_id,
     });
-    if (error) return toast.error(error.message);
-    if (order.include_delivery) await refreshServices(id!);
   };
+
+  const revertInvoiceMut = useRpcMutation<{ _order_id: string; _reason: string | null }>({
+    rpc: "sale_order_revert_invoice_status",
+    successMessage: "Faturação revertida",
+    invalidateKeys: invalidateOrder,
+    onSuccess: async (_d, args) => {
+      const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", args._order_id).maybeSingle();
+      if (data) setOrder((o: any) => ({ ...o, ...data }));
+    },
+  });
+
+  const cancelOrderMut = useRpcMutation<{ _order: string }>({
+    rpc: kind === "sale" ? "cancel_sale_order" : "cancel_purchase_order",
+    successMessage: "Cancelado",
+    invalidateKeys: invalidateOrder,
+    onSuccess: () => { setOrder((o: any) => ({ ...o, state: "cancelled" })); },
+  });
+
 
   const setLine = (idx: number, patch: Partial<Line>) => {
     setLines((prev) => {
