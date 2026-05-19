@@ -25,7 +25,7 @@ vi.mock("@/core/timeline/RecordTimeline", () => ({ RecordTimeline: () => <div da
 vi.mock("@/core/tasks/RecordTasks", () => ({ RecordTasks: () => <div data-testid="tasks" /> }));
 vi.mock("@/core/conversations/RecordConversations", () => ({ RecordConversations: () => <div data-testid="convs" /> }));
 
-import CustomerTicketDetail from "../pages/CustomerTicketDetail";
+import CustomerTicketDetail from "../CustomerTicketDetail";
 
 function makeTicket(over: any = {}) {
   return {

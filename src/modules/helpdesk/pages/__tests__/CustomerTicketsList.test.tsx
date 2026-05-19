@@ -48,7 +48,7 @@ function setup() {
   );
 }
 
-import CustomerTicketsList from "../pages/CustomerTicketsList";
+import CustomerTicketsList from "../CustomerTicketsList";
 
 describe("CustomerTicketsList", () => {
   it("renders tickets", async () => {

@@ -12,7 +12,7 @@ vi.mock("sonner", () => ({
   toast: { success: (m: string) => toastSuccess(m), error: (m: string) => toastError(m) },
 }));
 
-import CustomerPortalPage from "../pages/CustomerPortalPage";
+import CustomerPortalPage from "../CustomerPortalPage";
 
 function renderPortal(token = "tok-valid") {
   return render(
