@@ -91,6 +91,23 @@ export const STATUS_REGISTRY: Registry = {
     scrapped: { label: "Sucata", variant: "destructive" },
     outlet: { label: "Outlet", variant: "outline" },
   },
+  purchase: {
+    draft: { label: "Rascunho", variant: "outline" },
+    rfq_sent: { label: "RFQ enviada", variant: "secondary" },
+    confirmed: { label: "Confirmado", variant: "default" },
+    received: { label: "Recebido", variant: "secondary" },
+    done: { label: "Concluído", variant: "secondary" },
+    cancelled: { label: "Cancelado", variant: "destructive" },
+  },
+  purchase_need: {
+    pending: { label: "Pendente", variant: "destructive" },
+    quoting: { label: "Em cotação", variant: "secondary" },
+    approved: { label: "Aprovado", variant: "default" },
+    po_created: { label: "PO criado", variant: "default" },
+    partially_received: { label: "Parc. recebido", variant: "secondary" },
+    received: { label: "Recebido", variant: "secondary" },
+    cancelled: { label: "Cancelado", variant: "outline" },
+  },
 };
 
 export function getStatusDef(domain: StatusDomain, status: string | null | undefined): StatusDef | null {
