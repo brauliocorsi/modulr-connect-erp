@@ -764,6 +764,8 @@ export type Database = {
           reconciled_at: string | null
           reconciled_by: string | null
           reference: string | null
+          reversal_of_id: string | null
+          reversal_reason: string | null
           route_id: string | null
           session_id: string
           user_id: string | null
@@ -782,6 +784,8 @@ export type Database = {
           reconciled_at?: string | null
           reconciled_by?: string | null
           reference?: string | null
+          reversal_of_id?: string | null
+          reversal_reason?: string | null
           route_id?: string | null
           session_id: string
           user_id?: string | null
@@ -800,6 +804,8 @@ export type Database = {
           reconciled_at?: string | null
           reconciled_by?: string | null
           reference?: string | null
+          reversal_of_id?: string | null
+          reversal_reason?: string | null
           route_id?: string | null
           session_id?: string
           user_id?: string | null
@@ -825,6 +831,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_picking_exceptions"
             referencedColumns: ["picking_id"]
+          },
+          {
+            foreignKeyName: "cash_movements_reversal_of_id_fkey"
+            columns: ["reversal_of_id"]
+            isOneToOne: false
+            referencedRelation: "cash_movements"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cash_movements_route_id_fkey"
@@ -1142,6 +1155,151 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_credit_applications: {
+        Row: {
+          amount: number
+          applied_at: string
+          applied_by: string | null
+          credit_id: string
+          customer_payment_id: string | null
+          id: string
+          notes: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          sale_order_id: string | null
+        }
+        Insert: {
+          amount: number
+          applied_at?: string
+          applied_by?: string | null
+          credit_id: string
+          customer_payment_id?: string | null
+          id?: string
+          notes?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          sale_order_id?: string | null
+        }
+        Update: {
+          amount?: number
+          applied_at?: string
+          applied_by?: string | null
+          credit_id?: string
+          customer_payment_id?: string | null
+          id?: string
+          notes?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          sale_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credit_applications_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "customer_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_customer_payment_id_fkey"
+            columns: ["customer_payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_order_fulfillment"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "v_sale_line_allocation_demand"
+            referencedColumns: ["sale_order_id"]
+          },
+        ]
+      }
+      customer_credits: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          idempotency_key: string | null
+          origin_payment_id: string | null
+          origin_service_case_id: string | null
+          partner_id: string
+          reason: string | null
+          remaining_amount: number
+          state: string
+        }
+        Insert: {
+          amount: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key?: string | null
+          origin_payment_id?: string | null
+          origin_service_case_id?: string | null
+          partner_id: string
+          reason?: string | null
+          remaining_amount: number
+          state?: string
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key?: string | null
+          origin_payment_id?: string | null
+          origin_service_case_id?: string | null
+          partner_id?: string
+          reason?: string | null
+          remaining_amount?: number
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credits_origin_payment_id_fkey"
+            columns: ["origin_payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credits_origin_service_case_id_fkey"
+            columns: ["origin_service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credits_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -6956,6 +7114,131 @@ export type Database = {
           },
         ]
       }
+      service_case_charges: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_credit_id: string | null
+          customer_payment_id: string | null
+          id: string
+          kind: string
+          notes: string | null
+          partner_id: string
+          service_case_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_credit_id?: string | null
+          customer_payment_id?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          partner_id: string
+          service_case_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_credit_id?: string | null
+          customer_payment_id?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          partner_id?: string
+          service_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_case_charges_customer_credit_id_fkey"
+            columns: ["customer_credit_id"]
+            isOneToOne: false
+            referencedRelation: "customer_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_charges_customer_payment_id_fkey"
+            columns: ["customer_payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_charges_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_charges_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_case_costs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: string
+          notes: string | null
+          quantity: number
+          service_case_id: string
+          supplier_id: string | null
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          quantity?: number
+          service_case_id: string
+          supplier_id?: string | null
+          total_cost: number
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          quantity?: number
+          service_case_id?: string
+          supplier_id?: string | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_case_costs_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_costs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_case_items: {
         Row: {
           created_at: string
@@ -8803,6 +9086,81 @@ export type Database = {
           },
         ]
       }
+      supplier_bill_lines: {
+        Row: {
+          bill_id: string
+          created_at: string
+          description: string | null
+          id: string
+          po_line_id: string | null
+          product_id: string | null
+          quantity: number
+          subtotal: number
+          tax_pct: number
+          unit_price: number
+        }
+        Insert: {
+          bill_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          po_line_id?: string | null
+          product_id?: string | null
+          quantity: number
+          subtotal?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Update: {
+          bill_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          po_line_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          subtotal?: number
+          tax_pct?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_bill_lines_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_bill_lines_po_line_id_fkey"
+            columns: ["po_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_bill_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_forecast"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "supplier_bill_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_bill_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_product_stock_full"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
       supplier_bills: {
         Row: {
           amount_paid: number
@@ -8869,10 +9227,13 @@ export type Database = {
         Row: {
           amount: number
           bill_id: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           cost_center_id: string | null
           created_at: string
           created_by: string | null
           id: string
+          idempotency_key: string | null
           journal_id: string | null
           method_id: string | null
           name: string
@@ -8885,10 +9246,13 @@ export type Database = {
         Insert: {
           amount: number
           bill_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
+          idempotency_key?: string | null
           journal_id?: string | null
           method_id?: string | null
           name: string
@@ -8901,10 +9265,13 @@ export type Database = {
         Update: {
           amount?: number
           bill_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
+          idempotency_key?: string | null
           journal_id?: string | null
           method_id?: string | null
           name?: string
@@ -10166,6 +10533,10 @@ export type Database = {
         Args: { _cleanup?: boolean }
         Returns: Json
       }
+      _test_phase20_financial_core: {
+        Args: { _cleanup?: boolean }
+        Returns: Json
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -10208,6 +10579,16 @@ export type Database = {
       allocation_on_po_receipt: { Args: { _picking_id: string }; Returns: Json }
       allocation_on_return_good: {
         Args: { _mode?: string; _package_id: string }
+        Returns: Json
+      }
+      apply_customer_credit: {
+        Args: {
+          _amount: number
+          _credit_id: string
+          _customer_payment_id?: string
+          _notes?: string
+          _sale_order_id?: string
+        }
         Returns: Json
       }
       apply_inventory_adjustment: { Args: { _adj: string }; Returns: undefined }
@@ -10404,6 +10785,10 @@ export type Database = {
         }
         Returns: Json
       }
+      cash_movement_reverse: {
+        Args: { _movement_id: string; _reason: string }
+        Returns: Json
+      }
       cash_session_balance: { Args: { _session: string }; Returns: number }
       cash_session_summary: { Args: { _session: string }; Returns: Json }
       close_cash_session: {
@@ -10418,6 +10803,17 @@ export type Database = {
       confirm_purchase_order: { Args: { _order: string }; Returns: undefined }
       confirm_sale_order: { Args: { _order: string }; Returns: undefined }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
+      create_customer_credit: {
+        Args: {
+          _amount: number
+          _idempotency_key?: string
+          _origin_payment_id?: string
+          _origin_service_case_id?: string
+          _partner_id: string
+          _reason?: string
+        }
+        Returns: Json
+      }
       create_customer_pickup: {
         Args: { _sale_order_id: string; _scheduled_date?: string }
         Returns: Json
@@ -10675,6 +11071,7 @@ export type Database = {
         Args: { _threshold_days?: number }
         Returns: Json
       }
+      erp_financial_health_check: { Args: never; Returns: Json }
       erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
       erp_health_check_run: {
         Args: { _threshold_days?: number }
@@ -11159,8 +11556,32 @@ export type Database = {
         Args: { _case_id: string; _reason: string }
         Returns: Json
       }
+      service_case_charge_add: {
+        Args: {
+          _amount: number
+          _customer_credit_id?: string
+          _customer_payment_id?: string
+          _kind: string
+          _notes?: string
+          _partner_id: string
+          _service_case_id: string
+        }
+        Returns: Json
+      }
       service_case_close: {
         Args: { _case_id: string; _resolution: string }
+        Returns: Json
+      }
+      service_case_cost_add: {
+        Args: {
+          _description: string
+          _kind: string
+          _notes?: string
+          _quantity: number
+          _service_case_id: string
+          _supplier_id?: string
+          _unit_cost: number
+        }
         Returns: Json
       }
       service_case_create: { Args: { _payload: Json }; Returns: string }
@@ -11289,7 +11710,32 @@ export type Database = {
           zone_name: string
         }[]
       }
+      supplier_bill_create_from_po: {
+        Args: {
+          _bill_date?: string
+          _idempotency_key?: string
+          _lines?: Json
+          _po_id: string
+          _reference?: string
+        }
+        Returns: Json
+      }
       supplier_location_id: { Args: never; Returns: string }
+      supplier_payment_cancel: {
+        Args: { _payment_id: string; _reason: string }
+        Returns: Json
+      }
+      supplier_payment_register: {
+        Args: {
+          _amount: number
+          _bill_id: string
+          _idempotency_key?: string
+          _method_id?: string
+          _payment_date?: string
+          _reference?: string
+        }
+        Returns: Json
+      }
       tg_route_recompute_current_manual: {
         Args: { _route_id: string }
         Returns: undefined
