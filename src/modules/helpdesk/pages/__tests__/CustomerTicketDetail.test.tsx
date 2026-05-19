@@ -152,10 +152,13 @@ describe("CustomerTicketDetail", () => {
     expect(btn).toBeDisabled();
   });
 
-  it("closes ticket via helpdesk_ticket_close", async () => {
+  it("closes ticket via helpdesk_ticket_close after confirm", async () => {
     setupFrom(makeTicket());
     renderAt("t1");
     fireEvent.click(await screen.findByRole("button", { name: /Encerrar/ }));
+    // confirm dialog opens — second "Encerrar" button is the confirm
+    const confirmBtn = await screen.findByRole("button", { name: "Encerrar" });
+    fireEvent.click(confirmBtn);
     await waitFor(() =>
       expect(rpcMock).toHaveBeenCalledWith("helpdesk_ticket_close", expect.objectContaining({ _ticket_id: "t1" })),
     );
