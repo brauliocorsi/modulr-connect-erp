@@ -277,6 +277,11 @@ const App = () => (
               <Route path="service/requests/new" element={<ServiceRequestForm />} />
               <Route path="service/requests/:id" element={<ServiceRequestForm />} />
 
+              {/* Helpdesk */}
+              <Route path="helpdesk" element={<Navigate to="/helpdesk/tickets" replace />} />
+              <Route path="helpdesk/tickets" element={<CustomerTicketsList />} />
+              <Route path="helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
+
               {/* Cashbox */}
               <Route path="cashbox" element={<CashRegistersList />} />
               <Route path="cashbox/sessions/:id" element={<CashSessionDetail />} />
