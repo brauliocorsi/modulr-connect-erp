@@ -1018,6 +1018,20 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
           </aside>
         </div>
       </PageBody>
+      {kind === "sale" && !isNew && id && (
+        <MarkInvoicedDialog
+          open={invDlg}
+          onOpenChange={setInvDlg}
+          orderId={id}
+          current={{
+            invoice_number: order.invoice_number,
+            invoice_date: order.invoice_date,
+            invoice_notes: order.invoice_notes,
+          }}
+          onSaved={() => void refresh()}
+        />
+      )}
     </>
+
   );
 }
