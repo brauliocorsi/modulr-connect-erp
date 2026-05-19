@@ -394,10 +394,7 @@ export default function PurchaseNeedsList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Multi-select bulk action retained via Checkbox header future. */}
-      {/* Note: bulk multi-select intentionally simplified — row-level conversion preserved. */}
-      {/* For multi-need conversion across rows, use the kanban / detail bulk flows (R4.1). */}
-      <span hidden><Checkbox /></span>
+      {/* Bulk multi-need conversion across rows is deferred to R4.1. */}
     </>
   );
 }
