@@ -1,84 +1,54 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader, PageBody, EmptyState } from "@/core/layout/PageHeader";
+import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, ChevronDown, LayoutGrid, Merge, Layers } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
-import { toast } from "sonner";
-import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
-import { Card } from "@/components/ui/card";
-
-const STATE_LABEL: Record<string, string> = {
-  draft: "Rascunho",
-  rfq_sent: "Enviado",
-  confirmed: "Confirmado",
-  done: "Concluído",
-  cancelled: "Cancelado",
-};
-
-const STATE_VARIANT: Record<string, "secondary" | "default" | "outline" | "destructive"> = {
-  draft: "secondary",
-  rfq_sent: "outline",
-  confirmed: "default",
-  done: "default",
-  cancelled: "destructive",
-};
+import {
+  OperationalDataTable,
+  OperationalStatusBadge,
+  type Column,
+  type FilterDef,
+  type FilterValue,
+} from "@/core/operational";
 
 export const PurchaseOrdersList = () => {
   const nav = useNavigate();
-  const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [stateFilter, setStateFilter] = useState<string>("all");
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<FilterValues>({});
-  const [groupDrafts, setGroupDrafts] = useState<boolean>(() => {
-    try { return localStorage.getItem("po-group-drafts") !== "0"; } catch { return true; }
-  });
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
-  const toggleGroupDrafts = () => {
-    setGroupDrafts((v) => {
-      const n = !v;
-      try { localStorage.setItem("po-group-drafts", n ? "1" : "0"); } catch {}
-      return n;
-    });
-  };
-  const toggleGroup = (k: string) => setOpenGroups((p) => {
-    const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n;
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({
+    state: null, supplier: null, warehouse: null, date: null, expected: null,
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-min"],
     queryFn: async () => (await supabase.from("partners").select("id,name").eq("is_supplier", true).order("name")).data ?? [],
   });
-  const { data: warehousesOpt } = useQuery({
+  const { data: warehousesOpt = [] } = useQuery({
     queryKey: ["warehouses-min"],
     queryFn: async () => (await supabase.from("warehouses").select("id,name").order("name")).data ?? [],
   });
 
-  const { data: orders = [], refetch } = useQuery({
-    queryKey: ["purchase-orders-list", search, stateFilter, filters],
+  const { data: orders = [], isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
+    queryKey: ["purchase-orders-list", filters, search],
     queryFn: async () => {
-      let q = supabase
+      let q: any = supabase
         .from("purchase_orders")
         .select("id, name, state, date_order, expected_date, amount_total, partner_id, warehouse_id, created_by, created_at, partners(name), warehouses(name)")
         .order("created_at", { ascending: false })
         .limit(500);
-      if (search) q = q.ilike("name", `%${search}%`);
-      if (stateFilter !== "all") q = q.eq("state", stateFilter as any);
-      if (filters.partner_id) q = q.eq("partner_id", filters.partner_id);
-      if (filters.warehouse_id) q = q.eq("warehouse_id", filters.warehouse_id);
-      if (filters.from) q = q.gte("date_order", filters.from);
-      if (filters.to) q = q.lte("date_order", filters.to + "T23:59:59");
-      if (filters.expected_from) q = q.gte("expected_date", filters.expected_from);
-      if (filters.expected_to) q = q.lte("expected_date", filters.expected_to);
-      if (filters.min_total) q = q.gte("amount_total", Number(filters.min_total));
+      if (search.trim()) q = q.ilike("name", `%${search.trim()}%`);
+      if (filters.state) q = q.eq("state", filters.state);
+      if (filters.supplier) q = q.eq("partner_id", filters.supplier);
+      if (filters.warehouse) q = q.eq("warehouse_id", filters.warehouse);
+      const date = filters.date as { from?: string; to?: string } | null;
+      if (date?.from) q = q.gte("date_order", date.from);
+      if (date?.to) q = q.lte("date_order", date.to + "T23:59:59");
+      const exp = filters.expected as { from?: string; to?: string } | null;
+      if (exp?.from) q = q.gte("expected_date", exp.from);
+      if (exp?.to) q = q.lte("expected_date", exp.to);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -86,16 +56,6 @@ export const PurchaseOrdersList = () => {
   });
 
   const orderIds = useMemo(() => orders.map((o: any) => o.id), [orders]);
-
-  const sortedOrders = useMemo(() => {
-    const isPending = (s: string) => s === "draft" || s === "rfq_sent";
-    return [...orders].sort((a: any, b: any) => {
-      const ap = isPending(a.state) ? 0 : 1;
-      const bp = isPending(b.state) ? 0 : 1;
-      if (ap !== bp) return ap - bp;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-  }, [orders]);
 
   const { data: origins = [] } = useQuery({
     enabled: orderIds.length > 0,
@@ -109,23 +69,6 @@ export const PurchaseOrdersList = () => {
     },
   });
 
-  const { data: buyers = [] } = useQuery({
-    enabled: orderIds.length > 0,
-    queryKey: ["po-buyers", orderIds],
-    queryFn: async () => {
-      const ids = Array.from(new Set(orders.map((o: any) => o.created_by).filter(Boolean)));
-      if (!ids.length) return [];
-      const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
-      return data ?? [];
-    },
-  });
-
-  const buyerMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    (buyers as any[]).forEach((b) => (m[b.id] = b.full_name || b.email || "—"));
-    return m;
-  }, [buyers]);
-
   const originsByPo = useMemo(() => {
     const m: Record<string, { id: string; name: string }[]> = {};
     (origins as any[]).forEach((o) => {
@@ -135,433 +78,139 @@ export const PurchaseOrdersList = () => {
     return m;
   }, [origins]);
 
-  const toggleExpand = (id: string) => {
-    setExpanded((p) => {
-      const n = new Set(p);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
+  const sortedOrders = useMemo(() => {
+    const isPending = (s: string) => s === "draft" || s === "rfq_sent";
+    return [...orders].sort((a: any, b: any) => {
+      const ap = isPending(a.state) ? 0 : 1;
+      const bp = isPending(b.state) ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  };
+  }, [orders]);
 
-  const toggleSelect = (id: string) => {
-    setSelected((p) => {
-      const n = new Set(p);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
-  };
+  const filterDefs: FilterDef[] = useMemo(() => [
+    {
+      key: "state", label: "Estado", type: "select",
+      options: [
+        { value: "draft", label: "Rascunho" },
+        { value: "rfq_sent", label: "RFQ enviada" },
+        { value: "confirmed", label: "Confirmado" },
+        { value: "done", label: "Concluído" },
+        { value: "cancelled", label: "Cancelado" },
+      ],
+    },
+    {
+      key: "supplier", label: "Fornecedor", type: "select",
+      options: (suppliers as any[]).map((s) => ({ value: s.id, label: s.name })),
+    },
+    {
+      key: "warehouse", label: "Armazém", type: "select",
+      options: (warehousesOpt as any[]).map((w) => ({ value: w.id, label: w.name })),
+    },
+    { key: "date", label: "Data", type: "date-range" },
+    { key: "expected", label: "Esperada", type: "date-range" },
+  ], [suppliers, warehousesOpt]);
 
-  const canMerge = useMemo(() => {
-    if (selected.size < 2) return false;
-    const sel = orders.filter((o: any) => selected.has(o.id));
-    if (sel.length < 2) return false;
-    const partner = sel[0].partner_id;
-    const wh = sel[0].warehouse_id ?? null;
-    return sel.every((o: any) => o.state === "draft" && o.partner_id === partner && (o.warehouse_id ?? null) === wh);
-  }, [selected, orders]);
-
-  const mergeSelected = async () => {
-    const ids = Array.from(selected);
-    const target = ids[0];
-    const sources = ids.slice(1);
-    const { error } = await (supabase.rpc as any)("merge_purchase_orders", { _target: target, _sources: sources });
-    if (error) return toast.error(error.message);
-    toast.success(`${sources.length} pedido(s) fundido(s)`);
-    setSelected(new Set());
-    qc.invalidateQueries({ queryKey: ["purchase-orders-list"] });
-    refetch();
-  };
-
-  const mergeGroup = async (ids: string[]) => {
-    if (ids.length < 2) return;
-    const target = ids[0];
-    const sources = ids.slice(1);
-    const { error } = await (supabase.rpc as any)("merge_purchase_orders", { _target: target, _sources: sources });
-    if (error) return toast.error(error.message);
-    toast.success(`${sources.length} rascunho(s) agrupado(s)`);
-    qc.invalidateQueries({ queryKey: ["purchase-orders-list"] });
-    refetch();
-  };
-
-  // Group draft orders by supplier+warehouse for the master/expand view
-  const draftGroups = useMemo(() => {
-    if (!groupDrafts) return [];
-    const map: Record<string, { key: string; partner_id: string; partner_name: string; warehouse_id: string | null; warehouse_name: string; orders: any[]; total: number }> = {};
-    for (const o of sortedOrders as any[]) {
-      if (o.state !== "draft") continue;
-      const key = `${o.partner_id}|${o.warehouse_id ?? "_"}`;
-      if (!map[key]) {
-        map[key] = {
-          key,
-          partner_id: o.partner_id,
-          partner_name: o.partners?.name ?? "—",
-          warehouse_id: o.warehouse_id ?? null,
-          warehouse_name: o.warehouses?.name ?? "—",
-          orders: [],
-          total: 0,
-        };
-      }
-      map[key].orders.push(o);
-      map[key].total += Number(o.amount_total || 0);
-    }
-    return Object.values(map).filter((g) => g.orders.length >= 2);
-  }, [sortedOrders, groupDrafts]);
-
-  const groupedDraftIds = useMemo(() => new Set(draftGroups.flatMap((g) => g.orders.map((o: any) => o.id))), [draftGroups]);
-  const ungroupedOrders = useMemo(
-    () => sortedOrders.filter((o: any) => !groupedDraftIds.has(o.id)),
-    [sortedOrders, groupedDraftIds]
-  );
-
-  const states = ["all", "draft", "rfq_sent", "confirmed", "done", "cancelled"];
+  const columns: Column<any>[] = useMemo(() => [
+    {
+      key: "name",
+      header: "Número",
+      cell: (o) => {
+        const isPending = o.state === "draft" || o.state === "rfq_sent";
+        const fromSale = (originsByPo[o.id]?.length ?? 0) > 0;
+        return (
+          <div className="flex items-center gap-2 font-medium">
+            {o.name}
+            {isPending && fromSale && (
+              <Badge variant="default" className="text-xs">Pendente · Venda</Badge>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "supplier",
+      header: "Fornecedor",
+      cell: (o) => o.partners?.name ?? <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: "warehouse",
+      header: "Armazém",
+      cell: (o) => <span className="text-xs">{o.warehouses?.name ?? "—"}</span>,
+    },
+    {
+      key: "date_order",
+      header: "Data",
+      cell: (o) => <span className="text-xs">{o.date_order ? new Date(o.date_order).toLocaleDateString("pt-PT") : "—"}</span>,
+    },
+    {
+      key: "expected_date",
+      header: "Esperada",
+      cell: (o) => <span className="text-xs">{o.expected_date ? new Date(o.expected_date).toLocaleDateString("pt-PT") : "—"}</span>,
+    },
+    {
+      key: "origins",
+      header: "Vendas origem",
+      cell: (o) => {
+        const sos = originsByPo[o.id] ?? [];
+        if (sos.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <div className="flex gap-1 flex-wrap">
+            {sos.slice(0, 2).map((s) => (
+              <Link key={s.id} to={`/sales/orders/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                <Badge variant="outline" className="hover:bg-accent text-xs">{s.name}</Badge>
+              </Link>
+            ))}
+            {sos.length > 2 && <Badge variant="secondary" className="text-xs">+{sos.length - 2}</Badge>}
+          </div>
+        );
+      },
+    },
+    {
+      key: "state",
+      header: "Estado",
+      cell: (o) => <OperationalStatusBadge domain="purchase" status={o.state} />,
+    },
+    {
+      key: "total",
+      header: "Total",
+      align: "right",
+      cell: (o) => <span className="font-medium">{fmtMoney(o.amount_total)}</span>,
+    },
+  ], [originsByPo]);
 
   return (
     <>
       <PageHeader
         title="Pedidos de Compra"
         breadcrumb={[{ label: "Compras", to: "/purchase" }, { label: "Pedidos" }]}
-        onSearch={setSearch}
         createTo="/purchase/orders/new"
         actions={
-          <>
-            {canMerge && (
-              <Button size="sm" variant="default" onClick={mergeSelected}>
-                <Merge className="h-4 w-4 mr-1" /> Agrupar {selected.size}
-              </Button>
-            )}
-            <Button size="sm" variant={groupDrafts ? "default" : "outline"} onClick={toggleGroupDrafts} title="Agrupar rascunhos por fornecedor">
-              <Layers className="h-4 w-4 mr-1" /> Agrupar rascunhos
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/purchase/kanban"><LayoutGrid className="h-4 w-4 mr-1" /> Kanban</Link>
-            </Button>
-          </>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/purchase/kanban"><LayoutGrid className="h-4 w-4 mr-1" /> Kanban</Link>
+          </Button>
         }
       />
       <PageBody>
-        <div className="flex gap-2 mb-3 flex-wrap">
-          {states.map((s) => (
-            <Button
-              key={s}
-              size="sm"
-              variant={stateFilter === s ? "default" : "outline"}
-              onClick={() => setStateFilter(s)}
-            >
-              {s === "all" ? "Todos" : STATE_LABEL[s] ?? s}
-            </Button>
-          ))}
-        </div>
-        <Card className="p-3 mb-3">
-          <AdvancedFilters
-            onChange={setFilters}
-            fields={[
-              { key: "partner_id", label: "Fornecedor", type: "select", options: (suppliers ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
-              { key: "warehouse_id", label: "Armazém", type: "select", options: (warehousesOpt ?? []).map((w: any) => ({ value: w.id, label: w.name })) },
-              { key: "from", label: "Data de", type: "date" },
-              { key: "to", label: "Data até", type: "date" },
-              { key: "expected_from", label: "Esperada de", type: "date" },
-              { key: "expected_to", label: "Esperada até", type: "date" },
-              { key: "min_total", label: "Total mínimo", type: "text" },
-            ]}
-          />
-        </Card>
-
-        {(() => {
-          const pendingCount = sortedOrders.filter((o: any) => o.state === "draft" || o.state === "rfq_sent").length;
-          const fromSaleCount = sortedOrders.filter((o: any) => (originsByPo[o.id]?.length ?? 0) > 0 && (o.state === "draft" || o.state === "rfq_sent")).length;
-          return pendingCount > 0 ? (
-            <div className="mb-3 p-3 rounded-lg border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 text-sm flex items-center gap-3">
-              <Badge className="bg-amber-500 hover:bg-amber-600">{pendingCount} pendente(s)</Badge>
-              {fromSaleCount > 0 && <span className="text-muted-foreground">{fromSaleCount} originada(s) por venda — exibidas no topo</span>}
-            </div>
-          ) : null;
-        })()}
-
-        {orders.length === 0 ? (
-          <EmptyState title="Sem pedidos" description="Nenhum pedido de compra encontrado." />
-        ) : (
-          <div className="border rounded-lg bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8"></TableHead>
-                  <TableHead className="w-8"></TableHead>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Comprador</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Vendas origem</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {draftGroups.map((g) => {
-                  const isOpen = openGroups.has(g.key);
-                  const ids = g.orders.map((o: any) => o.id);
-                  return (
-                    <Fragment key={`grp-${g.key}`}>
-                      <TableRow className="bg-amber-100/60 dark:bg-amber-950/40 border-l-4 border-l-amber-500 hover:bg-amber-100">
-                        <TableCell></TableCell>
-                        <TableCell onClick={() => toggleGroup(g.key)} className="cursor-pointer">
-                          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Layers className="h-4 w-4 text-amber-600" />
-                            <span>{g.orders.length} rascunhos</span>
-                            <Badge variant="secondary" className="text-xs">{g.warehouse_name}</Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{g.partner_name}</TableCell>
-                        <TableCell colSpan={3} className="text-xs text-muted-foreground">
-                          Mesmo fornecedor e armazém — podem ser fundidos num único pedido
-                        </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="default" onClick={() => mergeGroup(ids)}>
-                            <Merge className="h-3 w-3 mr-1" /> Fundir todos
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">{fmtMoney(g.total)}</TableCell>
-                      </TableRow>
-                      {isOpen && g.orders.map((o: any) => {
-                        const sos = originsByPo[o.id] ?? [];
-                        return (
-                          <TableRow key={o.id} className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <Checkbox checked={selected.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
-                            </TableCell>
-                            <TableCell></TableCell>
-                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer pl-8 font-medium">
-                              {o.name}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">↳ {g.partner_name}</TableCell>
-                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
-                              <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
-                              <div className="text-xs text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleString("pt-PT") : ""}</div>
-                            </TableCell>
-                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer text-sm">
-                              {o.date_order ? new Date(o.date_order).toLocaleDateString("pt-PT") : "—"}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1 flex-wrap">
-                                {sos.slice(0, 2).map((s) => (
-                                  <Link key={s.id} to={`/sales/orders/${s.id}`} onClick={(e) => e.stopPropagation()}>
-                                    <Badge variant="outline" className="hover:bg-accent">{s.name}</Badge>
-                                  </Link>
-                                ))}
-                                {sos.length > 2 && <Badge variant="secondary">+{sos.length - 2}</Badge>}
-                                {sos.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                              </div>
-                            </TableCell>
-                            <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="cursor-pointer">
-                              <Badge variant={STATE_VARIANT[o.state] ?? "secondary"}>{STATE_LABEL[o.state] ?? o.state}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium" onClick={() => nav(`/purchase/orders/${o.id}`)}>{fmtMoney(o.amount_total)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-                {ungroupedOrders.map((o: any) => {
-                   const isOpen = expanded.has(o.id);
-                   const sos = originsByPo[o.id] ?? [];
-                   const isPending = o.state === "draft" || o.state === "rfq_sent";
-                   const fromSale = sos.length > 0;
-                   return (
-                     <Fragment key={o.id}>
-                       <TableRow className={"cursor-pointer hover:bg-muted/50 " + (isPending ? "bg-amber-50/50 dark:bg-amber-950/20 border-l-4 border-l-amber-500" : "")}>
-                         <TableCell onClick={(e) => e.stopPropagation()}>
-                           <Checkbox
-                             checked={selected.has(o.id)}
-                             onCheckedChange={() => toggleSelect(o.id)}
-                           />
-                         </TableCell>
-                         <TableCell onClick={() => toggleExpand(o.id)}>
-                           {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                         </TableCell>
-                         <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="font-medium">
-                           <div className="flex items-center gap-2">
-                             {o.name}
-                             {isPending && fromSale && (
-                               <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 text-xs">Pendente · Venda</Badge>
-                             )}
-                             {isPending && !fromSale && (
-                               <Badge variant="secondary" className="text-xs">Pendente</Badge>
-                             )}
-                           </div>
-                         </TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>{o.partners?.name ?? "—"}</TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>
-                          <div className="text-sm">{buyerMap[o.created_by] ?? "—"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {o.created_at ? new Date(o.created_at).toLocaleString("pt-PT") : ""}
-                          </div>
-                        </TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)} className="text-sm">
-                          {o.date_order ? new Date(o.date_order).toLocaleDateString("pt-PT") : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {sos.slice(0, 2).map((s) => (
-                              <Link key={s.id} to={`/sales/orders/${s.id}`} onClick={(e) => e.stopPropagation()}>
-                                <Badge variant="outline" className="hover:bg-accent">{s.name}</Badge>
-                              </Link>
-                            ))}
-                            {sos.length > 2 && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge variant="secondary">+{sos.length - 2}</Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {sos.slice(2).map((s) => s.name).join(", ")}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            {sos.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                          </div>
-                        </TableCell>
-                        <TableCell onClick={() => nav(`/purchase/orders/${o.id}`)}>
-                          <Badge variant={STATE_VARIANT[o.state] ?? "secondary"}>
-                            {STATE_LABEL[o.state] ?? o.state}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-medium" onClick={() => nav(`/purchase/orders/${o.id}`)}>
-                          {fmtMoney(o.amount_total)}
-                        </TableCell>
-                      </TableRow>
-                      {isOpen && <ExpandedRow poId={o.id} poName={o.name} sos={sos} />}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <OperationalDataTable<any>
+          columns={columns}
+          rows={sortedOrders}
+          getRowId={(o) => o.id}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          error={error}
+          onRowClick={(o) => nav(`/purchase/orders/${o.id}`)}
+          search={{ value: search, onChange: setSearch, placeholder: "Buscar nº…" }}
+          filters={filterDefs}
+          filterValues={filters}
+          onFilterChange={(k, v) => setFilters((p) => ({ ...p, [k]: v }))}
+          onFiltersClear={() => setFilters({ state: null, supplier: null, warehouse: null, date: null, expected: null })}
+          onRefresh={() => refetch()}
+          lastUpdated={dataUpdatedAt ? new Date(dataUpdatedAt) : null}
+          emptyTitle="Sem pedidos"
+          emptyDescription="Nenhum pedido de compra corresponde aos filtros."
+        />
       </PageBody>
     </>
   );
 };
-
-function ExpandedRow({ poId, poName, sos }: { poId: string; poName: string; sos: { id: string; name: string }[] }) {
-  const { data: lines = [] } = useQuery({
-    queryKey: ["po-lines", poId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("purchase_order_lines")
-        .select("id, product_id, description, quantity, unit_price, subtotal, products(name)")
-        .eq("order_id", poId)
-        .order("sequence");
-      return data ?? [];
-    },
-  });
-
-  const { data: receipts = [] } = useQuery({
-    queryKey: ["po-receipts", poName],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("stock_pickings")
-        .select("id, name, state, scheduled_at, done_at, stock_moves(product_id, quantity, quantity_done)")
-        .eq("origin", poName)
-        .eq("kind", "incoming");
-      return data ?? [];
-    },
-  });
-
-  // Map of received per product
-  const receivedByProduct = useMemo(() => {
-    const m: Record<string, number> = {};
-    (receipts as any[]).forEach((p) => {
-      if (p.state !== "done") return;
-      (p.stock_moves || []).forEach((mv: any) => {
-        m[mv.product_id] = (m[mv.product_id] || 0) + Number(mv.quantity_done || 0);
-      });
-    });
-    return m;
-  }, [receipts]);
-
-  return (
-    <TableRow className="bg-muted/30">
-      <TableCell colSpan={9} className="p-0">
-        <div className="p-4 space-y-4">
-          <div>
-            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Linhas do pedido</div>
-            <div className="border rounded bg-background">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead className="text-right">Pedido</TableHead>
-                    <TableHead className="text-right">Recebido</TableHead>
-                    <TableHead className="text-right">Em falta</TableHead>
-                    <TableHead className="text-right">Preço</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lines.map((l: any) => {
-                    const received = receivedByProduct[l.product_id] || 0;
-                    const missing = Math.max(0, Number(l.quantity) - received);
-                    return (
-                      <TableRow key={l.id}>
-                        <TableCell>{l.products?.name ?? l.description}</TableCell>
-                        <TableCell className="text-right">{l.quantity}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={received >= l.quantity ? "default" : received > 0 ? "secondary" : "outline"}>
-                            {received}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {missing > 0 ? <span className="text-destructive">{missing}</span> : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">{fmtMoney(l.unit_price)}</TableCell>
-                        <TableCell className="text-right font-medium">{fmtMoney(l.subtotal)}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {sos.length > 0 && (
-            <div>
-              <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                Vendas que originaram esta compra
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {sos.map((s) => (
-                  <Link key={s.id} to={`/sales/orders/${s.id}`}>
-                    <Badge variant="outline" className="hover:bg-accent cursor-pointer">{s.name}</Badge>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {receipts.length > 0 && (
-            <div>
-              <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Receções</div>
-              <div className="space-y-1">
-                {(receipts as any[]).map((r) => (
-                  <div key={r.id} className="flex items-center gap-2 text-sm">
-                    <Badge variant={r.state === "done" ? "default" : "secondary"}>{r.state}</Badge>
-                    <span className="font-medium">{r.name}</span>
-                    {r.done_at && (
-                      <span className="text-muted-foreground text-xs">
-                        Validado em {new Date(r.done_at).toLocaleString("pt-PT")}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
