@@ -112,6 +112,9 @@ import ShopFloorOrder from "@/modules/shopfloor/pages/ShopFloorOrder";
 import ShopFloorQuality from "@/modules/shopfloor/pages/ShopFloorQuality";
 import PickupsPage from "@/modules/m5/pages/PickupsPage";
 import CarrierShipmentsPage from "@/modules/m5/pages/CarrierShipmentsPage";
+import CustomerTicketsList from "@/modules/helpdesk/pages/CustomerTicketsList";
+import CustomerTicketDetail from "@/modules/helpdesk/pages/CustomerTicketDetail";
+import CustomerPortalPage from "@/modules/portal/pages/CustomerPortalPage";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +127,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+
+            {/* Public Customer Portal */}
+            <Route path="/portal/:token" element={<CustomerPortalPage />} />
 
             {/* Delivery app (layout próprio) */}
             <Route path="/delivery" element={<RequireAuth><DeliveryShell /></RequireAuth>}>
