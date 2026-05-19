@@ -21,12 +21,12 @@ export function MarkInvoicedDialog({
   const [notes, setNotes] = useState(current?.invoice_notes ?? "");
 
   const save = async () => {
-    const { error } = await supabase.from("sale_orders").update({
-      invoice_status: "invoiced",
-      invoice_number: num || null,
-      invoice_date: date || null,
-      invoice_notes: notes || null,
-    }).eq("id", orderId);
+    const { error } = await supabase.rpc("sale_order_mark_invoiced" as any, {
+      _order_id: orderId,
+      _invoice_number: num || null,
+      _invoice_date: date || null,
+      _invoice_notes: notes || null,
+    });
     if (error) return toast.error(error.message);
     toast.success("Marcado como faturado");
     onOpenChange(false);
