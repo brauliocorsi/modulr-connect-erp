@@ -894,6 +894,9 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               <PurchaseBillsPanel poId={id!} poName={order.name} poTotal={Number(order.amount_total ?? totals.total)} />
             )}
             {!isNew && kind === "sale" && <OrderTraceability saleOrderId={id!} />}
+            {!isNew && kind === "sale" && (
+              <RecordTimeline entityType="sale_order" entityId={id!} />
+            )}
             {!isNew && <RecordSidebar recordType={kind === "sale" ? "sale_order" : "purchase_order"} recordId={id!} />}
           </div>
 
