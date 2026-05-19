@@ -52,14 +52,7 @@ type Line = {
   source_sale_order_id?: string | null;
 };
 
-const STATE_TONES: Record<string, "default" | "success" | "warning" | "info" | "destructive"> = {
-  draft: "default",
-  sent: "info",
-  rfq_sent: "info",
-  confirmed: "warning",
-  done: "success",
-  cancelled: "destructive",
-};
+// Status tones now centralised in OperationalStatusBadge (domain 'sale').
 
 export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const { id } = useParams();
