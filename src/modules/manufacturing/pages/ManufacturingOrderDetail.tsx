@@ -118,7 +118,7 @@ export default function ManufacturingOrderDetail() {
     {
       key: "refresh-needs",
       label: "Gerar necessidades",
-      onClick: () => generateNeeds.mutateAsync({ _mo: id! }),
+      onClick: async () => { await generateNeeds.mutateAsync({ _mo: id! }); },
       loading: generateNeeds.isPending,
       disabled: isTerminal,
       disabledReason: closeDisabledReason ?? undefined,
