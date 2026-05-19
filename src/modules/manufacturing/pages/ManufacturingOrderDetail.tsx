@@ -132,7 +132,7 @@ export default function ManufacturingOrderDetail() {
       key: "close",
       label: "Fechar OF",
       variant: "default",
-      onClick: () => closeMo.mutateAsync({ _mo: id! }),
+      onClick: async () => { await closeMo.mutateAsync({ _mo: id! }); },
       loading: closeMo.isPending,
       disabled: isTerminal,
       disabledReason: closeDisabledReason ?? undefined,
