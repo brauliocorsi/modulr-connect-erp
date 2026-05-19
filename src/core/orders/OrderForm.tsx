@@ -481,7 +481,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       label: "Salvar",
       icon: <Save className="h-4 w-4 mr-1" />,
       variant: "outline",
-      onClick: save,
+      onClick: async () => { await save(); },
     });
   }
   if (!isNew) {
