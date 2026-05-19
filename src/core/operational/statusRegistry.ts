@@ -8,7 +8,9 @@ export type StatusDomain =
   | "service"
   | "ticket"
   | "finance"
-  | "package";
+  | "package"
+  | "purchase"
+  | "purchase_need";
 
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
