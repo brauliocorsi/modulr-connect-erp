@@ -10908,6 +10908,10 @@ export type Database = {
         Args: { _cleanup?: boolean }
         Returns: Json
       }
+      _test_phase21_communication_core: {
+        Args: { _verbose?: boolean }
+        Returns: Json
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
