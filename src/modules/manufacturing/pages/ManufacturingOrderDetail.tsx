@@ -11,6 +11,8 @@ import { MOOriginBadge } from "../components/MOOriginBadge";
 import { AttachmentsGrid } from "../components/PhotoUploader";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import WorkOrdersSection from "../components/WorkOrdersSection";
+import { RecordTimeline } from "@/core/timeline/RecordTimeline";
+import { RecordTasks } from "@/core/tasks/RecordTasks";
 
 const CLOSE_ERROR_MESSAGES: Record<string, string> = {
   WORK_ORDERS_NOT_DONE: "Ainda existem operações abertas.",
