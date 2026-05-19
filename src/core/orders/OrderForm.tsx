@@ -413,7 +413,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const revertInvoice = async () => {
     if (!confirm("Reverter faturação?")) return;
-    await supabase.from("sale_orders").update({ invoice_status: "not_invoiced", invoice_number: null, invoice_date: null }).eq("id", id!);
+    const { error } = await supabase.rpc("sale_order_revert_invoice_status" as any, { _order_id: id!, _reason: null });
+    if (error) return toast.error(error.message);
     const { data } = await supabase.from("sale_orders").select("invoice_status,invoice_number,invoice_date,invoice_notes").eq("id", id!).maybeSingle();
     if (data) setOrder((o: any) => ({ ...o, ...data }));
   };
