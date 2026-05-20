@@ -282,6 +282,31 @@ export default function CashSessionDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!reverseTarget} onOpenChange={(o) => !o && setReverseTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter movimento</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">
+              Esta ação cria um movimento contrário irreversível. Indique um motivo.
+            </p>
+            <div>
+              <Label>Motivo</Label>
+              <Input
+                value={reverseTarget?.reason ?? ""}
+                onChange={(e) => setReverseTarget((t) => t ? { ...t, reason: e.target.value } : t)}
+                placeholder="Ex: lançado por engano"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReverseTarget(null)} disabled={reversing}>Cancelar</Button>
+            <Button variant="destructive" onClick={reverseMove} disabled={reversing}>
+              <Undo2 className="h-4 w-4 mr-1" /> {reversing ? "A reverter…" : "Reverter"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
