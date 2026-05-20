@@ -280,6 +280,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const setDeliveryModeMut = useRpcMutation<{ _order_id: string; _delivery_mode: string }>({
     rpc: "sale_order_set_delivery_mode",
     invalidateKeys: invalidateOrder,
+    onError: (err) => {
+      const msg = (err.message || "").trim();
+      if (msg === "pickup_with_active_delivery_schedule") {
+        toast.error("Existe um agendamento ativo. Cancele o agendamento antes de mudar para levantamento.");
+      }
+      // revert local optimistic update
+      reloadOrder(id!);
+    },
+    onSuccess: async (_d, args) => { await refreshServices(args._order_id); },
   });
   const setDeliveryMode = (mode: "delivery" | "pickup" | "direct") => {
     if (isNew) return toast.error("Salve o pedido primeiro");
@@ -963,12 +972,17 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                   </Select>
                   <p className="text-xs text-muted-foreground">Define a cadeia de transferências criada ao confirmar a venda.</p>
                 </div>
+                {order.delivery_mode === "pickup" && (
+                  <div className="text-xs rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1">
+                    Levantamento não permite entrega/montagem nesta fase.
+                  </div>
+                )}
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="flex items-start gap-3 p-3 rounded border">
+                  <div className="flex items-start gap-3 p-3 rounded border" title={order.delivery_mode === "pickup" ? "Levantamento não permite montagem" : undefined}>
                     <Switch
-                      checked={!!order.include_assembly}
+                      checked={!!order.include_assembly && order.delivery_mode !== "pickup"}
                       onCheckedChange={(v) => toggleService("include_assembly", v)}
-                      disabled={isLocked}
+                      disabled={isLocked || order.delivery_mode === "pickup"}
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">Incluir montagem</div>
@@ -978,11 +992,11 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 rounded border">
+                  <div className="flex items-start gap-3 p-3 rounded border" title={order.delivery_mode === "pickup" ? "Levantamento não permite entrega" : undefined}>
                     <Switch
-                      checked={!!order.include_delivery}
+                      checked={!!order.include_delivery && order.delivery_mode !== "pickup"}
                       onCheckedChange={(v) => toggleService("include_delivery", v)}
-                      disabled={isLocked}
+                      disabled={isLocked || order.delivery_mode === "pickup"}
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">Incluir entrega</div>

@@ -12,14 +12,14 @@ export async function printSaleOrder(orderId: string) {
   const { data: order } = await supabase
     .from("sale_orders")
     .select(
-      "name, state, date_order, commitment_date, notes, amount_untaxed, amount_tax, amount_total, payment_status, invoice_status, invoice_number, invoice_date, partner_id, company_id, include_assembly, include_delivery, delivery_zone_label"
+      "name, state, date_order, commitment_date, notes, amount_untaxed, amount_tax, amount_total, payment_status, invoice_status, invoice_number, invoice_date, partner_id, company_id, include_assembly, include_delivery, delivery_zone_label, delivery_mode"
     )
     .eq("id", orderId)
     .maybeSingle();
 
   if (!order) return;
 
-  const [{ data: partner }, { data: lines }, { data: company }, { data: payments }] = await Promise.all([
+  const [{ data: partner }, { data: lines }, { data: company }, { data: payments }, { data: schedule }] = await Promise.all([
     supabase
       .from("partners")
       .select("name, tax_id, email, phone, street, city, state, zip, country")
@@ -41,6 +41,11 @@ export async function printSaleOrder(orderId: string) {
       .eq("order_id", orderId)
       .eq("state", "posted")
       .order("payment_date"),
+    supabase
+      .from("sale_orders_with_schedule_summary" as any)
+      .select("scheduled_date, slot_start, slot_end, schedule_status, schedule_confirmed, route_date")
+      .eq("sale_order_id", orderId)
+      .maybeSingle(),
   ]);
 
   const paid = (payments ?? []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
@@ -195,6 +200,26 @@ export async function printSaleOrder(orderId: string) {
       <div class="row" style="display:flex;justify-content:space-between;font-weight:600;font-size:14px;margin-top:4px"><span>Total</span><span>${fmtMoney(Number(order.amount_total || 0))}</span></div>
     </div>
   </div>
+
+  ${(() => {
+    const mode = (order as any).delivery_mode || "delivery";
+    const modeLabel = mode === "pickup" ? "Levantamento" : mode === "direct" ? "Direto" : "Entrega";
+    const sched: any = schedule;
+    const isDelivery = mode === "delivery";
+    const slot = sched?.slot_start && sched?.slot_end
+      ? `${String(sched.slot_start).slice(0,5)}–${String(sched.slot_end).slice(0,5)}`
+      : "";
+    return `
+    <div class="box" style="margin-bottom:20px">
+      <h3>Modo</h3>
+      <div class="bold">${esc(modeLabel)}</div>
+      ${isDelivery && sched?.scheduled_date ? `<div class="muted" style="margin-top:4px">Data: ${new Date(sched.scheduled_date).toLocaleDateString("pt-PT")}${slot ? ` · ${esc(slot)}` : ""}</div>` : ""}
+      ${isDelivery && (order as any).delivery_zone_label ? `<div class="muted">Zona: ${esc((order as any).delivery_zone_label)}</div>` : ""}
+      ${isDelivery ? `<div class="muted">Montagem: ${(order as any).include_assembly ? "Sim" : "Não"}</div>` : ""}
+      ${isDelivery && sched ? `<div class="muted">Agendamento: ${sched.schedule_confirmed ? "Confirmado" : "Pendente"}</div>` : ""}
+    </div>`;
+  })()}
+
 
   <table class="lines">
     <thead>
