@@ -201,6 +201,26 @@ export async function printSaleOrder(orderId: string) {
     </div>
   </div>
 
+  ${(() => {
+    const mode = (order as any).delivery_mode || "delivery";
+    const modeLabel = mode === "pickup" ? "Levantamento" : mode === "direct" ? "Direto" : "Entrega";
+    const sched: any = schedule;
+    const isDelivery = mode === "delivery";
+    const slot = sched?.slot_start && sched?.slot_end
+      ? `${String(sched.slot_start).slice(0,5)}–${String(sched.slot_end).slice(0,5)}`
+      : "";
+    return `
+    <div class="box" style="margin-bottom:20px">
+      <h3>Modo</h3>
+      <div class="bold">${esc(modeLabel)}</div>
+      ${isDelivery && sched?.scheduled_date ? `<div class="muted" style="margin-top:4px">Data: ${new Date(sched.scheduled_date).toLocaleDateString("pt-PT")}${slot ? ` · ${esc(slot)}` : ""}</div>` : ""}
+      ${isDelivery && (order as any).delivery_zone_label ? `<div class="muted">Zona: ${esc((order as any).delivery_zone_label)}</div>` : ""}
+      ${isDelivery ? `<div class="muted">Montagem: ${(order as any).include_assembly ? "Sim" : "Não"}</div>` : ""}
+      ${isDelivery && sched ? `<div class="muted">Agendamento: ${sched.schedule_confirmed ? "Confirmado" : "Pendente"}</div>` : ""}
+    </div>`;
+  })()}
+
+
   <table class="lines">
     <thead>
       <tr>
