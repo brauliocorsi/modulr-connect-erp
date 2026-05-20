@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { Lock, Plus, ArrowDownToLine } from "lucide-react";
+import { Lock, Plus, ArrowDownToLine, Undo2 } from "lucide-react";
 import { CashMovementDialog } from "@/modules/cashbox/components/CashMovementDialog";
+import { ConfirmActionDialog } from "@/core/operational";
 
 const KIND_LABEL: Record<string, string> = {
   opening: "Abertura", sale: "Venda", withdrawal: "Retirada", expense: "Despesa",
