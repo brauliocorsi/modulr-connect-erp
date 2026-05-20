@@ -354,6 +354,7 @@ const App = () => (
               <Route path="manufacturing/planning" element={<ManufacturingPlanning />} />
               <Route path="manufacturing/work-centers" element={<WorkCentersPage />} />
               <Route path="manufacturing/operations" element={<OperationsPage />} />
+              <Route path="manufacturing/machines" element={<MachinesPage />} />
               <Route path="manufacturing/bom" element={<Navigate to="/products/bom" replace />} />
 
               {/* Inventory — Damaged / Quarantine */}
