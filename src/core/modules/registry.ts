@@ -72,6 +72,8 @@ export const MODULES: ModuleDef[] = [
       { section: "Operações", label: "Códigos de Barras (App)", to: "/barcode" },
       { section: "Operações", label: "Movimentos", to: "/inventory/moves" },
       { section: "Operações", label: "Ajustes", to: "/inventory/adjustments" },
+      { section: "Qualidade", label: "Danificados", to: "/inventory/damaged" },
+      { section: "Qualidade", label: "Quarentena", to: "/inventory/quarantine" },
       { section: "Relatórios", label: "Kardex", to: "/inventory/kardex" },
       { section: "Relatórios", label: "Stock por Produto", to: "/reports/stock" },
       { section: "Relatórios", label: "Lotes/Séries", to: "/inventory/lots" },
@@ -217,6 +219,7 @@ export const MODULES: ModuleDef[] = [
     description: "Assistência, helpdesk e portal cliente",
     menu: [
       { section: "Assistência", label: "Pedidos", to: "/service/requests" },
+      { section: "Assistência", label: "Reparações", to: "/service/repairs" },
       { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
     ],
   },
@@ -230,7 +233,9 @@ export const MODULES: ModuleDef[] = [
     description: "Tickets de clientes e atendimento",
     menu: [
       { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
+      { section: "Helpdesk", label: "Portal Cliente", to: "/helpdesk/portal-tokens" },
       { section: "Assistência", label: "Pedidos de assistência", to: "/service/requests" },
+      { section: "Assistência", label: "Reparações", to: "/service/repairs" },
     ],
   },
   {
@@ -245,6 +250,8 @@ export const MODULES: ModuleDef[] = [
       { section: "Visão Geral", label: "Dashboard", to: "/manufacturing" },
       { section: "Produção", label: "Ordens de Fabricação", to: "/manufacturing/orders" },
       { section: "Produção", label: "Planeamento", to: "/manufacturing/planning" },
+      { section: "Configuração", label: "Centros de Trabalho", to: "/manufacturing/work-centers" },
+      { section: "Configuração", label: "Operações", to: "/manufacturing/operations" },
       { section: "Engenharia", label: "Listas de Materiais (BOM)", to: "/products/bom" },
     ],
   },

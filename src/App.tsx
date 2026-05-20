@@ -117,6 +117,12 @@ import CarrierShipmentsPage from "@/modules/m5/pages/CarrierShipmentsPage";
 import CustomerTicketsList from "@/modules/helpdesk/pages/CustomerTicketsList";
 import CustomerTicketDetail from "@/modules/helpdesk/pages/CustomerTicketDetail";
 import CustomerPortalPage from "@/modules/portal/pages/CustomerPortalPage";
+import PortalTokensPage from "@/modules/helpdesk/pages/PortalTokensPage";
+import WorkCentersPage from "@/modules/manufacturing/pages/WorkCentersPage";
+import OperationsPage from "@/modules/manufacturing/pages/OperationsPage";
+import DamagedStockPage from "@/modules/inventory/pages/DamagedStockPage";
+import QuarantinePage from "@/modules/inventory/pages/QuarantinePage";
+import ServiceRepairsPage from "@/modules/service/pages/ServiceRepairsPage";
 import IndicatorsPage from "@/modules/indicators/pages/IndicatorsPage";
 
 const queryClient = new QueryClient();
@@ -283,11 +289,13 @@ const App = () => (
               <Route path="service/requests" element={<ServiceRequestsList />} />
               <Route path="service/requests/new" element={<ServiceRequestForm />} />
               <Route path="service/requests/:id" element={<ServiceRequestForm />} />
+              <Route path="service/repairs" element={<ServiceRepairsPage />} />
 
               {/* Helpdesk */}
               <Route path="helpdesk" element={<Navigate to="/helpdesk/tickets" replace />} />
               <Route path="helpdesk/tickets" element={<CustomerTicketsList />} />
               <Route path="helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
+              <Route path="helpdesk/portal-tokens" element={<PortalTokensPage />} />
 
               {/* Cashbox */}
               <Route path="cashbox" element={<CashRegistersList />} />
@@ -343,7 +351,13 @@ const App = () => (
               <Route path="manufacturing/orders" element={<ManufacturingOrdersList />} />
               <Route path="manufacturing/orders/:id" element={<ManufacturingOrderDetail />} />
               <Route path="manufacturing/planning" element={<ManufacturingPlanning />} />
+              <Route path="manufacturing/work-centers" element={<WorkCentersPage />} />
+              <Route path="manufacturing/operations" element={<OperationsPage />} />
               <Route path="manufacturing/bom" element={<Navigate to="/products/bom" replace />} />
+
+              {/* Inventory — Damaged / Quarantine */}
+              <Route path="inventory/damaged" element={<DamagedStockPage />} />
+              <Route path="inventory/quarantine" element={<QuarantinePage />} />
 
               {/* Shop Floor */}
               <Route path="shop-floor" element={<ShopFloorBoard />} />
