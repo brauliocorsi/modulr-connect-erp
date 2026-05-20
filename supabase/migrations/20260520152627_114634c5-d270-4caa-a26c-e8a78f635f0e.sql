@@ -1,0 +1,1 @@
+ALTER VIEW public.sale_orders_with_schedule_summary SET (security_invoker = on);
