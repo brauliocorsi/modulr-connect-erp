@@ -153,4 +153,14 @@ describe("OrderForm (F22-R2)", () => {
     await waitFor(() => expect(screen.getAllByText("SO0001").length).toBeGreaterThan(0));
     expect(toastError).not.toHaveBeenCalled();
   });
+
+  it("renders summary cards strip (Total / Saldo / Pagamento / Faturação / Entrega)", async () => {
+    renderForm();
+    await waitFor(() => expect(screen.getByText(/Saldo em aberto/i)).toBeInTheDocument());
+    expect(screen.getByText(/^Total$/)).toBeInTheDocument();
+    expect(screen.getByText(/Pagamento/i)).toBeInTheDocument();
+    expect(screen.getByText(/Faturação/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Entrega$/i)).toBeInTheDocument();
+  });
 });
+
