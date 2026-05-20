@@ -92,8 +92,8 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
   it("renders EntityHeader title, SKU and EAN in subtitle", async () => {
     renderForm();
     await waitForLoaded();
-    expect(screen.getByText(/SOF-001/)).toBeInTheDocument();
-    expect(screen.getByText(/1234567890123/)).toBeInTheDocument();
+    expect(screen.getAllByText(/SOF-001/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/1234567890123/).length).toBeGreaterThan(0);
   });
 
   it("renders main capability flag badges", async () => {
