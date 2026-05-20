@@ -32,6 +32,8 @@ export default function CashSessionDetail() {
   const [openerName, setOpenerName] = useState<string>("");
 
   const [reconcile, setReconcile] = useState<any[]>([]);
+  const [reverseTarget, setReverseTarget] = useState<{ id: string; reason: string } | null>(null);
+  const [reversing, setReversing] = useState(false);
 
   const load = async () => {
     const { data: s } = await supabase
