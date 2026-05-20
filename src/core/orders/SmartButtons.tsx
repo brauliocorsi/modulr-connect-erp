@@ -42,9 +42,11 @@ function Btn({ s }: { s: Stat }) {
 export function SmartButtons({
   kind,
   orderName,
+  refreshToken,
 }: {
   kind: "sale" | "purchase" | "picking";
   orderName: string;
+  refreshToken?: number | string;
 }) {
   const [stats, setStats] = useState<Stat[]>([]);
 
