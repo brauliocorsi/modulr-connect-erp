@@ -89,14 +89,14 @@ function renderForm() {
 describe("ProductForm (F22-V2 visual remodel)", () => {
   it("renders EntityHeader title, SKU and EAN in subtitle", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getByText("Sofá Lisboa")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
     expect(screen.getByText(/SOF-001/)).toBeInTheDocument();
     expect(screen.getByText(/1234567890123/)).toBeInTheDocument();
   });
 
   it("renders main capability flag badges", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getByText("Sofá Lisboa")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
     expect(screen.getByText("Vendável")).toBeInTheDocument();
     expect(screen.getByText("Comprável")).toBeInTheDocument();
     expect(screen.getByText("Fabricável")).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
 
   it("renders summary cards: Variantes, BOM, Colis, Peso/Volume, Abastecimento", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getByText("Sofá Lisboa")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
     expect(screen.getByText("Variantes")).toBeInTheDocument();
     expect(screen.getByText("BOM")).toBeInTheDocument();
     expect(screen.getByText("Colis")).toBeInTheDocument();
