@@ -248,8 +248,8 @@ export default function GlobalSidebar() {
       data-testid="global-sidebar"
       className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground"
     >
-      <div className="p-3 border-b">
-        <div className="relative">
+      <div className="p-3 border-b flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={query}
@@ -258,6 +258,14 @@ export default function GlobalSidebar() {
             className="pl-7 h-8 text-xs"
           />
         </div>
+        <Button
+          variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+          data-testid="sidebar-collapse-toggle"
+          aria-label="Recolher menu"
+          onClick={() => setCollapsed(true)}
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </Button>
       </div>
       <nav className="flex-1 overflow-auto p-2 space-y-1">
         {filtered.map((group) => {
