@@ -10333,6 +10333,9 @@ export type Database = {
           created_by: string | null
           id: string
           is_default: boolean
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
           role: string
           store_id: string
           updated_at: string
@@ -10344,6 +10347,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_default?: boolean
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           role?: string
           store_id: string
           updated_at?: string
@@ -10355,6 +10361,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_default?: boolean
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           role?: string
           store_id?: string
           updated_at?: string
@@ -11631,6 +11640,14 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      _test_phase24d1_permissions_admin: {
+        Args: never
+        Returns: {
+          detail: string
+          passed: boolean
+          test: string
+        }[]
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -12611,6 +12628,15 @@ export type Database = {
         Args: { _product_id: string }
         Returns: Json
       }
+      permissions_health_check: {
+        Args: never
+        Returns: {
+          code: string
+          detail: string
+          entity_id: string
+          severity: string
+        }[]
+      }
       picking_return_status: { Args: { _picking_id: string }; Returns: Json }
       picking_shortages: {
         Args: { _picking: string }
@@ -13179,6 +13205,32 @@ export type Database = {
           _supply_route: string
         }
         Returns: Json
+      }
+      user_role_assign: {
+        Args: { _group_code: string; _user_id: string }
+        Returns: string
+      }
+      user_role_remove: {
+        Args: { _group_code: string; _user_id: string }
+        Returns: undefined
+      }
+      user_store_assignment_remove: {
+        Args: { _assignment_id: string; _reason: string }
+        Returns: undefined
+      }
+      user_store_assignment_set_default: {
+        Args: { _assignment_id: string }
+        Returns: undefined
+      }
+      user_store_assignment_upsert: {
+        Args: {
+          _active?: boolean
+          _is_default?: boolean
+          _role?: string
+          _store_id: string
+          _user_id: string
+        }
+        Returns: string
       }
       validate_batch: { Args: { _batch: string }; Returns: Json }
       validate_customer_pickup: {

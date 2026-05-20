@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
+import { usePermissions } from "@/core/permissions/usePermissions";
+import { useAuth } from "@/core/auth/AuthProvider";
 
 const ERROR_PT: Record<string, string> = {
   user_without_store: "Este utilizador não está associado a nenhuma loja.",
@@ -276,6 +279,7 @@ export function RegisterPaymentDialog({
                 </Select>
               )}
               {cashHelp && <div className="text-xs text-rose-600">{cashHelp}</div>}
+              <CashCTAs status={cashStatus.status} />
             </div>
           )}
 
@@ -315,4 +319,24 @@ export function RegisterPaymentDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function CashCTAs({ status }: { status: string }) {
+  const { isAdmin, inGroup } = usePermissions();
+  const { user } = useAuth();
+  if (status === "no_store" && isAdmin && user?.id) {
+    return (
+      <Button asChild size="sm" variant="outline" data-testid="cta-configure-store">
+        <Link to={`/settings/users/${user.id}`}>Configurar loja do utilizador</Link>
+      </Button>
+    );
+  }
+  if (status === "no_open_session" && (isAdmin || inGroup("cashbox_user") || inGroup("finance_user") || inGroup("sales_user"))) {
+    return (
+      <Button asChild size="sm" variant="outline" data-testid="cta-open-cash">
+        <Link to="/cashbox">Abrir caixa</Link>
+      </Button>
+    );
+  }
+  return null;
 }
