@@ -32,6 +32,21 @@ type Tpl = {
 
 const num = (v: string) => (v === "" ? null : Number(v));
 
+const PACKAGE_ERRORS: Record<string, string> = {
+  product_not_found: "Produto não encontrado",
+  name_required: "Nome do colis é obrigatório",
+  invalid_length: "Comprimento deve ser maior que zero",
+  invalid_width: "Largura deve ser maior que zero",
+  invalid_height: "Altura deve ser maior que zero",
+  invalid_weight: "Peso não pode ser negativo",
+  template_not_found: "Template não encontrado",
+  template_in_use: "Não é possível remover — template já gerou colis físicos",
+};
+const mapPackageError = (msg: string) => {
+  for (const k of Object.keys(PACKAGE_ERRORS)) if (msg.includes(k)) return PACKAGE_ERRORS[k];
+  return msg;
+};
+
 export function PackagesTab({ productId }: { productId: string }) {
   const [items, setItems] = useState<Tpl[]>([]);
   const [loading, setLoading] = useState(false);
