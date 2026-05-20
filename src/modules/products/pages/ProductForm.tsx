@@ -244,11 +244,11 @@ export default function ProductForm() {
             },
           }] : []),
           ...(!isNew ? [{
-            key: "delete",
-            label: "Excluir",
+            key: "archive",
+            label: "Arquivar",
             onClick: async () => { await remove(); },
             destructive: true,
-            confirm: { title: "Excluir produto", description: "Esta ação não pode ser desfeita.", confirmLabel: "Excluir" },
+            confirm: { title: "Arquivar produto", description: "O produto fica inativo. Só é permitido sem stock, BOM ativa, MO/compras/vendas abertas.", confirmLabel: "Arquivar" },
           }] : []),
         ]}
       />
