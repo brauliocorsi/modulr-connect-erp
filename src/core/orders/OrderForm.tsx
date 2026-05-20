@@ -577,6 +577,51 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         secondaryActions={secondaryActions}
       />
 
+      {kind === "sale" && !isNew && (() => {
+        const total = Number(order.amount_total ?? totals.total ?? 0);
+        // No paid_amount field: derive a visual saldo from payment_status when possible
+        const ps = order.payment_status;
+        const saldo =
+          ps === "paid" ? 0 :
+          ps === "unpaid" || !ps ? total :
+          null; // partial / unknown -> "—"
+        const items: SummaryCardItem[] = [
+          {
+            key: "total",
+            label: "Total",
+            value: fmtMoney(total),
+            tone: "primary",
+          },
+          {
+            key: "saldo",
+            label: "Saldo em aberto",
+            value: saldo == null ? "—" : fmtMoney(saldo),
+            hint: saldo == null ? "Ver aba Pagamentos" : undefined,
+            tone: saldo && saldo > 0 ? "warning" : "success",
+          },
+          {
+            key: "payment",
+            label: "Pagamento",
+            value: <OperationalStatusBadge domain="finance" status={order.payment_status ?? "unpaid"} />,
+          },
+          {
+            key: "invoice",
+            label: "Faturação",
+            value: <InvoiceStatusBadge status={order.invoice_status} />,
+          },
+          {
+            key: "fulfillment",
+            label: "Entrega",
+            value: <FulfillmentBadge status={order.fulfillment_status} />,
+          },
+        ];
+        return (
+          <div className="px-6 lg:px-8 pt-4">
+            <SummaryCards items={items} />
+          </div>
+        );
+      })()}
+
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
