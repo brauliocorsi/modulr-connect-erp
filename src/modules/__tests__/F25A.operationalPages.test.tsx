@@ -61,7 +61,7 @@ describe("F25-A operational pages", () => {
   it("QuarantinePage renderiza sem erro", async () => {
     const { default: Page } = await import("@/modules/inventory/pages/QuarantinePage");
     wrap(<Page />);
-    await waitFor(() => expect(screen.getByText("Quarentena")).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText("Quarentena").length).toBeGreaterThan(0));
   });
 
   it("ServiceRepairsPage renderiza reparações", async () => {
