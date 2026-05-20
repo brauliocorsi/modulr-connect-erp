@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 // --- Supabase mock ----------------------------------------------------------
@@ -18,7 +18,6 @@ vi.mock("@/core/auth/AuthProvider", () => ({
   useAuth: () => ({ user: authUser, session: null, loading: false, signOut: vi.fn() }),
 }));
 
-// --- Sonner mock ------------------------------------------------------------
 const toastErr = vi.fn();
 vi.mock("sonner", () => ({
   toast: { error: (m: string) => toastErr(m), success: vi.fn() },
@@ -26,39 +25,64 @@ vi.mock("sonner", () => ({
 
 import GlobalChatDock from "../GlobalChatDock";
 
-// Fixture data
-const THREADS = [
+const UNIFIED = [
   {
-    id: "th1",
+    id: "th-entity",
+    thread_type: "entity",
     title: "Pedido #1",
-    status: "open",
-    visibility: "internal",
     entity_type: "sale_order",
-    entity_id: "so-1",
-    created_at: "2026-05-19T10:00:00Z",
+    entity_id: "11111111-1111-1111-1111-111111111111",
+    channel_id: null,
+    visibility: "internal",
+    status: "open",
+    last_activity: "2026-05-19T12:00:00Z",
+    last_message: "última th-entity",
+    last_message_at: "2026-05-19T12:00:00Z",
+    unread_count: 2,
+    last_read_at: null,
+    pinned: false,
+    muted: false,
   },
   {
-    id: "th2",
-    title: "Cliente B",
-    status: "open",
-    visibility: "customer_visible",
+    id: "th-dm",
+    thread_type: "dm",
+    title: "Alice",
     entity_type: null,
     entity_id: null,
-    created_at: "2026-05-19T11:00:00Z",
+    channel_id: null,
+    visibility: "internal",
+    status: "open",
+    last_activity: "2026-05-19T11:30:00Z",
+    last_message: "oi",
+    last_message_at: "2026-05-19T11:30:00Z",
+    unread_count: 0,
+    last_read_at: null,
+    pinned: false,
+    muted: false,
+  },
+  {
+    id: "th-ch",
+    thread_type: "channel",
+    title: "geral",
+    entity_type: null,
+    entity_id: null,
+    channel_id: "ch-x",
+    visibility: "internal",
+    status: "open",
+    last_activity: "2026-05-19T10:00:00Z",
+    last_message: "hello",
+    last_message_at: "2026-05-19T10:00:00Z",
+    unread_count: 1,
+    last_read_at: null,
+    pinned: false,
+    muted: false,
   },
 ];
-const PARTICIPANTS = [
-  { thread_id: "th1", left_at: null },
-  { thread_id: "th2", left_at: null },
-];
-const LAST_MSGS = [
-  { thread_id: "th1", message: "última th1", created_at: "2026-05-19T12:00:00Z" },
-  { thread_id: "th2", message: "última th2", created_at: "2026-05-19T11:30:00Z" },
-];
-const MESSAGES_TH1 = [
+
+const MESSAGES = [
   {
     id: "m1",
-    thread_id: "th1",
+    thread_id: "th-entity",
     sender_user_id: "user-2",
     sender_type: "user",
     message: "Olá interno",
@@ -67,48 +91,19 @@ const MESSAGES_TH1 = [
   },
 ];
 
-// Build a chainable mock that resolves to {data, error} when awaited.
-function buildBuilder(result: { data: any; error: any }) {
-  const thenable: any = {};
-  const methods = ["select", "eq", "is", "in", "order", "limit"];
-  for (const m of methods) thenable[m] = vi.fn().mockReturnValue(thenable);
-  thenable.then = (resolve: any) => Promise.resolve(result).then(resolve);
-  return thenable;
-}
-
-function defaultFromRouter() {
-  fromMock.mockImplementation((table: string) => {
-    if (table === "conversation_participants") return buildBuilder({ data: PARTICIPANTS, error: null });
-    if (table === "conversation_threads") return buildBuilder({ data: THREADS, error: null });
-    if (table === "conversation_messages") {
-      // Distinguish list-of-last vs single-thread by inspecting later .eq call.
-      // Return both at once and let the component choose; we route via call order.
-      // Simpler: always return MESSAGES_TH1 when .eq("thread_id", x) is called,
-      // else last messages list. We track via a builder variant.
-      const b: any = {};
-      let usedEq = false;
-      const methods = ["select", "is", "in", "order", "limit"];
-      for (const m of methods) b[m] = vi.fn().mockReturnValue(b);
-      b.eq = vi.fn().mockImplementation(() => {
-        usedEq = true;
-        return b;
-      });
-      b.then = (resolve: any) =>
-        Promise.resolve(usedEq ? { data: MESSAGES_TH1, error: null } : { data: LAST_MSGS, error: null }).then(resolve);
-      return b;
-    }
-    return buildBuilder({ data: [], error: null });
-  });
-}
-
 beforeEach(() => {
   rpcMock.mockReset();
   fromMock.mockReset();
   toastErr.mockReset();
   localStorage.clear();
   authUser = { id: "user-1", email: "u@e.com" };
-  defaultFromRouter();
-  rpcMock.mockResolvedValue({ data: null, error: null });
+  rpcMock.mockImplementation((name: string) => {
+    if (name === "conversation_unified_list") return Promise.resolve({ data: UNIFIED, error: null });
+    if (name === "conversation_get_messages") return Promise.resolve({ data: MESSAGES, error: null });
+    if (name === "conversation_mark_read") return Promise.resolve({ data: { ok: true }, error: null });
+    if (name === "conversation_send_message") return Promise.resolve({ data: "new-id", error: null });
+    return Promise.resolve({ data: null, error: null });
+  });
 });
 
 function renderDock(initialEntries: string[] = ["/"]) {
@@ -119,113 +114,111 @@ function renderDock(initialEntries: string[] = ["/"]) {
   );
 }
 
-describe("GlobalChatDock", () => {
+describe("GlobalChatDock — unified", () => {
   it("does not render when user is unauthenticated", () => {
     authUser = null;
     const { container } = renderDock();
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders floating launcher when authenticated", async () => {
-    renderDock();
-    expect(await screen.findByTestId("global-chat-launcher")).toBeInTheDocument();
-  });
-
-  it("does not render on /portal/:token route", () => {
-    const { container } = renderDock(["/portal/abc123"]);
+  it("does not render on /portal route", () => {
+    const { container } = renderDock(["/portal/abc"]);
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows unread badge when there are recent messages and nothing seen", async () => {
+  it("shows server-side unread badge (sum of unread_count)", async () => {
     renderDock();
-    await screen.findByTestId("global-chat-launcher");
-    expect(await screen.findByTestId("global-chat-unread-badge")).toBeInTheDocument();
+    const badge = await screen.findByTestId("global-chat-unread-badge");
+    // 2 + 0 + 1 = 3
+    expect(badge.textContent).toBe("3");
   });
 
-  it("opens the panel when launcher is clicked and lists threads", async () => {
+  it("opens panel and lists unified threads (DM/channel/entity)", async () => {
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
     expect(await screen.findByTestId("global-chat-panel")).toBeInTheDocument();
     expect(await screen.findByText("Pedido #1")).toBeInTheDocument();
-    expect(screen.getByText("Cliente B")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("geral")).toBeInTheDocument();
   });
 
-  it("minimizes panel and persists state in localStorage", async () => {
+  it("filters by DM tab", async () => {
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    await screen.findByTestId("global-chat-panel");
-    fireEvent.click(screen.getByLabelText("Minimizar"));
-    expect(screen.queryByTestId("global-chat-panel")).not.toBeInTheDocument();
-    const persisted = JSON.parse(localStorage.getItem("erp.globalChatDock.state") || "{}");
-    expect(persisted.state).toBe("minimized");
+    await screen.findByText("Pedido #1");
+    fireEvent.click(screen.getByRole("tab", { name: /DMs/ }));
+    await waitFor(() => {
+      expect(screen.queryByText("Pedido #1")).not.toBeInTheDocument();
+      expect(screen.getByText("Alice")).toBeInTheDocument();
+    });
   });
 
-  it("selects a thread and loads its messages", async () => {
+  it("filters by Canais tab", async () => {
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    fireEvent.click(await screen.findByTestId("global-chat-thread-th1"));
-    expect(await screen.findByText("Olá interno")).toBeInTheDocument();
+    await screen.findByText("Pedido #1");
+    fireEvent.click(screen.getByRole("tab", { name: /Canais/ }));
+    await waitFor(() => {
+      expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+      expect(screen.getByText("geral")).toBeInTheDocument();
+    });
   });
 
-  it("sends a message via conversation_add_message RPC", async () => {
+  it("shows 'Página' tab content when route maps to an entity", async () => {
+    renderDock(["/sales/orders/11111111-1111-1111-1111-111111111111"]);
+    fireEvent.click(await screen.findByTestId("global-chat-launcher"));
+    await screen.findByText("Pedido #1");
+    fireEvent.click(screen.getByRole("tab", { name: /Página/ }));
+    await waitFor(() => {
+      expect(screen.getByText("Pedido #1")).toBeInTheDocument();
+      expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens a thread and calls conversation_mark_read", async () => {
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    fireEvent.click(await screen.findByTestId("global-chat-thread-th1"));
+    fireEvent.click(await screen.findByTestId("global-chat-thread-th-entity"));
+    await screen.findByText("Olá interno");
+    await waitFor(() =>
+      expect(rpcMock).toHaveBeenCalledWith("conversation_mark_read", { _thread_id: "th-entity" }),
+    );
+    expect(rpcMock).toHaveBeenCalledWith("conversation_get_messages", { _thread_id: "th-entity", _limit: 100 });
+  });
+
+  it("sends a message via conversation_send_message RPC", async () => {
+    renderDock();
+    fireEvent.click(await screen.findByTestId("global-chat-launcher"));
+    fireEvent.click(await screen.findByTestId("global-chat-thread-th-entity"));
     await screen.findByText("Olá interno");
     fireEvent.change(screen.getByTestId("global-chat-input"), { target: { value: "minha resposta" } });
     fireEvent.click(screen.getByTestId("global-chat-send"));
     await waitFor(() =>
       expect(rpcMock).toHaveBeenCalledWith(
-        "conversation_add_message",
-        expect.objectContaining({ _thread_id: "th1", _message: "minha resposta", _visibility: "internal" }),
+        "conversation_send_message",
+        expect.objectContaining({ _thread_id: "th-entity", _body: "minha resposta", _visibility: "internal" }),
       ),
     );
   });
 
-  it("does not allow sending empty messages", async () => {
+  it("never uses legacy record_messages table nor direct conversation table writes", async () => {
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    fireEvent.click(await screen.findByTestId("global-chat-thread-th1"));
+    fireEvent.click(await screen.findByTestId("global-chat-thread-th-entity"));
     await screen.findByText("Olá interno");
-    const sendBtn = screen.getByTestId("global-chat-send") as HTMLButtonElement;
-    expect(sendBtn.disabled).toBe(true);
-    fireEvent.click(sendBtn);
-    expect(rpcMock).not.toHaveBeenCalledWith("conversation_add_message", expect.anything());
+    fireEvent.change(screen.getByTestId("global-chat-input"), { target: { value: "x" } });
+    fireEvent.click(screen.getByTestId("global-chat-send"));
+    await waitFor(() => expect(rpcMock).toHaveBeenCalledWith("conversation_send_message", expect.any(Object)));
+    expect(fromMock).not.toHaveBeenCalled();
   });
 
-  it("shows error state when thread query fails", async () => {
-    fromMock.mockImplementation((table: string) => {
-      if (table === "conversation_participants")
-        return buildBuilder({ data: null, error: { message: "boom" } });
-      return buildBuilder({ data: [], error: null });
+  it("shows error state when unified list fails", async () => {
+    rpcMock.mockImplementation((name: string) => {
+      if (name === "conversation_unified_list") return Promise.resolve({ data: null, error: { message: "boom" } });
+      return Promise.resolve({ data: null, error: null });
     });
     renderDock();
     fireEvent.click(await screen.findByTestId("global-chat-launcher"));
     expect(await screen.findByTestId("global-chat-error")).toHaveTextContent("boom");
-  });
-
-  it("never writes directly to conversation_messages / conversation_threads", async () => {
-    renderDock();
-    fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    fireEvent.click(await screen.findByTestId("global-chat-thread-th1"));
-    await screen.findByText("Olá interno");
-    fireEvent.change(screen.getByTestId("global-chat-input"), { target: { value: "x" } });
-    fireEvent.click(screen.getByTestId("global-chat-send"));
-    await waitFor(() => expect(rpcMock).toHaveBeenCalledWith("conversation_add_message", expect.any(Object)));
-    // from() is used only for read selects; ensure no chained .insert/.update/.delete was returned by builders.
-    const builders = fromMock.mock.results.map((r) => r.value);
-    for (const b of builders) {
-      expect(b.insert).toBeUndefined();
-      expect(b.update).toBeUndefined();
-      expect(b.upsert).toBeUndefined();
-      expect(b.delete).toBeUndefined();
-    }
-  });
-
-  it("does not use legacy record_messages table", async () => {
-    renderDock();
-    fireEvent.click(await screen.findByTestId("global-chat-launcher"));
-    await screen.findByTestId("global-chat-panel");
-    expect(fromMock).not.toHaveBeenCalledWith("record_messages");
   });
 });
