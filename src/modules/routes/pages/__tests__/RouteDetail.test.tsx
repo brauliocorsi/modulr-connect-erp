@@ -86,7 +86,7 @@ beforeEach(() => {
 describe("RouteDetail (F22-R5)", () => {
   it("renders EntityHeader with route status badge and metadata", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText(/Zona Norte/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/Zona Norte/).length).toBeGreaterThan(0));
     expect(screen.getByText("Planeada")).toBeInTheDocument(); // delivery_route status
     expect(screen.getByText(/Carrinha 1/)).toBeInTheDocument();
     expect(screen.getByText(/Cais 1/)).toBeInTheDocument();
