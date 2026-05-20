@@ -120,6 +120,7 @@ import CustomerPortalPage from "@/modules/portal/pages/CustomerPortalPage";
 import PortalTokensPage from "@/modules/helpdesk/pages/PortalTokensPage";
 import WorkCentersPage from "@/modules/manufacturing/pages/WorkCentersPage";
 import OperationsPage from "@/modules/manufacturing/pages/OperationsPage";
+import MachinesPage from "@/modules/manufacturing/pages/MachinesPage";
 import DamagedStockPage from "@/modules/inventory/pages/DamagedStockPage";
 import QuarantinePage from "@/modules/inventory/pages/QuarantinePage";
 import ServiceRepairsPage from "@/modules/service/pages/ServiceRepairsPage";
@@ -353,6 +354,7 @@ const App = () => (
               <Route path="manufacturing/planning" element={<ManufacturingPlanning />} />
               <Route path="manufacturing/work-centers" element={<WorkCentersPage />} />
               <Route path="manufacturing/operations" element={<OperationsPage />} />
+              <Route path="manufacturing/machines" element={<MachinesPage />} />
               <Route path="manufacturing/bom" element={<Navigate to="/products/bom" replace />} />
 
               {/* Inventory — Damaged / Quarantine */}

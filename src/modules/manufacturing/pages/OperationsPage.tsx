@@ -1,31 +1,22 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Plus, Pencil, Archive } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import {
-  OperationalDataTable,
-  type Column,
-  type FilterDef,
-  type FilterValue,
+  OperationalDataTable, useRpcMutation,
+  type Column, type FilterDef, type FilterValue, type OperationalAction,
 } from "@/core/operational";
+import OperationDialog, { type OperationRow } from "../components/OperationDialog";
 
-type Row = {
-  id: string;
-  code: string | null;
-  name: string;
-  description: string | null;
-  default_work_center_id: string | null;
-  requires_machine: boolean | null;
-  requires_employee: boolean | null;
-  requires_quality_check: boolean | null;
-  active: boolean;
-  work_centers?: { name: string; code: string | null } | null;
-};
+type Row = OperationRow & { work_centers?: { name: string; code: string | null } | null };
 
 export default function OperationsPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, FilterValue>>({ active: "true", wc: null });
+  const [editing, setEditing] = useState<OperationRow | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: wcs = [] } = useQuery({
     queryKey: ["wc-min"],
@@ -49,12 +40,17 @@ export default function OperationsPage() {
     },
   });
 
+  const archive = useRpcMutation<{ _operation_id: string; _reason: string }, unknown>({
+    rpc: "manufacturing_operation_archive",
+    successMessage: "Operação arquivada",
+    invalidateKeys: [["manufacturing-operations"]],
+  });
+
   const filterDefs: FilterDef[] = useMemo(() => [
     { key: "active", label: "Estado", type: "select", options: [
-      { value: "true", label: "Ativos" }, { value: "false", label: "Inativos" },
-    ]},
+      { value: "true", label: "Ativas" }, { value: "false", label: "Inativas" }] },
     { key: "wc", label: "Centro de trabalho", type: "select",
-      options: (wcs as any[]).map((w) => ({ value: w.id, label: w.name })) },
+      options: (wcs as Array<{ id: string; name: string }>).map((w) => ({ value: w.id, label: w.name })) },
   ], [wcs]);
 
   const columns: Column<Row>[] = useMemo(() => [
@@ -69,15 +65,32 @@ export default function OperationsPage() {
         {!r.requires_machine && !r.requires_employee && !r.requires_quality_check && "—"}
       </div>
     )},
-    { key: "active", header: "Ativo", cell: (r) => <Badge variant={r.active ? "default" : "outline"}>{r.active ? "Ativo" : "Inativo"}</Badge> },
+    { key: "active", header: "Ativa", cell: (r) => <Badge variant={r.active ? "default" : "outline"}>{r.active ? "Sim" : "Não"}</Badge> },
   ], []);
+
+  const headerActions: OperationalAction[] = [
+    { key: "new", label: "Nova operação", icon: <Plus className="h-4 w-4" />, variant: "default",
+      onClick: () => { setEditing(null); setDialogOpen(true); } },
+  ];
+
+  const rowActions = (row: OperationRow): OperationalAction[] => [
+    { key: "edit", label: "Editar", icon: <Pencil className="h-4 w-4" />,
+      onClick: () => { setEditing(row); setDialogOpen(true); } },
+    { key: "archive", label: "Arquivar", icon: <Archive className="h-4 w-4" />, destructive: true,
+      disabled: !row.active, disabledReason: !row.active ? "Já arquivada" : undefined,
+      onClick: async () => {
+        const reason = window.prompt("Motivo do arquivamento:");
+        if (!reason || !reason.trim()) return;
+        await archive.mutateAsync({ _operation_id: row.id, _reason: reason.trim() });
+      } },
+  ];
 
   return (
     <>
       <PageHeader title="Operações" breadcrumb={[{ label: "Manufatura", to: "/manufacturing" }, { label: "Operações" }]} />
       <PageBody>
         <OperationalDataTable
-          columns={columns}
+          columns={columns as any}
           rows={rows}
           getRowId={(r) => r.id}
           isLoading={isLoading}
@@ -90,10 +103,13 @@ export default function OperationsPage() {
           onFiltersClear={() => setFilters({ active: "true", wc: null })}
           onRefresh={() => refetch()}
           lastUpdated={dataUpdatedAt ? new Date(dataUpdatedAt) : null}
+          headerActions={headerActions}
+          rowActions={rowActions as any}
           emptyTitle="Sem operações"
           emptyDescription="Configure operações para definir as etapas dos roteiros de fabrico."
         />
       </PageBody>
+      <OperationDialog open={dialogOpen} onOpenChange={setDialogOpen} initial={editing} onSaved={() => refetch()} />
     </>
   );
 }
