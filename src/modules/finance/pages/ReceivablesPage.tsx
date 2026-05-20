@@ -160,10 +160,10 @@ export default function ReceivablesPage() {
           />
         </div>
         <OperationalDataTable
-          loading={loading}
+          isLoading={loading}
           rows={filtered}
           getRowId={(r) => r.id}
-          empty="Sem parcelas em aberto"
+          emptyTitle="Sem parcelas em aberto"
           columns={[
             { key: "order", header: "Venda", cell: (r) => (
               <Link to={`/sales/orders/${r.order_id}`} className="font-mono text-xs text-primary hover:underline">{r.order_name}</Link>
