@@ -188,6 +188,7 @@ export default function AppShell() {
       </div>
 
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      <GlobalChatDock />
     </div>
   );
 }
