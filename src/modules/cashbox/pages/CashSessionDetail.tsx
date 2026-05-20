@@ -107,6 +107,23 @@ export default function CashSessionDetail() {
     load();
   };
 
+  const reversedIds = new Set(moves.filter((m) => m.reversal_of_id).map((m) => m.reversal_of_id));
+  const reverseMove = async () => {
+    if (!reverseTarget) return;
+    if (!reverseTarget.reason.trim()) return toast.error("Motivo obrigatório");
+    setReversing(true);
+    const { error } = await supabase.rpc("cash_movement_reverse", {
+      _movement_id: reverseTarget.id,
+      _reason: reverseTarget.reason.trim(),
+    });
+    setReversing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Movimento revertido");
+    setReverseTarget(null);
+    load();
+  };
+
+
   if (!sess) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isOpen = sess.state === "open";
 
