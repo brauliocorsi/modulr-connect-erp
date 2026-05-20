@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth/AuthProvider";
 import { useInstalledModules } from "@/core/modules/useInstalledModules";
 import { MODULES, getModuleByPath } from "@/core/modules/registry";
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Grid3x3, Search, ChevronDown, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import GlobalSidebar from "@/core/layout/GlobalSidebar";
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
@@ -36,13 +37,8 @@ export default function AppShell() {
   const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox", "service", "helpdesk"]);
   const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
 
-  const sectionedMenu = activeModule
-    ? activeModule.menu.reduce<Record<string, typeof activeModule.menu>>((acc, item) => {
-        const k = item.section ?? "Menu";
-        (acc[k] ??= []).push(item);
-        return acc;
-      }, {})
-    : {};
+
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -183,36 +179,8 @@ export default function AppShell() {
 
       {/* BODY */}
       <div className="flex-1 flex min-h-0">
-        {activeModule && (
-          <aside className="hidden md:flex w-60 flex-col border-r bg-sidebar text-sidebar-foreground">
-            <div className="p-3 border-b">
-              <div className="text-sm font-semibold">{activeModule.name}</div>
-              <div className="text-xs text-muted-foreground">{activeModule.description}</div>
-            </div>
-            <nav className="flex-1 overflow-auto p-2 space-y-4">
-              {Object.entries(sectionedMenu).map(([section, items]) => (
-                <div key={section}>
-                  <div className="o-section-title px-2 mb-1">{section}</div>
-                  {items.map((it) => (
-                    <NavLink
-                      key={it.to}
-                      to={it.to}
-                      end={it.to === activeModule.basePath}
-                      className={({ isActive }) =>
-                        cn(
-                          "block px-2 py-1.5 rounded text-sm hover:bg-sidebar-accent",
-                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        )
-                      }
-                    >
-                      {it.label}
-                    </NavLink>
-                  ))}
-                </div>
-              ))}
-            </nav>
-          </aside>
-        )}
+        <GlobalSidebar />
+
         <main className="flex-1 min-w-0 overflow-auto">
           <Outlet />
         </main>
