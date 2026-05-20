@@ -464,6 +464,8 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
 
   const isLocked = ["confirmed", "done", "cancelled"].includes(order.state);
   const [invDlg, setInvDlg] = useState(false);
+  const [smartRefresh, setSmartRefresh] = useState(0);
+  const bumpSmart = () => setSmartRefresh((n) => n + 1);
 
   // ---------- Operational action bar ----------
   const cancelDisabledReason =
