@@ -132,7 +132,11 @@ export default function CustomerTicketsList() {
 
   return (
     <>
-      <PageHeader title="Tickets de Helpdesk" breadcrumb={[{ label: "Helpdesk" }, { label: "Tickets" }]} />
+      <PageHeader
+        title="Tickets de Helpdesk"
+        breadcrumb={[{ label: "Helpdesk" }, { label: "Tickets" }]}
+        actions={<NewTicketDialog onCreated={() => refetch()} />}
+      />
       <PageBody>
         <OperationalDataTable<Ticket>
           columns={columns}
