@@ -17,10 +17,13 @@ import { RecordConversations } from "@/core/conversations/RecordConversations";
 import {
   EntityHeader,
   OperationalStatusBadge,
+  SummaryCards,
   EmptyState,
   LoadingState,
   type OperationalAction,
+  type SummaryCardItem,
 } from "@/core/operational";
+import { AlertTriangle, Boxes, ClipboardList, Hammer } from "lucide-react";
 import { useRpcMutation } from "@/core/operational/hooks/useRpcMutation";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
 
