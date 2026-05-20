@@ -1,13 +1,37 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { fmtMoney } from "@/lib/format";
-import { Receipt } from "lucide-react";
+import { Receipt, ExternalLink } from "lucide-react";
+import {
+  OperationalDataTable,
+  OperationalStatusBadge,
+  OperationalFiltersBar,
+  SummaryCards,
+  type FilterDef,
+  type FilterValue,
+} from "@/core/operational";
 import { RegisterPaymentDialog } from "@/modules/finance/components/RegisterPaymentDialog";
+
+type Row = {
+  id: string;
+  order_id: string;
+  label: string;
+  due_kind: string;
+  due_date: string | null;
+  due_days: number | null;
+  amount: number;
+  paid_amount: number;
+  state: string;
+  order_name: string;
+  partner_id: string | null;
+  partner_name: string;
+  _open: number;
+  _overdue: boolean;
+  _due_label: string;
+};
 
 const dueLabel = (s: any) => {
   if (s.due_kind === "fixed_date") return s.due_date ?? "—";
@@ -17,94 +41,165 @@ const dueLabel = (s: any) => {
   return "—";
 };
 
-const isOverdue = (s: any) => {
-  if (s.due_kind === "fixed_date" && s.due_date) return new Date(s.due_date) < new Date();
-  return false;
-};
+const isOverdue = (s: any) => s.due_kind === "fixed_date" && s.due_date && new Date(s.due_date) < new Date();
 
 export default function ReceivablesPage() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [pickedOrder, setPickedOrder] = useState<{ id: string; partner_id?: string | null; amount: number } | null>(null);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({});
+  const [picked, setPicked] = useState<{ id: string; partner_id?: string | null; amount: number } | null>(null);
 
   const load = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from("sale_payment_schedules")
-      .select("id,label,due_kind,due_date,due_days,amount,paid_amount,state,order_id, sale_orders(id,name,partner_id, partners(name))")
+      .select("id,label,due_kind,due_date,due_days,amount,paid_amount,state,order_id, sale_orders(id,name,partner_id, partners(id,name))")
       .neq("state", "paid")
       .order("created_at");
-    setRows(data ?? []);
+    const out: Row[] = (data ?? []).map((r: any) => {
+      const amount = Number(r.amount || 0);
+      const paid = Number(r.paid_amount || 0);
+      const open = +(amount - paid).toFixed(2);
+      const overdue = isOverdue(r);
+      return {
+        id: r.id,
+        order_id: r.order_id,
+        label: r.label,
+        due_kind: r.due_kind,
+        due_date: r.due_date,
+        due_days: r.due_days,
+        amount,
+        paid_amount: paid,
+        state: r.state ?? "unpaid",
+        order_name: r.sale_orders?.name ?? "—",
+        partner_id: r.sale_orders?.partner_id ?? null,
+        partner_name: r.sale_orders?.partners?.name ?? "—",
+        _open: open,
+        _overdue: overdue,
+        _due_label: dueLabel(r),
+      };
+    });
+    setRows(out);
+    setLoading(false);
   };
+
   useEffect(() => { load(); }, []);
 
-  const groups = useMemo(() => {
-    const all = rows.map((r) => ({ ...r, _open: Number(r.amount) - Number(r.paid_amount), _overdue: isOverdue(r) }));
-    return {
-      all,
-      overdue: all.filter((r) => r._overdue),
-      week: all.filter((r) => !r._overdue && r.due_kind === "fixed_date" && r.due_date && new Date(r.due_date) <= new Date(Date.now() + 7 * 86400000)),
-    };
+  const partnerOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.partner_id) map.set(r.partner_id, r.partner_name); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [rows]);
 
-  const Table = ({ data }: { data: any[] }) => (
-    <Card>
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40">
-          <tr>
-            <th className="text-left px-3 py-2">Venda</th>
-            <th className="text-left px-3 py-2">Cliente</th>
-            <th className="text-left px-3 py-2">Parcela</th>
-            <th className="text-left px-3 py-2">Vencimento</th>
-            <th className="text-right px-3 py-2">Valor</th>
-            <th className="text-right px-3 py-2">Em aberto</th>
-            <th className="w-10"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.length === 0 ? (
-            <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Nada por aqui</td></tr>
-          ) : data.map((s) => (
-            <tr key={s.id} className={`border-t ${s._overdue ? "bg-rose-50/50 dark:bg-rose-950/20" : ""}`}>
-              <td className="px-3 py-2"><Link to={`/sales/orders/${s.order_id}`} className="text-primary hover:underline">{s.sale_orders?.name}</Link></td>
-              <td className="px-3 py-2">{s.sale_orders?.partners?.name ?? "—"}</td>
-              <td className="px-3 py-2">{s.label}</td>
-              <td className="px-3 py-2">{dueLabel(s)}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.amount)}</td>
-              <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtMoney(s._open)}</td>
-              <td className="px-2">
-                <Button size="sm" variant="ghost" onClick={() => setPickedOrder({ id: s.order_id, partner_id: s.sale_orders?.partner_id, amount: s._open })}>
-                  <Receipt className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Card>
-  );
+  const filterDefs: FilterDef[] = useMemo(() => [
+    {
+      key: "state",
+      label: "Estado",
+      type: "select",
+      options: [
+        { value: "unpaid", label: "Por pagar" },
+        { value: "partial", label: "Parcial" },
+        { value: "paid", label: "Pago" },
+      ],
+    },
+    {
+      key: "overdue",
+      label: "Vencimento",
+      type: "select",
+      options: [
+        { value: "overdue", label: "Vencidos" },
+        { value: "week", label: "Próximos 7 dias" },
+        { value: "future", label: "Futuros" },
+      ],
+    },
+    { key: "partner", label: "Cliente", type: "select", options: partnerOptions, width: "w-56" },
+  ], [partnerOptions]);
+
+  const filtered = useMemo(() => {
+    const inWeek = (r: Row) => r.due_kind === "fixed_date" && r.due_date && new Date(r.due_date) <= new Date(Date.now() + 7 * 86400000);
+    return rows.filter((r) => {
+      if (filters.state && filters.state !== r.state) return false;
+      if (filters.partner && filters.partner !== r.partner_id) return false;
+      if (filters.overdue === "overdue" && !r._overdue) return false;
+      if (filters.overdue === "week" && (r._overdue || !inWeek(r))) return false;
+      if (filters.overdue === "future" && (r._overdue || inWeek(r))) return false;
+      return true;
+    });
+  }, [rows, filters]);
+
+  const summary = useMemo(() => {
+    const open = filtered.reduce((s, r) => s + r._open, 0);
+    const overdueRows = filtered.filter((r) => r._overdue);
+    const overdueAmt = overdueRows.reduce((s, r) => s + r._open, 0);
+    const partial = filtered.filter((r) => r.state === "partial");
+    return { open, overdueAmt, overdueCount: overdueRows.length, partialCount: partial.length, total: filtered.length };
+  }, [filtered]);
 
   return (
     <>
-      <PageHeader title="Contas a Receber" breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "A Receber" }]} />
+      <PageHeader
+        title="Contas a Receber"
+        breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "A Receber" }]}
+      />
       <PageBody>
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger value="all">Todas ({groups.all.length})</TabsTrigger>
-            <TabsTrigger value="week">Esta semana ({groups.week.length})</TabsTrigger>
-            <TabsTrigger value="overdue">Vencidas ({groups.overdue.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="all"><Table data={groups.all} /></TabsContent>
-          <TabsContent value="week"><Table data={groups.week} /></TabsContent>
-          <TabsContent value="overdue"><Table data={groups.overdue} /></TabsContent>
-        </Tabs>
+        <SummaryCards
+          className="mb-4"
+          items={[
+            { key: "total", label: "Parcelas em aberto", value: String(summary.total) },
+            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "primary" },
+            { key: "overdue", label: "Vencidos", value: fmtMoney(summary.overdueAmt), hint: `${summary.overdueCount} parcelas`, tone: summary.overdueCount ? "danger" : "muted" },
+            { key: "partial", label: "Parciais", value: String(summary.partialCount), tone: "warning" },
+          ]}
+        />
+        <div className="mb-3">
+          <OperationalFiltersBar
+            filters={filterDefs}
+            values={filters}
+            onChange={(k, v) => setFilters((f) => ({ ...f, [k]: v }))}
+            onClear={() => setFilters({})}
+          />
+        </div>
+        <OperationalDataTable
+          loading={loading}
+          rows={filtered}
+          getRowId={(r) => r.id}
+          empty="Sem parcelas em aberto"
+          columns={[
+            { key: "order", header: "Venda", cell: (r) => (
+              <Link to={`/sales/orders/${r.order_id}`} className="font-mono text-xs text-primary hover:underline">{r.order_name}</Link>
+            ) },
+            { key: "partner", header: "Cliente", cell: (r) => r.partner_name },
+            { key: "label", header: "Parcela", cell: (r) => r.label },
+            { key: "due", header: "Vencimento", cell: (r) => (
+              <span className={r._overdue ? "text-destructive font-medium" : ""}>{r._due_label}</span>
+            ) },
+            { key: "amount", header: "Valor", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount)}</span> },
+            { key: "paid", header: "Recebido", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.paid_amount)}</span> },
+            { key: "open", header: "Saldo", align: "right", cell: (r) => <span className="tabular-nums font-semibold">{fmtMoney(r._open)}</span> },
+            { key: "state", header: "Estado", cell: (r) => (
+              <OperationalStatusBadge domain="finance" status={r._overdue && r.state !== "paid" ? "overdue" : r.state} />
+            ) },
+            { key: "actions", header: "", align: "right", cell: (r) => (
+              <div className="flex gap-1 justify-end">
+                <Button size="sm" variant="ghost" title="Registar recebimento" onClick={() => setPicked({ id: r.order_id, partner_id: r.partner_id, amount: r._open })}>
+                  <Receipt className="h-4 w-4" />
+                </Button>
+                <Link to={`/sales/orders/${r.order_id}`}>
+                  <Button size="sm" variant="ghost" title="Abrir venda"><ExternalLink className="h-4 w-4" /></Button>
+                </Link>
+              </div>
+            ) },
+          ]}
+        />
       </PageBody>
-      {pickedOrder && (
+      {picked && (
         <RegisterPaymentDialog
-          open={!!pickedOrder}
-          onOpenChange={(v) => { if (!v) setPickedOrder(null); }}
-          orderId={pickedOrder.id}
-          partnerId={pickedOrder.partner_id}
-          defaultAmount={pickedOrder.amount}
-          onSaved={() => { setPickedOrder(null); load(); }}
+          open={!!picked}
+          onOpenChange={(v) => { if (!v) setPicked(null); }}
+          orderId={picked.id}
+          partnerId={picked.partner_id}
+          defaultAmount={picked.amount}
+          onSaved={() => { setPicked(null); load(); }}
         />
       )}
     </>
