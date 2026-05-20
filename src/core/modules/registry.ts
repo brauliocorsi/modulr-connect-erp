@@ -219,6 +219,7 @@ export const MODULES: ModuleDef[] = [
     description: "Assistência, helpdesk e portal cliente",
     menu: [
       { section: "Assistência", label: "Pedidos", to: "/service/requests" },
+      { section: "Assistência", label: "Reparações", to: "/service/repairs" },
       { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
     ],
   },
@@ -232,7 +233,9 @@ export const MODULES: ModuleDef[] = [
     description: "Tickets de clientes e atendimento",
     menu: [
       { section: "Helpdesk", label: "Tickets", to: "/helpdesk/tickets" },
+      { section: "Helpdesk", label: "Portal Cliente", to: "/helpdesk/portal-tokens" },
       { section: "Assistência", label: "Pedidos de assistência", to: "/service/requests" },
+      { section: "Assistência", label: "Reparações", to: "/service/repairs" },
     ],
   },
   {
