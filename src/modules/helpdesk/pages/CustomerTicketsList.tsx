@@ -14,6 +14,7 @@ import {
   type FilterValue,
 } from "@/core/operational";
 import { TicketCategoryBadge, TicketPriorityBadge, SERVICE_HINT_CATEGORIES } from "../components/TicketBadges";
+import { NewTicketDialog } from "../components/NewTicketDialog";
 
 type Ticket = {
   id: string;
@@ -131,7 +132,11 @@ export default function CustomerTicketsList() {
 
   return (
     <>
-      <PageHeader title="Tickets de Helpdesk" breadcrumb={[{ label: "Helpdesk" }, { label: "Tickets" }]} />
+      <PageHeader
+        title="Tickets de Helpdesk"
+        breadcrumb={[{ label: "Helpdesk" }, { label: "Tickets" }]}
+        actions={<NewTicketDialog onCreated={() => refetch()} />}
+      />
       <PageBody>
         <OperationalDataTable<Ticket>
           columns={columns}

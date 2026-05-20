@@ -12347,6 +12347,7 @@ export type Database = {
         Args: { _payload?: Json; _ticket_id: string }
         Returns: string
       }
+      helpdesk_ticket_create: { Args: { _payload: Json }; Returns: string }
       is_manufacturing_component: {
         Args: { _product_id: string }
         Returns: boolean
