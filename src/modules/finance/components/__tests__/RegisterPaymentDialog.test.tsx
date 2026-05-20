@@ -40,6 +40,7 @@ import { RegisterPaymentDialog } from "@/modules/finance/components/RegisterPaym
 
 beforeEach(() => {
   rpcMock.mockReset();
+  rpcMock.mockResolvedValue({ data: { status: "no_open_session", sessions: [] }, error: null });
   toastError.mockReset();
   toastSuccess.mockReset();
 });
