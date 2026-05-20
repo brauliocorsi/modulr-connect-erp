@@ -15,6 +15,8 @@ function setup(path: string) {
 }
 
 describe("GlobalSidebar", () => {
+  beforeEach(() => localStorage.clear());
+
   it("renders all main groups", () => {
     setup("/");
     for (const g of __SIDEBAR_GROUPS_FOR_TEST) {
