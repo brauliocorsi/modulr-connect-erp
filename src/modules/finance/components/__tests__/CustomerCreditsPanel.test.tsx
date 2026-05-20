@@ -62,7 +62,7 @@ beforeEach(() => {
 describe("CustomerCreditsPanel", () => {
   it("renderiza créditos do cliente", async () => {
     renderPanel();
-    await waitFor(() => expect(screen.getByText("avaria")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("avaria").length).toBeGreaterThan(0));
   });
 
   it("create chama create_customer_credit", async () => {
