@@ -232,33 +232,44 @@ export function VariantsTab({ productId }: { productId: string }) {
     return ids;
   };
 
+  const bulkUpsert = async (
+    items: { id: string; payload: Record<string, unknown> }[],
+  ) => {
+    const results = await Promise.all(
+      items.map(({ id, payload }) => rpcUpsert(id, payload).then((r) => ({ id, r }))),
+    );
+    const failed = results.filter((x) => x.r.error);
+    return { results, failed };
+  };
+
   const applyBulkPrice = async (mode: "set" | "add") => {
     const ids = requireSelection(); if (!ids) return;
     const value = Number(bulkPrice);
     if (Number.isNaN(value)) return toast.error("Valor inválido");
-    if (mode === "set") {
-      await supabase.from("product_variants").update({ price_extra: value }).in("id", ids);
-    } else {
-      await Promise.all(ids.map((id) => {
-        const v = variants.find((x) => x.id === id);
-        return supabase.from("product_variants").update({ price_extra: Number(v?.price_extra ?? 0) + value }).eq("id", id);
-      }));
-    }
-    toast.success(`${ids.length} variantes atualizadas`);
+    const items = ids.map((id) => {
+      const v = variants.find((x) => x.id === id);
+      const price_extra = mode === "set" ? value : Number(v?.price_extra ?? 0) + value;
+      return { id, payload: { price_extra } };
+    });
+    const { failed } = await bulkUpsert(items);
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes atualizadas`);
     setBulkPrice(""); load();
   };
   const applyBulkWeight = async () => {
     const ids = requireSelection(); if (!ids) return;
     const value = Number(bulkWeight);
     if (Number.isNaN(value)) return toast.error("Valor inválido");
-    await supabase.from("product_variants").update({ weight: value }).in("id", ids);
-    toast.success(`${ids.length} variantes atualizadas`);
+    const { failed } = await bulkUpsert(ids.map((id) => ({ id, payload: { weight: value } })));
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes atualizadas`);
     setBulkWeight(""); load();
   };
   const applyBulkActive = async (active: boolean) => {
     const ids = requireSelection(); if (!ids) return;
-    await supabase.from("product_variants").update({ active }).in("id", ids);
-    toast.success(`${ids.length} variantes ${active ? "ativadas" : "desativadas"}`);
+    const { failed } = await bulkUpsert(ids.map((id) => ({ id, payload: { active } })));
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes ${active ? "ativadas" : "desativadas"}`);
     load();
   };
   const applyBulkSku = async () => {
@@ -307,13 +318,13 @@ export function VariantsTab({ productId }: { productId: string }) {
       return;
     }
 
-    // 4. Apply
-    const results = await Promise.all(targets.map((t) =>
-      supabase.from("product_variants").update({ sku: t.sku }).eq("id", t.id).then((r) => ({ t, r }))
-    ));
-    const failed = results.filter((x) => x.r.error);
+    // 4. Apply via RPC
+    const { failed } = await bulkUpsert(targets.map((t) => ({ id: t.id, payload: { sku: t.sku } })));
     if (failed.length) {
-      const msgs = failed.map(({ t, r }) => `${t.label}: ${r.error?.message}`);
+      const msgs = failed.map(({ id, r }) => {
+        const label = targets.find((t) => t.id === id)?.label ?? id;
+        return `${label}: ${r.error?.message}`;
+      });
       setBulkErrors(msgs);
       toast.error(`${failed.length} erro(s) ao salvar`);
     } else {
@@ -329,14 +340,17 @@ export function VariantsTab({ productId }: { productId: string }) {
     const { error } = await supabase.storage.from("product-variants").upload(path, file, { upsert: true });
     if (error) return toast.error(error.message);
     const { data } = supabase.storage.from("product-variants").getPublicUrl(path);
-    await supabase.from("product_variants").update({ image_url: data.publicUrl }).eq("id", variant.id);
+    const { error: rpcErr } = await rpcUpsert(variant.id, { image_url: data.publicUrl });
+    if (rpcErr) return toast.error(rpcErr.message);
     toast.success("Foto enviada");
     load();
   };
   const removeImage = async (variant: Variant) => {
-    await supabase.from("product_variants").update({ image_url: null }).eq("id", variant.id);
+    const { error } = await rpcUpsert(variant.id, { image_url: null });
+    if (error) return toast.error(error.message);
     load();
   };
+
 
   return (
     <div className="space-y-4">
