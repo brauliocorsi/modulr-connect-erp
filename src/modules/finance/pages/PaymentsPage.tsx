@@ -207,21 +207,18 @@ export default function PaymentsPage() {
   useEffect(() => { load(); }, []);
 
   const reconcileOne = async (id: string) => {
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("cash_movements")
-      .update({ reconciled_at: new Date().toISOString(), reconciled_by: u.user?.id ?? null })
-      .eq("id", id);
+    const { error } = await supabase.rpc("cash_movement_reconcile", { _movement_id: id, _payload: {} });
     if (error) return toast.error(error.message);
     toast.success("Movimento conciliado");
     load();
   };
 
   const undoReconcile = async (id: string) => {
-    const { error } = await supabase
-      .from("cash_movements")
-      .update({ reconciled_at: null, reconciled_by: null })
-      .eq("id", id);
+    const reason = window.prompt("Motivo para reabrir esta conciliação:");
+    if (!reason || !reason.trim()) {
+      return toast.error("Motivo obrigatório");
+    }
+    const { error } = await supabase.rpc("cash_movement_unreconcile", { _movement_id: id, _reason: reason.trim() });
     if (error) return toast.error(error.message);
     toast.success("Conciliação removida");
     load();
@@ -230,14 +227,16 @@ export default function PaymentsPage() {
   const reconcileAllEligible = async () => {
     const ids = recon.filter((r) => r.eligible && !r.reconciled_at).map((r) => r.id);
     if (ids.length === 0) return toast.info("Nada elegível para conciliar");
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("cash_movements")
-      .update({ reconciled_at: new Date().toISOString(), reconciled_by: u.user?.id ?? null })
-      .in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success(`${ids.length} movimentos conciliados`);
-    load();
+    try {
+      for (const id of ids) {
+        const { error } = await supabase.rpc("cash_movement_reconcile", { _movement_id: id, _payload: {} });
+        if (error) throw new Error(error.message);
+      }
+      toast.success(`${ids.length} movimentos conciliados`);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao conciliar");
+    }
   };
 
   const filteredRecon = recon.filter((r) => {

@@ -11179,7 +11179,15 @@ export type Database = {
         }
         Returns: Json
       }
+      cash_movement_reconcile: {
+        Args: { _movement_id: string; _payload?: Json }
+        Returns: Json
+      }
       cash_movement_reverse: {
+        Args: { _movement_id: string; _reason: string }
+        Returns: Json
+      }
+      cash_movement_unreconcile: {
         Args: { _movement_id: string; _reason: string }
         Returns: Json
       }
@@ -12065,6 +12073,14 @@ export type Database = {
           _order_id: string
         }
         Returns: Json
+      }
+      sale_payment_schedule_delete: {
+        Args: { _reason?: string; _schedule_id: string }
+        Returns: Json
+      }
+      sale_payment_schedule_upsert: {
+        Args: { _payload: Json; _sale_order_id: string; _schedule_id: string }
+        Returns: string
       }
       scan_increment_move: {
         Args: { _delta?: number; _move: string }

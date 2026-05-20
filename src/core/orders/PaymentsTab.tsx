@@ -104,12 +104,26 @@ export function PaymentsTab({
   };
 
   const applyPreset = async (preset: string) => {
-    const rows = recalc(presetRows(preset).map((r) => ({ ...r, order_id: orderId })));
-    // remove qualquer plano antigo sem pagamentos
-    await supabase.from("sale_payment_schedules").delete().eq("order_id", orderId);
-    await supabase.from("sale_payment_schedules").insert(rows.map(({ state, ...r }) => r));
-    toast.success("Plano criado");
-    load();
+    const rows = recalc(presetRows(preset));
+    try {
+      // remove qualquer plano antigo sem pagamentos
+      for (const s of schedules) {
+        const { error } = await supabase.rpc("sale_payment_schedule_delete", { _schedule_id: s.id, _reason: "Substituído por modelo" });
+        if (error) throw new Error(error.message);
+      }
+      for (const r of rows) {
+        const { error } = await supabase.rpc("sale_payment_schedule_upsert", {
+          _schedule_id: null,
+          _sale_order_id: orderId,
+          _payload: { sequence: r.sequence, label: r.label, due_kind: r.due_kind, due_days: r.due_days, due_date: r.due_date, percent: r.percent, amount: r.amount },
+        });
+        if (error) throw new Error(error.message);
+      }
+      toast.success("Plano criado");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao criar plano");
+    }
   };
 
   const startEdit = () => {
@@ -136,22 +150,32 @@ export function PaymentsTab({
     if (draft.length === 0) return toast.error("Adicione ao menos uma parcela");
     const adjusted = recalc(draft);
     const existingIds = adjusted.filter((s) => s.id).map((s) => s.id);
-    const { data: current } = await supabase.from("sale_payment_schedules").select("id").eq("order_id", orderId);
-    const toDelete = (current ?? []).filter((c) => !existingIds.includes(c.id)).map((c) => c.id);
-    if (toDelete.length) await supabase.from("sale_payment_schedules").delete().in("id", toDelete);
-    for (const s of adjusted) {
-      const payload: any = {
-        order_id: orderId, sequence: s.sequence, label: s.label, due_kind: s.due_kind,
-        due_date: s.due_kind === "fixed_date" ? s.due_date : null,
-        due_days: s.due_kind === "days_after_confirm" ? s.due_days : null,
-        percent: s.percent, amount: s.amount,
-      };
-      if (s.id) await supabase.from("sale_payment_schedules").update(payload).eq("id", s.id);
-      else await supabase.from("sale_payment_schedules").insert(payload);
+    const toDelete = schedules.filter((c) => !existingIds.includes(c.id)).map((c) => c.id);
+    try {
+      for (const id of toDelete) {
+        const { error } = await supabase.rpc("sale_payment_schedule_delete", { _schedule_id: id, _reason: "Removida na edição do plano" });
+        if (error) throw new Error(error.message);
+      }
+      for (const s of adjusted) {
+        const payload = {
+          sequence: s.sequence, label: s.label, due_kind: s.due_kind,
+          due_date: s.due_kind === "fixed_date" ? s.due_date : null,
+          due_days: s.due_kind === "days_after_confirm" ? s.due_days : null,
+          percent: s.percent, amount: s.amount,
+        };
+        const { error } = await supabase.rpc("sale_payment_schedule_upsert", {
+          _schedule_id: s.id ?? null,
+          _sale_order_id: orderId,
+          _payload: payload,
+        });
+        if (error) throw new Error(error.message);
+      }
+      toast.success("Plano salvo");
+      setEditing(false);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar plano");
     }
-    toast.success("Plano salvo");
-    setEditing(false);
-    load();
   };
 
   const cancelPayment = async (id: string) => {
@@ -170,12 +194,14 @@ export function PaymentsTab({
 
   const openReceive = async (sched?: any) => {
     if (!schedules.length && !sched) {
-      const { data: created } = await supabase.from("sale_payment_schedules").insert({
-        order_id: orderId, sequence: 10, label: "Total a receber",
-        due_kind: "on_delivery", percent: 100, amount: total,
-      }).select().single();
+      const { data: createdId, error } = await supabase.rpc("sale_payment_schedule_upsert", {
+        _schedule_id: null,
+        _sale_order_id: orderId,
+        _payload: { sequence: 10, label: "Total a receber", due_kind: "on_delivery", percent: 100, amount: total },
+      });
+      if (error) { toast.error(error.message); return; }
       await load();
-      setPicked({ amount: total, scheduleId: created?.id ?? null });
+      setPicked({ amount: total, scheduleId: (createdId as string) ?? null });
       return;
     }
     const s = sched ?? schedules.find((x) => x.state !== "paid") ?? schedules[0];
