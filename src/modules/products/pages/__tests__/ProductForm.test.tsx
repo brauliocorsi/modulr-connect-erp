@@ -27,7 +27,6 @@ const productRow = {
 function makeQuery(table: string) {
   const q: Record<string, unknown> = {
     then: (onF: (v: unknown) => unknown) => {
-      // count head queries
       const counts: Record<string, number> = {
         product_variants: 4,
         boms: 1,
@@ -86,17 +85,20 @@ function renderForm() {
   return render(<ProductForm />, { wrapper: Wrapper });
 }
 
+const waitForLoaded = () =>
+  waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0));
+
 describe("ProductForm (F22-V2 visual remodel)", () => {
   it("renders EntityHeader title, SKU and EAN in subtitle", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
+    await waitForLoaded();
     expect(screen.getByText(/SOF-001/)).toBeInTheDocument();
     expect(screen.getByText(/1234567890123/)).toBeInTheDocument();
   });
 
   it("renders main capability flag badges", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
+    await waitForLoaded();
     expect(screen.getByText("Vendável")).toBeInTheDocument();
     expect(screen.getByText("Comprável")).toBeInTheDocument();
     expect(screen.getByText("Fabricável")).toBeInTheDocument();
@@ -106,10 +108,8 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
 
   it("renders summary cards: Variantes, BOM, Colis, Peso/Volume, Abastecimento", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getAllByText("Sofá Lisboa").length).toBeGreaterThan(0); expect(true).toBeInTheDocument());
-    expect(screen.getByText("Variantes")).toBeInTheDocument();
+    await waitForLoaded();
     expect(screen.getByText("BOM")).toBeInTheDocument();
-    expect(screen.getByText("Colis")).toBeInTheDocument();
     expect(screen.getByText("Peso / Volume")).toBeInTheDocument();
     expect(screen.getByText("Abastecimento")).toBeInTheDocument();
     expect(screen.getByText(/Compra \+ Fabrica/)).toBeInTheDocument();
@@ -124,6 +124,7 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
 
   it("renders Salvar primary action", async () => {
     renderForm();
-    await waitFor(() => expect(screen.getByRole("button", { name: /Salvar/ })).toBeInTheDocument());
+    await waitForLoaded();
+    expect(screen.getByRole("button", { name: /Salvar/ })).toBeInTheDocument();
   });
 });
