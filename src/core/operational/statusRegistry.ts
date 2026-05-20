@@ -10,7 +10,9 @@ export type StatusDomain =
   | "finance"
   | "package"
   | "purchase"
-  | "purchase_need";
+  | "purchase_need"
+  | "delivery_route"
+  | "delivery_order";
 
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
