@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { TagPicker } from "../components/TagPicker";
 import { SuppliersTab } from "./tabs/SuppliersTab";
 import { VariantsTab } from "./tabs/VariantsTab";
@@ -28,6 +27,7 @@ import { OperationalConfigTab } from "./tabs/OperationalConfigTab";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
 import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
+import { EntityHeader, SummaryCards, type SummaryCardItem } from "@/core/operational";
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -89,31 +89,134 @@ export default function ProductForm() {
     nav("/products");
   };
 
+  // Lightweight counts for summary strip + tab badges
+  const counts = useQuery({
+    queryKey: ["product_counts", id],
+    enabled: !isNew && !!id,
+    queryFn: async () => {
+      const [variants, boms, packages] = await Promise.all([
+        supabase.from("product_variants").select("id", { count: "exact", head: true }).eq("product_id", id!),
+        supabase.from("boms").select("id", { count: "exact", head: true }).eq("product_id", id!),
+        supabase.from("product_packages").select("id", { count: "exact", head: true }).eq("product_id", id!),
+      ]);
+      return {
+        variants: variants.count ?? 0,
+        boms: boms.count ?? 0,
+        packages: packages.count ?? 0,
+      };
+    },
+  });
+
+  const flagBadge = (label: string, on: boolean | undefined) => (
+    <Badge variant={on ? "default" : "outline"} className={on ? "" : "opacity-60"}>{label}</Badge>
+  );
+
+  const supplyKind =
+    form.can_be_manufactured && form.can_be_purchased ? "Compra + Fabrica" :
+    form.can_be_manufactured ? "Fabricado" :
+    form.can_be_purchased ? "Comprado" : "—";
+
+  const summary: SummaryCardItem[] = [
+    {
+      key: "variants",
+      label: "Variantes",
+      value: isNew ? "—" : (counts.data?.variants ?? "—"),
+      tone: (counts.data?.variants ?? 0) > 0 ? "primary" : "muted",
+    },
+    {
+      key: "bom",
+      label: "BOM",
+      value: isNew ? "—" : (counts.data?.boms ?? "—"),
+      hint: form.requires_bom ? "Requer BOM" : undefined,
+      tone: form.can_be_manufactured ? ((counts.data?.boms ?? 0) > 0 ? "success" : "warning") : "muted",
+    },
+    {
+      key: "packages",
+      label: "Colis",
+      value: isNew ? "—" : (counts.data?.packages ?? "—"),
+      hint: form.package_tracking_enabled ? "Rastreio ON" : "Rastreio OFF",
+      tone: form.package_tracking_enabled ? "primary" : "muted",
+    },
+    {
+      key: "physical",
+      label: "Peso / Volume",
+      value: `${Number(form.weight ?? 0).toFixed(2)} kg`,
+      hint: `${Number(form.volume ?? 0).toFixed(3)} m³`,
+    },
+    {
+      key: "supply",
+      label: "Abastecimento",
+      value: supplyKind,
+      hint: `Tipo: ${form.type ?? "—"}`,
+      tone: "default",
+    },
+  ];
+
   return (
     <>
-      <FormHeader
+      <EntityHeader
         title={form.name || "Novo produto"}
-        breadcrumb={[{ label: "Produtos", to: "/products" }, { label: form.name || "Novo" }]}
-        backTo="/products"
-        state={form.active === false ? { label: "Arquivado", tone: "destructive" } : undefined}
-        actions={
-          <div className="flex gap-2">
-            {!isNew && (
-              <Button size="sm" variant="outline" onClick={async () => {
-                const { data } = await supabase.from("product_packages").select("id").eq("product_id", id!).order("sequence");
-                const ids = (data ?? []).map((p: any) => p.id);
-                if (!ids.length) { toast.error("Sem colis definidos"); return; }
-                await printColisLabels(ids);
-              }}>
-                <Printer className="h-4 w-4 mr-1" /> Etiquetas colis
-              </Button>
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2">
+            {form.internal_ref && <span className="font-mono text-xs">SKU: {form.internal_ref}</span>}
+            {form.barcode && <span className="font-mono text-xs">EAN: {form.barcode}</span>}
+            {form.category_id && cats?.find((c: any) => c.id === form.category_id) && (
+              <span>· {cats.find((c: any) => c.id === form.category_id)?.name}</span>
             )}
-            <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>
-          </div>
+          </span>
         }
-        onDelete={isNew ? undefined : remove}
+        breadcrumb={[{ label: "Produtos", to: "/products" }, { label: form.name || "Novo" }]}
+        statusBadges={
+          <span className="flex flex-wrap items-center gap-1.5">
+            {form.active === false
+              ? <Badge variant="destructive">Arquivado</Badge>
+              : <Badge variant="secondary">Ativo</Badge>}
+            {flagBadge("Vendável", form.can_be_sold)}
+            {flagBadge("Comprável", form.can_be_purchased)}
+            {flagBadge("Fabricável", form.can_be_manufactured)}
+            {form.can_be_manufactured && flagBadge("Requer BOM", form.requires_bom)}
+            {flagBadge("Rastreio colis", form.package_tracking_enabled)}
+          </span>
+        }
+        onRefresh={isNew ? undefined : () => {
+          counts.refetch();
+          supabase.from("products").select("*").eq("id", id!).maybeSingle().then(({ data }) => data && setForm(data));
+        }}
+        isFetching={counts.isFetching || save.isPending}
+        lastUpdated={form.updated_at ?? null}
+        primaryActions={[
+          {
+            key: "save",
+            label: save.isPending ? "Salvando…" : "Salvar",
+            onClick: () => save.mutate(),
+            variant: "default",
+            loading: save.isPending,
+          },
+        ]}
+        secondaryActions={[
+          ...(!isNew ? [{
+            key: "print-colis",
+            label: "Etiquetas colis",
+            icon: <Printer className="h-4 w-4" />,
+            onClick: async () => {
+              const { data } = await supabase.from("product_packages").select("id").eq("product_id", id!).order("sequence");
+              const ids = (data ?? []).map((p: any) => p.id);
+              if (!ids.length) { toast.error("Sem colis definidos"); return; }
+              await printColisLabels(ids);
+            },
+          }] : []),
+          ...(!isNew ? [{
+            key: "delete",
+            label: "Excluir",
+            onClick: async () => { await remove(); },
+            destructive: true,
+            confirm: { title: "Excluir produto", description: "Esta ação não pode ser desfeita.", confirmLabel: "Excluir" },
+          }] : []),
+        ]}
       />
+
       <PageBody>
+        <SummaryCards items={summary} className="mb-4" />
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             <Card className="p-6">
@@ -174,14 +277,21 @@ export default function ProductForm() {
                 <TabsTrigger value="sales">Vendas</TabsTrigger>
                 <TabsTrigger value="purchase">Compras</TabsTrigger>
                 <TabsTrigger value="inventory">Inventário</TabsTrigger>
-                <TabsTrigger value="variants" disabled={isNew}>Variantes</TabsTrigger>
-                <TabsTrigger value="bom" disabled={isNew}>BOM/Kit</TabsTrigger>
+                <TabsTrigger value="variants" disabled={isNew}>
+                  Variantes{counts.data?.variants ? ` (${counts.data.variants})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="bom" disabled={isNew}>
+                  BOM/Kit{counts.data?.boms ? ` (${counts.data.boms})` : ""}
+                </TabsTrigger>
                 <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
                 <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
-                <TabsTrigger value="packages" disabled={isNew}>Colis</TabsTrigger>
+                <TabsTrigger value="packages" disabled={isNew}>
+                  Colis{counts.data?.packages ? ` (${counts.data.packages})` : ""}
+                </TabsTrigger>
                 <TabsTrigger value="ops" disabled={isNew}>Config. Operacional</TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="sales" className="pt-4">
                 <Card className="p-6 space-y-4">
