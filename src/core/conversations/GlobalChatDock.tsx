@@ -156,6 +156,34 @@ export default function GlobalChatDock() {
     return () => window.clearInterval(id);
   }, [user, hidden, fetchThreads, fetchMessages, activeThread, dockState]);
 
+  // Realtime: refresh threads on any new message; refresh active thread messages if it matches
+  useEffect(() => {
+    if (!user || hidden) return;
+    const channel = supabase
+      .channel(`global-chat-${user.id}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "INSERT", schema: "public", table: "conversation_messages" },
+        (payload: any) => {
+          const tid = payload?.new?.thread_id;
+          fetchThreads();
+          if (tid && tid === activeThread && dockState === "open") {
+            fetchMessages(activeThread);
+            markRead(activeThread);
+          }
+        },
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "UPDATE", schema: "public", table: "conversation_participants", filter: `user_id=eq.${user.id}` },
+        () => { fetchThreads(); },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, hidden, activeThread, dockState, fetchThreads, fetchMessages, markRead]);
+
   // Load messages + mark read when thread opens
   useEffect(() => {
     if (!activeThread || dockState !== "open") return;
