@@ -1558,6 +1558,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -1763,6 +1770,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -1879,6 +1893,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -1953,6 +1974,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -2178,6 +2206,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -2765,6 +2800,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -4093,6 +4135,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -5092,6 +5141,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -6316,6 +6372,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -6456,6 +6519,13 @@ export type Database = {
             columns: ["source_sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
+            columns: ["source_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -6517,6 +6587,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -7010,6 +7087,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -7231,6 +7315,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -7341,6 +7432,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -7550,6 +7648,13 @@ export type Database = {
             columns: ["parent_sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
+            columns: ["parent_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -7585,6 +7690,13 @@ export type Database = {
             columns: ["root_sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_root_sale_order_id_fkey"
+            columns: ["root_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -7687,6 +7799,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_payment_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -7758,6 +7877,13 @@ export type Database = {
             columns: ["deferred_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
+            columns: ["deferred_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["sale_order_id"]
           },
           {
@@ -7779,6 +7905,13 @@ export type Database = {
             columns: ["parent_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -8268,6 +8401,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -9288,6 +9428,13 @@ export type Database = {
             columns: ["sale_order_id"]
             isOneToOne: false
             referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
             referencedColumns: ["id"]
           },
           {
@@ -10855,6 +11002,7 @@ export type Database = {
           delivery_mode: string | null
           delivery_zone_label: string | null
           fulfillment_status: string | null
+          id: string | null
           include_assembly: boolean | null
           include_delivery: boolean | null
           invoice_status: string | null
