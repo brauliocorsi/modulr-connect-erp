@@ -53,6 +53,7 @@ import CashRegistersList from "@/modules/cashbox/pages/CashRegistersList";
 import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
 import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
+import RecurringExpensesPage from "@/modules/finance/pages/RecurringExpensesPage";
 import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
@@ -275,6 +276,7 @@ const App = () => (
               <Route path="finance/payables/new" element={<BillForm />} />
               <Route path="finance/payables/:id" element={<BillForm />} />
               <Route path="finance/handovers" element={<DriverHandoversPage />} />
+              <Route path="finance/recurring" element={<RecurringExpensesPage />} />
 
               {/* Assistência */}
               <Route path="service" element={<Navigate to="/service/requests" replace />} />
