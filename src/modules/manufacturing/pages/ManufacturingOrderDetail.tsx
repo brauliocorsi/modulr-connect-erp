@@ -23,7 +23,7 @@ import {
   type OperationalAction,
   type SummaryCardItem,
 } from "@/core/operational";
-import { AlertTriangle, Boxes, ClipboardList, Hammer } from "lucide-react";
+import { AlertTriangle, Boxes, Hammer } from "lucide-react";
 import { useRpcMutation } from "@/core/operational/hooks/useRpcMutation";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
 
