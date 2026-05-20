@@ -358,7 +358,7 @@ export const UsersSettings = () => {
               key: "active",
               header: "Estado",
               cell: (r: any) => (
-                <OperationalStatusBadge label={r.active ? "Ativo" : "Inativo"} tone={r.active ? "success" : "muted"} />
+                <Badge variant={r.active ? "default" : "secondary"}>{r.active ? "Ativo" : "Inativo"}</Badge>
               ),
             },
             {
