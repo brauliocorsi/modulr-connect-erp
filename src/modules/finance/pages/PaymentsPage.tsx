@@ -4,266 +4,205 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Banknote, Link2, Plus, RefreshCw, XCircle } from "lucide-react";
 
-const isCashName = (n?: string) => {
-  const s = (n ?? "").toLowerCase();
-  return ["dinheiro", "cash", "numerário", "numerario"].some((c) => s.includes(c));
-};
-
-type ReconRow = {
-  id: string;
-  session_id: string;
-  session_name: string;
-  register_name: string;
-  created_at: string;
-  amount: number;
-  method: string;
-  reference: string | null;
-  partner: string | null;
-  reconciled_at: string | null;
-  eligible: boolean;
-  block_reason?: string;
-  kind: string;
-  is_withdrawal: boolean;
-};
-
-type SessionSummary = {
-  session_id: string;
-  session_name: string;
-  register_name: string;
-  cashSales: number;
-  sangria: number;
-  eligibleCash: number;
-  diff: number;
-};
-
+/**
+ * F24-B — PaymentsPage refatorada com três áreas estritamente separadas:
+ *   1. Caixa físico             → cash sessions + cash movements cash-only
+ *   2. Pagamentos pendentes     → customer_payments non-cash a confirmar/rejeitar
+ *   3. Conciliação bancária     → bank_reconciliation_lines + match RPC
+ *
+ * Toda a lógica FIFO/sangria que liberava pagamentos bancários foi REMOVIDA.
+ * Não há writes diretos; só leituras e RPCs.
+ */
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<any[]>([]);
-  const [pending, setPending] = useState<any[]>([]);
-  const [recon, setRecon] = useState<ReconRow[]>([]);
-  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
-  const [reconFilter, setReconFilter] = useState<"pending" | "reconciled" | "all">("pending");
+  const [cashSessions, setCashSessions] = useState<any[]>([]);
+  const [cashMovements, setCashMovements] = useState<any[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
+  const [reconLines, setReconLines] = useState<any[]>([]);
+  const [postedNonCash, setPostedNonCash] = useState<any[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("customer_payments")
-      .select("id,name,payment_date,amount,state,reference,partner_id,order_id, payment_methods(name), account_journals(name), partners(name), sale_orders(name)")
-      .order("payment_date", { ascending: false })
-      .limit(500);
-    setPayments(data ?? []);
-
-    const { data: sched } = await supabase
-      .from("sale_payment_schedules")
-      .select("id,label,due_kind,due_date,due_days,amount,paid_amount,state,order_id, sale_orders(id,name,partner_id, partners(name))")
-      .neq("state", "paid")
-      .order("created_at");
-    setPending(sched ?? []);
-
-    // Cash movements grouped by session for reconciliation
-    const { data: moves, error: movesErr } = await supabase
-      .from("cash_movements")
-      .select("id, session_id, kind, amount, reference, created_at, reconciled_at, partner_id, payment_id")
-      .in("kind", ["sale", "sangria", "withdrawal", "deposit", "cash_in"])
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    if (movesErr) console.error("cash_movements error", movesErr);
-
-    const list = (moves ?? []) as any[];
-
-    // Hydrate related data without relying on FK embeds
-    const sessionIds = Array.from(new Set(list.map((m) => m.session_id).filter(Boolean)));
-    const partnerIds = Array.from(new Set(list.map((m) => m.partner_id).filter(Boolean)));
-    const paymentIds = Array.from(new Set(list.map((m) => m.payment_id).filter(Boolean)));
-
-    const [sessRes, partRes, payRes] = await Promise.all([
-      sessionIds.length
-        ? supabase.from("cash_sessions").select("id, name, register_id").in("id", sessionIds)
-        : Promise.resolve({ data: [] as any[] }),
-      partnerIds.length
-        ? supabase.from("partners").select("id, name").in("id", partnerIds)
-        : Promise.resolve({ data: [] as any[] }),
-      paymentIds.length
-        ? supabase.from("customer_payments").select("id, method_id").in("id", paymentIds)
-        : Promise.resolve({ data: [] as any[] }),
+    const [sess, mov, pending, lines, posted] = await Promise.all([
+      supabase
+        .from("cash_sessions")
+        .select("id, name, state, opened_at, closed_at, opening_balance, closing_balance_counted, difference, cash_registers(name)")
+        .order("opened_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("cash_movements")
+        .select("id, session_id, kind, amount, reference, created_at, migration_note, payment_id, cash_sessions(name), customer_payments(method_id, payment_methods(code, name, feeds_cash_session))")
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase
+        .from("customer_payments")
+        .select("id, name, payment_date, amount, state, reference, partner_id, order_id, payment_methods(code, name, feeds_cash_session, journal_type, requires_reference), partners(name), sale_orders(name)")
+        .in("state", ["pending", "pending_delivery"])
+        .order("payment_date", { ascending: false })
+        .limit(200),
+      supabase
+        .from("bank_reconciliation_lines")
+        .select("id, batch_id, payment_id, amount, reference, occurred_at, status, direction, notes, customer_payments(name, partners(name))")
+        .order("occurred_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("customer_payments")
+        .select("id, name, payment_date, amount, reference, partner_id, reconciliation_status, reconciled_at, payment_methods(code, name, requires_reconciliation), partners(name)")
+        .eq("state", "posted")
+        .is("reconciled_at", null)
+        .order("payment_date", { ascending: false })
+        .limit(200),
     ]);
-    const sessionsMap = new Map<string, any>((sessRes.data ?? []).map((s: any) => [s.id, s]));
-    const partnersMap = new Map<string, any>((partRes.data ?? []).map((p: any) => [p.id, p]));
-    const paymentsMap = new Map<string, any>((payRes.data ?? []).map((p: any) => [p.id, p]));
-
-    const registerIds = Array.from(new Set(Array.from(sessionsMap.values()).map((s: any) => s.register_id).filter(Boolean)));
-    const methodIds = Array.from(new Set(Array.from(paymentsMap.values()).map((p: any) => p.method_id).filter(Boolean)));
-    const [regRes, methRes] = await Promise.all([
-      registerIds.length
-        ? supabase.from("cash_registers").select("id, name").in("id", registerIds)
-        : Promise.resolve({ data: [] as any[] }),
-      methodIds.length
-        ? supabase.from("payment_methods").select("id, name").in("id", methodIds)
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-    const registersMap = new Map<string, any>((regRes.data ?? []).map((r: any) => [r.id, r]));
-    const methodsMap = new Map<string, any>((methRes.data ?? []).map((m: any) => [m.id, m]));
-
-    // Attach helpers onto each move
-    for (const m of list) {
-      const sess = sessionsMap.get(m.session_id);
-      const reg = sess ? registersMap.get(sess.register_id) : null;
-      const pay = m.payment_id ? paymentsMap.get(m.payment_id) : null;
-      const method = pay ? methodsMap.get(pay.method_id) : null;
-      m.__session = sess;
-      m.__register = reg;
-      m.__method = method;
-      m.__partner = m.partner_id ? partnersMap.get(m.partner_id) : null;
-    }
-    // Compute eligibility: non-cash payments are always eligible.
-    // Cash sale/cash_in entries become eligible up to the absolute sum of sangrias/withdrawals in the same session.
-    const bySession = new Map<string, any[]>();
-    for (const m of list) {
-      const arr = bySession.get(m.session_id) ?? [];
-      arr.push(m);
-      bySession.set(m.session_id, arr);
-    }
-
-    const out: ReconRow[] = [];
-    const summaries: SessionSummary[] = [];
-    for (const [sid, arr] of bySession) {
-      // Cash withdrawals available pool (positive number)
-      const sangriaPool = arr
-        .filter((m) => ["sangria", "withdrawal"].includes(m.kind))
-        .reduce((s, m) => s + Math.abs(Number(m.amount || 0)), 0);
-
-      // Sort cash sale entries by created_at to allocate sangria pool FIFO
-      const cashEntries = arr
-        .filter((m) => isCashName(m.__method?.name) && Number(m.amount) > 0 && !["sangria","withdrawal"].includes(m.kind))
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-      const cashSalesTotal = cashEntries.reduce((s, m) => s + Number(m.amount || 0), 0);
-
-      let remainingPool = sangriaPool;
-      const cashEligibleIds = new Set<string>();
-      let eligibleCashTotal = 0;
-      for (const c of cashEntries) {
-        const amt = Number(c.amount || 0);
-        if (remainingPool >= amt - 0.01) {
-          cashEligibleIds.add(c.id);
-          remainingPool -= amt;
-          eligibleCashTotal += amt;
-        }
-      }
-
-      const firstSess = arr.find((m) => m.__session) ?? arr[0];
-      summaries.push({
-        session_id: sid,
-        session_name: firstSess?.__session?.name ?? "—",
-        register_name: firstSess?.__register?.name ?? "—",
-        cashSales: cashSalesTotal,
-        sangria: sangriaPool,
-        eligibleCash: eligibleCashTotal,
-        diff: cashSalesTotal - sangriaPool,
-      });
-
-      for (const m of arr) {
-        const isWithdrawal = ["sangria", "withdrawal"].includes(m.kind);
-        const methodName = m.__method?.name
-          ?? (isWithdrawal ? "Sangria/Retirada" : "—");
-        const isCash = isCashName(methodName) || isWithdrawal;
-
-        let eligible = true;
-        let block_reason: string | undefined;
-        if (isWithdrawal) {
-          // Sangrias are themselves financial movements that go to reconciliation (they unlock cash)
-          eligible = true;
-        } else if (isCash) {
-          eligible = cashEligibleIds.has(m.id);
-          if (!eligible) block_reason = "Aguarda sangria de caixa";
-        }
-
-        out.push({
-          id: m.id,
-          session_id: sid,
-          session_name: m.__session?.name ?? "—",
-          register_name: m.__register?.name ?? "—",
-          created_at: m.created_at,
-          amount: Number(m.amount || 0),
-          method: methodName,
-          reference: m.reference,
-          partner: m.__partner?.name ?? null,
-          reconciled_at: m.reconciled_at,
-          eligible,
-          block_reason,
-          kind: m.kind,
-          is_withdrawal: isWithdrawal,
-        });
-      }
-    }
-    out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    setRecon(out);
-    setSessionSummaries(summaries.sort((a, b) => a.session_name.localeCompare(b.session_name)));
+    setCashSessions(sess.data ?? []);
+    setCashMovements(mov.data ?? []);
+    setPendingPayments(pending.data ?? []);
+    setReconLines(lines.data ?? []);
+    setPostedNonCash((posted.data ?? []).filter((p: any) => p.payment_methods?.requires_reconciliation));
   };
-
   useEffect(() => { load(); }, []);
 
-  const reconcileOne = async (id: string) => {
-    const { error } = await supabase.rpc("cash_movement_reconcile", { _movement_id: id, _payload: {} });
+  // ── Pagamentos pendentes ────────────────────────────────────────────
+  const confirmPending = async (id: string) => {
+    const { error } = await supabase.rpc("confirm_pending_payment", { _payment: id });
     if (error) return toast.error(error.message);
-    toast.success("Movimento conciliado");
+    toast.success("Pagamento confirmado");
+    load();
+  };
+  const rejectPending = async (id: string) => {
+    const reason = window.prompt("Motivo para rejeitar este pagamento:");
+    if (!reason || !reason.trim()) return toast.error("Motivo obrigatório");
+    const { error } = await supabase.rpc("cancel_customer_payment", { _payment_id: id, _reason: reason.trim() });
+    if (error) return toast.error(error.message);
+    toast.success("Pagamento rejeitado");
     load();
   };
 
-  const undoReconcile = async (id: string) => {
-    const reason = window.prompt("Motivo para reabrir esta conciliação:");
-    if (!reason || !reason.trim()) {
-      return toast.error("Motivo obrigatório");
-    }
-    const { error } = await supabase.rpc("cash_movement_unreconcile", { _movement_id: id, _reason: reason.trim() });
+  // ── Conciliação bancária ───────────────────────────────────────────
+  const unmatchLine = async (id: string) => {
+    const reason = window.prompt("Motivo para desfazer esta conciliação:");
+    if (!reason || !reason.trim()) return toast.error("Motivo obrigatório");
+    const { error } = await supabase.rpc("bank_reconciliation_unmatch", { _line_id: id, _reason: reason.trim() });
     if (error) return toast.error(error.message);
-    toast.success("Conciliação removida");
+    toast.success("Conciliação desfeita");
     load();
   };
 
-  const reconcileAllEligible = async () => {
-    const ids = recon.filter((r) => r.eligible && !r.reconciled_at).map((r) => r.id);
-    if (ids.length === 0) return toast.info("Nada elegível para conciliar");
-    try {
-      for (const id of ids) {
-        const { error } = await supabase.rpc("cash_movement_reconcile", { _movement_id: id, _payload: {} });
-        if (error) throw new Error(error.message);
-      }
-      toast.success(`${ids.length} movimentos conciliados`);
-      load();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao conciliar");
-    }
+  const matchLine = async (lineId: string, paymentId: string) => {
+    const { error } = await supabase.rpc("bank_reconciliation_match_customer_payment", { _line_id: lineId, _payment_id: paymentId });
+    if (error) return toast.error(error.message);
+    toast.success("Pagamento conciliado");
+    load();
   };
 
-  const filteredRecon = recon.filter((r) => {
-    if (reconFilter === "pending") return !r.reconciled_at;
-    if (reconFilter === "reconciled") return !!r.reconciled_at;
-    return true;
+  // ── Render ──────────────────────────────────────────────────────────
+  const cashOnlyMovements = cashMovements.filter((m) => {
+    if (m.migration_note === "non_cash_legacy") return false;
+    if (!m.payment_id) return true;
+    return m.customer_payments?.payment_methods?.feeds_cash_session !== false;
   });
 
-  const reconCounts = {
-    pending: recon.filter((r) => !r.reconciled_at).length,
-    eligible: recon.filter((r) => r.eligible && !r.reconciled_at).length,
-    reconciled: recon.filter((r) => r.reconciled_at).length,
-  };
+  const pendingCount = pendingPayments.length;
+  const reconPending = reconLines.filter((l) => l.status === "pending").length;
+  const reconMatched = reconLines.filter((l) => l.status === "matched").length;
 
   return (
     <>
-      <PageHeader title="Recebimentos" breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Recebimentos" }]} />
+      <PageHeader
+        title="Recebimentos & Caixa"
+        breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Recebimentos" }]}
+        actions={<Button variant="outline" size="sm" onClick={load}><RefreshCw className="h-4 w-4 mr-1" />Atualizar</Button>}
+      />
       <PageBody>
-        <Tabs defaultValue="received">
+        <Tabs defaultValue="cash">
           <TabsList>
-            <TabsTrigger value="received">Recebidos ({payments.length})</TabsTrigger>
-            <TabsTrigger value="pending">Por Receber ({pending.length})</TabsTrigger>
-            <TabsTrigger value="recon">Conciliação de caixa ({reconCounts.pending})</TabsTrigger>
+            <TabsTrigger value="cash"><Banknote className="h-4 w-4 mr-1" />Caixa físico ({cashSessions.filter((s) => s.state === "open").length} abertas)</TabsTrigger>
+            <TabsTrigger value="pending">Pagamentos pendentes ({pendingCount})</TabsTrigger>
+            <TabsTrigger value="recon"><Link2 className="h-4 w-4 mr-1" />Conciliação bancária ({reconPending} pendentes)</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="received">
+          {/* ============= TAB 1 — CAIXA FÍSICO ============= */}
+          <TabsContent value="cash">
+            <Card className="mb-3">
+              <div className="px-3 py-2 text-sm font-semibold border-b">Sessões de caixa</div>
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Sessão</th>
+                    <th className="text-left px-3 py-2">Caixa</th>
+                    <th className="text-left px-3 py-2">Estado</th>
+                    <th className="text-left px-3 py-2">Aberta</th>
+                    <th className="text-left px-3 py-2">Fechada</th>
+                    <th className="text-right px-3 py-2">Abertura</th>
+                    <th className="text-right px-3 py-2">Contado</th>
+                    <th className="text-right px-3 py-2">Diferença</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashSessions.length === 0 ? (
+                    <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem sessões</td></tr>
+                  ) : cashSessions.map((s) => (
+                    <tr key={s.id} className="border-t">
+                      <td className="px-3 py-2 font-mono text-xs">
+                        <Link to={`/cashbox/sessions/${s.id}`} className="text-primary hover:underline">{s.name}</Link>
+                      </td>
+                      <td className="px-3 py-2">{s.cash_registers?.name ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${s.state === "open" ? "bg-emerald-100 text-emerald-900" : "bg-muted text-muted-foreground"}`}>{s.state}</span>
+                      </td>
+                      <td className="px-3 py-2">{s.opened_at?.slice(0, 16).replace("T", " ")}</td>
+                      <td className="px-3 py-2">{s.closed_at?.slice(0, 16).replace("T", " ") ?? "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.opening_balance)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{s.closing_balance_counted != null ? fmtMoney(s.closing_balance_counted) : "—"}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${Math.abs(s.difference ?? 0) > 0.01 ? "text-amber-600 font-semibold" : ""}`}>{s.difference != null ? fmtMoney(s.difference) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+
             <Card>
+              <div className="px-3 py-2 text-sm font-semibold border-b">Movimentos de caixa (cash-only)</div>
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Data</th>
+                    <th className="text-left px-3 py-2">Sessão</th>
+                    <th className="text-left px-3 py-2">Tipo</th>
+                    <th className="text-left px-3 py-2">Método</th>
+                    <th className="text-left px-3 py-2">Ref.</th>
+                    <th className="text-right px-3 py-2">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashOnlyMovements.length === 0 ? (
+                    <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos de caixa</td></tr>
+                  ) : cashOnlyMovements.slice(0, 200).map((m) => (
+                    <tr key={m.id} className="border-t">
+                      <td className="px-3 py-2 whitespace-nowrap text-xs">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{m.cash_sessions?.name ?? "—"}</td>
+                      <td className="px-3 py-2">{m.kind}</td>
+                      <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
+                      <td className="px-3 py-2">{m.reference ?? "—"}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${m.amount < 0 ? "text-rose-600" : ""}`}>{fmtMoney(m.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          </TabsContent>
+
+          {/* ============= TAB 2 — PAGAMENTOS PENDENTES ============= */}
+          <TabsContent value="pending">
+            <Card>
+              <div className="px-3 py-2 text-sm font-semibold border-b">Pagamentos não-caixa a confirmar</div>
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
@@ -272,69 +211,39 @@ export default function PaymentsPage() {
                     <th className="text-left px-3 py-2">Cliente</th>
                     <th className="text-left px-3 py-2">Venda</th>
                     <th className="text-left px-3 py-2">Método</th>
-                    <th className="text-left px-3 py-2">Diário</th>
+                    <th className="text-left px-3 py-2">Ref.</th>
                     <th className="text-right px-3 py-2">Valor</th>
-                    <th className="text-left px-3 py-2">Estado</th>
+                    <th className="text-right px-3 py-2 w-56"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.length === 0 ? (
-                    <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem recebimentos</td></tr>
-                  ) : payments.map((p) => (
-                    <tr key={p.id} className={`border-t ${p.state === "cancelled" ? "opacity-50" : ""}`}>
-                      <td className="px-3 py-2 font-mono">{p.name}</td>
-                      <td className="px-3 py-2">{p.payment_date}</td>
-                      <td className="px-3 py-2">{p.partners?.name ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {p.sale_orders ? <Link to={`/sales/orders/${p.order_id}`} className="text-primary hover:underline">{p.sale_orders.name}</Link> : "—"}
-                      </td>
-                      <td className="px-3 py-2">{p.payment_methods?.name ?? "—"}</td>
-                      <td className="px-3 py-2">{p.account_journals?.name ?? "—"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(p.amount)}</td>
-                      <td className="px-3 py-2">{p.state}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pending">
-            <Card>
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="text-left px-3 py-2">Venda</th>
-                    <th className="text-left px-3 py-2">Cliente</th>
-                    <th className="text-left px-3 py-2">Parcela</th>
-                    <th className="text-left px-3 py-2">Vencimento</th>
-                    <th className="text-right px-3 py-2">Valor</th>
-                    <th className="text-right px-3 py-2">Pago</th>
-                    <th className="text-right px-3 py-2">Em aberto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pending.length === 0 ? (
-                    <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Tudo em dia</td></tr>
-                  ) : pending.map((s) => {
-                    const open = Number(s.amount || 0) - Number(s.paid_amount || 0);
-                    const due =
-                      s.due_kind === "fixed_date" ? (s.due_date ?? "—")
-                      : s.due_kind === "on_confirm" ? "Na confirmação"
-                      : s.due_kind === "on_delivery" ? "Na entrega"
-                      : s.due_kind === "days_after_confirm" ? `${s.due_days ?? 0}d após confirmação`
-                      : "—";
+                  {pendingPayments.length === 0 ? (
+                    <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem pagamentos pendentes</td></tr>
+                  ) : pendingPayments.map((p) => {
+                    const m = p.payment_methods;
+                    const refMissing = m?.requires_reference && !p.reference;
                     return (
-                      <tr key={s.id} className="border-t">
+                      <tr key={p.id} className="border-t">
+                        <td className="px-3 py-2 font-mono text-xs">{p.name}</td>
+                        <td className="px-3 py-2">{p.payment_date}</td>
+                        <td className="px-3 py-2">{p.partners?.name ?? "—"}</td>
+                        <td className="px-3 py-2">{p.sale_orders ? <Link to={`/sales/orders/${p.order_id}`} className="text-primary hover:underline">{p.sale_orders.name}</Link> : "—"}</td>
                         <td className="px-3 py-2">
-                          <Link to={`/sales/orders/${s.order_id}`} className="text-primary hover:underline">{s.sale_orders?.name}</Link>
+                          {m?.name ?? "—"}
+                          <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-muted">{m?.journal_type ?? ""}</span>
                         </td>
-                        <td className="px-3 py-2">{s.sale_orders?.partners?.name ?? "—"}</td>
-                        <td className="px-3 py-2">{s.label}</td>
-                        <td className="px-3 py-2">{due}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.amount)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.paid_amount)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtMoney(open)}</td>
+                        <td className="px-3 py-2">
+                          {p.reference ?? <span className="text-rose-600 text-xs">{refMissing ? "obrigatória" : "—"}</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(p.amount)}</td>
+                        <td className="px-3 py-2 text-right space-x-1">
+                          <Button size="sm" variant="ghost" onClick={() => rejectPending(p.id)}>
+                            <XCircle className="h-4 w-4 mr-1" />Rejeitar
+                          </Button>
+                          <Button size="sm" onClick={() => confirmPending(p.id)} disabled={refMissing}>
+                            <CheckCircle2 className="h-4 w-4 mr-1" />Confirmar
+                          </Button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -343,105 +252,59 @@ export default function PaymentsPage() {
             </Card>
           </TabsContent>
 
+          {/* ============= TAB 3 — CONCILIAÇÃO BANCÁRIA ============= */}
           <TabsContent value="recon">
-            <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
-              <div className="flex gap-1">
-                <Button size="sm" variant={reconFilter === "pending" ? "default" : "outline"} onClick={() => setReconFilter("pending")}>
-                  Pendentes ({reconCounts.pending})
-                </Button>
-                <Button size="sm" variant={reconFilter === "reconciled" ? "default" : "outline"} onClick={() => setReconFilter("reconciled")}>
-                  Conciliados ({reconCounts.reconciled})
-                </Button>
-                <Button size="sm" variant={reconFilter === "all" ? "default" : "outline"} onClick={() => setReconFilter("all")}>
-                  Todos ({recon.length})
-                </Button>
+            <Card className="p-3 mb-3 flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">
+                <strong>{reconPending}</strong> pendentes · <strong>{reconMatched}</strong> conciliadas · <strong>{postedNonCash.length}</strong> pagamentos posted aguardam conciliação
               </div>
-              <div className="ml-auto text-sm text-muted-foreground">
-                <strong>{reconCounts.eligible}</strong> elegíveis (multibanco/cartão/transferência sempre; dinheiro só após sangria de caixa)
-              </div>
-              <Button size="sm" onClick={reconcileAllEligible} disabled={reconCounts.eligible === 0}>
-                <CheckCircle2 className="h-4 w-4 mr-1" /> Conciliar elegíveis
+              <Button size="sm" className="ml-auto" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />Nova linha
               </Button>
             </Card>
-
-            {sessionSummaries.length > 0 && (
-              <Card className="p-3 mb-3">
-                <div className="text-sm font-semibold mb-2">Cruzamento por sessão (dinheiro vs sangria)</div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <th className="text-left px-3 py-2">Sessão</th>
-                        <th className="text-left px-3 py-2">Caixa</th>
-                        <th className="text-right px-3 py-2">Vendas em dinheiro</th>
-                        <th className="text-right px-3 py-2">Sangrias / Retiradas</th>
-                        <th className="text-right px-3 py-2">Dinheiro elegível</th>
-                        <th className="text-right px-3 py-2">Diferença</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sessionSummaries.map((s) => (
-                        <tr key={s.session_id} className="border-t">
-                          <td className="px-3 py-2 font-mono text-xs">{s.session_name}</td>
-                          <td className="px-3 py-2">{s.register_name}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.cashSales)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.sangria)}</td>
-                          <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(s.eligibleCash)}</td>
-                          <td className={`px-3 py-2 text-right tabular-nums font-semibold ${Math.abs(s.diff) < 0.01 ? "text-emerald-600" : "text-amber-600"}`}>
-                            {fmtMoney(s.diff)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            )}
 
             <Card>
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="text-left px-3 py-2">Data</th>
-                    <th className="text-left px-3 py-2">Sessão</th>
-                    <th className="text-left px-3 py-2">Caixa</th>
-                    <th className="text-left px-3 py-2">Método</th>
-                    <th className="text-left px-3 py-2">Cliente / Ref.</th>
+                    <th className="text-left px-3 py-2">Sentido</th>
+                    <th className="text-left px-3 py-2">Ref.</th>
                     <th className="text-right px-3 py-2">Valor</th>
-                    <th className="text-left px-3 py-2 w-44">Estado</th>
-                    <th className="text-right px-3 py-2 w-32"></th>
+                    <th className="text-left px-3 py-2">Pagamento</th>
+                    <th className="text-left px-3 py-2 w-32">Estado</th>
+                    <th className="text-right px-3 py-2 w-72"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRecon.length === 0 ? (
-                    <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
-                  ) : filteredRecon.map((r) => (
-                    <tr key={r.id} className="border-t">
-                      <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{r.session_name}</td>
-                      <td className="px-3 py-2">{r.register_name}</td>
-                      <td className="px-3 py-2">{r.method}</td>
-                      <td className="px-3 py-2">{r.partner ?? r.reference ?? "—"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.amount)}</td>
+                  {reconLines.length === 0 ? (
+                    <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem linhas de conciliação</td></tr>
+                  ) : reconLines.map((l) => (
+                    <tr key={l.id} className="border-t align-top">
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">{new Date(l.occurred_at).toLocaleDateString("pt-PT")}</td>
+                      <td className="px-3 py-2">{l.direction === "incoming" ? "Entrada" : "Saída"}</td>
+                      <td className="px-3 py-2">{l.reference ?? "—"}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.amount)}</td>
                       <td className="px-3 py-2">
-                        {r.reconciled_at ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
-                            <CheckCircle2 className="h-3 w-3" /> Conciliado
+                        {l.payment_id ? (
+                          <span className="text-xs">
+                            <span className="font-mono">{l.customer_payments?.name}</span> · {l.customer_payments?.partners?.name ?? "—"}
                           </span>
-                        ) : r.eligible ? (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200">Elegível</span>
-                        ) : (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" title={r.block_reason}>
-                            {r.block_reason ?? "Bloqueado"}
-                          </span>
-                        )}
+                        ) : "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          l.status === "matched" ? "bg-emerald-100 text-emerald-900" :
+                          l.status === "pending" ? "bg-blue-100 text-blue-900" :
+                          "bg-muted text-muted-foreground"
+                        }`}>{l.status}</span>
                       </td>
                       <td className="px-3 py-2 text-right">
-                        {r.reconciled_at ? (
-                          <Button size="sm" variant="ghost" onClick={() => undoReconcile(r.id)}>Reabrir</Button>
-                        ) : (
-                          <Button size="sm" disabled={!r.eligible} onClick={() => reconcileOne(r.id)}>Conciliar</Button>
-                        )}
+                        {l.status === "matched" ? (
+                          <Button size="sm" variant="ghost" onClick={() => unmatchLine(l.id)}>Desfazer</Button>
+                        ) : l.status === "pending" ? (
+                          <MatchPicker line={l} candidates={postedNonCash} onMatch={matchLine} />
+                        ) : null}
                       </td>
                     </tr>
                   ))}
@@ -450,7 +313,90 @@ export default function PaymentsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <CreateReconLineDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={load} />
       </PageBody>
     </>
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+
+function MatchPicker({ line, candidates, onMatch }: { line: any; candidates: any[]; onMatch: (lineId: string, paymentId: string) => void }) {
+  const eligible = candidates.filter((c) => Math.abs(Number(c.amount) - Number(line.amount)) < 0.01);
+  const [sel, setSel] = useState<string>("");
+  if (eligible.length === 0) return <span className="text-xs text-muted-foreground">Sem candidato</span>;
+  return (
+    <div className="flex items-center gap-1 justify-end">
+      <Select value={sel} onValueChange={setSel}>
+        <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Escolher pagamento…" /></SelectTrigger>
+        <SelectContent>
+          {eligible.map((c) => (
+            <SelectItem key={c.id} value={c.id}>{c.name} · {c.partners?.name ?? "—"}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button size="sm" disabled={!sel} onClick={() => onMatch(line.id, sel)}>Conciliar</Button>
+    </div>
+  );
+}
+
+function CreateReconLineDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; onCreated: () => void }) {
+  const [amount, setAmount] = useState<number>(0);
+  const [reference, setReference] = useState("");
+  const [direction, setDirection] = useState<"incoming" | "outgoing">("incoming");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!amount || amount <= 0) return toast.error("Valor inválido");
+    setSaving(true);
+    const { error } = await supabase.rpc("bank_reconciliation_line_create", {
+      _payload: { amount, reference: reference || null, direction, notes: notes || null },
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Linha criada");
+    setAmount(0); setReference(""); setNotes("");
+    onOpenChange(false);
+    onCreated();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Nova linha de conciliação bancária</DialogTitle></DialogHeader>
+        <div className="grid gap-3 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Sentido</Label>
+              <Select value={direction} onValueChange={(v) => setDirection(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="incoming">Entrada</SelectItem>
+                  <SelectItem value="outgoing">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Valor</Label>
+              <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+            </div>
+          </div>
+          <div>
+            <Label>Referência bancária</Label>
+            <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Ex: TRF 1234567" />
+          </div>
+          <div>
+            <Label>Notas</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving}>{saving ? "A criar…" : "Criar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
