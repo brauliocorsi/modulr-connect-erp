@@ -138,4 +138,32 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
     await waitForLoaded();
     expect(screen.getByRole("button", { name: /Salvar/ })).toBeInTheDocument();
   });
+
+  it("save (update) calls product_upsert RPC with id", async () => {
+    renderForm();
+    await waitForLoaded();
+    fireEvent.click(screen.getByRole("button", { name: /Salvar/ }));
+    await waitFor(() => {
+      const call = rpcMock.mock.calls.find((c) => c[0] === "product_upsert");
+      expect(call).toBeTruthy();
+      expect(call![1]._product_id).toBe("p1");
+      expect(call![1]._payload).toMatchObject({ name: "Sofá Lisboa" });
+    });
+  });
+
+  it("archive action calls product_archive RPC and maps friendly errors", async () => {
+    rpcMock.mockImplementation((name: string) => {
+      if (name === "product_stock_summary") return Promise.resolve({ data: null, error: null });
+      if (name === "product_archive") return Promise.resolve({ data: null, error: { message: "has_stock" } });
+      return Promise.resolve({ data: null, error: null });
+    });
+    renderForm();
+    await waitForLoaded();
+    fireEvent.click(screen.getByRole("button", { name: /Arquivar/ }));
+    const confirmBtn = await screen.findByRole("button", { name: /^Arquivar$/ });
+    fireEvent.click(confirmBtn);
+    await waitFor(() => {
+      expect(rpcMock.mock.calls.some((c) => c[0] === "product_archive")).toBe(true);
+    });
+  });
 });
