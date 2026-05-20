@@ -185,7 +185,7 @@ export default function GlobalChatDock() {
   // Auto-scroll
   useEffect(() => {
     if (dockState === "open" && messages?.length) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
     }
   }, [messages, dockState]);
 
