@@ -528,7 +528,7 @@ export default function IndicatorsPage() {
         <div className="flex items-center gap-2">
           <PeriodTabs value={period} onChange={setPeriod} />
           <RefreshButton onRefresh={refreshAll} />
-          <LastUpdated date={lastRefresh} />
+          <LastUpdated value={lastRefresh} />
         </div>
       </header>
 
