@@ -440,10 +440,6 @@ export default function RouteDetail() {
             <RouteCapacityCard capacity={capacity} stats={stats} />
           </div>
         </div>
-          </div>
-
-          <RouteCapacityCard capacity={capacity} stats={stats} />
-        </div>
 
         <div className="mb-3">
           <RouteDockSection
