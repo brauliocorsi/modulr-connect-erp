@@ -120,6 +120,7 @@ import CustomerPortalPage from "@/modules/portal/pages/CustomerPortalPage";
 import PortalTokensPage from "@/modules/helpdesk/pages/PortalTokensPage";
 import WorkCentersPage from "@/modules/manufacturing/pages/WorkCentersPage";
 import OperationsPage from "@/modules/manufacturing/pages/OperationsPage";
+import MachinesPage from "@/modules/manufacturing/pages/MachinesPage";
 import DamagedStockPage from "@/modules/inventory/pages/DamagedStockPage";
 import QuarantinePage from "@/modules/inventory/pages/QuarantinePage";
 import ServiceRepairsPage from "@/modules/service/pages/ServiceRepairsPage";
