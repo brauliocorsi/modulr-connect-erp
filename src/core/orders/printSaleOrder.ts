@@ -12,7 +12,7 @@ export async function printSaleOrder(orderId: string) {
   const { data: order } = await supabase
     .from("sale_orders")
     .select(
-      "name, state, date_order, commitment_date, notes, amount_untaxed, amount_tax, amount_total, payment_status, invoice_status, invoice_number, invoice_date, partner_id, company_id, include_assembly, include_delivery, delivery_zone_label"
+      "name, state, date_order, commitment_date, notes, amount_untaxed, amount_tax, amount_total, payment_status, invoice_status, invoice_number, invoice_date, partner_id, company_id, include_assembly, include_delivery, delivery_zone_label, delivery_mode"
     )
     .eq("id", orderId)
     .maybeSingle();
