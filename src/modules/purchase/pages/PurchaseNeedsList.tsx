@@ -209,7 +209,7 @@ export default function PurchaseNeedsList() {
     {
       key: "origin",
       header: "Origem",
-      cell: (r) => <Badge variant="outline" className="text-xs">{ORIGIN_LABEL[r.origin_kind] ?? r.origin_kind}</Badge>,
+      cell: (r) => <OriginBadge origin={r.origin_kind} />,
     },
     {
       key: "ref",
