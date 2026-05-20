@@ -11686,7 +11686,11 @@ export type Database = {
       }
       _test_phase25_machines_workcenters_operations: {
         Args: never
-        Returns: Json
+        Returns: {
+          check_name: string
+          detail: string
+          ok: boolean
+        }[]
       }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
