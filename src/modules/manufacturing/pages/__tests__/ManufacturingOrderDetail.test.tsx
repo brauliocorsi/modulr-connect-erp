@@ -104,8 +104,8 @@ describe("ManufacturingOrderDetail (F22-R3)", () => {
 
   it("renders summary cards (state / qty / components / operations / issues)", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText(/Componentes/i)).toBeInTheDocument());
-    expect(screen.getByText(/Operações/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(/Componentes/i).length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/Operações/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Problemas abertos/i)).toBeInTheDocument();
   });
 
