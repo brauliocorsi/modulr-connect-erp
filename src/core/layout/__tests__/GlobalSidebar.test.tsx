@@ -68,4 +68,18 @@ describe("GlobalSidebar", () => {
     expect(screen.getByRole("link", { name: "Kardex" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Pedidos" })).toBeNull();
   });
+
+  it("collapse toggle persists to localStorage and renders icon-only view", () => {
+    setup("/");
+    fireEvent.click(screen.getByTestId("sidebar-collapse-toggle"));
+    expect(localStorage.getItem("erp.sidebar.collapsed")).toBe("1");
+    expect(screen.getByTestId("global-sidebar")).toHaveAttribute("data-collapsed", "1");
+    expect(screen.getByTestId("sidebar-collapsed-financeiro")).toHaveAttribute("aria-label", "Financeiro");
+  });
+
+  it("restores collapsed state from localStorage on mount", () => {
+    localStorage.setItem("erp.sidebar.collapsed", "1");
+    setup("/");
+    expect(screen.getByTestId("global-sidebar")).toHaveAttribute("data-collapsed", "1");
+  });
 });
