@@ -91,7 +91,7 @@ export default function DamagedStockPage() {
         key: "repair",
         label: "Abrir reparação",
         icon: <Wrench className="h-4 w-4" />,
-        onClick: () => openCase.mutateAsync({ _stock_package_id: r.id, _action: "repair" }),
+        onClick: async () => { await openCase.mutateAsync({ _stock_package_id: r.id, _action: "repair" }); },
         loading: openCase.isPending,
         confirm: {
           title: "Abrir caso de reparação",
