@@ -37,13 +37,8 @@ export default function AppShell() {
   const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox", "service", "helpdesk"]);
   const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
 
-  const sectionedMenu = activeModule
-    ? activeModule.menu.reduce<Record<string, typeof activeModule.menu>>((acc, item) => {
-        const k = item.section ?? "Menu";
-        (acc[k] ??= []).push(item);
-        return acc;
-      }, {})
-    : {};
+
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
