@@ -331,7 +331,7 @@ function CashCTAs({ status }: { status: string }) {
       </Button>
     );
   }
-  if (status === "no_open_session" && (isAdmin || can("finance", "cash_sessions", "edit"))) {
+  if (status === "no_open_session" && (isAdmin || can("core" as any, "cash_sessions", "edit"))) {
     return (
       <Button asChild size="sm" variant="outline" data-testid="cta-open-cash">
         <Link to="/cashbox">Abrir caixa</Link>
