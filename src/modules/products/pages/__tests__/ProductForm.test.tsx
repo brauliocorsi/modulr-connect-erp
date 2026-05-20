@@ -46,9 +46,10 @@ function makeQuery(table: string) {
   return q;
 }
 
+const rpcMock = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    rpc: vi.fn(),
+    rpc: (...args: unknown[]) => rpcMock(...args),
     from: (t: string) => makeQuery(t),
     auth: { getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })) },
     channel: () => ({ on() { return this; }, subscribe: () => ({}) }),
@@ -56,6 +57,16 @@ vi.mock("@/integrations/supabase/client", () => ({
     storage: { from: () => ({ upload: vi.fn(), getPublicUrl: () => ({ data: { publicUrl: "" } }) }) },
   },
 }));
+
+beforeEach(() => {
+  rpcMock.mockReset();
+  rpcMock.mockImplementation((name: string) => {
+    if (name === "product_stock_summary") return Promise.resolve({ data: null, error: null });
+    if (name === "product_upsert") return Promise.resolve({ data: "p1", error: null });
+    if (name === "product_archive") return Promise.resolve({ data: { archived: true }, error: null });
+    return Promise.resolve({ data: null, error: null });
+  });
+});
 
 vi.mock("../components/TagPicker", () => ({ TagPicker: () => <div data-testid="tag-picker" /> }));
 vi.mock("../tabs/SuppliersTab", () => ({ SuppliersTab: () => <div /> }));
