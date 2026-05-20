@@ -11852,6 +11852,39 @@ export type Database = {
         Args: { _product_id: string }
         Returns: Json
       }
+      product_package_template_delete: {
+        Args: { _template_id: string }
+        Returns: Json
+      }
+      product_package_template_upsert: {
+        Args: { _payload: Json; _product_id: string; _template_id: string }
+        Returns: string
+      }
+      product_stock_summary: { Args: { _product_id: string }; Returns: Json }
+      product_template_attribute_delete: {
+        Args: { _attribute_id: string }
+        Returns: Json
+      }
+      product_template_attribute_upsert: {
+        Args: { _attribute_id: string; _payload: Json; _product_id: string }
+        Returns: string
+      }
+      product_template_attribute_value_delete: {
+        Args: { _value_id: string }
+        Returns: Json
+      }
+      product_template_attribute_value_delete_pair: {
+        Args: { _template_attribute_id: string; _value_id: string }
+        Returns: Json
+      }
+      product_template_attribute_value_upsert: {
+        Args: {
+          _payload: Json
+          _template_attribute_id: string
+          _value_id: string
+        }
+        Returns: string
+      }
       product_variant_delete: { Args: { _variant_id: string }; Returns: Json }
       product_variant_upsert: {
         Args: { _payload: Json; _product_id: string; _variant_id: string }
