@@ -69,7 +69,7 @@ describe("RegisterPaymentDialog (F24-B2 store cash)", () => {
       return Promise.resolve({ data: {}, error: null });
     });
 
-    render(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
+    renderWithRouter(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
     await waitFor(() => expect(screen.getByTestId("cash-block")).toBeTruthy());
     await waitFor(() => expect(screen.getByText(/Loja Lisboa \/ Caixa Principal/)).toBeTruthy());
     expect(rpcMock).toHaveBeenCalledWith("cash_session_for_current_user", expect.any(Object));
@@ -83,14 +83,14 @@ describe("RegisterPaymentDialog (F24-B2 store cash)", () => {
       return Promise.resolve({ data: {}, error: null });
     });
 
-    render(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
+    renderWithRouter(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
     await waitFor(() => expect(screen.getByText(/Não há caixa aberto/)).toBeTruthy());
     const btn = screen.getByRole("button", { name: /registar/i });
     expect((btn as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("método non-cash: não mostra caixa físico e mostra badge conciliação", async () => {
-    render(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
+    renderWithRouter(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
     // Wait for methods load
     await waitFor(() => expect(screen.getByRole("combobox")).toBeTruthy());
     // The default selected method is the first (CASH). We change to second by re-rendering with selection — simpler: assert non-cash branch by selecting second method using internal Select isn't trivial in jsdom. Skip click; instead assert that when CASH default loads we DO show the cash block (sanity for non-cash absence), then verify non-cash branch via a separate render with mocked default — already covered above.
@@ -109,7 +109,7 @@ describe("RegisterPaymentDialog (F24-B2 store cash)", () => {
       return Promise.resolve({ data: {}, error: null });
     });
 
-    render(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
+    renderWithRouter(<RegisterPaymentDialog open onOpenChange={() => {}} orderId="o1" defaultAmount={50} />);
     await waitFor(() => expect(screen.getByTestId("cash-block")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /registar/i }));
     await waitFor(() =>
