@@ -83,6 +83,11 @@ export default function ManufacturingOrderDetail() {
     enabled: !!id,
     queryFn: async () => (await supabase.from("mo_quality_checks").select("*").eq("mo_id", id!).order("checked_at", { ascending: false })).data ?? [],
   });
+  const { data: ops } = useQuery({
+    queryKey: ["mo-ops", id],
+    enabled: !!id,
+    queryFn: async () => (await supabase.from("mo_operations").select("id,state").eq("mo_id", id!)).data ?? [],
+  });
 
   const closeMo = useRpcMutation<{ _mo: string }, unknown>({
     rpc: "close_mo",
