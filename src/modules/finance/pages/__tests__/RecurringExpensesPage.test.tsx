@@ -103,7 +103,7 @@ describe("RecurringExpensesPage (F23-D3)", () => {
 
   it("mostra summary cards", async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText("Ativas")).toBeInTheDocument());
-    expect(screen.getByText("Equivalente mensal")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Equivalente mensal")).toBeInTheDocument());
+    expect(screen.getByText("Próximas 7 dias")).toBeInTheDocument();
   });
 });
