@@ -14,8 +14,15 @@ import { ListView } from "@/core/layout/ListView";
 import { SimpleForm } from "@/core/layout/SimpleForm";
 import { toast } from "sonner";
 import { Plus, Link2, Unlink } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { EntityHeader } from "@/core/operational/EntityHeader";
+import { OperationalDataTable } from "@/core/operational/OperationalDataTable";
+import { OperationalStatusBadge } from "@/core/operational/OperationalStatusBadge";
+import { UserStoreAssignmentsPanel } from "@/modules/settings/components/UserStoreAssignmentsPanel";
+import { UserRolesPanel } from "@/modules/settings/components/UserRolesPanel";
+import { PermissionsHealthCard } from "@/modules/settings/components/PermissionsHealthCard";
 
 export const AppsSettings = () => {
   const qc = useQueryClient();
