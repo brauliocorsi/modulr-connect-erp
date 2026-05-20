@@ -279,6 +279,7 @@ export function RegisterPaymentDialog({
                 </Select>
               )}
               {cashHelp && <div className="text-xs text-rose-600">{cashHelp}</div>}
+              <CashCTAs status={cashStatus.status} />
             </div>
           )}
 
