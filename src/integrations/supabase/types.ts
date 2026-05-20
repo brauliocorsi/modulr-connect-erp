@@ -11619,6 +11619,14 @@ export type Database = {
       }
       _test_phase24_chat_unified: { Args: never; Returns: Json }
       _test_phase24_finance_core_rebuild: { Args: never; Returns: Json }
+      _test_phase24_security_rls_permissions: {
+        Args: never
+        Returns: {
+          detail: string
+          ok: boolean
+          scenario: string
+        }[]
+      }
       _test_phase24b2_store_cash_delivery_guardrails: {
         Args: never
         Returns: Json
@@ -12376,6 +12384,10 @@ export type Database = {
       }
       is_sale_line_compatible_for_allocation: {
         Args: { _source_line_id: string; _target_line_id: string }
+        Returns: boolean
+      }
+      is_thread_participant: {
+        Args: { _thread: string; _user: string }
         Returns: boolean
       }
       lock_cash_session: { Args: { _session: string }; Returns: undefined }
