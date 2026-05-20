@@ -92,14 +92,21 @@ describe("ManufacturingOrderDetail (F22-R3)", () => {
   it("renders EntityHeader with MO code, product and manufacturing status badge", async () => {
     renderPage();
     await waitFor(() => expect(screen.getAllByText(/MO0001/).length).toBeGreaterThan(0));
-    expect(screen.getByText("Pronta")).toBeInTheDocument();
+    expect(screen.getAllByText("Pronta").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Cadeira/).length).toBeGreaterThan(0);
   });
 
   it("renders metadata grid with quantity and BOM", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("BOM-1")).toBeInTheDocument());
-    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getAllByText("5").length).toBeGreaterThan(0);
+  });
+
+  it("renders summary cards (state / qty / components / operations / issues)", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/Componentes/i)).toBeInTheDocument());
+    expect(screen.getByText(/Operações/i)).toBeInTheDocument();
+    expect(screen.getByText(/Problemas abertos/i)).toBeInTheDocument();
   });
 
   it("Fechar OF requires confirm and calls close_mo RPC", async () => {
