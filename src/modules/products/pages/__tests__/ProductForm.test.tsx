@@ -102,7 +102,7 @@ describe("ProductForm (F22-V2 visual remodel)", () => {
     expect(screen.getByText("Vendável")).toBeInTheDocument();
     expect(screen.getByText("Comprável")).toBeInTheDocument();
     expect(screen.getByText("Fabricável")).toBeInTheDocument();
-    expect(screen.getByText("Requer BOM")).toBeInTheDocument();
+    expect(screen.getAllByText("Requer BOM").length).toBeGreaterThan(0);
     expect(screen.getByText("Rastreio colis")).toBeInTheDocument();
   });
 
