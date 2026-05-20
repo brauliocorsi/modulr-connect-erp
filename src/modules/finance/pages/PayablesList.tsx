@@ -1,79 +1,142 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Receipt, ExternalLink, Ban } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
+import { toast } from "sonner";
+import {
+  OperationalDataTable,
+  OperationalStatusBadge,
+  OperationalFiltersBar,
+  SummaryCards,
+  ConfirmActionDialog,
+  type FilterDef,
+  type FilterValue,
+} from "@/core/operational";
+import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
 
-const STATE_LABEL: Record<string, string> = {
-  draft: "Rascunho", posted: "Lançada", partial: "Parcial", paid: "Paga", cancelled: "Cancelada",
+type Row = {
+  id: string;
+  name: string;
+  bill_date: string;
+  due_date: string | null;
+  amount_total: number;
+  amount_paid: number;
+  state: string;
+  partner_id: string | null;
+  partner_name: string;
+  po_id: string | null;
+  po_name: string | null;
+  _open: number;
+  _overdue: boolean;
 };
 
 export default function PayablesList() {
   const nav = useNavigate();
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({});
+  const [picked, setPicked] = useState<{ id: string; partner_id?: string | null; amount: number } | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Row | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("supplier_bills")
-        .select("*, partners(name), cost_centers(name)")
-        .order("bill_date", { ascending: false })
-        .limit(500);
-      setRows(data ?? []);
-    })();
-  }, []);
-
-  const groups = useMemo(() => {
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("supplier_bills")
+      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id, partners(id,name), purchase_orders(id,name)")
+      .order("bill_date", { ascending: false })
+      .limit(500);
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    return {
-      all: rows,
-      pending: rows.filter((r) => ["draft", "posted", "partial"].includes(r.state)),
-      overdue: rows.filter((r) => r.due_date && new Date(r.due_date) < today && r.state !== "paid" && r.state !== "cancelled"),
-      paid: rows.filter((r) => r.state === "paid"),
-    };
+    const out: Row[] = (data ?? []).map((b: any) => {
+      const total = Number(b.amount_total || 0);
+      const paid = Number(b.amount_paid || 0);
+      return {
+        id: b.id,
+        name: b.name,
+        bill_date: b.bill_date,
+        due_date: b.due_date,
+        amount_total: total,
+        amount_paid: paid,
+        state: b.state,
+        partner_id: b.partner_id,
+        partner_name: b.partners?.name ?? "—",
+        po_id: b.purchase_order_id,
+        po_name: b.purchase_orders?.name ?? null,
+        _open: +(total - paid).toFixed(2),
+        _overdue: !!b.due_date && new Date(b.due_date) < today && !["paid", "cancelled"].includes(b.state),
+      };
+    });
+    setRows(out);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const partnerOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.partner_id) map.set(r.partner_id, r.partner_name); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [rows]);
 
-  const Table = ({ data }: { data: any[] }) => (
-    <Card>
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40">
-          <tr>
-            <th className="text-left px-3 py-2">Nº</th>
-            <th className="text-left px-3 py-2">Fornecedor</th>
-            <th className="text-left px-3 py-2">Data</th>
-            <th className="text-left px-3 py-2">Vencimento</th>
-            <th className="text-right px-3 py-2">Total</th>
-            <th className="text-right px-3 py-2">Pago</th>
-            <th className="text-right px-3 py-2">Em aberto</th>
-            <th className="text-left px-3 py-2">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.length === 0 ? (
-            <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem registos</td></tr>
-          ) : data.map((b) => {
-            const open = Number(b.amount_total) - Number(b.amount_paid);
-            return (
-              <tr key={b.id} className="border-t hover:bg-muted/40 cursor-pointer" onClick={() => nav(`/finance/payables/${b.id}`)}>
-                <td className="px-3 py-2 font-mono">{b.name}</td>
-                <td className="px-3 py-2">{b.partners?.name ?? "—"}</td>
-                <td className="px-3 py-2">{b.bill_date}</td>
-                <td className="px-3 py-2">{b.due_date ?? "—"}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(b.amount_total)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(b.amount_paid)}</td>
-                <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtMoney(open)}</td>
-                <td className="px-3 py-2">{STATE_LABEL[b.state] ?? b.state}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </Card>
-  );
+  const filterDefs: FilterDef[] = useMemo(() => [
+    {
+      key: "state",
+      label: "Estado",
+      type: "select",
+      options: [
+        { value: "draft", label: "Rascunho" },
+        { value: "posted", label: "Lançada" },
+        { value: "partial", label: "Parcial" },
+        { value: "paid", label: "Paga" },
+        { value: "cancelled", label: "Cancelada" },
+      ],
+    },
+    {
+      key: "overdue",
+      label: "Vencimento",
+      type: "select",
+      options: [
+        { value: "overdue", label: "Vencidas" },
+        { value: "open", label: "Em aberto" },
+      ],
+    },
+    { key: "partner", label: "Fornecedor", type: "select", options: partnerOptions, width: "w-56" },
+  ], [partnerOptions]);
+
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (filters.state && filters.state !== r.state) return false;
+    if (filters.partner && filters.partner !== r.partner_id) return false;
+    if (filters.overdue === "overdue" && !r._overdue) return false;
+    if (filters.overdue === "open" && (["paid", "cancelled"].includes(r.state))) return false;
+    return true;
+  }), [rows, filters]);
+
+  const summary = useMemo(() => {
+    const open = filtered.filter((r) => !["paid", "cancelled"].includes(r.state));
+    const openAmt = open.reduce((s, r) => s + r._open, 0);
+    const overdue = open.filter((r) => r._overdue);
+    return {
+      count: filtered.length,
+      open: openAmt,
+      overdue: overdue.reduce((s, r) => s + r._open, 0),
+      overdueCount: overdue.length,
+    };
+  }, [filtered]);
+
+  const cancelBill = async (row: Row) => {
+    setCancelling(true);
+    const { error } = await supabase.rpc("supplier_bill_cancel", {
+      _bill_id: row.id,
+      _reason: "Cancelada via lista de contas a pagar",
+    });
+    setCancelling(false);
+    if (error) return toast.error(error.message);
+    toast.success("Fatura cancelada");
+    setCancelTarget(null);
+    load();
+  };
 
   return (
     <>
@@ -83,19 +146,84 @@ export default function PayablesList() {
         actions={<Button size="sm" onClick={() => nav("/finance/payables/new")}><Plus className="h-4 w-4 mr-1" /> Nova fatura</Button>}
       />
       <PageBody>
-        <Tabs defaultValue="pending">
-          <TabsList>
-            <TabsTrigger value="pending">A pagar ({groups.pending.length})</TabsTrigger>
-            <TabsTrigger value="overdue">Vencidas ({groups.overdue.length})</TabsTrigger>
-            <TabsTrigger value="paid">Pagas ({groups.paid.length})</TabsTrigger>
-            <TabsTrigger value="all">Todas ({groups.all.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pending"><Table data={groups.pending} /></TabsContent>
-          <TabsContent value="overdue"><Table data={groups.overdue} /></TabsContent>
-          <TabsContent value="paid"><Table data={groups.paid} /></TabsContent>
-          <TabsContent value="all"><Table data={groups.all} /></TabsContent>
-        </Tabs>
+        <SummaryCards
+          className="mb-4"
+          items={[
+            { key: "count", label: "Faturas", value: String(summary.count) },
+            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "primary" },
+            { key: "overdue", label: "Vencidas", value: fmtMoney(summary.overdue), hint: `${summary.overdueCount} faturas`, tone: summary.overdueCount ? "danger" : "muted" },
+          ]}
+        />
+        <div className="mb-3">
+          <OperationalFiltersBar
+            filters={filterDefs}
+            values={filters}
+            onChange={(k, v) => setFilters((f) => ({ ...f, [k]: v }))}
+            onClear={() => setFilters({})}
+          />
+        </div>
+        <OperationalDataTable
+          isLoading={loading}
+          rows={filtered}
+          getRowId={(r) => r.id}
+          emptyTitle="Sem faturas"
+          onRowClick={(r) => nav(`/finance/payables/${r.id}`)}
+          columns={[
+            { key: "name", header: "Nº", cell: (r) => <span className="font-mono text-xs">{r.name}</span> },
+            { key: "partner", header: "Fornecedor", cell: (r) => r.partner_name },
+            { key: "po", header: "PO", cell: (r) => r.po_id
+              ? <Link to={`/purchase/orders/${r.po_id}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline font-mono text-xs">{r.po_name}</Link>
+              : <span className="text-muted-foreground">—</span> },
+            { key: "bill_date", header: "Data", cell: (r) => r.bill_date },
+            { key: "due", header: "Vencimento", cell: (r) => (
+              <span className={r._overdue ? "text-destructive font-medium" : ""}>{r.due_date ?? "—"}</span>
+            ) },
+            { key: "total", header: "Total", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_total)}</span> },
+            { key: "paid", header: "Pago", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_paid)}</span> },
+            { key: "open", header: "Saldo", align: "right", cell: (r) => <span className="tabular-nums font-semibold">{fmtMoney(r._open)}</span> },
+            { key: "state", header: "Estado", cell: (r) => (
+              <OperationalStatusBadge domain="supplier_bill" status={r._overdue ? "overdue" : r.state} />
+            ) },
+            { key: "actions", header: "", align: "right", cell: (r) => (
+              <div className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                {!["paid", "cancelled"].includes(r.state) && r._open > 0 && (
+                  <Button size="sm" variant="ghost" title="Pagar" onClick={() => setPicked({ id: r.id, partner_id: r.partner_id, amount: r._open })}>
+                    <Receipt className="h-4 w-4" />
+                  </Button>
+                )}
+                {!["paid", "cancelled"].includes(r.state) && (
+                  <Button size="sm" variant="ghost" title="Cancelar fatura" onClick={() => setCancelTarget(r)}>
+                    <Ban className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" title="Abrir" onClick={() => nav(`/finance/payables/${r.id}`)}>
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            ) },
+          ]}
+        />
       </PageBody>
+      {picked && (
+        <RegisterSupplierPaymentDialog
+          open={!!picked}
+          onOpenChange={(v) => { if (!v) setPicked(null); }}
+          billId={picked.id}
+          partnerId={picked.partner_id}
+          defaultAmount={picked.amount}
+          onSaved={() => { setPicked(null); load(); }}
+        />
+      )}
+      <ConfirmActionDialog
+        open={!!cancelTarget}
+        onOpenChange={(v) => { if (!v) setCancelTarget(null); }}
+        title="Cancelar fatura"
+        description={cancelTarget ? `Cancelar fatura ${cancelTarget.name}? Esta ação reverte movimentos pendentes.` : ""}
+        confirmLabel="Cancelar fatura"
+        destructive
+        loading={cancelling}
+        onConfirm={() => cancelTarget && cancelBill(cancelTarget)}
+      />
     </>
   );
 }
