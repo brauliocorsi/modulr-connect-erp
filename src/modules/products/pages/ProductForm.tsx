@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FormHeader } from "@/core/layout/FormHeader";
 import { PageBody } from "@/core/layout/PageHeader";
 import { RecordSidebar } from "@/core/activities/RecordSidebar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { TagPicker } from "../components/TagPicker";
 import { SuppliersTab } from "./tabs/SuppliersTab";
 import { VariantsTab } from "./tabs/VariantsTab";
@@ -28,6 +27,7 @@ import { OperationalConfigTab } from "./tabs/OperationalConfigTab";
 import { printColisLabels } from "@/modules/barcode/printBarcodes";
 import { Printer } from "lucide-react";
 import { FieldInfoTooltip } from "@/components/ui/field-info-tooltip";
+import { EntityHeader, SummaryCards, type SummaryCardItem } from "@/core/operational";
 
 export default function ProductForm() {
   const { id } = useParams();
