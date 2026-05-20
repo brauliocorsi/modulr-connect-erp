@@ -67,11 +67,7 @@ export default function PickingScan() {
     setActiveLocation(null);
     setScannedColis({});
     // Reset quantity_done to 0 in DB so the operator must re-confirm every unit by scanning
-    await supabase
-      .from("stock_moves")
-      .update({ quantity_done: 0 })
-      .eq("picking_id", id)
-      .not("state", "in", "(done,cancelled)");
+    await supabase.rpc("picking_scan_reset_quantity_done" as any, { _picking: id });
     const { data: m } = await supabase
       .from("stock_moves")
       .select("id,product_id,quantity,quantity_done,state,source_location_id,destination_location_id,products(name,barcode,internal_ref)")

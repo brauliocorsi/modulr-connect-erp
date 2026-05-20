@@ -117,12 +117,11 @@ export default function Discuss() {
           .map((m) => profiles.find((p) => (p.full_name ?? p.email ?? "").toLowerCase().includes(m[1].toLowerCase()))?.id)
           .filter(Boolean) as string[]
       : [];
-    const { error } = await supabase.from("chat_messages").insert({
-      channel_id: channelId,
-      author_id: user.id,
-      body: body || null,
-      mentions,
-      image_url: imageUrl,
+    const { error } = await supabase.rpc("discuss_send_message" as any, {
+      _channel_id: channelId,
+      _body: body || null,
+      _image_url: imageUrl,
+      _mentions: mentions,
     });
     if (error) {
       toast.error("Não foi possível enviar a mensagem", { description: error.message });
