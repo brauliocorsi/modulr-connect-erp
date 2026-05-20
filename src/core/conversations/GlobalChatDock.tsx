@@ -282,98 +282,110 @@ export default function GlobalChatDock() {
       {/* Body */}
       {!activeThread ? (
         <div className="flex-1 overflow-hidden flex flex-col">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="mx-2 mt-2 grid grid-cols-5 h-8">
-              <TabsTrigger value="all" className="text-[11px] px-1">
-                Todas
-              </TabsTrigger>
-              <TabsTrigger value="dm" className="text-[11px] px-1">
-                DMs
-              </TabsTrigger>
-              <TabsTrigger value="channel" className="text-[11px] px-1">
-                Canais
-              </TabsTrigger>
-              <TabsTrigger value="entity" className="text-[11px] px-1">
-                Entidades
-              </TabsTrigger>
-              <TabsTrigger
-                value="page"
-                disabled={!pageCtx}
-                className="text-[11px] px-1"
-                title={pageCtx ? `${pageCtx.label}` : "Sem contexto"}
-              >
-                Página
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value={tab} className="flex-1 overflow-y-auto m-0 mt-2">
-              {loadingThreads && !threads ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando…
-                </div>
-              ) : error ? (
-                <div className="p-6 text-center text-sm text-destructive" data-testid="global-chat-error">
-                  {error}
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  {tab === "page" && !pageCtx ? "Sem contexto de página" : "Nenhuma conversa"}
-                </div>
-              ) : (
-                <ul className="divide-y">
-                  {filtered.map((t) => {
-                    const isUnread = (t.unread_count || 0) > 0;
-                    return (
-                      <li key={t.id}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveThread(t.id)}
-                          data-testid={`global-chat-thread-${t.id}`}
-                          className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground shrink-0">{threadIcon(t)}</span>
-                            <span className={cn("text-sm truncate flex-1", isUnread && "font-semibold")}>
-                              {t.title}
+          <div role="tablist" className="mx-2 mt-2 grid grid-cols-5 gap-1 p-1 rounded-md bg-muted">
+            {([
+              { k: "all", label: "Todas" },
+              { k: "dm", label: "DMs" },
+              { k: "channel", label: "Canais" },
+              { k: "entity", label: "Entidades" },
+              { k: "page", label: "Página" },
+            ] as Array<{ k: TabKey; label: string }>).map((t) => {
+              const isActive = tab === t.k;
+              const isDisabled = t.k === "page" && !pageCtx;
+              return (
+                <button
+                  key={t.k}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`global-chat-tabpanel-${t.k}`}
+                  data-state={isActive ? "active" : "inactive"}
+                  disabled={isDisabled}
+                  onClick={() => setTab(t.k)}
+                  title={t.k === "page" && pageCtx ? pageCtx.label : undefined}
+                  className={cn(
+                    "text-[11px] px-1 py-1 rounded-sm font-medium transition-colors",
+                    isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    isDisabled && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <div
+            role="tabpanel"
+            id={`global-chat-tabpanel-${tab}`}
+            className="flex-1 overflow-y-auto mt-2"
+          >
+            {loadingThreads && !threads ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando…
+              </div>
+            ) : error ? (
+              <div className="p-6 text-center text-sm text-destructive" data-testid="global-chat-error">
+                {error}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                {tab === "page" && !pageCtx ? "Sem contexto de página" : "Nenhuma conversa"}
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {filtered.map((t) => {
+                  const isUnread = (t.unread_count || 0) > 0;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveThread(t.id)}
+                        data-testid={`global-chat-thread-${t.id}`}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground shrink-0">{threadIcon(t)}</span>
+                          <span className={cn("text-sm truncate flex-1", isUnread && "font-semibold")}>
+                            {t.title}
+                          </span>
+                          {isUnread && (
+                            <span className="shrink-0 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                              {t.unread_count > 9 ? "9+" : t.unread_count}
                             </span>
-                            {isUnread && (
-                              <span className="shrink-0 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                                {t.unread_count > 9 ? "9+" : t.unread_count}
-                              </span>
-                            )}
-                            <Badge
-                              variant={t.visibility === "customer_visible" ? "secondary" : "outline"}
-                              className="h-4 text-[10px] px-1.5 shrink-0"
-                            >
-                              {t.visibility === "customer_visible" ? (
-                                <Eye className="h-2.5 w-2.5" />
-                              ) : t.visibility === "mixed" ? (
-                                "mixed"
-                              ) : (
-                                <EyeOff className="h-2.5 w-2.5" />
-                              )}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5 pl-5">
-                            <span className="text-xs text-muted-foreground truncate flex-1">
-                              {t.last_message ?? "Sem mensagens"}
-                            </span>
-                            {t.last_activity && (
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {formatDistanceToNow(new Date(t.last_activity), { addSuffix: false, locale: ptBR })}
-                              </span>
-                            )}
-                          </div>
-                          {t.entity_type && (
-                            <div className="text-[10px] text-muted-foreground mt-0.5 pl-5">{t.entity_type}</div>
                           )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </TabsContent>
-          </Tabs>
+                          <Badge
+                            variant={t.visibility === "customer_visible" ? "secondary" : "outline"}
+                            className="h-4 text-[10px] px-1.5 shrink-0"
+                          >
+                            {t.visibility === "customer_visible" ? (
+                              <Eye className="h-2.5 w-2.5" />
+                            ) : t.visibility === "mixed" ? (
+                              "mixed"
+                            ) : (
+                              <EyeOff className="h-2.5 w-2.5" />
+                            )}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 pl-5">
+                          <span className="text-xs text-muted-foreground truncate flex-1">
+                            {t.last_message ?? "Sem mensagens"}
+                          </span>
+                          {t.last_activity && (
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {formatDistanceToNow(new Date(t.last_activity), { addSuffix: false, locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                        {t.entity_type && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5 pl-5">{t.entity_type}</div>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       ) : (
         <>
