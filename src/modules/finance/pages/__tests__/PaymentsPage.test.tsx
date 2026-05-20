@@ -14,6 +14,7 @@ vi.mock("@/integrations/supabase/client", () => {
       in: () => b,
       neq: () => b,
       eq: () => b,
+      is: () => b,
       limit: () => b,
       order: () => b,
       then: thenable.then.bind(thenable),
@@ -31,9 +32,11 @@ vi.mock("@/integrations/supabase/client", () => {
 
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
 
-describe("PaymentsPage reconcile (F23-D2)", () => {
-  it("renderiza com tab de conciliação (writes diretos eliminados — verificado por grep)", async () => {
+describe("PaymentsPage (F24-B) — caixa físico / pendentes / conciliação bancária", () => {
+  it("renderiza as três abas separadas", async () => {
     render(<MemoryRouter><PaymentsPage /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText(/Conciliação de caixa/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Caixa físico/i)).toBeInTheDocument());
+    expect(screen.getByText(/Pagamentos pendentes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Conciliação bancária/i)).toBeInTheDocument();
   });
 });

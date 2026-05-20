@@ -324,6 +324,109 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_reconciliation_batches: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          source?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      bank_reconciliation_lines: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          created_at: string
+          created_by: string | null
+          direction: string
+          id: string
+          matched_at: string | null
+          matched_by: string | null
+          notes: string | null
+          occurred_at: string
+          payment_id: string | null
+          reference: string | null
+          status: string
+          supplier_payment_id: string | null
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          notes?: string | null
+          occurred_at?: string
+          payment_id?: string | null
+          reference?: string | null
+          status?: string
+          supplier_payment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          matched_at?: string | null
+          matched_by?: string | null
+          notes?: string | null
+          occurred_at?: string
+          payment_id?: string | null
+          reference?: string | null
+          status?: string
+          supplier_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_lines_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliation_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_lines_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_lines_supplier_payment_id_fkey"
+            columns: ["supplier_payment_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bom_lines: {
         Row: {
           applies_to_variant_rule: Json | null
@@ -814,6 +917,7 @@ export type Database = {
           created_by: string | null
           id: string
           kind: string
+          migration_note: string | null
           notes: string | null
           partner_id: string | null
           payment_id: string | null
@@ -834,6 +938,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           kind: string
+          migration_note?: string | null
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
@@ -854,6 +959,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           kind?: string
+          migration_note?: string | null
           notes?: string | null
           partner_id?: string | null
           payment_id?: string | null
@@ -1541,6 +1647,10 @@ export type Database = {
           order_id: string | null
           partner_id: string | null
           payment_date: string
+          reconciled_at: string | null
+          reconciled_by: string | null
+          reconciliation_line_id: string | null
+          reconciliation_status: string
           reference: string | null
           refund_of: string | null
           schedule_id: string | null
@@ -1560,6 +1670,10 @@ export type Database = {
           order_id?: string | null
           partner_id?: string | null
           payment_date?: string
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reconciliation_line_id?: string | null
+          reconciliation_status?: string
           reference?: string | null
           refund_of?: string | null
           schedule_id?: string | null
@@ -1579,6 +1693,10 @@ export type Database = {
           order_id?: string | null
           partner_id?: string | null
           payment_date?: string
+          reconciled_at?: string | null
+          reconciled_by?: string | null
+          reconciliation_line_id?: string | null
+          reconciliation_status?: string
           reference?: string | null
           refund_of?: string | null
           schedule_id?: string | null
@@ -4996,8 +5114,11 @@ export type Database = {
           default_journal_id: string | null
           feeds_cash_session: boolean
           id: string
+          journal_type: string
           name: string
+          requires_reconciliation: boolean
           requires_reference: boolean
+          settlement_delay_days: number
           updated_at: string
         }
         Insert: {
@@ -5008,8 +5129,11 @@ export type Database = {
           default_journal_id?: string | null
           feeds_cash_session?: boolean
           id?: string
+          journal_type?: string
           name: string
+          requires_reconciliation?: boolean
           requires_reference?: boolean
+          settlement_delay_days?: number
           updated_at?: string
         }
         Update: {
@@ -5020,8 +5144,11 @@ export type Database = {
           default_journal_id?: string | null
           feeds_cash_session?: boolean
           id?: string
+          journal_type?: string
           name?: string
+          requires_reconciliation?: boolean
           requires_reference?: boolean
+          settlement_delay_days?: number
           updated_at?: string
         }
         Relationships: [
@@ -10997,6 +11124,7 @@ export type Database = {
         Args: { _verbose?: boolean }
         Returns: Json
       }
+      _test_phase24_finance_core_rebuild: { Args: never; Returns: Json }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -11089,6 +11217,18 @@ export type Database = {
           vehicle_id: string
           zone_id: string
         }[]
+      }
+      bank_reconciliation_line_create: {
+        Args: { _payload: Json }
+        Returns: string
+      }
+      bank_reconciliation_match_customer_payment: {
+        Args: { _line_id: string; _payment_id: string }
+        Returns: undefined
+      }
+      bank_reconciliation_unmatch: {
+        Args: { _line_id: string; _reason: string }
+        Returns: undefined
       }
       bom_delete_line: { Args: { p_id: string }; Returns: boolean }
       bom_delete_output: { Args: { p_id: string }; Returns: boolean }
@@ -11222,6 +11362,10 @@ export type Database = {
           order_id: string | null
           partner_id: string | null
           payment_date: string
+          reconciled_at: string | null
+          reconciled_by: string | null
+          reconciliation_line_id: string | null
+          reconciliation_status: string
           reference: string | null
           refund_of: string | null
           schedule_id: string | null
@@ -12075,6 +12219,10 @@ export type Database = {
           order_id: string | null
           partner_id: string | null
           payment_date: string
+          reconciled_at: string | null
+          reconciled_by: string | null
+          reconciliation_line_id: string | null
+          reconciliation_status: string
           reference: string | null
           refund_of: string | null
           schedule_id: string | null
