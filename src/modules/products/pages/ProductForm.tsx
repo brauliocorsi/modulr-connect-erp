@@ -216,6 +216,7 @@ export default function ProductForm() {
       />
 
       <PageBody>
+        <SummaryCards items={summary} className="mb-4" />
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
             <Card className="p-6">
