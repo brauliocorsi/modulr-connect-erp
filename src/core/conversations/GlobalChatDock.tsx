@@ -159,10 +159,11 @@ export default function GlobalChatDock() {
   // Realtime: refresh threads on any new message; refresh active thread messages if it matches
   useEffect(() => {
     if (!user || hidden) return;
-    const channel = supabase
+    if (typeof (supabase as any).channel !== "function") return;
+    const channel = (supabase as any)
       .channel(`global-chat-${user.id}`)
       .on(
-        "postgres_changes" as any,
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "conversation_messages" },
         (payload: any) => {
           const tid = payload?.new?.thread_id;
@@ -174,13 +175,13 @@ export default function GlobalChatDock() {
         },
       )
       .on(
-        "postgres_changes" as any,
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversation_participants", filter: `user_id=eq.${user.id}` },
         () => { fetchThreads(); },
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      try { (supabase as any).removeChannel?.(channel); } catch { /* noop */ }
     };
   }, [user, hidden, activeThread, dockState, fetchThreads, fetchMessages, markRead]);
 
