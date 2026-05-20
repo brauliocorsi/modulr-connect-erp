@@ -1,13 +1,13 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader, PageBody } from "@/core/layout/PageHeader";
+import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { Truck, User2, Calendar, Lock, MapPin } from "lucide-react";
+import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock } from "lucide-react";
 
 import { callRouteRpc } from "../lib/routeRpc";
 import { RouteProgress } from "../components/RouteProgress";
@@ -18,6 +18,14 @@ import { DeliverOrderDialog } from "../components/DeliverOrderDialog";
 import { ReturnPackageDialog } from "../components/ReturnPackageDialog";
 import { CashClosureCard } from "@/modules/m5/components/CashClosureCard";
 import { RescheduleDialog } from "@/modules/m5/components/RescheduleDialog";
+import {
+  EntityHeader,
+  OperationalStatusBadge,
+  SummaryCards,
+  type OperationalAction,
+  type SummaryCardItem,
+} from "@/core/operational";
+import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
 
 // UI-4: visão operacional da rota.
 // NOTA: continua a respeitar UI-P0 — sem .update()/.delete() directos em
