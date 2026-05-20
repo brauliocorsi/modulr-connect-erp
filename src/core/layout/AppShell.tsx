@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Grid3x3, Search, ChevronDown, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import GlobalSidebar from "@/core/layout/GlobalSidebar";
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
