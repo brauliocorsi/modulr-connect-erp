@@ -1,13 +1,13 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHeader, PageBody } from "@/core/layout/PageHeader";
+import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { Truck, User2, Calendar, Lock, MapPin } from "lucide-react";
+import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock } from "lucide-react";
 
 import { callRouteRpc } from "../lib/routeRpc";
 import { RouteProgress } from "../components/RouteProgress";
@@ -18,6 +18,14 @@ import { DeliverOrderDialog } from "../components/DeliverOrderDialog";
 import { ReturnPackageDialog } from "../components/ReturnPackageDialog";
 import { CashClosureCard } from "@/modules/m5/components/CashClosureCard";
 import { RescheduleDialog } from "@/modules/m5/components/RescheduleDialog";
+import {
+  EntityHeader,
+  OperationalStatusBadge,
+  SummaryCards,
+  type OperationalAction,
+  type SummaryCardItem,
+} from "@/core/operational";
+import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
 
 // UI-4: visão operacional da rota.
 // NOTA: continua a respeitar UI-P0 — sem .update()/.delete() directos em
@@ -112,11 +120,21 @@ export default function RouteDetail() {
   const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
 
-  const refreshAll = () => {
-    refetchRoute(); refetchPickings(); refetchOrders(); refetchManifest(); refetchDocks();
-    qc.invalidateQueries({ queryKey: ["route-capacity", id] });
-    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
-  };
+  const { refresh, lastUpdated, isFetching } = useEntityRefresh({
+    entityType: "delivery_route",
+    entityId: id,
+    extraKeys: [
+      ["route-detail", id],
+      ["route-capacity", id],
+      ["route-pickings", id],
+      ["route-orders", id],
+      ["route-manifest", id],
+      ["route-docks", id],
+      ["routes-schedule"],
+    ],
+  });
+
+  const refreshAll = () => { void refresh(); };
 
   const callRpc = async (key: string, fn: string, args: Record<string, any>, label: string, closeCtx = false) => {
     setBusy(key);
@@ -215,42 +233,189 @@ export default function RouteDetail() {
     close: ["return_pending", "awaiting_cash_closure", "done", "completed"].includes(state) && stockOnVehicle === 0,
   };
 
+  const disabledReason = (cond: boolean, reason: string) => (cond ? undefined : reason);
+  const closeReasonText = !["return_pending", "awaiting_cash_closure", "done", "completed"].includes(state)
+    ? "A rota ainda não está pronta para fechar."
+    : stockOnVehicle > 0
+      ? `${stockOnVehicle} package(s) ainda na viatura.`
+      : undefined;
+
+  const actions: OperationalAction[] = [
+    {
+      key: "ptd",
+      label: "Mover p/ cais",
+      icon: <Package className="h-4 w-4" />,
+      onClick: async () => { await callRpc("ptd", "delivery_pick_to_dock", { _route_id: id, _dock_id: dockId }, "Mover para cais"); },
+      loading: busy === "ptd",
+      disabled: !can.pickToDock || busy !== null,
+      disabledReason: !dockId ? "Selecione um cais antes de mover." : disabledReason(can.pickToDock, "Estado da rota não permite mover para cais."),
+    },
+    {
+      key: "lv",
+      label: "Carregar viatura",
+      icon: <Truck className="h-4 w-4" />,
+      onClick: async () => { await callRpc("lv", "delivery_load_vehicle", { _route_id: id }, "Carregar viatura"); },
+      loading: busy === "lv",
+      disabled: !can.loadVehicle || busy !== null,
+      disabledReason: disabledReason(can.loadVehicle, "Estado da rota não permite carregar."),
+    },
+    {
+      key: "vl",
+      label: "Verificar carga",
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      onClick: async () => { await callRpc("vl", "delivery_verify_load", { _route_id: id, _manifest_ids: [] as string[] }, "Verificar carga"); },
+      loading: busy === "vl",
+      disabled: !can.verifyLoad || busy !== null,
+      disabledReason: disabledReason(can.verifyLoad, "A carga ainda não está em verificação."),
+    },
+    {
+      key: "st",
+      label: "Iniciar rota",
+      variant: "default",
+      icon: <PlayCircle className="h-4 w-4" />,
+      onClick: async () => { await callRpc("st", "delivery_route_start", { _route_id: id }, "Iniciar rota"); },
+      loading: busy === "st",
+      disabled: !can.start || busy !== null,
+      disabledReason: disabledReason(can.start, "A rota não está pronta para iniciar."),
+      confirm: {
+        title: "Iniciar rota?",
+        description: "Confirma o início da rota com a viatura carregada.",
+        confirmLabel: "Iniciar",
+      },
+    },
+    {
+      key: "cp",
+      label: "Completar",
+      icon: <FlagOff className="h-4 w-4" />,
+      onClick: async () => { await callRpc("cp", "delivery_route_complete", { _route_id: id }, "Completar rota"); },
+      loading: busy === "cp",
+      disabled: !can.complete || busy !== null,
+      disabledReason: disabledReason(can.complete, "A rota ainda não está em curso."),
+      confirm: {
+        title: "Marcar rota como completa?",
+        description: "Esta ação dá a rota como terminada e prepara o fecho.",
+        confirmLabel: "Completar",
+      },
+    },
+    {
+      key: "cl",
+      label: "Fechar rota",
+      variant: "default",
+      icon: <Lock className="h-4 w-4" />,
+      onClick: async () => { await callRpc("cl", "delivery_route_close", { _route_id: id }, "Fechar rota", true); },
+      loading: busy === "cl",
+      disabled: !can.close || busy !== null,
+      disabledReason: closeReasonText,
+      confirm: {
+        title: "Fechar rota?",
+        description: "Valida packages na viatura, pedidos abertos e verificação de carga.",
+        confirmLabel: "Fechar",
+      },
+    },
+  ];
+
+  const summaryItems: SummaryCardItem[] = [
+    {
+      key: "deliveries",
+      label: "Entregas",
+      value: <span>{orderCounts.delivered + orderCounts.partial}<span className="text-muted-foreground text-base">/{orderCounts.total}</span></span>,
+      hint: `Pendentes: ${orderCounts.pending} · Falhas: ${orderCounts.failed}`,
+      tone: orderCounts.total > 0 && orderCounts.delivered + orderCounts.partial >= orderCounts.total ? "success" : "primary",
+      icon: <MapPin className="h-3 w-3" />,
+    },
+    {
+      key: "packages",
+      label: "Colis",
+      value: <span>{stats.loadedCount}<span className="text-muted-foreground text-base">/{stats.totalPackages}</span></span>,
+      hint: `Entregues: ${stats.deliveredCount} · Retornados: ${stats.returnedCount}`,
+      tone: stats.totalPackages > 0 && stats.loadedCount < stats.totalPackages ? "warning" : "default",
+      icon: <Package className="h-3 w-3" />,
+    },
+    {
+      key: "capacity",
+      label: "Capacidade",
+      value: <span className="capitalize">{r.capacity_status ?? "—"}</span>,
+      hint: (capacity as any)?.volume_used != null ? `Vol. ${Number((capacity as any).volume_used).toFixed(2)}` : "Conforme viatura",
+      tone: r.capacity_status === "overcapacity" ? "danger" : "muted",
+      icon: <Truck className="h-3 w-3" />,
+    },
+    {
+      key: "verify",
+      label: "Verificação",
+      value: <span>{verifyStats.ver}<span className="text-muted-foreground text-base">/{verifyStats.req}</span></span>,
+      hint: "Manifesto verificado",
+      tone: verifyStats.req > 0 && verifyStats.ver < verifyStats.req ? "warning" : "success",
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    {
+      key: "issues",
+      label: "Stock na viatura",
+      value: <span>{stockOnVehicle}</span>,
+      hint: `Parciais/falhas: ${orderCounts.partial + orderCounts.failed}`,
+      tone: stockOnVehicle > 0 ? "danger" : orderCounts.failed > 0 ? "warning" : "success",
+      icon: <AlertTriangle className="h-3 w-3" />,
+    },
+  ];
+
   return (
     <>
-      <PageHeader
+      <EntityHeader
         title={`${r.delivery_zones?.name ?? "Rota"} · ${r.route_date}`}
+        subtitle={
+          <span>
+            {r.vehicles?.name ?? "Sem viatura"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}
+            {" · "}Motorista: {r.driver_id ?? "—"}
+            {r.loading_docks?.name ? ` · Cais: ${r.loading_docks.name}` : ""}
+          </span>
+        }
         breadcrumb={[{ label: "Rotas", to: "/routes" }, { label: r.route_date }]}
+        statusBadges={
+          <>
+            <OperationalStatusBadge domain="delivery_route" status={state} />
+            {isReturnPending && <Badge variant="outline" className="text-[10px]">retorno pendente</Badge>}
+            {r.capacity_status === "overcapacity" && (
+              <Badge variant="destructive" className="text-[10px]">Capacidade excedida</Badge>
+            )}
+          </>
+        }
+        metadata={[
+          { label: "Data", value: r.route_date },
+          { label: "Zona", value: r.delivery_zones?.name ?? "—" },
+          { label: "Pedidos", value: `${orderCounts.delivered + orderCounts.partial}/${orderCounts.total}` },
+          { label: "Cais", value: r.loading_docks?.name ?? "—" },
+        ]}
+        primaryActions={actions}
+        onRefresh={refresh}
+        isFetching={isFetching}
+        lastUpdated={lastUpdated}
       />
       <PageBody>
-        <Card className="p-3 mb-3 bg-amber-50 border-amber-300 text-amber-900 text-xs flex items-start gap-2">
-          <Lock className="h-4 w-4 mt-0.5" />
-          <div>
-            <strong>UI-4:</strong> visão operacional. Toda a mutação passa por RPCs oficiais (sem updates directos).
-          </div>
-        </Card>
+        <SummaryCards items={summaryItems} className="mb-4" />
 
-        {/* Header summary */}
-        <div className="grid gap-3 md:grid-cols-4 mb-3">
-          <Card className="p-3">
-            <div className="text-xs text-muted-foreground">Estado</div>
-            <Badge className="mt-1 capitalize">{state}</Badge>
-            <div className="text-[10px] text-muted-foreground mt-1">capacidade: {r.capacity_status}</div>
-            {isReturnPending && <Badge variant="outline" className="mt-1 text-[10px]">return_pending</Badge>}
+        {/* Vehicle swap (kept as inline control — not a primary action) */}
+        {can.changeVehicle && (
+          <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">Trocar viatura</span>
+            <Select value={newVehicleId} onValueChange={setNewVehicleId}>
+              <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Selecionar viatura…" /></SelectTrigger>
+              <SelectContent>
+                {(vehicles as any[]).map((v) => <SelectItem key={v.id} value={v.id}>{v.name} {v.license_plate ? `· ${v.license_plate}` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" disabled={!newVehicleId || busy !== null}
+              onClick={() => callRpc("chv", "delivery_route_change_vehicle", { _route_id: id, _vehicle_id: newVehicleId }, "Trocar carrinha")}>
+              {busy === "chv" ? "…" : "Aplicar"}
+            </Button>
+            <span className="mx-2 h-5 w-px bg-border" aria-hidden />
+            <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">Cais</span>
+            <Select value={dockId} onValueChange={setDockId}>
+              <SelectTrigger className="h-8 w-48"><SelectValue placeholder="Selecionar cais…" /></SelectTrigger>
+              <SelectContent>
+                {(docks as any[]).map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </Card>
-          <Card className="p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><Truck className="h-3 w-3" />Carrinha</div>
-            <div className="mt-1 text-sm">{r.vehicles?.name ?? "—"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><User2 className="h-3 w-3" />Motorista</div>
-            <div className="mt-1 text-sm">{r.driver_id ?? "—"}</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data / Cais</div>
-            <div className="mt-1 text-sm">{r.route_date}</div>
-            <div className="text-[10px] text-muted-foreground">{r.loading_docks?.name ?? "sem cais"}</div>
-          </Card>
-        </div>
+        )}
 
         <Card className="p-3 mb-3 space-y-3">
           <RouteProgress
@@ -263,86 +428,17 @@ export default function RouteDetail() {
             totalOrders={orderCounts.total}
             returnPendingCount={stockOnVehicle}
           />
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs text-center">
-            <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Total</div><div className="font-semibold">{orderCounts.total}</div></div>
-            <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Pendentes</div><div className="font-semibold">{orderCounts.pending}</div></div>
-            <div className="rounded bg-muted/30 py-1.5"><div className="text-muted-foreground">Carregadas</div><div className="font-semibold">{orderCounts.loaded}</div></div>
-            <div className="rounded bg-emerald-50 py-1.5"><div className="text-muted-foreground">Entregues</div><div className="font-semibold">{orderCounts.delivered}</div></div>
-            <div className="rounded bg-amber-50 py-1.5"><div className="text-muted-foreground">Parciais/Falhas</div><div className="font-semibold">{orderCounts.partial + orderCounts.failed}</div></div>
-            <div className="rounded bg-rose-50 py-1.5"><div className="text-muted-foreground">Stock na viatura</div><div className="font-semibold">{stockOnVehicle}</div></div>
-          </div>
+          {closeError && (
+            <div className="text-xs rounded border border-destructive/40 bg-destructive/5 text-destructive px-2 py-1.5" role="alert" data-testid="close-error">
+              Fechar bloqueado: {closeError}
+            </div>
+          )}
         </Card>
 
         <div className="grid gap-3 md:grid-cols-3 mb-3">
-          <div className="md:col-span-2 space-y-3">
-            {/* Action bar */}
-            <Card className="p-3 space-y-3">
-              <div className="font-semibold text-sm">Ações de rota (RPCs)</div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Select value={newVehicleId} onValueChange={setNewVehicleId}>
-                  <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Trocar carrinha…" /></SelectTrigger>
-                  <SelectContent>
-                    {(vehicles as any[]).map((v) => <SelectItem key={v.id} value={v.id}>{v.name} {v.license_plate ? `· ${v.license_plate}` : ""}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" disabled={!can.changeVehicle || !newVehicleId || busy !== null}
-                  onClick={() => callRpc("chv", "delivery_route_change_vehicle", { _route_id: id, _vehicle_id: newVehicleId }, "Trocar carrinha")}>
-                  {busy === "chv" ? "…" : "Trocar"}
-                </Button>
-              </div>
-
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Preparação</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={dockId} onValueChange={setDockId}>
-                    <SelectTrigger className="h-8 w-48"><SelectValue placeholder="Cais…" /></SelectTrigger>
-                    <SelectContent>
-                      {(docks as any[]).map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" variant="outline" disabled={!can.pickToDock || busy !== null} title={!dockId ? "Escolha um cais" : ""}
-                    onClick={() => callRpc("ptd", "delivery_pick_to_dock", { _route_id: id, _dock_id: dockId }, "Mover para cais")}>
-                    {busy === "ptd" ? "…" : "1. Mover p/ cais"}
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={!can.loadVehicle || busy !== null}
-                    onClick={() => callRpc("lv", "delivery_load_vehicle", { _route_id: id }, "Carregar viatura")}>
-                    {busy === "lv" ? "…" : "2. Carregar viatura"}
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={!can.verifyLoad || busy !== null}
-                    onClick={() => callRpc("vl", "delivery_verify_load", { _route_id: id, _manifest_ids: [] as string[] }, "Verificar carga")}>
-                    {busy === "vl" ? "…" : "3. Verificar carga"}
-                  </Button>
-                  <Button size="sm" variant="default" disabled={!can.start || busy !== null}
-                    onClick={() => callRpc("st", "delivery_route_start", { _route_id: id }, "Iniciar rota")}>
-                    {busy === "st" ? "…" : "4. Iniciar rota"}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Fecho</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button size="sm" variant="outline" disabled={!can.complete || busy !== null}
-                    onClick={() => callRpc("cp", "delivery_route_complete", { _route_id: id }, "Completar rota")}>
-                    {busy === "cp" ? "…" : "5. Completar"}
-                  </Button>
-                  <Button size="sm" variant="default" disabled={!can.close || busy !== null}
-                    title={!can.close ? (stockOnVehicle > 0 ? `${stockOnVehicle} package(s) ainda na viatura` : "Estado não permite fechar") : ""}
-                    onClick={() => callRpc("cl", "delivery_route_close", { _route_id: id }, "Fechar rota", true)}>
-                    {busy === "cl" ? "…" : "6. Fechar rota"}
-                  </Button>
-                </div>
-                {closeError && (
-                  <div className="mt-2 text-xs rounded border border-rose-300 bg-rose-50 text-rose-900 px-2 py-1.5" role="alert" data-testid="close-error">
-                    Fechar bloqueado: {closeError}
-                  </div>
-                )}
-              </div>
-            </Card>
+          <div className="md:col-span-2">
+            <RouteCapacityCard capacity={capacity} stats={stats} />
           </div>
-
-          <RouteCapacityCard capacity={capacity} stats={stats} />
         </div>
 
         <div className="mb-3">

@@ -10,7 +10,9 @@ export type StatusDomain =
   | "finance"
   | "package"
   | "purchase"
-  | "purchase_need";
+  | "purchase_need"
+  | "delivery_route"
+  | "delivery_order";
 
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
@@ -107,6 +109,34 @@ export const STATUS_REGISTRY: Registry = {
     partially_received: { label: "Parc. recebido", variant: "secondary" },
     received: { label: "Recebido", variant: "secondary" },
     cancelled: { label: "Cancelado", variant: "outline" },
+  },
+  delivery_route: {
+    draft: { label: "Rascunho", variant: "outline" },
+    planning: { label: "Planeamento", variant: "outline" },
+    planned: { label: "Planeada", variant: "secondary" },
+    loading: { label: "Em carregamento", variant: "secondary" },
+    loaded: { label: "Carregada", variant: "secondary" },
+    in_progress: { label: "Em rota", variant: "default" },
+    in_transit: { label: "Em rota", variant: "default" },
+    return_pending: { label: "Retorno pendente", variant: "secondary" },
+    awaiting_cash_closure: { label: "Aguarda fecho caixa", variant: "secondary" },
+    completed: { label: "Concluída", variant: "secondary" },
+    done: { label: "Concluída", variant: "secondary" },
+    closed: { label: "Fechada", variant: "outline" },
+    cancelled: { label: "Cancelada", variant: "destructive" },
+  },
+  delivery_order: {
+    pending: { label: "Pendente", variant: "outline" },
+    planned: { label: "Planeada", variant: "secondary" },
+    loading: { label: "Em carga", variant: "secondary" },
+    loaded: { label: "Carregada", variant: "secondary" },
+    out_for_delivery: { label: "Em entrega", variant: "default" },
+    in_transit: { label: "Em entrega", variant: "default" },
+    delivered: { label: "Entregue", variant: "secondary" },
+    partial: { label: "Entrega parcial", variant: "secondary" },
+    failed: { label: "Falhou", variant: "destructive" },
+    returned: { label: "Retornada", variant: "destructive" },
+    cancelled: { label: "Cancelada", variant: "outline" },
   },
 };
 
