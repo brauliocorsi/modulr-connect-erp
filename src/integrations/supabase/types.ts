@@ -6534,6 +6534,91 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_expenses: {
+        Row: {
+          active: boolean
+          amount: number
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          frequency: string
+          id: string
+          last_generated_bill_id: string | null
+          last_generated_due_date: string | null
+          name: string
+          next_due_date: string
+          notes: string | null
+          payment_method_id: string | null
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          frequency: string
+          id?: string
+          last_generated_bill_id?: string | null
+          last_generated_due_date?: string | null
+          name: string
+          next_due_date: string
+          notes?: string | null
+          payment_method_id?: string | null
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          frequency?: string
+          id?: string
+          last_generated_bill_id?: string | null
+          last_generated_due_date?: string | null
+          name?: string
+          next_due_date?: string
+          notes?: string | null
+          payment_method_id?: string | null
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_last_generated_bill_id_fkey"
+            columns: ["last_generated_bill_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reordering_rules: {
         Row: {
           active: boolean
@@ -11946,6 +12031,19 @@ export type Database = {
       recompute_sale_payment_status: { Args: { _so: string }; Returns: string }
       recompute_sale_state: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
+      recurring_expense_cancel: {
+        Args: { _expense_id: string; _reason: string }
+        Returns: Json
+      }
+      recurring_expense_create: { Args: { _payload: Json }; Returns: Json }
+      recurring_expense_generate_bill: {
+        Args: { _expense_id: string }
+        Returns: Json
+      }
+      recurring_expense_update: {
+        Args: { _expense_id: string; _payload: Json }
+        Returns: Json
+      }
       refresh_order_services: { Args: { _order: string }; Returns: undefined }
       refund_customer_payment: {
         Args: { _payment: string; _reason?: string }
