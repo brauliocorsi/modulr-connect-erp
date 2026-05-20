@@ -61,7 +61,7 @@ describe("RecurringExpensesPage (F23-D3)", () => {
   it("renderiza lista de despesas fixas", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("Renda escritório")).toBeInTheDocument());
-    expect(screen.getByText("Internet")).toBeInTheDocument();
+    expect(screen.getAllByText("Internet").length).toBeGreaterThan(0);
     expect(screen.getByText("Senhorio Lda")).toBeInTheDocument();
   });
 
