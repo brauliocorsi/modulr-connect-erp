@@ -11844,6 +11844,10 @@ export type Database = {
           shortage: number
         }[]
       }
+      product_archive: {
+        Args: { _product_id: string; _reason?: string }
+        Returns: Json
+      }
       product_available_qty: {
         Args: { _product: string; _warehouse: string }
         Returns: number
@@ -11883,6 +11887,10 @@ export type Database = {
           _template_attribute_id: string
           _value_id: string
         }
+        Returns: string
+      }
+      product_upsert: {
+        Args: { _payload?: Json; _product_id?: string }
         Returns: string
       }
       product_variant_delete: { Args: { _variant_id: string }; Returns: Json }
