@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Package, ShoppingBag, Factory, Warehouse, Truck,
   Wallet, Wrench, LifeBuoy, Settings as SettingsIcon, LucideIcon,
-  ChevronDown, Search, Sparkles,
+  ChevronDown, Search, Sparkles, BarChart3,
 } from "lucide-react";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
@@ -30,6 +30,12 @@ type NavGroup = {
 };
 
 const GROUPS: NavGroup[] = [
+  {
+    id: "indicadores", label: "Indicadores", icon: BarChart3,
+    items: [
+      { label: "Visão operacional", to: "/indicators" },
+    ],
+  },
   {
     id: "comercial", label: "Comercial", icon: ShoppingCart,
     items: [
