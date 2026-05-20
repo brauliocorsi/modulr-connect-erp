@@ -11,7 +11,7 @@ const sample = [
     sale_orders: { name: "SO/777" } },
 ];
 
-const rpcMock = vi.fn(() => Promise.resolve({ error: null }));
+const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn(() => Promise.resolve({ error: null })) }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const builder: any = {

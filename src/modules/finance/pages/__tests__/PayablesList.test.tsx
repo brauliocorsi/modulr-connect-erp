@@ -13,7 +13,7 @@ const sample = [
     partners: { id: "p2", name: "Fornecedor B" }, purchase_orders: null },
 ];
 
-const rpcMock = vi.fn(() => Promise.resolve({ error: null }));
+const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn(() => Promise.resolve({ error: null })) }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const builder: any = {
