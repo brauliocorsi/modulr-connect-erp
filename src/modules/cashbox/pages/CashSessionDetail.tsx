@@ -218,28 +218,51 @@ export default function CashSessionDetail() {
                   <th className="text-left px-3 py-2">Referência</th>
                   <th className="text-left px-3 py-2">Notas</th>
                   <th className="text-right px-3 py-2">Valor</th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMoves.length === 0 ? (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
-                ) : filteredMoves.map((m) => (
-                  <tr key={m.id} className="border-t">
-                    <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
-                    <td className="px-3 py-2">{KIND_LABEL[m.kind] ?? m.kind}</td>
-                    <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
-                    <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{m.notes ?? ""}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                      {fmtMoney(m.amount)}
-                    </td>
-                  </tr>
-                ))}
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                ) : filteredMoves.map((m) => {
+                  const isReversal = !!m.reversal_of_id;
+                  const wasReversed = reversedIds.has(m.id);
+                  const canReverse = isOpen && !isReversal && !wasReversed && m.kind !== "opening";
+                  return (
+                    <tr key={m.id} className={`border-t ${isReversal || wasReversed ? "opacity-60" : ""}`}>
+                      <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="px-3 py-2">
+                        {KIND_LABEL[m.kind] ?? m.kind}
+                        {isReversal && <span className="ml-2 text-xs text-muted-foreground">(reversão)</span>}
+                        {wasReversed && <span className="ml-2 text-xs text-muted-foreground">(revertido)</span>}
+                      </td>
+                      <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
+                      <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{m.notes ?? m.reversal_reason ?? ""}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {fmtMoney(m.amount)}
+                      </td>
+                      <td className="px-2">
+                        {canReverse && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Reverter movimento"
+                            onClick={() => setReverseTarget({ id: m.id, reason: "" })}
+                          >
+                            <Undo2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </Card>
       </PageBody>
+
 
       <CashMovementDialog open={movDlg} onOpenChange={setMovDlg} sessionId={id!} onSaved={load} />
 
