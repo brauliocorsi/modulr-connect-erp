@@ -3788,13 +3788,19 @@ export type Database = {
       manufacturing_machines: {
         Row: {
           active: boolean
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           capacity_per_hour: number | null
           code: string
           cost_per_hour: number | null
           created_at: string
           id: string
+          last_maintenance_at: string | null
           machine_type: string | null
+          maintenance_status: string
           name: string
+          next_maintenance_at: string | null
           notes: string | null
           status: Database["public"]["Enums"]["machine_status"]
           updated_at: string
@@ -3802,13 +3808,19 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           capacity_per_hour?: number | null
           code: string
           cost_per_hour?: number | null
           created_at?: string
           id?: string
+          last_maintenance_at?: string | null
           machine_type?: string | null
+          maintenance_status?: string
           name: string
+          next_maintenance_at?: string | null
           notes?: string | null
           status?: Database["public"]["Enums"]["machine_status"]
           updated_at?: string
@@ -3816,13 +3828,19 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           capacity_per_hour?: number | null
           code?: string
           cost_per_hour?: number | null
           created_at?: string
           id?: string
+          last_maintenance_at?: string | null
           machine_type?: string | null
+          maintenance_status?: string
           name?: string
+          next_maintenance_at?: string | null
           notes?: string | null
           status?: Database["public"]["Enums"]["machine_status"]
           updated_at?: string
@@ -3841,6 +3859,9 @@ export type Database = {
       manufacturing_operations: {
         Row: {
           active: boolean
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           code: string
           created_at: string
           default_work_center_id: string | null
@@ -3854,6 +3875,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           code: string
           created_at?: string
           default_work_center_id?: string | null
@@ -3867,6 +3891,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           code?: string
           created_at?: string
           default_work_center_id?: string | null
@@ -10960,6 +10987,9 @@ export type Database = {
       work_centers: {
         Row: {
           active: boolean
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           capacity_per_day: number | null
           code: string
           company_id: string | null
@@ -10975,6 +11005,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           capacity_per_day?: number | null
           code: string
           company_id?: string | null
@@ -10990,6 +11023,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           capacity_per_day?: number | null
           code?: string
           company_id?: string | null
@@ -11647,6 +11683,10 @@ export type Database = {
           passed: boolean
           test: string
         }[]
+      }
+      _test_phase25_machines_workcenters_operations: {
+        Args: never
+        Returns: Json
       }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
@@ -12437,6 +12477,22 @@ export type Database = {
           _variant: string
         }
         Returns: undefined
+      }
+      machine_archive: {
+        Args: { _machine_id: string; _reason: string }
+        Returns: Json
+      }
+      machine_upsert: {
+        Args: { _machine_id: string; _payload: Json }
+        Returns: string
+      }
+      manufacturing_operation_archive: {
+        Args: { _operation_id: string; _reason: string }
+        Returns: Json
+      }
+      manufacturing_operation_upsert: {
+        Args: { _operation_id: string; _payload: Json }
+        Returns: string
       }
       merge_purchase_orders: {
         Args: { _sources: string[]; _target: string }
@@ -13239,6 +13295,14 @@ export type Database = {
       }
       validate_picking: { Args: { _picking: string }; Returns: undefined }
       validate_wave: { Args: { _wave: string }; Returns: undefined }
+      work_center_archive: {
+        Args: { _reason: string; _work_center_id: string }
+        Returns: Json
+      }
+      work_center_upsert: {
+        Args: { _payload: Json; _work_center_id: string }
+        Returns: string
+      }
       work_order_finish: {
         Args: {
           _notes?: string
