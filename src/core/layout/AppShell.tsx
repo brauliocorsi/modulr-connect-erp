@@ -184,36 +184,8 @@ export default function AppShell() {
 
       {/* BODY */}
       <div className="flex-1 flex min-h-0">
-        {activeModule && (
-          <aside className="hidden md:flex w-60 flex-col border-r bg-sidebar text-sidebar-foreground">
-            <div className="p-3 border-b">
-              <div className="text-sm font-semibold">{activeModule.name}</div>
-              <div className="text-xs text-muted-foreground">{activeModule.description}</div>
-            </div>
-            <nav className="flex-1 overflow-auto p-2 space-y-4">
-              {Object.entries(sectionedMenu).map(([section, items]) => (
-                <div key={section}>
-                  <div className="o-section-title px-2 mb-1">{section}</div>
-                  {items.map((it) => (
-                    <NavLink
-                      key={it.to}
-                      to={it.to}
-                      end={it.to === activeModule.basePath}
-                      className={({ isActive }) =>
-                        cn(
-                          "block px-2 py-1.5 rounded text-sm hover:bg-sidebar-accent",
-                          isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        )
-                      }
-                    >
-                      {it.label}
-                    </NavLink>
-                  ))}
-                </div>
-              ))}
-            </nav>
-          </aside>
-        )}
+        <GlobalSidebar />
+
         <main className="flex-1 min-w-0 overflow-auto">
           <Outlet />
         </main>
