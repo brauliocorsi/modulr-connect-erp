@@ -320,3 +320,23 @@ export function RegisterPaymentDialog({
     </Dialog>
   );
 }
+
+function CashCTAs({ status }: { status: string }) {
+  const { isAdmin, can } = usePermissions();
+  const { user } = useAuth();
+  if (status === "no_store" && isAdmin && user?.id) {
+    return (
+      <Button asChild size="sm" variant="outline" data-testid="cta-configure-store">
+        <Link to={`/settings/users/${user.id}`}>Configurar loja do utilizador</Link>
+      </Button>
+    );
+  }
+  if (status === "no_open_session" && (isAdmin || can("finance", "cash_sessions", "edit"))) {
+    return (
+      <Button asChild size="sm" variant="outline" data-testid="cta-open-cash">
+        <Link to="/cashbox">Abrir caixa</Link>
+      </Button>
+    );
+  }
+  return null;
+}
