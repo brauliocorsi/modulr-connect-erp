@@ -322,7 +322,7 @@ export function RegisterPaymentDialog({
 }
 
 function CashCTAs({ status }: { status: string }) {
-  const { isAdmin, can } = usePermissions();
+  const { isAdmin, inGroup } = usePermissions();
   const { user } = useAuth();
   if (status === "no_store" && isAdmin && user?.id) {
     return (
@@ -331,7 +331,7 @@ function CashCTAs({ status }: { status: string }) {
       </Button>
     );
   }
-  if (status === "no_open_session" && (isAdmin || can("core" as any, "cash_sessions", "edit"))) {
+  if (status === "no_open_session" && (isAdmin || inGroup("cashbox_user") || inGroup("finance_user") || inGroup("sales_user"))) {
     return (
       <Button asChild size="sm" variant="outline" data-testid="cta-open-cash">
         <Link to="/cashbox">Abrir caixa</Link>
