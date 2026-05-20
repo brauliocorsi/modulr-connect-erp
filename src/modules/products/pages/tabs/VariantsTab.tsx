@@ -44,7 +44,27 @@ export function VariantsTab({ productId }: { productId: string }) {
       return next;
     });
 
-  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique/i.test(err?.message ?? "");
+  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique|duplicate_sku|duplicate_barcode/i.test(err?.message ?? "");
+
+  const VARIANT_DELETE_REASONS: Record<string, string> = {
+    has_stock: "Variante tem stock — ajuste antes de remover",
+    has_reservations: "Variante tem reservas pendentes",
+    has_sale_orders: "Variante está em encomendas de venda",
+    has_purchase_orders: "Variante está em encomendas de compra",
+    has_manufacturing_orders: "Variante está em ordens de fabrico",
+    has_mo_components: "Variante é componente de ordens de fabrico",
+    has_stock_moves: "Variante tem movimentos de stock",
+    has_bom_variant_rules: "Variante tem regras de BOM",
+    has_boms: "Variante tem BOM dedicada",
+  };
+
+  const rpcUpsert = async (variantId: string | null, payload: Record<string, unknown>) => {
+    return await supabase.rpc("product_variant_upsert", {
+      _variant_id: variantId,
+      _product_id: productId,
+      _payload: payload as any,
+    });
+  };
 
   const load = async () => {
     const { data: prod } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
@@ -169,14 +189,23 @@ export function VariantsTab({ productId }: { productId: string }) {
     if (skuErr) { setRowError(v.id, "sku", skuErr); toast.error(`SKU duplicado — ${skuErr}`); return; }
     if (bcErr) { setRowError(v.id, "barcode", bcErr); toast.error(`Código de barras duplicado — ${bcErr}`); return; }
 
-    const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
+    const { error } = await rpcUpsert(v.id, patch);
     if (error) {
+      const msg = error.message || "";
+      if (/duplicate_sku/i.test(msg)) {
+        setRowError(v.id, "sku", "Valor duplicado no banco");
+        return toast.error("SKU já existe em outra variante");
+      }
+      if (/duplicate_barcode/i.test(msg)) {
+        setRowError(v.id, "barcode", "Valor duplicado no banco");
+        return toast.error("Código de barras já existe em outra variante");
+      }
       if (isUniqueError(error)) {
-        const field = /barcode/i.test(error.message) ? "barcode" : "sku";
+        const field = /barcode/i.test(msg) ? "barcode" : "sku";
         setRowError(v.id, field, "Valor duplicado no banco");
         return toast.error(`${field === "sku" ? "SKU" : "Código de barras"} já existe em outra variante`);
       }
-      return toast.error(error.message);
+      return toast.error(msg);
     }
     if ("sku" in patch) setRowError(v.id, "sku", undefined);
     if ("barcode" in patch) setRowError(v.id, "barcode", undefined);
@@ -184,8 +213,14 @@ export function VariantsTab({ productId }: { productId: string }) {
   };
   const removeVariant = async (id: string) => {
     if (!confirm("Remover variante?")) return;
-    await supabase.from("product_variants").delete().eq("id", id);
+    const { error } = await supabase.rpc("product_variant_delete", { _variant_id: id });
+    if (error) {
+      const code = (error.message || "").trim();
+      toast.error(VARIANT_DELETE_REASONS[code] ?? `Não foi possível remover: ${code}`);
+      return;
+    }
     setSelected((s) => { const n = new Set(s); n.delete(id); return n; });
+    toast.success("Variante removida");
     load();
   };
 
@@ -197,33 +232,44 @@ export function VariantsTab({ productId }: { productId: string }) {
     return ids;
   };
 
+  const bulkUpsert = async (
+    items: { id: string; payload: Record<string, unknown> }[],
+  ) => {
+    const results = await Promise.all(
+      items.map(({ id, payload }) => rpcUpsert(id, payload).then((r) => ({ id, r }))),
+    );
+    const failed = results.filter((x) => x.r.error);
+    return { results, failed };
+  };
+
   const applyBulkPrice = async (mode: "set" | "add") => {
     const ids = requireSelection(); if (!ids) return;
     const value = Number(bulkPrice);
     if (Number.isNaN(value)) return toast.error("Valor inválido");
-    if (mode === "set") {
-      await supabase.from("product_variants").update({ price_extra: value }).in("id", ids);
-    } else {
-      await Promise.all(ids.map((id) => {
-        const v = variants.find((x) => x.id === id);
-        return supabase.from("product_variants").update({ price_extra: Number(v?.price_extra ?? 0) + value }).eq("id", id);
-      }));
-    }
-    toast.success(`${ids.length} variantes atualizadas`);
+    const items = ids.map((id) => {
+      const v = variants.find((x) => x.id === id);
+      const price_extra = mode === "set" ? value : Number(v?.price_extra ?? 0) + value;
+      return { id, payload: { price_extra } };
+    });
+    const { failed } = await bulkUpsert(items);
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes atualizadas`);
     setBulkPrice(""); load();
   };
   const applyBulkWeight = async () => {
     const ids = requireSelection(); if (!ids) return;
     const value = Number(bulkWeight);
     if (Number.isNaN(value)) return toast.error("Valor inválido");
-    await supabase.from("product_variants").update({ weight: value }).in("id", ids);
-    toast.success(`${ids.length} variantes atualizadas`);
+    const { failed } = await bulkUpsert(ids.map((id) => ({ id, payload: { weight: value } })));
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes atualizadas`);
     setBulkWeight(""); load();
   };
   const applyBulkActive = async (active: boolean) => {
     const ids = requireSelection(); if (!ids) return;
-    await supabase.from("product_variants").update({ active }).in("id", ids);
-    toast.success(`${ids.length} variantes ${active ? "ativadas" : "desativadas"}`);
+    const { failed } = await bulkUpsert(ids.map((id) => ({ id, payload: { active } })));
+    if (failed.length) toast.error(`${failed.length} erro(s) ao atualizar`);
+    else toast.success(`${ids.length} variantes ${active ? "ativadas" : "desativadas"}`);
     load();
   };
   const applyBulkSku = async () => {
@@ -272,13 +318,13 @@ export function VariantsTab({ productId }: { productId: string }) {
       return;
     }
 
-    // 4. Apply
-    const results = await Promise.all(targets.map((t) =>
-      supabase.from("product_variants").update({ sku: t.sku }).eq("id", t.id).then((r) => ({ t, r }))
-    ));
-    const failed = results.filter((x) => x.r.error);
+    // 4. Apply via RPC
+    const { failed } = await bulkUpsert(targets.map((t) => ({ id: t.id, payload: { sku: t.sku } })));
     if (failed.length) {
-      const msgs = failed.map(({ t, r }) => `${t.label}: ${r.error?.message}`);
+      const msgs = failed.map(({ id, r }) => {
+        const label = targets.find((t) => t.id === id)?.label ?? id;
+        return `${label}: ${r.error?.message}`;
+      });
       setBulkErrors(msgs);
       toast.error(`${failed.length} erro(s) ao salvar`);
     } else {
@@ -294,14 +340,17 @@ export function VariantsTab({ productId }: { productId: string }) {
     const { error } = await supabase.storage.from("product-variants").upload(path, file, { upsert: true });
     if (error) return toast.error(error.message);
     const { data } = supabase.storage.from("product-variants").getPublicUrl(path);
-    await supabase.from("product_variants").update({ image_url: data.publicUrl }).eq("id", variant.id);
+    const { error: rpcErr } = await rpcUpsert(variant.id, { image_url: data.publicUrl });
+    if (rpcErr) return toast.error(rpcErr.message);
     toast.success("Foto enviada");
     load();
   };
   const removeImage = async (variant: Variant) => {
-    await supabase.from("product_variants").update({ image_url: null }).eq("id", variant.id);
+    const { error } = await rpcUpsert(variant.id, { image_url: null });
+    if (error) return toast.error(error.message);
     load();
   };
+
 
   return (
     <div className="space-y-4">

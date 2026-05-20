@@ -11852,6 +11852,11 @@ export type Database = {
         Args: { _product_id: string }
         Returns: Json
       }
+      product_variant_delete: { Args: { _variant_id: string }; Returns: Json }
+      product_variant_upsert: {
+        Args: { _payload: Json; _product_id: string; _variant_id: string }
+        Returns: string
+      }
       purchase_can_manage: { Args: { _uid: string }; Returns: boolean }
       purchase_need_remaining_qty: { Args: { _id: string }; Returns: number }
       purchase_needs_create_po: {
