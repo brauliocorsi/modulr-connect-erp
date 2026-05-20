@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { EntityHeader } from "@/core/operational/EntityHeader";
 import { OperationalDataTable } from "@/core/operational/OperationalDataTable";
-import { OperationalStatusBadge } from "@/core/operational/OperationalStatusBadge";
+// OperationalStatusBadge import removed; using Badge directly.
 import { UserStoreAssignmentsPanel } from "@/modules/settings/components/UserStoreAssignmentsPanel";
 import { UserRolesPanel } from "@/modules/settings/components/UserRolesPanel";
 import { PermissionsHealthCard } from "@/modules/settings/components/PermissionsHealthCard";
