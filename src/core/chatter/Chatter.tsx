@@ -62,14 +62,18 @@ export function Chatter({ recordType, recordId }: { recordType: string; recordId
 
   const send = async () => {
     if (!text.trim() || !user) return;
-    await supabase.from("record_messages").insert({
-      record_type: recordType,
-      record_id: recordId,
-      author_id: user.id,
-      kind: "comment",
-      body: text.trim(),
+    const { error } = await supabase.rpc("record_message_post" as any, {
+      _entity_type: recordType,
+      _entity_id: recordId,
+      _body: text.trim(),
+      _visibility: "internal",
     });
+    if (error) {
+      console.warn("record_message_post failed", error);
+      return;
+    }
     setText("");
+    load();
   };
 
   return (

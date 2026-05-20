@@ -5,28 +5,36 @@ import { useAuth } from "@/core/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, X, Minus, ChevronLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+
+import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { inferEntityContextFromPath } from "./inferEntityContext";
 
 type DockState = "closed" | "minimized" | "open";
 const STORAGE_KEY = "erp.globalChatDock.state";
-const SEEN_KEY = "erp.globalChatDock.seen";
 const POLL_MS = 20000;
 
-type ThreadRow = {
+type UnifiedThread = {
   id: string;
+  thread_type: "dm" | "channel" | "entity" | "support";
   title: string;
-  status: string;
-  visibility: "internal" | "customer_visible" | "mixed";
   entity_type: string | null;
   entity_id: string | null;
-  created_at: string;
-  last_message_at: string | null;
+  channel_id: string | null;
+  visibility: "internal" | "customer_visible" | "mixed";
+  status: string;
+  last_activity: string | null;
   last_message: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+  last_read_at: string | null;
+  pinned: boolean;
+  muted: boolean;
 };
+
 type MsgRow = {
   id: string;
   thread_id: string;
@@ -36,6 +44,8 @@ type MsgRow = {
   visibility: string;
   created_at: string;
 };
+
+type TabKey = "all" | "dm" | "channel" | "entity" | "page";
 
 function readPersisted(): { state: DockState; threadId: string | null } {
   try {
@@ -57,39 +67,31 @@ function persist(state: DockState, threadId: string | null) {
     /* noop */
   }
 }
-function readSeen(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-function writeSeen(map: Record<string, string>) {
-  try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify(map));
-  } catch {
-    /* noop */
-  }
+
+function threadIcon(t: UnifiedThread) {
+  if (t.thread_type === "channel") return <Hash className="h-3 w-3" />;
+  if (t.thread_type === "dm") return <AtSign className="h-3 w-3" />;
+  return <Inbox className="h-3 w-3" />;
 }
 
 export default function GlobalChatDock() {
   const { user } = useAuth();
   const loc = useLocation();
-
-  // Hide on portal/login/delivery shell (not under AppShell anyway, but be defensive)
   const hidden = loc.pathname.startsWith("/portal/") || loc.pathname.startsWith("/login");
+
+  const pageCtx = useMemo(() => inferEntityContextFromPath(loc.pathname), [loc.pathname]);
 
   const initial = useMemo(readPersisted, []);
   const [dockState, setDockState] = useState<DockState>(initial.state);
   const [activeThread, setActiveThread] = useState<string | null>(initial.threadId);
-  const [threads, setThreads] = useState<ThreadRow[] | null>(null);
+  const [threads, setThreads] = useState<UnifiedThread[] | null>(null);
   const [messages, setMessages] = useState<MsgRow[] | null>(null);
   const [loadingThreads, setLoadingThreads] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [seen, setSeen] = useState<Record<string, string>>(readSeen);
+  const [tab, setTab] = useState<TabKey>("all");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -101,42 +103,10 @@ export default function GlobalChatDock() {
     setLoadingThreads(true);
     setError(null);
     try {
-      const { data: parts, error: pErr } = await supabase
-        .from("conversation_participants")
-        .select("thread_id, left_at")
-        .eq("user_id", user.id)
-        .is("left_at", null);
-      if (pErr) throw pErr;
-      const ids = Array.from(new Set((parts ?? []).map((p: any) => p.thread_id)));
-      if (ids.length === 0) {
-        setThreads([]);
-        return;
-      }
-      const { data: ths, error: tErr } = await supabase
-        .from("conversation_threads")
-        .select("id, title, status, visibility, entity_type, entity_id, created_at")
-        .in("id", ids)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (tErr) throw tErr;
-      // last message per thread (single query, then reduce)
-      const { data: lastMsgs } = await supabase
-        .from("conversation_messages")
-        .select("thread_id, message, created_at")
-        .in("thread_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      const lastMap = new Map<string, { message: string; created_at: string }>();
-      for (const m of (lastMsgs ?? []) as any[]) {
-        if (!lastMap.has(m.thread_id)) lastMap.set(m.thread_id, { message: m.message, created_at: m.created_at });
-      }
-      const merged: ThreadRow[] = (ths ?? []).map((t: any) => ({
-        ...t,
-        last_message: lastMap.get(t.id)?.message ?? null,
-        last_message_at: lastMap.get(t.id)?.created_at ?? null,
-      }));
-      merged.sort((a, b) => (b.last_message_at ?? b.created_at).localeCompare(a.last_message_at ?? a.created_at));
-      setThreads(merged);
+      const { data, error: rErr } = await supabase.rpc("conversation_unified_list" as any, { _limit: 50 });
+      if (rErr) throw rErr;
+      const arr = (Array.isArray(data) ? data : []) as UnifiedThread[];
+      setThreads(arr);
     } catch (e: any) {
       setError(e?.message || "Erro ao carregar conversas");
       setThreads([]);
@@ -148,14 +118,12 @@ export default function GlobalChatDock() {
   const fetchMessages = useCallback(async (tid: string) => {
     setLoadingMessages(true);
     try {
-      const { data, error: mErr } = await supabase
-        .from("conversation_messages")
-        .select("id, thread_id, sender_user_id, sender_type, message, visibility, created_at")
-        .eq("thread_id", tid)
-        .order("created_at", { ascending: true })
-        .limit(200);
+      const { data, error: mErr } = await supabase.rpc("conversation_get_messages" as any, {
+        _thread_id: tid,
+        _limit: 100,
+      });
       if (mErr) throw mErr;
-      setMessages((data ?? []) as MsgRow[]);
+      setMessages((Array.isArray(data) ? data : []) as MsgRow[]);
     } catch (e: any) {
       setError(e?.message || "Erro ao carregar mensagens");
       setMessages([]);
@@ -163,6 +131,18 @@ export default function GlobalChatDock() {
       setLoadingMessages(false);
     }
   }, []);
+
+  const markRead = useCallback(
+    async (tid: string) => {
+      try {
+        await supabase.rpc("conversation_mark_read" as any, { _thread_id: tid });
+        setThreads((prev) => prev?.map((t) => (t.id === tid ? { ...t, unread_count: 0 } : t)) ?? prev);
+      } catch {
+        /* silent */
+      }
+    },
+    [],
+  );
 
   // Initial + polling
   useEffect(() => {
@@ -176,11 +156,12 @@ export default function GlobalChatDock() {
     return () => window.clearInterval(id);
   }, [user, hidden, fetchThreads, fetchMessages, activeThread, dockState]);
 
-  // Load messages when thread changes & dock is open
+  // Load messages + mark read when thread opens
   useEffect(() => {
     if (!activeThread || dockState !== "open") return;
     fetchMessages(activeThread);
-  }, [activeThread, dockState, fetchMessages]);
+    markRead(activeThread);
+  }, [activeThread, dockState, fetchMessages, markRead]);
 
   // Auto-scroll
   useEffect(() => {
@@ -189,33 +170,32 @@ export default function GlobalChatDock() {
     }
   }, [messages, dockState]);
 
-  // Mark seen when viewing thread
-  useEffect(() => {
-    if (dockState === "open" && activeThread && messages && messages.length > 0) {
-      const last = messages[messages.length - 1].created_at;
-      setSeen((prev) => {
-        if (prev[activeThread] === last) return prev;
-        const next = { ...prev, [activeThread]: last };
-        writeSeen(next);
-        return next;
-      });
-    }
-  }, [dockState, activeThread, messages]);
+  const unreadTotal = useMemo(
+    () => (threads ?? []).reduce((acc, t) => acc + (t.unread_count || 0), 0),
+    [threads],
+  );
 
-  const unreadCount = useMemo(() => {
-    if (!threads) return 0;
-    return threads.filter((t) => t.last_message_at && (seen[t.id] ?? "") < t.last_message_at).length;
-  }, [threads, seen]);
+  const filtered = useMemo(() => {
+    const list = threads ?? [];
+    if (tab === "all") return list;
+    if (tab === "dm") return list.filter((t) => t.thread_type === "dm");
+    if (tab === "channel") return list.filter((t) => t.thread_type === "channel");
+    if (tab === "entity") return list.filter((t) => t.thread_type === "entity" || t.thread_type === "support");
+    if (tab === "page") {
+      if (!pageCtx) return [];
+      return list.filter((t) => t.entity_type === pageCtx.entityType && t.entity_id === pageCtx.entityId);
+    }
+    return list;
+  }, [threads, tab, pageCtx]);
 
   const send = async () => {
     if (!activeThread || !text.trim()) return;
     setSending(true);
     try {
-      const { error: sErr } = await supabase.rpc("conversation_add_message" as any, {
+      const { error: sErr } = await supabase.rpc("conversation_send_message" as any, {
         _thread_id: activeThread,
-        _message: text.trim(),
+        _body: text.trim(),
         _visibility: "internal",
-        _metadata: {},
       });
       if (sErr) throw sErr;
       setText("");
@@ -231,7 +211,7 @@ export default function GlobalChatDock() {
 
   const activeThreadObj = activeThread ? threads?.find((t) => t.id === activeThread) ?? null : null;
 
-  // Closed → floating launcher only
+  // Closed / minimized → floating launcher
   if (dockState === "closed" || dockState === "minimized") {
     return (
       <button
@@ -240,28 +220,27 @@ export default function GlobalChatDock() {
         data-testid="global-chat-launcher"
         onClick={() => setDockState("open")}
         className={cn(
-          "fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full shadow-lg grid place-items-center text-primary-foreground transition-all hover:scale-105",
-          unreadCount > 0 ? "bg-primary animate-pulse" : "bg-primary",
+          "fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full shadow-lg grid place-items-center text-primary-foreground transition-all hover:scale-105 bg-primary",
+          unreadTotal > 0 && "animate-pulse",
         )}
       >
         <MessageCircle className="h-5 w-5" />
-        {unreadCount > 0 && (
+        {unreadTotal > 0 && (
           <span
             data-testid="global-chat-unread-badge"
             className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold grid place-items-center"
           >
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadTotal > 9 ? "9+" : unreadTotal}
           </span>
         )}
       </button>
     );
   }
 
-  // Open
   return (
     <div
       data-testid="global-chat-panel"
-      className="fixed bottom-4 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-2rem)] rounded-xl border bg-card shadow-2xl flex flex-col overflow-hidden"
+      className="fixed bottom-4 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-2rem)] rounded-xl border bg-card shadow-2xl flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="h-11 px-3 flex items-center gap-2 border-b bg-muted/50">
@@ -302,63 +281,111 @@ export default function GlobalChatDock() {
 
       {/* Body */}
       {!activeThread ? (
-        <div className="flex-1 overflow-y-auto">
-          {loadingThreads && !threads ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando…
-            </div>
-          ) : error ? (
-            <div className="p-6 text-center text-sm text-destructive" data-testid="global-chat-error">
-              {error}
-            </div>
-          ) : !threads || threads.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Nenhuma conversa ativa</div>
-          ) : (
-            <ul className="divide-y">
-              {threads.map((t) => {
-                const isUnread = t.last_message_at && (seen[t.id] ?? "") < t.last_message_at;
-                return (
-                  <li key={t.id}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveThread(t.id)}
-                      data-testid={`global-chat-thread-${t.id}`}
-                      className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={cn("text-sm truncate flex-1", isUnread && "font-semibold")}>{t.title}</span>
-                        <Badge
-                          variant={t.visibility === "customer_visible" ? "secondary" : "outline"}
-                          className="h-4 text-[10px] px-1.5 shrink-0"
-                        >
-                          {t.visibility === "customer_visible" ? (
-                            <Eye className="h-2.5 w-2.5" />
-                          ) : t.visibility === "mixed" ? (
-                            "mixed"
-                          ) : (
-                            <EyeOff className="h-2.5 w-2.5" />
-                          )}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-muted-foreground truncate flex-1">
-                          {t.last_message ?? "Sem mensagens"}
-                        </span>
-                        {t.last_message_at && (
-                          <span className="text-[10px] text-muted-foreground shrink-0">
-                            {formatDistanceToNow(new Date(t.last_message_at), { addSuffix: false, locale: ptBR })}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div role="tablist" className="mx-2 mt-2 grid grid-cols-5 gap-1 p-1 rounded-md bg-muted">
+            {([
+              { k: "all", label: "Todas" },
+              { k: "dm", label: "DMs" },
+              { k: "channel", label: "Canais" },
+              { k: "entity", label: "Entidades" },
+              { k: "page", label: "Página" },
+            ] as Array<{ k: TabKey; label: string }>).map((t) => {
+              const isActive = tab === t.k;
+              const isDisabled = t.k === "page" && !pageCtx;
+              return (
+                <button
+                  key={t.k}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`global-chat-tabpanel-${t.k}`}
+                  data-state={isActive ? "active" : "inactive"}
+                  disabled={isDisabled}
+                  onClick={() => setTab(t.k)}
+                  title={t.k === "page" && pageCtx ? pageCtx.label : undefined}
+                  className={cn(
+                    "text-[11px] px-1 py-1 rounded-sm font-medium transition-colors",
+                    isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    isDisabled && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <div
+            role="tabpanel"
+            id={`global-chat-tabpanel-${tab}`}
+            className="flex-1 overflow-y-auto mt-2"
+          >
+            {loadingThreads && !threads ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando…
+              </div>
+            ) : error ? (
+              <div className="p-6 text-center text-sm text-destructive" data-testid="global-chat-error">
+                {error}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                {tab === "page" && !pageCtx ? "Sem contexto de página" : "Nenhuma conversa"}
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {filtered.map((t) => {
+                  const isUnread = (t.unread_count || 0) > 0;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveThread(t.id)}
+                        data-testid={`global-chat-thread-${t.id}`}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground shrink-0">{threadIcon(t)}</span>
+                          <span className={cn("text-sm truncate flex-1", isUnread && "font-semibold")}>
+                            {t.title}
                           </span>
+                          {isUnread && (
+                            <span className="shrink-0 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                              {t.unread_count > 9 ? "9+" : t.unread_count}
+                            </span>
+                          )}
+                          <Badge
+                            variant={t.visibility === "customer_visible" ? "secondary" : "outline"}
+                            className="h-4 text-[10px] px-1.5 shrink-0"
+                          >
+                            {t.visibility === "customer_visible" ? (
+                              <Eye className="h-2.5 w-2.5" />
+                            ) : t.visibility === "mixed" ? (
+                              "mixed"
+                            ) : (
+                              <EyeOff className="h-2.5 w-2.5" />
+                            )}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 pl-5">
+                          <span className="text-xs text-muted-foreground truncate flex-1">
+                            {t.last_message ?? "Sem mensagens"}
+                          </span>
+                          {t.last_activity && (
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {formatDistanceToNow(new Date(t.last_activity), { addSuffix: false, locale: ptBR })}
+                            </span>
+                          )}
+                        </div>
+                        {t.entity_type && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5 pl-5">{t.entity_type}</div>
                         )}
-                      </div>
-                      {t.entity_type && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{t.entity_type}</div>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       ) : (
         <>
@@ -381,7 +408,7 @@ export default function GlobalChatDock() {
                       )}
                     >
                       <div className="whitespace-pre-wrap break-words">{m.message}</div>
-                      <div className={cn("text-[10px] mt-0.5 opacity-70 flex items-center gap-1")}>
+                      <div className="text-[10px] mt-0.5 opacity-70 flex items-center gap-1">
                         {m.visibility === "customer_visible" && <Eye className="h-2.5 w-2.5" />}
                         <span>{formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: ptBR })}</span>
                       </div>
@@ -407,12 +434,7 @@ export default function GlobalChatDock() {
               }}
               className="min-h-[36px] resize-none"
             />
-            <Button
-              size="sm"
-              onClick={send}
-              disabled={sending || !text.trim()}
-              data-testid="global-chat-send"
-            >
+            <Button size="sm" onClick={send} disabled={sending || !text.trim()} data-testid="global-chat-send">
               Enviar
             </Button>
           </div>

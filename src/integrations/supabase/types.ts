@@ -1376,31 +1376,43 @@ export type Database = {
         Row: {
           id: string
           joined_at: string
+          last_read_at: string | null
           left_at: string | null
+          muted: boolean
           participant_type: string
           partner_id: string | null
+          pinned: boolean
           role: string
           thread_id: string
+          unread_count: number
           user_id: string | null
         }
         Insert: {
           id?: string
           joined_at?: string
+          last_read_at?: string | null
           left_at?: string | null
+          muted?: boolean
           participant_type: string
           partner_id?: string | null
+          pinned?: boolean
           role?: string
           thread_id: string
+          unread_count?: number
           user_id?: string | null
         }
         Update: {
           id?: string
           joined_at?: string
+          last_read_at?: string | null
           left_at?: string | null
+          muted?: boolean
           participant_type?: string
           partner_id?: string | null
+          pinned?: boolean
           role?: string
           thread_id?: string
+          unread_count?: number
           user_id?: string | null
         }
         Relationships: [
@@ -1415,6 +1427,7 @@ export type Database = {
       }
       conversation_threads: {
         Row: {
+          channel_id: string | null
           close_reason: string | null
           closed_at: string | null
           created_at: string
@@ -1422,11 +1435,15 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
+          is_archived: boolean
+          last_message_at: string | null
           status: string
+          thread_type: string
           title: string
           visibility: string
         }
         Insert: {
+          channel_id?: string | null
           close_reason?: string | null
           closed_at?: string | null
           created_at?: string
@@ -1434,11 +1451,15 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          is_archived?: boolean
+          last_message_at?: string | null
           status?: string
+          thread_type?: string
           title: string
           visibility?: string
         }
         Update: {
+          channel_id?: string | null
           close_reason?: string | null
           closed_at?: string | null
           created_at?: string
@@ -1446,11 +1467,22 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          is_archived?: boolean
+          last_message_at?: string | null
           status?: string
+          thread_type?: string
           title?: string
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversation_threads_channel_fk"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cost_centers: {
         Row: {
@@ -11584,6 +11616,7 @@ export type Database = {
         Args: { _verbose?: boolean }
         Returns: Json
       }
+      _test_phase24_chat_unified: { Args: never; Returns: Json }
       _test_phase24_finance_core_rebuild: { Args: never; Returns: Json }
       _test_phase24b2_store_cash_delivery_guardrails: {
         Args: never
@@ -11916,19 +11949,37 @@ export type Database = {
         Args: { _payload: Json; _thread_id: string }
         Returns: string
       }
+      conversation_channel_get_or_create: {
+        Args: { _channel_id: string }
+        Returns: string
+      }
       conversation_close: {
         Args: { _reason?: string; _thread_id: string }
         Returns: Json
       }
       conversation_create: { Args: { _payload: Json }; Returns: string }
+      conversation_dm_get_or_create: {
+        Args: { _other_user_id: string }
+        Returns: string
+      }
+      conversation_get_messages: {
+        Args: { _limit?: number; _thread_id: string }
+        Returns: Json
+      }
       conversation_list_for_entity: {
         Args: { _entity_id: string; _entity_type: string }
         Returns: Json
       }
+      conversation_mark_read: { Args: { _thread_id: string }; Returns: Json }
       conversation_messages: {
         Args: { _thread_id: string; _visibility_filter?: string }
         Returns: Json
       }
+      conversation_send_message: {
+        Args: { _body: string; _thread_id: string; _visibility?: string }
+        Returns: string
+      }
+      conversation_unified_list: { Args: { _limit?: number }; Returns: Json }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
       create_customer_credit: {
         Args: {
@@ -12647,6 +12698,15 @@ export type Database = {
       recompute_sale_payment_status: { Args: { _so: string }; Returns: string }
       recompute_sale_state: { Args: { _so: string }; Returns: undefined }
       recompute_variant_quants: { Args: never; Returns: undefined }
+      record_message_post: {
+        Args: {
+          _body: string
+          _entity_id: string
+          _entity_type: string
+          _visibility?: string
+        }
+        Returns: string
+      }
       recurring_expense_cancel: {
         Args: { _expense_id: string; _reason: string }
         Returns: Json
