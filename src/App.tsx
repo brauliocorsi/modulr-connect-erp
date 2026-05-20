@@ -116,6 +116,7 @@ import CarrierShipmentsPage from "@/modules/m5/pages/CarrierShipmentsPage";
 import CustomerTicketsList from "@/modules/helpdesk/pages/CustomerTicketsList";
 import CustomerTicketDetail from "@/modules/helpdesk/pages/CustomerTicketDetail";
 import CustomerPortalPage from "@/modules/portal/pages/CustomerPortalPage";
+import IndicatorsPage from "@/modules/indicators/pages/IndicatorsPage";
 
 const queryClient = new QueryClient();
 
@@ -149,6 +150,8 @@ const App = () => (
               }
             >
               <Route index element={<Home />} />
+              <Route path="indicators" element={<IndicatorsPage />} />
+
 
               {/* Barcode app (dentro do ERP) */}
               <Route path="barcode" element={<BarcodeShell />}>

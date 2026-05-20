@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
 
 function makeQuery() {
   const q: Record<string, unknown> = {
-    then: (onF: (v: unknown) => unknown) => Promise.resolve({ count: 3, data: [], error: null }).then(onF),
+    then: (onF: (v: unknown) => unknown) =>
+      Promise.resolve({ count: 0, data: [], error: null }).then(onF),
   };
   ["select","insert","update","upsert","delete","eq","neq","in","gt","gte","lt","lte","is","not","or","order","limit","maybeSingle","single"]
     .forEach((m) => { q[m] = vi.fn(() => q); });
@@ -45,38 +46,41 @@ function renderHome() {
   return render(<Home />, { wrapper: Wrapper });
 }
 
-beforeEach(() => {});
-
-describe("Home operacional (F22-V1)", () => {
+describe("Home simplificada (F23-A)", () => {
   it("renders greeting with the user name", () => {
     renderHome();
     expect(screen.getByText(/alice/)).toBeInTheDocument();
   });
 
-  it("renders the 8 operational KPI cards", async () => {
+  it("does NOT render the legacy 'Indicadores operacionais' KPI block", () => {
     renderHome();
-    expect(screen.getByText(/Indicadores operacionais/i)).toBeInTheDocument();
-    expect(screen.getByText(/Vendas abertas/i)).toBeInTheDocument();
-    expect(screen.getByText(/Prontos p\/ entrega/i)).toBeInTheDocument();
-    expect(screen.getByText(/OFs em produção/i)).toBeInTheDocument();
-    expect(screen.getByText(/Necessidades pendentes/i)).toBeInTheDocument();
-    expect(screen.getByText(/Tickets abertos/i)).toBeInTheDocument();
-    expect(screen.getByText(/Assistência aguarda peça/i)).toBeInTheDocument();
-    expect(screen.getByText(/Notificações não lidas/i)).toBeInTheDocument();
-    expect(screen.getByText(/Tarefas vencidas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Indicadores operacionais/i)).not.toBeInTheDocument();
+  });
+
+  it("renders CTA Indicadores linking to /indicators", () => {
+    renderHome();
+    const cta = screen.getByTestId("home-cta-indicators");
+    expect(cta).toBeInTheDocument();
+    expect(cta.getAttribute("href")).toBe("/indicators");
+  });
+
+  it("renders Notificações block", async () => {
+    renderHome();
+    await waitFor(() =>
+      expect(screen.getByText(/Notificações/i)).toBeInTheDocument(),
+    );
+  });
+
+  it("renders Minhas tarefas block", async () => {
+    renderHome();
+    await waitFor(() =>
+      expect(screen.getByText(/Minhas tarefas/i)).toBeInTheDocument(),
+    );
   });
 
   it("renders quick access to installed modules", async () => {
     renderHome();
     expect(screen.getByText(/Acesso rápido aos módulos/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByText(/Vendas/).length).toBeGreaterThan(0));
-  });
-
-  it("KPI cards eventually render a numeric value", async () => {
-    renderHome();
-    await waitFor(() => {
-      // count from mocked query is 3 → at least one card shows 3
-      expect(screen.getAllByText("3").length).toBeGreaterThan(0);
-    });
   });
 });
