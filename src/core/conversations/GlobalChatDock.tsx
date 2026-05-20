@@ -5,7 +5,7 @@ import { useAuth } from "@/core/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
