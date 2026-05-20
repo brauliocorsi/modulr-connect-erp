@@ -289,11 +289,13 @@ const App = () => (
               <Route path="service/requests" element={<ServiceRequestsList />} />
               <Route path="service/requests/new" element={<ServiceRequestForm />} />
               <Route path="service/requests/:id" element={<ServiceRequestForm />} />
+              <Route path="service/repairs" element={<ServiceRepairsPage />} />
 
               {/* Helpdesk */}
               <Route path="helpdesk" element={<Navigate to="/helpdesk/tickets" replace />} />
               <Route path="helpdesk/tickets" element={<CustomerTicketsList />} />
               <Route path="helpdesk/tickets/:id" element={<CustomerTicketDetail />} />
+              <Route path="helpdesk/portal-tokens" element={<PortalTokensPage />} />
 
               {/* Cashbox */}
               <Route path="cashbox" element={<CashRegistersList />} />
