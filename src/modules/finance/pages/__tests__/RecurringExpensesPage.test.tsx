@@ -24,7 +24,7 @@ const sample = [
   },
 ];
 
-const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn(() => Promise.resolve({ data: { ok: true }, error: null })) }));
+const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn<any>(() => Promise.resolve({ data: { ok: true } as any, error: null })) }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const recurringBuilder: any = {
