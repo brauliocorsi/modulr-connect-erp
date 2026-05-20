@@ -44,7 +44,27 @@ export function VariantsTab({ productId }: { productId: string }) {
       return next;
     });
 
-  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique/i.test(err?.message ?? "");
+  const isUniqueError = (err: any) => err?.code === "23505" || /duplicate key|unique|duplicate_sku|duplicate_barcode/i.test(err?.message ?? "");
+
+  const VARIANT_DELETE_REASONS: Record<string, string> = {
+    has_stock: "Variante tem stock — ajuste antes de remover",
+    has_reservations: "Variante tem reservas pendentes",
+    has_sale_orders: "Variante está em encomendas de venda",
+    has_purchase_orders: "Variante está em encomendas de compra",
+    has_manufacturing_orders: "Variante está em ordens de fabrico",
+    has_mo_components: "Variante é componente de ordens de fabrico",
+    has_stock_moves: "Variante tem movimentos de stock",
+    has_bom_variant_rules: "Variante tem regras de BOM",
+    has_boms: "Variante tem BOM dedicada",
+  };
+
+  const rpcUpsert = async (variantId: string | null, payload: Record<string, unknown>) => {
+    return await supabase.rpc("product_variant_upsert", {
+      _variant_id: variantId,
+      _product_id: productId,
+      _payload: payload as any,
+    });
+  };
 
   const load = async () => {
     const { data: prod } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
