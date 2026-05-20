@@ -277,14 +277,21 @@ export default function ProductForm() {
                 <TabsTrigger value="sales">Vendas</TabsTrigger>
                 <TabsTrigger value="purchase">Compras</TabsTrigger>
                 <TabsTrigger value="inventory">Inventário</TabsTrigger>
-                <TabsTrigger value="variants" disabled={isNew}>Variantes</TabsTrigger>
-                <TabsTrigger value="bom" disabled={isNew}>BOM/Kit</TabsTrigger>
+                <TabsTrigger value="variants" disabled={isNew}>
+                  Variantes{counts.data?.variants ? ` (${counts.data.variants})` : ""}
+                </TabsTrigger>
+                <TabsTrigger value="bom" disabled={isNew}>
+                  BOM/Kit{counts.data?.boms ? ` (${counts.data.boms})` : ""}
+                </TabsTrigger>
                 <TabsTrigger value="stock" disabled={isNew}>Stock</TabsTrigger>
                 <TabsTrigger value="reordering" disabled={isNew}>Reabastecimento</TabsTrigger>
                 <TabsTrigger value="woo">WooCommerce</TabsTrigger>
-                <TabsTrigger value="packages" disabled={isNew}>Colis</TabsTrigger>
+                <TabsTrigger value="packages" disabled={isNew}>
+                  Colis{counts.data?.packages ? ` (${counts.data.packages})` : ""}
+                </TabsTrigger>
                 <TabsTrigger value="ops" disabled={isNew}>Config. Operacional</TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="sales" className="pt-4">
                 <Card className="p-6 space-y-4">
