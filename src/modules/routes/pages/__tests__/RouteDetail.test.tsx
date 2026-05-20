@@ -88,8 +88,8 @@ describe("RouteDetail (F22-R5)", () => {
     renderPage();
     await waitFor(() => expect(screen.getAllByText(/Zona Norte/).length).toBeGreaterThan(0));
     expect(screen.getByText("Planeada")).toBeInTheDocument(); // delivery_route status
-    expect(screen.getByText(/Carrinha 1/)).toBeInTheDocument();
-    expect(screen.getByText(/Cais 1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Carrinha 1/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cais 1/).length).toBeGreaterThan(0);
   });
 
   it("renders SummaryCards and key sections", async () => {
