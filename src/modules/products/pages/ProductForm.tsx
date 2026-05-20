@@ -107,6 +107,16 @@ export default function ProductForm() {
     },
   });
 
+  const stock = useQuery({
+    queryKey: ["product_stock_summary", id],
+    enabled: !isNew && !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("product_stock_summary", { _product_id: id! });
+      if (error) return null;
+      return (data ?? null) as any;
+    },
+  });
+
   const flagBadge = (label: string, on: boolean | undefined) => (
     <Badge variant={on ? "default" : "outline"} className={on ? "" : "opacity-60"}>{label}</Badge>
   );
@@ -115,6 +125,12 @@ export default function ProductForm() {
     form.can_be_manufactured && form.can_be_purchased ? "Compra + Fabrica" :
     form.can_be_manufactured ? "Fabricado" :
     form.can_be_purchased ? "Comprado" : "—";
+
+  const onHand = Number(stock.data?.total_on_hand ?? 0);
+  const reserved = Number(stock.data?.total_reserved ?? 0);
+  const available = Number(stock.data?.total_available ?? 0);
+  const damaged = Number(stock.data?.damaged_count ?? 0);
+  const quarantine = Number(stock.data?.quarantine_count ?? 0);
 
   const summary: SummaryCardItem[] = [
     {
@@ -136,6 +152,15 @@ export default function ProductForm() {
       value: isNew ? "—" : (counts.data?.packages ?? "—"),
       hint: form.package_tracking_enabled ? "Rastreio ON" : "Rastreio OFF",
       tone: form.package_tracking_enabled ? "primary" : "muted",
+    },
+    {
+      key: "stock",
+      label: "Stock",
+      value: isNew || !stock.data ? "—" : `${available.toFixed(0)}`,
+      hint: isNew || !stock.data
+        ? undefined
+        : `On hand ${onHand.toFixed(0)} · Reservado ${reserved.toFixed(0)}${damaged + quarantine > 0 ? ` · ⚠ ${damaged + quarantine}` : ""}`,
+      tone: !stock.data ? "muted" : available > 0 ? "success" : reserved > 0 ? "warning" : "muted",
     },
     {
       key: "physical",
@@ -180,6 +205,7 @@ export default function ProductForm() {
         }
         onRefresh={isNew ? undefined : () => {
           counts.refetch();
+          stock.refetch();
           supabase.from("products").select("*").eq("id", id!).maybeSingle().then(({ data }) => data && setForm(data));
         }}
         isFetching={counts.isFetching || save.isPending}

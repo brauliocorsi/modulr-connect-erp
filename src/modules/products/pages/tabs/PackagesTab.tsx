@@ -32,6 +32,21 @@ type Tpl = {
 
 const num = (v: string) => (v === "" ? null : Number(v));
 
+const PACKAGE_ERRORS: Record<string, string> = {
+  product_not_found: "Produto não encontrado",
+  name_required: "Nome do colis é obrigatório",
+  invalid_length: "Comprimento deve ser maior que zero",
+  invalid_width: "Largura deve ser maior que zero",
+  invalid_height: "Altura deve ser maior que zero",
+  invalid_weight: "Peso não pode ser negativo",
+  template_not_found: "Template não encontrado",
+  template_in_use: "Não é possível remover — template já gerou colis físicos",
+};
+const mapPackageError = (msg: string) => {
+  for (const k of Object.keys(PACKAGE_ERRORS)) if (msg.includes(k)) return PACKAGE_ERRORS[k];
+  return msg;
+};
+
 export function PackagesTab({ productId }: { productId: string }) {
   const [items, setItems] = useState<Tpl[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,10 +65,11 @@ export function PackagesTab({ productId }: { productId: string }) {
   const resequence = async (list: Tpl[]) => {
     await Promise.all(
       list.map((p, i) =>
-        supabase
-          .from("product_package_templates")
-          .update({ package_sequence: i + 1, package_total: list.length })
-          .eq("id", p.id),
+        supabase.rpc("product_package_template_upsert", {
+          _template_id: p.id,
+          _product_id: productId,
+          _payload: { package_sequence: i + 1, package_total: list.length, name: p.name } as any,
+        }),
       ),
     );
   };
@@ -61,15 +77,18 @@ export function PackagesTab({ productId }: { productId: string }) {
   const add = async () => {
     setLoading(true);
     const next = items.length + 1;
-    const { error } = await supabase.from("product_package_templates").insert({
-      product_id: productId,
-      name: `Colis ${next}`,
-      package_sequence: next,
-      package_total: next,
-      active: true,
-    } as any);
+    const { error } = await supabase.rpc("product_package_template_upsert", {
+      _template_id: null,
+      _product_id: productId,
+      _payload: {
+        name: `Colis ${next}`,
+        package_sequence: next,
+        package_total: next,
+        active: true,
+      } as any,
+    });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(mapPackageError(error.message));
     const { data } = await supabase
       .from("product_package_templates")
       .select("*")
@@ -80,21 +99,21 @@ export function PackagesTab({ productId }: { productId: string }) {
   };
 
   const update = async (id: string, patch: Partial<Tpl>) => {
+    const current = items.find((x) => x.id === id);
     setItems((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    const { error } = await supabase
-      .from("product_package_templates")
-      .update(patch as any)
-      .eq("id", id);
-    if (error) toast.error(error.message);
+    const payload = { ...current, ...patch };
+    const { error } = await supabase.rpc("product_package_template_upsert", {
+      _template_id: id,
+      _product_id: productId,
+      _payload: payload as any,
+    });
+    if (error) toast.error(mapPackageError(error.message));
   };
 
   const remove = async (id: string) => {
     if (!confirm("Remover este template de colis?")) return;
-    const { error } = await supabase
-      .from("product_package_templates")
-      .delete()
-      .eq("id", id);
-    if (error) return toast.error(error.message);
+    const { error } = await supabase.rpc("product_package_template_delete", { _template_id: id });
+    if (error) return toast.error(mapPackageError(error.message));
     const remaining = items.filter((x) => x.id !== id);
     await resequence(remaining);
     load();
