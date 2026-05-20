@@ -57,35 +57,47 @@ export default function ProductForm() {
     supabase.from("products").select("*").eq("id", id!).maybeSingle().then(({ data }) => data && setForm(data));
   }, [id, isNew]);
 
+  const mapProductError = (msg: string): string => {
+    const m = (msg || "").toLowerCase();
+    if (m.includes("product_not_found")) return "Produto não encontrado.";
+    if (m.includes("sku_conflict")) return "SKU já usado por outro produto.";
+    if (m.includes("ean_conflict")) return "EAN já usado por outro produto.";
+    if (m.includes("has_stock")) return "Produto tem stock e não pode ser arquivado.";
+    if (m.includes("has_active_packages")) return "Produto tem colis ativos.";
+    if (m.includes("has_open_mo")) return "Produto tem ordens de fabrico abertas.";
+    if (m.includes("has_active_bom")) return "Produto tem BOM ativa.";
+    if (m.includes("has_open_purchase")) return "Produto tem compras/necessidades abertas.";
+    if (m.includes("has_open_sales")) return "Produto tem vendas abertas.";
+    if (m.includes("name_required")) return "Nome é obrigatório.";
+    if (m.includes("permission_denied")) return "Sem permissão.";
+    return msg || "Erro ao guardar produto.";
+  };
+
   const save = useMutation({
     mutationFn: async () => {
-      // Normalizar strings vazias para NULL nos campos com índice único
-      // (barcode/internal_ref) — caso contrário "" colide com outro produto sem código.
       const payload = {
         ...form,
         barcode: form.barcode?.trim() ? form.barcode.trim() : null,
         internal_ref: form.internal_ref?.trim() ? form.internal_ref.trim() : null,
       };
-      if (isNew) {
-        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
-        if (error) throw error;
-        return data.id as string;
-      }
-      const { error } = await supabase.from("products").update(payload).eq("id", id!);
+      const { data, error } = await supabase.rpc("product_upsert", {
+        _product_id: isNew ? null : (id ?? null),
+        _payload: payload,
+      });
       if (error) throw error;
-      return id!;
+      return data as string;
     },
     onSuccess: (newId) => {
       toast.success("Salvo");
       if (isNew) nav(`/products/${newId}`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(mapProductError(e?.message ?? "")),
   });
 
   const remove = async () => {
-    if (!confirm("Excluir este produto?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id!);
-    if (error) return toast.error(error.message);
+    const { error } = await supabase.rpc("product_archive", { _product_id: id!, _reason: null });
+    if (error) return toast.error(mapProductError(error.message));
+    toast.success("Produto arquivado");
     nav("/products");
   };
 
