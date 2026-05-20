@@ -12328,6 +12328,7 @@ export type Database = {
         | "service"
         | "manufacturing"
         | "shop_floor"
+        | "helpdesk"
       bom_type: "normal" | "phantom" | "subcontract"
       component_allocation_policy:
         | "manufacturing_first"
@@ -12707,6 +12708,7 @@ export const Constants = {
         "service",
         "manufacturing",
         "shop_floor",
+        "helpdesk",
       ],
       bom_type: ["normal", "phantom", "subcontract"],
       component_allocation_policy: [
