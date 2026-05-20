@@ -330,7 +330,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     rpc: kind === "sale" ? "cancel_sale_order" : "cancel_purchase_order",
     successMessage: "Cancelado",
     invalidateKeys: invalidateOrder,
-    onSuccess: () => { setOrder((o: any) => ({ ...o, state: "cancelled" })); },
+    onSuccess: () => { setOrder((o: any) => ({ ...o, state: "cancelled" })); setSmartRefresh((n) => n + 1); },
   });
 
 
