@@ -247,39 +247,149 @@ function EmployeeLinkCard() {
   );
 }
 
-export const UserForm = () => (
-  <>
-    <SimpleForm
-      table="profiles"
-      title="Usuário"
-      basePath="/settings/users"
-      breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
-      fields={[
-        { name: "full_name", label: "Nome completo" },
-        { name: "job_title", label: "Cargo" },
-        { name: "active", label: "Ativo", type: "boolean", default: true },
-      ]}
-    />
-    <EmployeeLinkCard />
-  </>
-);
+export const UserForm = () => {
+  const { id } = useParams();
+  return (
+    <>
+      <SimpleForm
+        table="profiles"
+        title="Usuário"
+        basePath="/settings/users"
+        breadcrumb={[{ label: "Configurações" }, { label: "Usuários", to: "/settings/users" }, { label: "Editar" }]}
+        fields={[
+          { name: "full_name", label: "Nome completo" },
+          { name: "job_title", label: "Cargo" },
+          { name: "active", label: "Ativo", type: "boolean", default: true },
+        ]}
+      />
+      <EmployeeLinkCard />
+      {id && id !== "new" && (
+        <PageBody>
+          <div className="space-y-4">
+            <UserStoreAssignmentsPanel userId={id} />
+            <UserRolesPanel userId={id} />
+          </div>
+        </PageBody>
+      )}
+    </>
+  );
+};
 
-export const UsersSettings = () => (
-  <ListView
-    title="Usuários"
-    breadcrumb={[{ label: "Configurações" }, { label: "Usuários" }]}
-    table="profiles"
-    searchColumn="full_name"
-    rowLink={(r: any) => `/settings/users/${r.id}`}
-    actions={<CreateUserDialog />}
-    columns={[
-      { key: "full_name", header: "Nome" },
-      { key: "email", header: "E-mail" },
-      { key: "job_title", header: "Cargo" },
-      { key: "active", header: "Ativo", render: (r: any) => (r.active ? "Sim" : "Não") },
-    ]}
-  />
-);
+export const UsersSettings = () => {
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ["settings-users", search],
+    queryFn: async () => {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, job_title, active")
+        .order("full_name", { ascending: true });
+      const ids = (profs ?? []).map((p: any) => p.id);
+      const [{ data: ug }, { data: us }] = await Promise.all([
+        ids.length
+          ? supabase.from("user_groups").select("user_id, groups(code, name)").in("user_id", ids)
+          : Promise.resolve({ data: [] as any[] }),
+        ids.length
+          ? supabase
+              .from("user_store_assignments")
+              .select("user_id, is_default, active, stores(name)")
+              .in("user_id", ids)
+              .eq("active", true)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const groupsBy = new Map<string, any[]>();
+      (ug ?? []).forEach((r: any) => {
+        const arr = groupsBy.get(r.user_id) ?? [];
+        arr.push(r.groups);
+        groupsBy.set(r.user_id, arr);
+      });
+      const storesBy = new Map<string, any[]>();
+      (us ?? []).forEach((r: any) => {
+        const arr = storesBy.get(r.user_id) ?? [];
+        arr.push(r);
+        storesBy.set(r.user_id, arr);
+      });
+      return (profs ?? [])
+        .filter((p: any) =>
+          search
+            ? (p.full_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+              (p.email ?? "").toLowerCase().includes(search.toLowerCase())
+            : true,
+        )
+        .map((p: any) => ({
+          ...p,
+          groups: groupsBy.get(p.id) ?? [],
+          stores: storesBy.get(p.id) ?? [],
+        }));
+    },
+  });
+
+  return (
+    <>
+      <EntityHeader
+        title="Utilizadores"
+        breadcrumb={[{ label: "Configurações" }, { label: "Utilizadores" }]}
+        onRefresh={() => { void refetch(); void qc.invalidateQueries({ queryKey: ["settings-users"] }); }}
+        isFetching={isFetching}
+      />
+      <PageBody>
+        <div className="mb-3 flex justify-end"><CreateUserDialog /></div>
+        <OperationalDataTable
+          rows={data ?? []}
+          getRowId={(r: any) => r.id}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          search={{ value: search, onChange: setSearch, placeholder: "Pesquisar nome ou e-mail…" }}
+          onRowClick={(r: any) => navigate(`/settings/users/${r.id}`)}
+          emptyTitle="Sem utilizadores"
+          columns={[
+            { key: "full_name", header: "Nome", cell: (r: any) => r.full_name || "—" },
+            { key: "email", header: "E-mail", cell: (r: any) => r.email || "—" },
+            {
+              key: "active",
+              header: "Estado",
+              cell: (r: any) => (
+                <OperationalStatusBadge label={r.active ? "Ativo" : "Inativo"} tone={r.active ? "success" : "muted"} />
+              ),
+            },
+            {
+              key: "groups",
+              header: "Grupos",
+              cell: (r: any) => (
+                <div className="flex flex-wrap gap-1">
+                  {r.groups.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                  {r.groups.slice(0, 3).map((g: any, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[10px]">{g?.name ?? g?.code}</Badge>
+                  ))}
+                  {r.groups.length > 3 && <span className="text-xs text-muted-foreground">+{r.groups.length - 3}</span>}
+                </div>
+              ),
+            },
+            {
+              key: "stores",
+              header: "Lojas",
+              cell: (r: any) => (
+                <div className="flex flex-wrap gap-1">
+                  {r.stores.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                  {r.stores.map((s: any, i: number) => (
+                    <Badge key={i} variant={s.is_default ? "default" : "secondary"} className="text-[10px]">
+                      {s.stores?.name ?? "?"}{s.is_default ? " ★" : ""}
+                    </Badge>
+                  ))}
+                </div>
+              ),
+            },
+          ]}
+        />
+        <div className="mt-6">
+          <PermissionsHealthCard />
+        </div>
+      </PageBody>
+    </>
+  );
+};
 
 export const GroupsSettings = () => (
   <ListView
