@@ -280,6 +280,15 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
   const setDeliveryModeMut = useRpcMutation<{ _order_id: string; _delivery_mode: string }>({
     rpc: "sale_order_set_delivery_mode",
     invalidateKeys: invalidateOrder,
+    onError: (err) => {
+      const msg = (err.message || "").trim();
+      if (msg === "pickup_with_active_delivery_schedule") {
+        toast.error("Existe um agendamento ativo. Cancele o agendamento antes de mudar para levantamento.");
+      }
+      // revert local optimistic update
+      reloadOrder(id!);
+    },
+    onSuccess: async (_d, args) => { await refreshServices(args._order_id); },
   });
   const setDeliveryMode = (mode: "delivery" | "pickup" | "direct") => {
     if (isNew) return toast.error("Salve o pedido primeiro");
