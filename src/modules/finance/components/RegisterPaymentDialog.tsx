@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
+import { usePermissions } from "@/core/permissions/usePermissions";
+import { useAuth } from "@/core/auth/AuthProvider";
 
 const ERROR_PT: Record<string, string> = {
   user_without_store: "Este utilizador não está associado a nenhuma loja.",
