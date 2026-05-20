@@ -12,7 +12,9 @@ export type StatusDomain =
   | "purchase"
   | "purchase_need"
   | "delivery_route"
-  | "delivery_order";
+  | "delivery_order"
+  | "supplier_bill"
+  | "customer_credit";
 
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
@@ -84,6 +86,23 @@ export const STATUS_REGISTRY: Registry = {
     pending_confirmation: { label: "Aguarda confirmação", variant: "secondary" },
     refund_due: { label: "Reembolso devido", variant: "destructive" },
     credit_due: { label: "Crédito a aplicar", variant: "secondary" },
+    pending: { label: "Pendente", variant: "secondary" },
+    posted: { label: "Lançado", variant: "default" },
+    reversed: { label: "Revertido", variant: "outline" },
+    cancelled: { label: "Cancelado", variant: "destructive" },
+  },
+  supplier_bill: {
+    draft: { label: "Rascunho", variant: "outline" },
+    open: { label: "Em aberto", variant: "secondary" },
+    posted: { label: "Lançada", variant: "default" },
+    partial: { label: "Parcial", variant: "secondary" },
+    paid: { label: "Paga", variant: "secondary" },
+    cancelled: { label: "Cancelada", variant: "destructive" },
+  },
+  customer_credit: {
+    open: { label: "Aberto", variant: "default" },
+    consumed: { label: "Consumido", variant: "secondary" },
+    cancelled: { label: "Cancelado", variant: "destructive" },
   },
   package: {
     good: { label: "Bom estado", variant: "secondary" },

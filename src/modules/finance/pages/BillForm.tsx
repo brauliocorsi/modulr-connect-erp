@@ -87,6 +87,23 @@ export default function BillForm() {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");
     let bid = id;
     if (isNew) {
+      // Se vem prefilled de uma PO, usar RPC supplier_bill_create_from_po (F20-B).
+      if (bill.purchase_order_id) {
+        const { data, error } = await supabase.rpc("supplier_bill_create_from_po", {
+          _po_id: bill.purchase_order_id,
+          _bill_date: bill.bill_date,
+          _reference: bill.reference || undefined,
+          _idempotency_key: `bill:${bill.purchase_order_id}:${bill.bill_date}`,
+        });
+        if (error) return toast.error(error.message);
+        const res: any = data;
+        bid = res?.bill_id ?? res?.id ?? null;
+        toast.success("Fatura criada a partir da PO");
+        if (bid) return nav(`/finance/payables/${bid}`);
+        return;
+      }
+      // Fluxo ad-hoc (sem PO) — não há RPC dedicada; insere bill diretamente.
+      // DOCUMENTADO em D1: backend gap (criar RPC `supplier_bill_create`).
       const { data: seq } = await supabase.rpc("next_sequence", { _code: "supplier_bill" });
       const { data, error } = await supabase.from("supplier_bills").insert({
         name: seq ?? "BILL",
@@ -105,6 +122,8 @@ export default function BillForm() {
       toast.success("Fatura criada");
       nav(`/finance/payables/${bid}`);
     } else {
+      // Atualização de campos editáveis (referência / notas / vencimento).
+      // Não passa por RPC pois não altera state nem amount_paid.
       const { error } = await supabase.from("supplier_bills").update({
         partner_id: bill.partner_id,
         purchase_order_id: bill.purchase_order_id || null,
@@ -123,12 +142,21 @@ export default function BillForm() {
 
   const cancelBill = async () => {
     if (!confirm("Cancelar fatura?")) return;
-    await supabase.from("supplier_bills").update({ state: "cancelled" }).eq("id", id!);
+    // DOCUMENTADO D1: criar RPC `supplier_bill_cancel`.
+    const { error } = await supabase.from("supplier_bills").update({ state: "cancelled" }).eq("id", id!);
+    if (error) return toast.error(error.message);
+    toast.success("Fatura cancelada");
     load();
   };
   const cancelPayment = async (pid: string) => {
-    if (!confirm("Cancelar pagamento?")) return;
-    await supabase.from("supplier_payments").update({ state: "cancelled" }).eq("id", pid);
+    const reason = window.prompt("Motivo do cancelamento do pagamento?");
+    if (!reason || !reason.trim()) return;
+    const { error } = await supabase.rpc("supplier_payment_cancel", {
+      _payment_id: pid,
+      _reason: reason.trim(),
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Pagamento cancelado");
     load();
   };
 

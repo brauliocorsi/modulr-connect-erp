@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { Lock, Plus, ArrowDownToLine } from "lucide-react";
+import { Lock, Plus, ArrowDownToLine, Undo2 } from "lucide-react";
 import { CashMovementDialog } from "@/modules/cashbox/components/CashMovementDialog";
+import { ConfirmActionDialog } from "@/core/operational";
 
 const KIND_LABEL: Record<string, string> = {
   opening: "Abertura", sale: "Venda", withdrawal: "Retirada", expense: "Despesa",
@@ -31,6 +32,8 @@ export default function CashSessionDetail() {
   const [openerName, setOpenerName] = useState<string>("");
 
   const [reconcile, setReconcile] = useState<any[]>([]);
+  const [reverseTarget, setReverseTarget] = useState<{ id: string; reason: string } | null>(null);
+  const [reversing, setReversing] = useState(false);
 
   const load = async () => {
     const { data: s } = await supabase
@@ -103,6 +106,23 @@ export default function CashSessionDetail() {
     setCloseDlg(false);
     load();
   };
+
+  const reversedIds = new Set(moves.filter((m) => m.reversal_of_id).map((m) => m.reversal_of_id));
+  const reverseMove = async () => {
+    if (!reverseTarget) return;
+    if (!reverseTarget.reason.trim()) return toast.error("Motivo obrigatório");
+    setReversing(true);
+    const { error } = await supabase.rpc("cash_movement_reverse", {
+      _movement_id: reverseTarget.id,
+      _reason: reverseTarget.reason.trim(),
+    });
+    setReversing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Movimento revertido");
+    setReverseTarget(null);
+    load();
+  };
+
 
   if (!sess) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isOpen = sess.state === "open";
@@ -198,28 +218,51 @@ export default function CashSessionDetail() {
                   <th className="text-left px-3 py-2">Referência</th>
                   <th className="text-left px-3 py-2">Notas</th>
                   <th className="text-right px-3 py-2">Valor</th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMoves.length === 0 ? (
-                  <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
-                ) : filteredMoves.map((m) => (
-                  <tr key={m.id} className="border-t">
-                    <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
-                    <td className="px-3 py-2">{KIND_LABEL[m.kind] ?? m.kind}</td>
-                    <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
-                    <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{m.notes ?? ""}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                      {fmtMoney(m.amount)}
-                    </td>
-                  </tr>
-                ))}
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                ) : filteredMoves.map((m) => {
+                  const isReversal = !!m.reversal_of_id;
+                  const wasReversed = reversedIds.has(m.id);
+                  const canReverse = isOpen && !isReversal && !wasReversed && m.kind !== "opening";
+                  return (
+                    <tr key={m.id} className={`border-t ${isReversal || wasReversed ? "opacity-60" : ""}`}>
+                      <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="px-3 py-2">
+                        {KIND_LABEL[m.kind] ?? m.kind}
+                        {isReversal && <span className="ml-2 text-xs text-muted-foreground">(reversão)</span>}
+                        {wasReversed && <span className="ml-2 text-xs text-muted-foreground">(revertido)</span>}
+                      </td>
+                      <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
+                      <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{m.notes ?? m.reversal_reason ?? ""}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {fmtMoney(m.amount)}
+                      </td>
+                      <td className="px-2">
+                        {canReverse && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Reverter movimento"
+                            onClick={() => setReverseTarget({ id: m.id, reason: "" })}
+                          >
+                            <Undo2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </Card>
       </PageBody>
+
 
       <CashMovementDialog open={movDlg} onOpenChange={setMovDlg} sessionId={id!} onSaved={load} />
 
@@ -236,6 +279,31 @@ export default function CashSessionDetail() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCloseDlg(false)}>Cancelar</Button>
             <Button onClick={close}><ArrowDownToLine className="h-4 w-4 mr-1" /> Fechar caixa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reverseTarget} onOpenChange={(o) => !o && setReverseTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter movimento</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">
+              Esta ação cria um movimento contrário irreversível. Indique um motivo.
+            </p>
+            <div>
+              <Label>Motivo</Label>
+              <Input
+                value={reverseTarget?.reason ?? ""}
+                onChange={(e) => setReverseTarget((t) => t ? { ...t, reason: e.target.value } : t)}
+                placeholder="Ex: lançado por engano"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReverseTarget(null)} disabled={reversing}>Cancelar</Button>
+            <Button variant="destructive" onClick={reverseMove} disabled={reversing}>
+              <Undo2 className="h-4 w-4 mr-1" /> {reversing ? "A reverter…" : "Reverter"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
