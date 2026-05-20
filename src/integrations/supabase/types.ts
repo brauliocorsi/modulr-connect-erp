@@ -11502,6 +11502,7 @@ export type Database = {
         Returns: undefined
       }
       _svc_repair_loc: { Args: { _name: string }; Returns: string }
+      _test_f24_chat_dock_discuss_bridge: { Args: never; Returns: Json }
       _test_inventory_allocation_policy: { Args: never; Returns: Json }
       _test_inventory_allocation_policy_impl: {
         Args: { v_prefix: string }
@@ -12187,6 +12188,10 @@ export type Database = {
       delivery_verify_load: {
         Args: { _manifest_ids: string[]; _route_id: string }
         Returns: Json
+      }
+      discuss_bridge_channel_to_conversation: {
+        Args: { _channel_id: string }
+        Returns: string
       }
       discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
       discuss_open_dm: { Args: { _other: string }; Returns: string }
