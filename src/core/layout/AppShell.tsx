@@ -120,31 +120,66 @@ export default function AppShell() {
         </DropdownMenu>
       </header>
 
-      {/* APP SWITCHER OVERLAY */}
-      {appsOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm pt-16 px-6" onClick={() => setAppsOpen(false)}>
-          <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" onClick={(e) => e.stopPropagation()}>
-            {visibleModules.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => {
-                  nav(m.basePath);
-                  setAppsOpen(false);
-                }}
-                className="group flex flex-col items-center gap-3 p-6 rounded-xl border bg-card hover:shadow-elegant transition-all hover:-translate-y-0.5"
-              >
-                <div className={cn("h-14 w-14 rounded-xl grid place-items-center text-white", m.color)}>
-                  <m.icon className="h-7 w-7" />
+      {/* APP SWITCHER OVERLAY — grouped */}
+      {appsOpen && (() => {
+        const GROUPS: { title: string; ids: string[] }[] = [
+          { title: "Comercial", ids: ["sales"] },
+          { title: "Produtos & Engenharia", ids: ["products"] },
+          { title: "Compras", ids: ["purchase"] },
+          { title: "Produção", ids: ["manufacturing", "shop_floor"] },
+          { title: "Inventário & Logística", ids: ["inventory", "routes", "delivery", "barcode"] },
+          { title: "Financeiro", ids: ["finance", "cashbox"] },
+          { title: "Atendimento", ids: ["service", "helpdesk", "discuss"] },
+          { title: "Sistema", ids: ["hr", "settings"] },
+        ];
+        const grouped = GROUPS.map((g) => ({
+          ...g,
+          modules: g.ids
+            .map((id) => visibleModules.find((m) => (m.id as string) === id))
+            .filter(Boolean) as typeof visibleModules,
+        })).filter((g) => g.modules.length > 0);
+
+        const assignedIds = new Set(GROUPS.flatMap((g) => g.ids));
+        const others = visibleModules.filter((m) => !assignedIds.has(m.id as string));
+        if (others.length) grouped.push({ title: "Outros", ids: [], modules: others });
+
+        return (
+          <div
+            className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm overflow-auto pt-16 pb-10 px-6"
+            onClick={() => setAppsOpen(false)}
+          >
+            <div className="max-w-6xl mx-auto space-y-8" onClick={(e) => e.stopPropagation()}>
+              {grouped.map((g) => (
+                <div key={g.title}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    {g.title}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {g.modules.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          nav(m.basePath);
+                          setAppsOpen(false);
+                        }}
+                        className="group flex items-center gap-3 p-4 rounded-xl border bg-card hover:shadow-elegant transition-all hover:-translate-y-0.5 text-left"
+                      >
+                        <div className={cn("h-11 w-11 shrink-0 rounded-lg grid place-items-center text-white", m.color)}>
+                          <m.icon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold truncate">{m.name}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-2">{m.description}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="font-semibold">{m.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{m.description}</div>
-                </div>
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* BODY */}
       <div className="flex-1 flex min-h-0">
