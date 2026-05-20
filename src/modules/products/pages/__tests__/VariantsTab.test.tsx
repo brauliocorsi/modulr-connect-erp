@@ -82,12 +82,11 @@ describe("VariantsTab (F22-V2.1 RPC migration)", () => {
 
   it("remove dispatches product_variant_delete RPC", async () => {
     rpcMock.mockResolvedValue({ data: { ok: true }, error: null });
-    render(<VariantsTab productId="p1" />);
+    const { container } = render(<VariantsTab productId="p1" />);
     await waitForVariant();
-    const trashButtons = screen.getAllByRole("button");
-    const deleteBtn = trashButtons.find((b) => b.querySelector("svg.lucide-trash-2"));
-    expect(deleteBtn).toBeTruthy();
-    fireEvent.click(deleteBtn!);
+    const buttons = Array.from(container.querySelectorAll("button"));
+    const deleteBtn = buttons[buttons.length - 1];
+    fireEvent.click(deleteBtn);
     await waitFor(() =>
       expect(rpcMock).toHaveBeenCalledWith("product_variant_delete", { _variant_id: "v1" }),
     );
@@ -95,13 +94,13 @@ describe("VariantsTab (F22-V2.1 RPC migration)", () => {
 
   it("delete shows friendly toast when backend blocks (has_stock)", async () => {
     rpcMock.mockResolvedValue({ data: null, error: { message: "has_stock" } });
-    render(<VariantsTab productId="p1" />);
+    const { container } = render(<VariantsTab productId="p1" />);
     await waitForVariant();
-    const trashButtons = screen.getAllByRole("button");
-    const deleteBtn = trashButtons.find((b) => b.querySelector("svg.lucide-trash-2"));
-    fireEvent.click(deleteBtn!);
+    const buttons = Array.from(container.querySelectorAll("button"));
+    fireEvent.click(buttons[buttons.length - 1]);
     await waitFor(() =>
       expect(toastError).toHaveBeenCalledWith(expect.stringMatching(/stock/i)),
     );
   });
 });
+
