@@ -222,7 +222,7 @@ export default function PayablesList() {
         confirmLabel="Cancelar fatura"
         destructive
         loading={cancelling}
-        onConfirm={() => cancelTarget && cancelBill(cancelTarget)}
+        onConfirm={() => { if (cancelTarget) void cancelBill(cancelTarget); }}
       />
     </>
   );
