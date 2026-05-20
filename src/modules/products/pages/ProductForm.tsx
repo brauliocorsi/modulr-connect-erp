@@ -208,7 +208,7 @@ export default function ProductForm() {
           ...(!isNew ? [{
             key: "delete",
             label: "Excluir",
-            onClick: remove,
+            onClick: async () => { await remove(); },
             destructive: true,
             confirm: { title: "Excluir produto", description: "Esta ação não pode ser desfeita.", confirmLabel: "Excluir" },
           }] : []),
