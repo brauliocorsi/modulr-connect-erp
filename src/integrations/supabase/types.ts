@@ -12207,6 +12207,11 @@ export type Database = {
           zone_name: string
         }[]
       }
+      supplier_bill_cancel: {
+        Args: { _bill_id: string; _reason: string }
+        Returns: Json
+      }
+      supplier_bill_create: { Args: { _payload: Json }; Returns: Json }
       supplier_bill_create_from_po: {
         Args: {
           _bill_date?: string
@@ -12215,6 +12220,10 @@ export type Database = {
           _po_id: string
           _reference?: string
         }
+        Returns: Json
+      }
+      supplier_bill_update: {
+        Args: { _bill_id: string; _payload: Json }
         Returns: Json
       }
       supplier_location_id: { Args: never; Returns: string }

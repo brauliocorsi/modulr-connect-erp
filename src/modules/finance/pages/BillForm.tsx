@@ -85,9 +85,8 @@ export default function BillForm() {
 
   const save = async () => {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");
-    let bid = id;
     if (isNew) {
-      // Se vem prefilled de uma PO, usar RPC supplier_bill_create_from_po (F20-B).
+      // PO-based: usar RPC supplier_bill_create_from_po (F20-B).
       if (bill.purchase_order_id) {
         const { data, error } = await supabase.rpc("supplier_bill_create_from_po", {
           _po_id: bill.purchase_order_id,
@@ -97,54 +96,63 @@ export default function BillForm() {
         });
         if (error) return toast.error(error.message);
         const res: any = data;
-        bid = res?.bill_id ?? res?.id ?? null;
+        if (res?.error) return toast.error(mapBillError(res.error));
+        const bid = res?.bill_id ?? res?.id ?? null;
         toast.success("Fatura criada a partir da PO");
         if (bid) return nav(`/finance/payables/${bid}`);
         return;
       }
-      // Fluxo ad-hoc (sem PO) — não há RPC dedicada; insere bill diretamente.
-      // DOCUMENTADO em D1: backend gap (criar RPC `supplier_bill_create`).
-      const { data: seq } = await supabase.rpc("next_sequence", { _code: "supplier_bill" });
-      const { data, error } = await supabase.from("supplier_bills").insert({
-        name: seq ?? "BILL",
-        partner_id: bill.partner_id,
-        purchase_order_id: bill.purchase_order_id || null,
-        bill_date: bill.bill_date,
-        due_date: bill.due_date,
-        amount_total: bill.amount_total,
-        cost_center_id: bill.cost_center_id || null,
-        reference: bill.reference,
-        notes: bill.notes,
-        state: "posted",
-      }).select("id").single();
+      // Ad-hoc (sem PO) → RPC supplier_bill_create (F22-D1).
+      const { data, error } = await supabase.rpc("supplier_bill_create", {
+        _payload: {
+          partner_id: bill.partner_id,
+          bill_date: bill.bill_date,
+          due_date: bill.due_date || null,
+          amount_total: Number(bill.amount_total || 0),
+          cost_center_id: bill.cost_center_id || null,
+          reference: bill.reference || null,
+          notes: bill.notes || null,
+          state: "posted",
+        },
+      });
       if (error) return toast.error(error.message);
-      bid = (data as any).id;
+      const res: any = data;
+      if (res?.error) return toast.error(mapBillError(res.error));
       toast.success("Fatura criada");
-      nav(`/finance/payables/${bid}`);
+      nav(`/finance/payables/${res.bill_id}`);
     } else {
-      // Atualização de campos editáveis (referência / notas / vencimento).
-      // Não passa por RPC pois não altera state nem amount_paid.
-      const { error } = await supabase.from("supplier_bills").update({
-        partner_id: bill.partner_id,
-        purchase_order_id: bill.purchase_order_id || null,
-        bill_date: bill.bill_date,
-        due_date: bill.due_date,
-        amount_total: bill.amount_total,
-        cost_center_id: bill.cost_center_id || null,
-        reference: bill.reference,
-        notes: bill.notes,
-      }).eq("id", id!);
+      // Update via RPC supplier_bill_update (F22-D1).
+      const { data, error } = await supabase.rpc("supplier_bill_update", {
+        _bill_id: id!,
+        _payload: {
+          partner_id: bill.partner_id,
+          purchase_order_id: bill.purchase_order_id || null,
+          bill_date: bill.bill_date,
+          due_date: bill.due_date || null,
+          amount_total: Number(bill.amount_total || 0),
+          cost_center_id: bill.cost_center_id || null,
+          reference: bill.reference,
+          notes: bill.notes,
+        },
+      });
       if (error) return toast.error(error.message);
+      const res: any = data;
+      if (res?.error) return toast.error(mapBillError(res.error));
       toast.success("Salvo");
       load();
     }
   };
 
   const cancelBill = async () => {
-    if (!confirm("Cancelar fatura?")) return;
-    // DOCUMENTADO D1: criar RPC `supplier_bill_cancel`.
-    const { error } = await supabase.from("supplier_bills").update({ state: "cancelled" }).eq("id", id!);
+    const reason = window.prompt("Motivo do cancelamento da fatura?");
+    if (!reason || !reason.trim()) return;
+    const { data, error } = await supabase.rpc("supplier_bill_cancel", {
+      _bill_id: id!,
+      _reason: reason.trim(),
+    });
     if (error) return toast.error(error.message);
+    const res: any = data;
+    if (res?.error) return toast.error(mapBillError(res.error));
     toast.success("Fatura cancelada");
     load();
   };
@@ -267,6 +275,25 @@ export default function BillForm() {
       )}
     </>
   );
+}
+
+const BILL_ERROR_MESSAGES: Record<string, string> = {
+  permission_denied: "Sem permissão para esta operação",
+  partner_required: "Selecione um fornecedor",
+  total_must_be_positive: "Total deve ser maior que zero",
+  due_before_bill: "Vencimento não pode ser anterior à data da fatura",
+  invalid_initial_state: "Estado inicial inválido",
+  bill_not_found: "Fatura não encontrada",
+  bill_locked: "Fatura paga/cancelada não pode ser alterada",
+  total_below_paid: "Total não pode ser inferior ao valor já pago",
+  reason_required: "Motivo é obrigatório",
+  already_cancelled: "Fatura já cancelada",
+  bill_has_payments: "Cancele os pagamentos antes de cancelar a fatura",
+  po_not_found: "Ordem de compra não encontrada",
+  po_not_confirmed: "Ordem de compra não está confirmada",
+};
+function mapBillError(code: string): string {
+  return BILL_ERROR_MESSAGES[code] ?? `Erro: ${code}`;
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "rose" | "muted" }) {
