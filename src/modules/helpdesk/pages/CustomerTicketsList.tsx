@@ -14,6 +14,7 @@ import {
   type FilterValue,
 } from "@/core/operational";
 import { TicketCategoryBadge, TicketPriorityBadge, SERVICE_HINT_CATEGORIES } from "../components/TicketBadges";
+import { NewTicketDialog } from "../components/NewTicketDialog";
 
 type Ticket = {
   id: string;
