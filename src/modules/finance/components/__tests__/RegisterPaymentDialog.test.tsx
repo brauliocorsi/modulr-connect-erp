@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 const rpcMock = vi.fn();
 const toastError = vi.fn();
@@ -8,6 +9,13 @@ const toastSuccess = vi.fn();
 vi.mock("sonner", () => ({
   toast: { success: (m: string) => toastSuccess(m), error: (m: string) => toastError(m) },
 }));
+
+vi.mock("@/core/permissions/usePermissions", () => ({
+  usePermissions: () => ({ isAdmin: false, can: () => false, inGroup: () => false, loading: false, groups: [] }),
+}));
+vi.mock("@/core/auth/AuthProvider", () => ({ useAuth: () => ({ user: null }) }));
+
+const renderWithRouter = (ui: React.ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
 // Methods used by the dialog (one CASH, one non-cash with required reference)
 const METHODS = [
