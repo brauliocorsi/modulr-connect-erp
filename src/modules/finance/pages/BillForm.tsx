@@ -277,6 +277,25 @@ export default function BillForm() {
   );
 }
 
+const BILL_ERROR_MESSAGES: Record<string, string> = {
+  permission_denied: "Sem permissão para esta operação",
+  partner_required: "Selecione um fornecedor",
+  total_must_be_positive: "Total deve ser maior que zero",
+  due_before_bill: "Vencimento não pode ser anterior à data da fatura",
+  invalid_initial_state: "Estado inicial inválido",
+  bill_not_found: "Fatura não encontrada",
+  bill_locked: "Fatura paga/cancelada não pode ser alterada",
+  total_below_paid: "Total não pode ser inferior ao valor já pago",
+  reason_required: "Motivo é obrigatório",
+  already_cancelled: "Fatura já cancelada",
+  bill_has_payments: "Cancele os pagamentos antes de cancelar a fatura",
+  po_not_found: "Ordem de compra não encontrada",
+  po_not_confirmed: "Ordem de compra não está confirmada",
+};
+function mapBillError(code: string): string {
+  return BILL_ERROR_MESSAGES[code] ?? `Erro: ${code}`;
+}
+
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "emerald" | "rose" | "muted" }) {
   const cls = tone === "emerald" ? "text-emerald-600" : tone === "rose" ? "text-rose-600" : tone === "muted" ? "text-muted-foreground" : "text-foreground";
   return (<div><div className="text-xs text-muted-foreground">{label}</div><div className={`text-lg font-semibold ${cls}`}>{value}</div></div>);
