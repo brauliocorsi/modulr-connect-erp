@@ -12264,6 +12264,15 @@ export type Database = {
       }
       discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
       discuss_open_dm: { Args: { _other: string }; Returns: string }
+      discuss_send_message: {
+        Args: {
+          _body?: string
+          _channel_id: string
+          _image_url?: string
+          _mentions?: string[]
+        }
+        Returns: string
+      }
       driver_assign_batch: {
         Args: {
           _batch: string
@@ -12698,6 +12707,10 @@ export type Database = {
         }[]
       }
       picking_return_status: { Args: { _picking_id: string }; Returns: Json }
+      picking_scan_reset_quantity_done: {
+        Args: { _picking: string }
+        Returns: number
+      }
       picking_shortages: {
         Args: { _picking: string }
         Returns: {
