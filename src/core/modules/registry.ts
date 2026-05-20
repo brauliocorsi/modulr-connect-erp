@@ -250,6 +250,8 @@ export const MODULES: ModuleDef[] = [
       { section: "Visão Geral", label: "Dashboard", to: "/manufacturing" },
       { section: "Produção", label: "Ordens de Fabricação", to: "/manufacturing/orders" },
       { section: "Produção", label: "Planeamento", to: "/manufacturing/planning" },
+      { section: "Configuração", label: "Centros de Trabalho", to: "/manufacturing/work-centers" },
+      { section: "Configuração", label: "Operações", to: "/manufacturing/operations" },
       { section: "Engenharia", label: "Listas de Materiais (BOM)", to: "/products/bom" },
     ],
   },
