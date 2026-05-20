@@ -14,7 +14,8 @@ export type StatusDomain =
   | "delivery_route"
   | "delivery_order"
   | "supplier_bill"
-  | "customer_credit";
+  | "customer_credit"
+  | "customer_payment";
 
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
@@ -84,12 +85,15 @@ export const STATUS_REGISTRY: Registry = {
     partial: { label: "Pago parcial", variant: "secondary" },
     paid: { label: "Pago", variant: "secondary" },
     pending_confirmation: { label: "Aguarda confirmação", variant: "secondary" },
+    pending_delivery: { label: "Aguarda entrega", variant: "secondary" },
     refund_due: { label: "Reembolso devido", variant: "destructive" },
     credit_due: { label: "Crédito a aplicar", variant: "secondary" },
     pending: { label: "Pendente", variant: "secondary" },
     posted: { label: "Lançado", variant: "default" },
     reversed: { label: "Revertido", variant: "outline" },
     cancelled: { label: "Cancelado", variant: "destructive" },
+    overdue: { label: "Vencido", variant: "destructive" },
+    rejected: { label: "Rejeitado", variant: "destructive" },
   },
   supplier_bill: {
     draft: { label: "Rascunho", variant: "outline" },
@@ -98,6 +102,16 @@ export const STATUS_REGISTRY: Registry = {
     partial: { label: "Parcial", variant: "secondary" },
     paid: { label: "Paga", variant: "secondary" },
     cancelled: { label: "Cancelada", variant: "destructive" },
+    overdue: { label: "Vencida", variant: "destructive" },
+  },
+  customer_payment: {
+    pending: { label: "Pendente", variant: "secondary" },
+    pending_delivery: { label: "Aguarda entrega", variant: "secondary" },
+    pending_confirmation: { label: "Aguarda confirmação", variant: "secondary" },
+    posted: { label: "Lançado", variant: "default" },
+    cancelled: { label: "Cancelado", variant: "destructive" },
+    rejected: { label: "Rejeitado", variant: "destructive" },
+    refunded: { label: "Reembolsado", variant: "outline" },
   },
   customer_credit: {
     open: { label: "Aberto", variant: "default" },
