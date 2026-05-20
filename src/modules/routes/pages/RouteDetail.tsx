@@ -120,11 +120,21 @@ export default function RouteDetail() {
   const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
 
-  const refreshAll = () => {
-    refetchRoute(); refetchPickings(); refetchOrders(); refetchManifest(); refetchDocks();
-    qc.invalidateQueries({ queryKey: ["route-capacity", id] });
-    qc.invalidateQueries({ queryKey: ["routes-schedule"] });
-  };
+  const { refresh, lastUpdated, isFetching } = useEntityRefresh({
+    entityType: "delivery_route",
+    entityId: id,
+    extraKeys: [
+      ["route-detail", id],
+      ["route-capacity", id],
+      ["route-pickings", id],
+      ["route-orders", id],
+      ["route-manifest", id],
+      ["route-docks", id],
+      ["routes-schedule"],
+    ],
+  });
+
+  const refreshAll = () => { void refresh(); };
 
   const callRpc = async (key: string, fn: string, args: Record<string, any>, label: string, closeCtx = false) => {
     setBusy(key);
