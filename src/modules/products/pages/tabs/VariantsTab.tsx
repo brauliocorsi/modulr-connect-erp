@@ -189,14 +189,23 @@ export function VariantsTab({ productId }: { productId: string }) {
     if (skuErr) { setRowError(v.id, "sku", skuErr); toast.error(`SKU duplicado — ${skuErr}`); return; }
     if (bcErr) { setRowError(v.id, "barcode", bcErr); toast.error(`Código de barras duplicado — ${bcErr}`); return; }
 
-    const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
+    const { error } = await rpcUpsert(v.id, patch);
     if (error) {
+      const msg = error.message || "";
+      if (/duplicate_sku/i.test(msg)) {
+        setRowError(v.id, "sku", "Valor duplicado no banco");
+        return toast.error("SKU já existe em outra variante");
+      }
+      if (/duplicate_barcode/i.test(msg)) {
+        setRowError(v.id, "barcode", "Valor duplicado no banco");
+        return toast.error("Código de barras já existe em outra variante");
+      }
       if (isUniqueError(error)) {
-        const field = /barcode/i.test(error.message) ? "barcode" : "sku";
+        const field = /barcode/i.test(msg) ? "barcode" : "sku";
         setRowError(v.id, field, "Valor duplicado no banco");
         return toast.error(`${field === "sku" ? "SKU" : "Código de barras"} já existe em outra variante`);
       }
-      return toast.error(error.message);
+      return toast.error(msg);
     }
     if ("sku" in patch) setRowError(v.id, "sku", undefined);
     if ("barcode" in patch) setRowError(v.id, "barcode", undefined);
@@ -204,8 +213,14 @@ export function VariantsTab({ productId }: { productId: string }) {
   };
   const removeVariant = async (id: string) => {
     if (!confirm("Remover variante?")) return;
-    await supabase.from("product_variants").delete().eq("id", id);
+    const { error } = await supabase.rpc("product_variant_delete", { _variant_id: id });
+    if (error) {
+      const code = (error.message || "").trim();
+      toast.error(VARIANT_DELETE_REASONS[code] ?? `Não foi possível remover: ${code}`);
+      return;
+    }
     setSelected((s) => { const n = new Set(s); n.delete(id); return n; });
+    toast.success("Variante removida");
     load();
   };
 
