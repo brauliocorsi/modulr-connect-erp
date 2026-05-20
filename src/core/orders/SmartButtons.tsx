@@ -198,7 +198,7 @@ export function SmartButtons({
         ]);
       }
     })();
-  }, [kind, orderName]);
+  }, [kind, orderName, refreshToken]);
 
   if (!stats.length) return null;
   return (
