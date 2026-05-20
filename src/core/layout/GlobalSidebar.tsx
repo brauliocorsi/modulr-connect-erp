@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Package, ShoppingBag, Factory, Warehouse, Truck,
   Wallet, Wrench, LifeBuoy, Settings as SettingsIcon, LucideIcon,
-  ChevronDown, Search, Sparkles, BarChart3,
+  ChevronDown, Search, Sparkles, BarChart3, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
