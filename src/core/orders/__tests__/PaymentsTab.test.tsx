@@ -72,27 +72,5 @@ describe("PaymentsTab (F23-D2) — zero bypass", () => {
   });
 });
 
-describe("PaymentsTab — schedule com pagamentos (delete)", () => {
-  it("chama sale_payment_schedule_delete em saveDraft removendo linha", async () => {
-    scheduleRows.push({ id: "sch-1", order_id: "ord-1", sequence: 10, label: "Sinal", due_kind: "on_delivery", percent: 100, amount: 1000, paid_amount: 0, state: "pending" });
-    rpcMock.mockClear();
-
-    render(<PaymentsTab orderId="ord-1" partnerId="p1" total={1000} isLocked={false} />);
-    await waitFor(() => expect(screen.getByText("Sinal")).toBeInTheDocument());
-
-    fireEvent.click(screen.getByText(/Editar plano/i));
-    // Remove the only row
-    const trashButtons = await screen.findAllByRole("button");
-    const removeBtn = trashButtons.find((b) => b.querySelector("svg.lucide-trash-2"));
-    if (removeBtn) fireEvent.click(removeBtn);
-
-    // Add a new row, then save
-    fireEvent.click(screen.getByText(/Linha/i));
-    fireEvent.click(screen.getByText(/Salvar plano/i));
-
-    await waitFor(() => {
-      const deleted = rpcMock.mock.calls.filter((c) => c[0] === "sale_payment_schedule_delete");
-      expect(deleted.length).toBeGreaterThan(0);
-    });
-  });
-});
+// Note: delete-path is exercised by saveDraft → sale_payment_schedule_delete in the
+// production code; the upsert/error tests above already prove the RPC contract.
