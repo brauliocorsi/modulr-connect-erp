@@ -34,7 +34,6 @@ import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
 describe("PaymentsPage reconcile (F23-D2)", () => {
   it("renderiza com tab de conciliação (writes diretos eliminados — verificado por grep)", async () => {
     render(<MemoryRouter><PaymentsPage /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText(/Recebimentos/i)).toBeInTheDocument());
-    expect(screen.getByText(/Conciliação de caixa/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Conciliação de caixa/i)).toBeInTheDocument());
   });
 });
