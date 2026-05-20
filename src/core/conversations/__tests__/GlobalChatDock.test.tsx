@@ -5,10 +5,14 @@ import { MemoryRouter } from "react-router-dom";
 // --- Supabase mock ----------------------------------------------------------
 const rpcMock = vi.fn();
 const fromMock = vi.fn();
+const onMock = vi.fn();
+const subscribeMock = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (...a: any[]) => rpcMock(...a),
     from: (...a: any[]) => fromMock(...a),
+    channel: vi.fn(() => ({ on: onMock, subscribe: subscribeMock })),
+    removeChannel: vi.fn(),
   },
 }));
 
@@ -94,6 +98,9 @@ const MESSAGES = [
 beforeEach(() => {
   rpcMock.mockReset();
   fromMock.mockReset();
+  onMock.mockReset();
+  subscribeMock.mockReset();
+  onMock.mockReturnValue({ on: onMock, subscribe: subscribeMock });
   toastErr.mockReset();
   localStorage.clear();
   authUser = { id: "user-1", email: "u@e.com" };
@@ -140,6 +147,17 @@ describe("GlobalChatDock — unified", () => {
     expect(await screen.findByText("Pedido #1")).toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("geral")).toBeInTheDocument();
+  });
+
+  it("subscribes to legacy Discuss messages so the dock refreshes DMs sent there", async () => {
+    renderDock();
+    await waitFor(() =>
+      expect(onMock).toHaveBeenCalledWith(
+        "postgres_changes",
+        expect.objectContaining({ event: "INSERT", schema: "public", table: "chat_messages" }),
+        expect.any(Function),
+      ),
+    );
   });
 
   it("filters by DM tab", async () => {

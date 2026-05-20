@@ -176,6 +176,14 @@ export default function GlobalChatDock() {
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        () => {
+          fetchThreads();
+          if (activeThread && dockState === "open") fetchMessages(activeThread);
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversation_participants", filter: `user_id=eq.${user.id}` },
         () => { fetchThreads(); },
       )
