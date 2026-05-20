@@ -205,6 +205,7 @@ export default function ProductForm() {
         }
         onRefresh={isNew ? undefined : () => {
           counts.refetch();
+          stock.refetch();
           supabase.from("products").select("*").eq("id", id!).maybeSingle().then(({ data }) => data && setForm(data));
         }}
         isFetching={counts.isFetching || save.isPending}
