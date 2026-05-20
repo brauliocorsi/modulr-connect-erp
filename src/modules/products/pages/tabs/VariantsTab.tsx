@@ -153,16 +153,44 @@ export function VariantsTab({ productId }: { productId: string }) {
   // attribute admin
   const addAttr = async (attribute_id: string) => {
     if (attrs.find((a) => a.attribute_id === attribute_id)) return;
-    await supabase.from("product_template_attributes").insert({ product_id: productId, attribute_id });
+    const { error } = await supabase.rpc("product_template_attribute_upsert", {
+      _attribute_id: null,
+      _product_id: productId,
+      _payload: { attribute_id } as any,
+    });
+    if (error) return toast.error(error.message);
     load();
   };
   const toggleValue = async (templateAttrId: string, value_id: string, on: boolean) => {
-    if (on) await supabase.from("product_template_attribute_values").insert({ template_attribute_id: templateAttrId, value_id });
-    else await supabase.from("product_template_attribute_values").delete().eq("template_attribute_id", templateAttrId).eq("value_id", value_id);
+    if (on) {
+      const { error } = await supabase.rpc("product_template_attribute_value_upsert", {
+        _value_id: null,
+        _template_attribute_id: templateAttrId,
+        _payload: { value_id } as any,
+      });
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase.rpc("product_template_attribute_value_delete_pair", {
+        _template_attribute_id: templateAttrId,
+        _value_id: value_id,
+      });
+      if (error) {
+        const msg = (error.message || "").includes("value_in_use_by_variants")
+          ? "Valor em uso por variantes — não pode ser removido"
+          : error.message;
+        return toast.error(msg);
+      }
+    }
     load();
   };
   const removeAttr = async (id: string) => {
-    await supabase.from("product_template_attributes").delete().eq("id", id);
+    const { error } = await supabase.rpc("product_template_attribute_delete", { _attribute_id: id });
+    if (error) {
+      const msg = (error.message || "").includes("attribute_in_use_by_variants")
+        ? "Atributo em uso por variantes — remova-as antes"
+        : error.message;
+      return toast.error(msg);
+    }
     load();
   };
   const generate = async () => {
