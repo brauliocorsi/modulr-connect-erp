@@ -41,7 +41,13 @@ export async function printSaleOrder(orderId: string) {
       .eq("order_id", orderId)
       .eq("state", "posted")
       .order("payment_date"),
+    supabase
+      .from("sale_orders_with_schedule_summary" as any)
+      .select("scheduled_date, slot_start, slot_end, schedule_status, schedule_confirmed, route_date, delivery_mode")
+      .eq("sale_order_id", orderId)
+      .maybeSingle(),
   ]);
+  const schedule = (arguments[0] as any) && undefined; // placeholder, replaced below
 
   const paid = (payments ?? []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const balance = Number(order.amount_total || 0) - paid;
