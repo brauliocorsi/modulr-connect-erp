@@ -13,6 +13,7 @@ import { Grid3x3, Search, ChevronDown, LogOut, User as UserIcon, Settings as Set
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import GlobalSidebar from "@/core/layout/GlobalSidebar";
+import GlobalChatDock from "@/core/conversations/GlobalChatDock";
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
