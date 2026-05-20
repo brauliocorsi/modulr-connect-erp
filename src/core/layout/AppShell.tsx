@@ -13,6 +13,7 @@ import { Grid3x3, Search, ChevronDown, LogOut, User as UserIcon, Settings as Set
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import GlobalSidebar from "@/core/layout/GlobalSidebar";
+import ModuleInnerMenu from "@/core/layout/ModuleInnerMenu";
 import GlobalChatDock from "@/core/conversations/GlobalChatDock";
 
 export default function AppShell() {
@@ -182,8 +183,11 @@ export default function AppShell() {
       <div className="flex-1 flex min-h-0">
         <GlobalSidebar />
 
-        <main className="flex-1 min-w-0 overflow-auto">
-          <Outlet />
+        <main className="flex-1 min-w-0 overflow-auto flex flex-col">
+          <ModuleInnerMenu />
+          <div className="flex-1 min-h-0">
+            <Outlet />
+          </div>
         </main>
       </div>
 

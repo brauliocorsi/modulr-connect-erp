@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   ShoppingCart, Package, ShoppingBag, Factory, Warehouse, Truck,
   Wallet, Wrench, LifeBuoy, Settings as SettingsIcon, LucideIcon,
-  ChevronDown, Search, Sparkles, BarChart3,
+  ChevronDown, Search, Sparkles, BarChart3, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
@@ -171,6 +172,12 @@ function groupContainsActive(pathname: string, group: NavGroup) {
 export default function GlobalSidebar() {
   const { pathname } = useLocation();
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("erp.sidebar.collapsed") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("erp.sidebar.collapsed", collapsed ? "1" : "0"); } catch { /* ignore */ }
+  }, [collapsed]);
 
   const initialOpen = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -189,13 +196,60 @@ export default function GlobalSidebar() {
       })).filter((g) => g.items.length > 0)
     : GROUPS;
 
+  if (collapsed) {
+    return (
+      <aside
+        data-testid="global-sidebar"
+        data-collapsed="1"
+        className="hidden md:flex w-14 flex-col border-r bg-sidebar text-sidebar-foreground"
+      >
+        <div className="p-2 border-b flex justify-center">
+          <Button
+            variant="ghost" size="icon" className="h-8 w-8"
+            data-testid="sidebar-collapse-toggle"
+            aria-label="Expandir menu"
+            onClick={() => setCollapsed(false)}
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </Button>
+        </div>
+        <nav className="flex-1 overflow-auto py-2 space-y-1">
+          {GROUPS.map((g) => {
+            const Icon = g.icon;
+            const target = g.items.find((it) => it.to)?.to ?? "#";
+            const hasActive = groupContainsActive(pathname, g);
+            return (
+              <Tooltip key={g.id}>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to={target}
+                    data-testid={`sidebar-collapsed-${g.id}`}
+                    aria-label={g.label}
+                    className={cn(
+                      "flex items-center justify-center mx-1 my-0.5 h-9 w-12 rounded hover:bg-sidebar-accent",
+                      hasActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </NavLink>
+                </TooltipTrigger>
+                <TooltipContent side="right">{g.label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </nav>
+      </aside>
+    );
+  }
+
+
   return (
     <aside
       data-testid="global-sidebar"
       className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground"
     >
-      <div className="p-3 border-b">
-        <div className="relative">
+      <div className="p-3 border-b flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={query}
@@ -204,6 +258,14 @@ export default function GlobalSidebar() {
             className="pl-7 h-8 text-xs"
           />
         </div>
+        <Button
+          variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+          data-testid="sidebar-collapse-toggle"
+          aria-label="Recolher menu"
+          onClick={() => setCollapsed(true)}
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </Button>
       </div>
       <nav className="flex-1 overflow-auto p-2 space-y-1">
         {filtered.map((group) => {

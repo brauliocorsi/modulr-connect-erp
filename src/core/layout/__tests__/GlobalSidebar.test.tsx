@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +15,8 @@ function setup(path: string) {
 }
 
 describe("GlobalSidebar", () => {
+  beforeEach(() => localStorage.clear());
+
   it("renders all main groups", () => {
     setup("/");
     for (const g of __SIDEBAR_GROUPS_FOR_TEST) {
@@ -65,5 +67,19 @@ describe("GlobalSidebar", () => {
     fireEvent.change(input, { target: { value: "kardex" } });
     expect(screen.getByRole("link", { name: "Kardex" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Pedidos" })).toBeNull();
+  });
+
+  it("collapse toggle persists to localStorage and renders icon-only view", () => {
+    setup("/");
+    fireEvent.click(screen.getByTestId("sidebar-collapse-toggle"));
+    expect(localStorage.getItem("erp.sidebar.collapsed")).toBe("1");
+    expect(screen.getByTestId("global-sidebar")).toHaveAttribute("data-collapsed", "1");
+    expect(screen.getByTestId("sidebar-collapsed-financeiro")).toHaveAttribute("aria-label", "Financeiro");
+  });
+
+  it("restores collapsed state from localStorage on mount", () => {
+    localStorage.setItem("erp.sidebar.collapsed", "1");
+    setup("/");
+    expect(screen.getByTestId("global-sidebar")).toHaveAttribute("data-collapsed", "1");
   });
 });
