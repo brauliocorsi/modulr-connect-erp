@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth/AuthProvider";
 import { useInstalledModules } from "@/core/modules/useInstalledModules";
 import { MODULES, getModuleByPath } from "@/core/modules/registry";
