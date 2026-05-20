@@ -460,6 +460,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
     toast.success(kind === "sale" ? "Pedido confirmado e transferência criada" : "Compra confirmada e recebimento criado");
     const { data } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
     setOrder((o: any) => ({ ...o, state: (data as any)?.state }));
+    bumpSmart();
   };
 
   const isLocked = ["confirmed", "done", "cancelled"].includes(order.state);
