@@ -1557,6 +1557,13 @@ export type Database = {
             foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -1635,6 +1642,7 @@ export type Database = {
       customer_payments: {
         Row: {
           amount: number
+          cash_session_id: string | null
           cost_center_id: string | null
           created_at: string
           created_by: string | null
@@ -1655,9 +1663,11 @@ export type Database = {
           refund_of: string | null
           schedule_id: string | null
           state: string
+          store_id: string | null
         }
         Insert: {
           amount: number
+          cash_session_id?: string | null
           cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1678,9 +1688,11 @@ export type Database = {
           refund_of?: string | null
           schedule_id?: string | null
           state?: string
+          store_id?: string | null
         }
         Update: {
           amount?: number
+          cash_session_id?: string | null
           cost_center_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1701,8 +1713,16 @@ export type Database = {
           refund_of?: string | null
           schedule_id?: string | null
           state?: string
+          store_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customer_payments_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customer_payments_cost_center_id_fkey"
             columns: ["cost_center_id"]
@@ -1742,6 +1762,13 @@ export type Database = {
             foreignKeyName: "customer_payments_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "customer_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -1764,6 +1791,13 @@ export type Database = {
             columns: ["schedule_id"]
             isOneToOne: false
             referencedRelation: "sale_payment_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -1844,6 +1878,13 @@ export type Database = {
             foreignKeyName: "customer_pickups_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "customer_pickups_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -1913,6 +1954,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "customer_portal_tokens_sale_order_id_fkey"
@@ -2112,6 +2160,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "customer_tickets_delivery_schedule_id_fkey"
+            columns: ["delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
+          },
+          {
             foreignKeyName: "customer_tickets_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
@@ -2124,6 +2179,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_tickets_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "customer_tickets_sale_order_id_fkey"
@@ -2364,6 +2426,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_route_orders_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
           },
         ]
       }
@@ -2702,6 +2771,13 @@ export type Database = {
             foreignKeyName: "delivery_schedules_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "delivery_schedules_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -2912,6 +2988,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dock_transfers_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
           },
         ]
       }
@@ -4009,6 +4092,13 @@ export type Database = {
             foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "manufacturing_orders_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -5003,6 +5093,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "package_damage_reports_sale_order_id_fkey"
@@ -6218,6 +6315,13 @@ export type Database = {
             foreignKeyName: "purchase_needs_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "purchase_needs_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -6351,6 +6455,13 @@ export type Database = {
             foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
             columns: ["source_sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_source_sale_order_id_fkey"
+            columns: ["source_sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -6407,6 +6518,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "purchase_order_origins_sale_order_id_fkey"
@@ -6891,6 +7009,13 @@ export type Database = {
             foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
             columns: ["sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "sale_operational_plan_log_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -7105,6 +7230,13 @@ export type Database = {
             foreignKeyName: "sale_order_lines_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "sale_order_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -7210,6 +7342,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "sale_order_timeline_sale_order_id_fkey"
@@ -7410,6 +7549,13 @@ export type Database = {
             foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
             columns: ["parent_sale_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "sale_orders_parent_sale_order_id_fkey"
+            columns: ["parent_sale_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -7440,6 +7586,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_root_sale_order_id_fkey"
+            columns: ["root_sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "sale_orders_root_sale_order_id_fkey"
@@ -7533,6 +7686,13 @@ export type Database = {
             foreignKeyName: "sale_payment_schedules_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "sale_payment_schedules_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -7597,6 +7757,13 @@ export type Database = {
             foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
             columns: ["deferred_order_id"]
             isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_deferred_order_id_fkey"
+            columns: ["deferred_order_id"]
+            isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_id"]
           },
@@ -7613,6 +7780,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "sale_split_payment_allocations_parent_order_id_fkey"
@@ -8055,6 +8229,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_cases_delivery_schedule_id_fkey"
+            columns: ["delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
+          },
+          {
             foreignKeyName: "service_cases_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -8088,6 +8269,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_cases_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "service_cases_sale_order_id_fkey"
@@ -8471,6 +8659,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tasks_linked_delivery_schedule_id_fkey"
+            columns: ["linked_delivery_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
           },
           {
             foreignKeyName: "service_tasks_linked_manufacturing_order_id_fkey"
@@ -9094,6 +9289,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sale_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_packages_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["sale_order_id"]
           },
           {
             foreignKeyName: "stock_packages_sale_order_id_fkey"
@@ -9945,6 +10147,50 @@ export type Database = {
           },
         ]
       }
+      user_store_assignments: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          role: string
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          role?: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          role?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_store_assignments_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_route_manifest: {
         Row: {
           assistance_case_id: string | null
@@ -10122,6 +10368,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
           },
           {
             foreignKeyName: "vehicle_route_manifest_stock_move_id_fkey"
@@ -10594,6 +10847,58 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_orders_with_schedule_summary: {
+        Row: {
+          amount_total: number | null
+          commitment_date: string | null
+          date_order: string | null
+          delivery_mode: string | null
+          delivery_zone_label: string | null
+          fulfillment_status: string | null
+          include_assembly: boolean | null
+          include_delivery: boolean | null
+          invoice_status: string | null
+          name: string | null
+          operational_status: string | null
+          partner_id: string | null
+          payment_status: string | null
+          route_date: string | null
+          route_id: string | null
+          route_type: string | null
+          sale_order_id: string | null
+          schedule_confirmed: boolean | null
+          schedule_id: string | null
+          schedule_status: string | null
+          scheduled_date: string | null
+          slot_end: string | null
+          slot_start: string | null
+          state: Database["public"]["Enums"]["sale_state"] | null
+          store_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_schedules_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_manifest_by_line: {
         Row: {
           any_assistance: boolean | null
@@ -10666,6 +10971,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "delivery_schedules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_route_manifest_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders_with_schedule_summary"
+            referencedColumns: ["schedule_id"]
           },
         ]
       }
@@ -11125,6 +11437,10 @@ export type Database = {
         Returns: Json
       }
       _test_phase24_finance_core_rebuild: { Args: never; Returns: Json }
+      _test_phase24b2_store_cash_delivery_guardrails: {
+        Args: never
+        Returns: Json
+      }
       _test_phase3: { Args: never; Returns: Json }
       _test_phase4: { Args: never; Returns: Json }
       _test_phase5: { Args: never; Returns: Json }
@@ -11350,6 +11666,7 @@ export type Database = {
         Args: { _payment_id: string; _reason?: string }
         Returns: {
           amount: number
+          cash_session_id: string | null
           cost_center_id: string | null
           created_at: string
           created_by: string | null
@@ -11370,6 +11687,7 @@ export type Database = {
           refund_of: string | null
           schedule_id: string | null
           state: string
+          store_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -11421,6 +11739,10 @@ export type Database = {
         Returns: Json
       }
       cash_session_balance: { Args: { _session: string }; Returns: number }
+      cash_session_for_current_user: {
+        Args: { _store_id?: string }
+        Returns: Json
+      }
       cash_session_summary: { Args: { _session: string }; Returns: Json }
       close_cash_session: {
         Args: { _counted: number; _session: string }
@@ -11504,6 +11826,8 @@ export type Database = {
         Returns: string
       }
       create_wave: { Args: { _moves: string[] }; Returns: string }
+      current_user_default_store_id: { Args: never; Returns: string }
+      current_user_store_ids: { Args: never; Returns: string[] }
       customer_delivery_request_schedule: {
         Args: {
           _notes?: string
@@ -12193,48 +12517,96 @@ export type Database = {
         Args: { _payment: string; _reason?: string }
         Returns: string
       }
-      register_customer_payment: {
-        Args: {
-          _amount: number
-          _idempotency_key?: string
-          _journal?: string
-          _method: string
-          _notes?: string
-          _order: string
-          _payment_date?: string
-          _reference?: string
-          _schedule?: string
-        }
-        Returns: {
-          amount: number
-          cost_center_id: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          idempotency_key: string | null
-          journal_id: string | null
-          method_id: string | null
-          name: string
-          notes: string | null
-          order_id: string | null
-          partner_id: string | null
-          payment_date: string
-          reconciled_at: string | null
-          reconciled_by: string | null
-          reconciliation_line_id: string | null
-          reconciliation_status: string
-          reference: string | null
-          refund_of: string | null
-          schedule_id: string | null
-          state: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "customer_payments"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      register_customer_payment:
+        | {
+            Args: {
+              _amount: number
+              _idempotency_key?: string
+              _journal?: string
+              _method: string
+              _notes?: string
+              _order: string
+              _payment_date?: string
+              _reference?: string
+              _schedule?: string
+            }
+            Returns: {
+              amount: number
+              cash_session_id: string | null
+              cost_center_id: string | null
+              created_at: string
+              created_by: string | null
+              id: string
+              idempotency_key: string | null
+              journal_id: string | null
+              method_id: string | null
+              name: string
+              notes: string | null
+              order_id: string | null
+              partner_id: string | null
+              payment_date: string
+              reconciled_at: string | null
+              reconciled_by: string | null
+              reconciliation_line_id: string | null
+              reconciliation_status: string
+              reference: string | null
+              refund_of: string | null
+              schedule_id: string | null
+              state: string
+              store_id: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "customer_payments"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _amount: number
+              _cash_session_id?: string
+              _idempotency_key?: string
+              _journal?: string
+              _method: string
+              _notes?: string
+              _order: string
+              _payment_date?: string
+              _reference?: string
+              _schedule?: string
+            }
+            Returns: {
+              amount: number
+              cash_session_id: string | null
+              cost_center_id: string | null
+              created_at: string
+              created_by: string | null
+              id: string
+              idempotency_key: string | null
+              journal_id: string | null
+              method_id: string | null
+              name: string
+              notes: string | null
+              order_id: string | null
+              partner_id: string | null
+              payment_date: string
+              reconciled_at: string | null
+              reconciled_by: string | null
+              reconciliation_line_id: string | null
+              reconciliation_status: string
+              reference: string | null
+              refund_of: string | null
+              schedule_id: string | null
+              state: string
+              store_id: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "customer_payments"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       release_mo_reservation: { Args: { _mo: string }; Returns: undefined }
       release_move_reservation: { Args: { _move: string }; Returns: undefined }
       release_move_reservation_partial: {
@@ -12262,6 +12634,10 @@ export type Database = {
           _variant_id?: string
         }
         Returns: Json
+      }
+      resolve_cash_session_for_user: {
+        Args: { _explicit_session?: string; _store_ids: string[] }
+        Returns: string
       }
       route_capacity_used: {
         Args: { _route: string }
