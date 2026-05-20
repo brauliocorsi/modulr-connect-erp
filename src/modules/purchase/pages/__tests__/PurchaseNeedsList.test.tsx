@@ -130,4 +130,13 @@ describe("PurchaseNeedsList", () => {
     if (confirmBtn) fireEvent.click(confirmBtn);
     await waitFor(() => expect(rpcMock).toHaveBeenCalledWith("cancel_purchase_need", { _id: "n1" }));
   });
+
+  it("renders colored origin badges", async () => {
+    setup();
+    await screen.findByText("Madeira");
+    // labels from ORIGIN_LABEL
+    expect(screen.getByText("Produção")).toBeInTheDocument();
+    expect(screen.getByText("Venda")).toBeInTheDocument();
+  });
 });
+

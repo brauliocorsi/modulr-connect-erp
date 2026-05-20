@@ -25,8 +25,22 @@ import {
 
 const ORIGIN_LABEL: Record<string, string> = {
   sale: "Venda", manufacturing: "Produção", min_stock: "Stock mín.",
-  manual: "Manual", forecast: "Previsão",
+  manual: "Manual", forecast: "Previsão", service_case: "Assistência",
+  stock_replenishment: "Reabast.",
 };
+const ORIGIN_TONE: Record<string, string> = {
+  sale: "border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  manufacturing: "border-sky-500/60 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  min_stock: "border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  stock_replenishment: "border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  service_case: "border-rose-500/60 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+  manual: "border-muted-foreground/40 bg-muted text-foreground",
+  forecast: "border-violet-500/60 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+};
+function OriginBadge({ origin }: { origin: string }) {
+  const tone = ORIGIN_TONE[origin] ?? "border-border bg-muted text-muted-foreground";
+  return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}>{ORIGIN_LABEL[origin] ?? origin}</span>;
+}
 const ERR_LABEL: Record<string, string> = {
   NEED_CANCELLED: "Necessidade cancelada.",
   NEED_RECEIVED: "Necessidade já recebida.",
@@ -195,7 +209,7 @@ export default function PurchaseNeedsList() {
     {
       key: "origin",
       header: "Origem",
-      cell: (r) => <Badge variant="outline" className="text-xs">{ORIGIN_LABEL[r.origin_kind] ?? r.origin_kind}</Badge>,
+      cell: (r) => <OriginBadge origin={r.origin_kind} />,
     },
     {
       key: "ref",

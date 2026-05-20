@@ -17,10 +17,13 @@ import { RecordConversations } from "@/core/conversations/RecordConversations";
 import {
   EntityHeader,
   OperationalStatusBadge,
+  SummaryCards,
   EmptyState,
   LoadingState,
   type OperationalAction,
+  type SummaryCardItem,
 } from "@/core/operational";
+import { AlertTriangle, Boxes, Hammer } from "lucide-react";
 import { useRpcMutation } from "@/core/operational/hooks/useRpcMutation";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
 
@@ -79,6 +82,11 @@ export default function ManufacturingOrderDetail() {
     queryKey: ["mo-qc", id],
     enabled: !!id,
     queryFn: async () => (await supabase.from("mo_quality_checks").select("*").eq("mo_id", id!).order("checked_at", { ascending: false })).data ?? [],
+  });
+  const { data: ops } = useQuery({
+    queryKey: ["mo-ops", id],
+    enabled: !!id,
+    queryFn: async () => (await supabase.from("mo_operations").select("id,state").eq("mo_id", id!)).data ?? [],
   });
 
   const closeMo = useRpcMutation<{ _mo: string }, unknown>({
@@ -181,6 +189,53 @@ export default function ManufacturingOrderDetail() {
         lastUpdated={lastUpdated}
       />
       <PageBody>
+        {(() => {
+          const compList = (comps ?? []) as any[];
+          const reserved = compList.filter((c) => c.status === "reserved" || c.status === "ready" || Number(c.qty_consumed) >= Number(c.qty_required)).length;
+          const totalComps = compList.length;
+          const opsList = (ops ?? []) as any[];
+          const doneOps = opsList.filter((o) => o.state === "done").length;
+          const totalOps = opsList.length;
+          const openIssues = (issues ?? []).filter((i: any) => !i.resolved_at).length;
+          const items: SummaryCardItem[] = [
+            {
+              key: "state",
+              label: "Estado",
+              value: <OperationalStatusBadge domain="manufacturing" status={mo.state} />,
+              tone: mo.state === "done" ? "success" : mo.state === "cancelled" ? "muted" : "primary",
+            },
+            {
+              key: "qty",
+              label: "Quantidade",
+              value: <span>{Number(mo.qty)}</span>,
+              hint: "Alvo planeado",
+            },
+            {
+              key: "comps",
+              label: "Componentes",
+              value: <span>{reserved}<span className="text-muted-foreground text-base">/{totalComps}</span></span>,
+              hint: "Reservados / total",
+              icon: <Boxes className="h-3 w-3" />,
+              tone: totalComps > 0 && reserved < totalComps ? "warning" : "success",
+            },
+            {
+              key: "wo",
+              label: "Operações",
+              value: <span>{doneOps}<span className="text-muted-foreground text-base">/{totalOps}</span></span>,
+              hint: "Concluídas / total",
+              icon: <Hammer className="h-3 w-3" />,
+              tone: totalOps > 0 && doneOps < totalOps ? "primary" : "success",
+            },
+            {
+              key: "issues",
+              label: "Problemas abertos",
+              value: <span>{openIssues}</span>,
+              icon: <AlertTriangle className="h-3 w-3" />,
+              tone: openIssues > 0 ? "danger" : "success",
+            },
+          ];
+          return <SummaryCards items={items} className="mb-4" />;
+        })()}
         <Card className="p-4">
           <Tabs defaultValue="components">
             <TabsList>
