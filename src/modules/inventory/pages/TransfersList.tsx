@@ -32,6 +32,39 @@ export default function TransfersList() {
   useEffect(() => { writeToggle("transfers-group-by-origin", groupMode); }, [groupMode]);
   const toggleExpand = (key: string) => setExpanded((p) => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
+  // Per-user column visibility
+  const COL_DEFS: { key: string; label: string; alwaysVisible?: boolean }[] = [
+    { key: "name", label: "Referência", alwaysVisible: true },
+    { key: "kind", label: "Tipo" },
+    { key: "step", label: "Etapa" },
+    { key: "partner", label: "Parceiro" },
+    { key: "state", label: "Estado" },
+    { key: "batch", label: "Lote" },
+    { key: "route", label: "Rota" },
+    { key: "scheduled_at", label: "Programado" },
+  ];
+  const listView = useUserListView("inventory.transfers", {
+    columns: COL_DEFS.map((c, i) => ({ key: c.key, visible: true, order: i })),
+    filters: {},
+    sort: { key: "created_at", asc: false },
+  });
+  const colVisible = (k: string) => {
+    if (COL_DEFS.find((c) => c.key === k)?.alwaysVisible) return true;
+    const p = listView.state.columns.find((c) => c.key === k);
+    return p ? p.visible : true;
+  };
+  const visibleColCount = 1 /* checkbox */ + COL_DEFS.filter((c) => colVisible(c.key)).length;
+  const toggleCol = (k: string) => {
+    if (COL_DEFS.find((c) => c.key === k)?.alwaysVisible) return;
+    const map = new Map(listView.state.columns.map((c) => [c.key, c]));
+    const cur = map.get(k);
+    if (cur) map.set(k, { ...cur, visible: !cur.visible });
+    else map.set(k, { key: k, visible: false, order: COL_DEFS.findIndex((c) => c.key === k) });
+    listView.update({
+      columns: COL_DEFS.map((c, i) => map.get(c.key) ?? { key: c.key, visible: true, order: i }),
+    });
+  };
+
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses-min"],
     queryFn: async () => (await supabase.from("warehouses").select("id,name").order("name")).data ?? [],
