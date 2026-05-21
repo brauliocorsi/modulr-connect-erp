@@ -241,3 +241,27 @@ export function suggestDeliveryDays(opts: {
 }
 
 export const __test = { postalMatchesZone, pickSaturation };
+
+// ── F27-C — Capacity classification for a single route ─────────────────────────
+export type RouteCapacityStatus = "available" | "tight" | "saturated" | "unknown";
+
+export function resolveRouteCapacityStatus(
+  route: Pick<RouteRow, "cap_deliveries" | "current_deliveries" | "cap_volume_m3" | "current_volume_m3"> | null | undefined
+): { status: RouteCapacityStatus; ratio: number | null; reason: string } {
+  if (!route) return { status: "unknown", ratio: null, reason: "Sem rota seleccionada" };
+  const cap = route.cap_deliveries;
+  if (cap == null || cap <= 0) {
+    const vCap = route.cap_volume_m3;
+    if (vCap == null || vCap <= 0) return { status: "unknown", ratio: null, reason: "Capacidade não definida" };
+    const vUsed = Number(route.current_volume_m3 ?? 0);
+    const r = vUsed / Number(vCap);
+    if (r >= 1) return { status: "saturated", ratio: r, reason: "Volume da rota esgotado" };
+    if (r >= 0.85) return { status: "tight", ratio: r, reason: "Volume da rota quase esgotado" };
+    return { status: "available", ratio: r, reason: "Volume disponível" };
+  }
+  const used = Number(route.current_deliveries ?? 0);
+  const r = used / Number(cap);
+  if (r >= 1) return { status: "saturated", ratio: r, reason: "Entregas da rota esgotadas" };
+  if (r >= 0.85) return { status: "tight", ratio: r, reason: "Rota quase cheia" };
+  return { status: "available", ratio: r, reason: "Rota com folga" };
+}

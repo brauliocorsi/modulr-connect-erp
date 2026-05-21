@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, Wrench, Boxes, ExternalLink } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, Wrench, Boxes, ExternalLink, CalendarPlus } from "lucide-react";
 import { useRealtimeInvalidate } from "@/core/realtime";
 import {
   calculateDayCapacity,
@@ -19,6 +19,7 @@ import {
   type ScheduleRow,
   type SaturationStatus,
 } from "@/modules/sales/lib/deliverySchedule";
+import { ScheduleSaleOrderDeliveryDialog } from "@/modules/sales/components/ScheduleSaleOrderDeliveryDialog";
 
 const fmt = (n: number | null | undefined, digits = 1) =>
   n == null ? "—" : Number(n).toLocaleString("pt-PT", { minimumFractionDigits: 0, maximumFractionDigits: digits });
@@ -184,6 +185,7 @@ export default function DeliveryScheduleCalendar() {
   }, [suggestions]);
 
   const [drawerDate, setDrawerDate] = useState<string | null>(null);
+  const [scheduleDialog, setScheduleDialog] = useState<{ saleOrderId: string; date?: string | null } | null>(null);
 
   const monthLabel = anchor.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
@@ -236,6 +238,20 @@ export default function DeliveryScheduleCalendar() {
         </div>
       </Card>
 
+      {focusSoId && (
+        <Card className="p-3 flex flex-wrap items-center gap-2 text-sm border-primary/40">
+          <CalendarPlus className="h-4 w-4 text-primary" />
+          <span>
+            Em foco: <b>{(focusSo as any)?.name ?? "venda"}</b>
+            {postalCode ? ` · CP ${postalCode}` : ""}
+          </span>
+          <Button size="sm" className="ml-auto h-7 text-xs"
+            onClick={() => setScheduleDialog({ saleOrderId: focusSoId, date: preferredDate })}>
+            <CalendarPlus className="h-3 w-3 mr-1" /> Agendar/Reagendar entrega
+          </Button>
+        </Card>
+      )}
+
       {suggestions.length > 0 && (
         <Card className="p-3 border-emerald-200/60 dark:border-emerald-900/40">
           <div className="flex items-center gap-2 text-sm font-medium mb-2">
@@ -253,6 +269,7 @@ export default function DeliveryScheduleCalendar() {
           </div>
         </Card>
       )}
+
 
       <TooltipProvider delayDuration={150}>
         <div className={view === "month" ? "grid grid-cols-7 gap-2" : "grid grid-cols-7 gap-2"}>
@@ -370,9 +387,15 @@ export default function DeliveryScheduleCalendar() {
                               </div>
                             </div>
                             {s.sale_order_id && (
-                              <Button asChild size="sm" variant="ghost" className="h-7">
-                                <Link to={`/sales/orders/${s.sale_order_id}`}>Abrir</Link>
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button size="sm" variant="ghost" className="h-7 text-xs"
+                                  onClick={() => setScheduleDialog({ saleOrderId: s.sale_order_id, date: drawerDate })}>
+                                  <CalendarPlus className="h-3 w-3 mr-1" /> Reagendar
+                                </Button>
+                                <Button asChild size="sm" variant="ghost" className="h-7">
+                                  <Link to={`/sales/orders/${s.sale_order_id}`}>Abrir</Link>
+                                </Button>
+                              </div>
                             )}
                           </div>
                         );
@@ -380,11 +403,27 @@ export default function DeliveryScheduleCalendar() {
                     </div>
                   )}
                 </div>
+
+                {focusSoId && (
+                  <Button className="w-full" onClick={() => setScheduleDialog({ saleOrderId: focusSoId, date: drawerDate })}>
+                    <CalendarPlus className="h-4 w-4 mr-1" /> Agendar/Reagendar venda em foco para {new Date(drawerDate!).toLocaleDateString("pt-PT")}
+                  </Button>
+                )}
               </div>
             );
           })()}
         </SheetContent>
       </Sheet>
+
+      {scheduleDialog && (
+        <ScheduleSaleOrderDeliveryDialog
+          open={!!scheduleDialog}
+          onOpenChange={(o) => !o && setScheduleDialog(null)}
+          saleOrderId={scheduleDialog.saleOrderId}
+          preferredDate={scheduleDialog.date ?? null}
+        />
+      )}
+
     </div>
   );
 }

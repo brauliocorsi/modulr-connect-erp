@@ -13044,6 +13044,17 @@ export type Database = {
         Args: { _order_id: string; _reason?: string }
         Returns: Json
       }
+      sale_order_schedule_delivery: {
+        Args: {
+          _notes?: string
+          _route_id?: string
+          _sale_order_id: string
+          _scheduled_date: string
+          _slot_end?: string
+          _slot_start?: string
+        }
+        Returns: Json
+      }
       sale_order_set_delivery_mode: {
         Args: { _delivery_mode: string; _order_id: string }
         Returns: Json

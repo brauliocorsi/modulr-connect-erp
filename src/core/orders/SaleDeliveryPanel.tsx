@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, MapPin, PackageCheck, CalendarClock, ExternalLink, CircleDashed } from "lucide-react";
+import { Truck, MapPin, PackageCheck, CalendarClock, ExternalLink, CircleDashed, CalendarPlus } from "lucide-react";
 import { useRealtimeInvalidate } from "@/core/realtime";
 import { LastUpdated } from "@/core/operational/LastUpdated";
+import { ScheduleSaleOrderDeliveryDialog } from "@/modules/sales/components/ScheduleSaleOrderDeliveryDialog";
 
 type Shipment = {
   id: string;
@@ -39,6 +41,8 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
   commitmentDate?: string | null;
 }) {
   const qc = useQueryClient();
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
 
   const { data, dataUpdatedAt, isLoading } = useQuery({
     enabled: !!saleOrderName && saleOrderName !== "Rascunho",
@@ -82,15 +86,30 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
   if (!data) {
     const href = `/sales/delivery-schedule?sale_order_id=${saleOrderId}${commitmentDate ? `&preferred_date=${String(commitmentDate).slice(0,10)}` : ""}`;
     return (
-      <Card className="p-3 flex flex-wrap items-center gap-2 text-sm">
-        <CircleDashed className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Sem transferência de saída ainda. Será criada ao confirmar a venda.</span>
-        <Button asChild size="sm" variant="ghost" className="h-7 text-xs ml-auto">
-          <Link to={href}><CalendarClock className="h-3 w-3 mr-1" /> Ver cronograma</Link>
-        </Button>
-      </Card>
+      <>
+        <Card className="p-3 flex flex-wrap items-center gap-2 text-sm">
+          <CircleDashed className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Sem transferência de saída ainda. Será criada ao confirmar a venda.</span>
+          <div className="ml-auto flex items-center gap-1">
+            <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => setScheduleOpen(true)}>
+              <CalendarPlus className="h-3 w-3 mr-1" /> Agendar entrega
+            </Button>
+            <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+              <Link to={href}><CalendarClock className="h-3 w-3 mr-1" /> Ver cronograma</Link>
+            </Button>
+          </div>
+        </Card>
+        <ScheduleSaleOrderDeliveryDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          saleOrderId={saleOrderId}
+          preferredDate={commitmentDate}
+          onScheduled={() => qc.invalidateQueries({ queryKey: ["sale-delivery-panel", saleOrderName] })}
+        />
+      </>
     );
   }
+
 
   const tone = PICK_STATE_TONE[data.state ?? ""] ?? PICK_STATE_TONE.draft;
   const zone = data.delivery_routes?.delivery_zones;
@@ -107,6 +126,9 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
         <Badge variant="outline" className={`text-[10px] ${tone.cls}`}>{tone.label}</Badge>
         <div className="ml-auto flex items-center gap-2">
           <LastUpdated value={dataUpdatedAt ? new Date(dataUpdatedAt) : null} />
+          <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => setScheduleOpen(true)}>
+            <CalendarPlus className="h-3 w-3 mr-1" /> {data.route_id || data.scheduled_at ? "Reagendar" : "Agendar entrega"}
+          </Button>
           <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
             <Link to={scheduleHref}>
               <CalendarClock className="h-3 w-3 mr-1" /> Ver cronograma
@@ -119,6 +141,14 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           </Button>
         </div>
       </div>
+      <ScheduleSaleOrderDeliveryDialog
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        saleOrderId={saleOrderId}
+        preferredDate={data.scheduled_at ? String(data.scheduled_at).slice(0,10) : commitmentDate}
+        onScheduled={() => qc.invalidateQueries({ queryKey: ["sale-delivery-panel", saleOrderName] })}
+      />
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-sm">
         {/* Data */}
