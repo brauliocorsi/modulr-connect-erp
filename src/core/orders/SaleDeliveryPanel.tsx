@@ -93,6 +93,8 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
   const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-PT") : "—");
   const fmtDt = (d?: string | null) => (d ? new Date(d).toLocaleString("pt-PT") : "—");
 
+  const scheduleHref = `/sales/delivery-schedule?sale_order_id=${saleOrderId}${commitmentDate ? `&preferred_date=${String(commitmentDate).slice(0,10)}` : ""}`;
+
   return (
     <Card className="overflow-hidden">
       <div className="px-4 py-2 border-b bg-muted/30 flex items-center gap-2">
@@ -101,6 +103,11 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
         <Badge variant="outline" className={`text-[10px] ${tone.cls}`}>{tone.label}</Badge>
         <div className="ml-auto flex items-center gap-2">
           <LastUpdated value={dataUpdatedAt ? new Date(dataUpdatedAt) : null} />
+          <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+            <Link to={scheduleHref}>
+              <CalendarClock className="h-3 w-3 mr-1" /> Ver cronograma
+            </Link>
+          </Button>
           <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
             <Link to={`/inventory/transfers/${data.id}`}>
               <ExternalLink className="h-3 w-3 mr-1" /> Abrir transferência
