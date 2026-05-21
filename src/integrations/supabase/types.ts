@@ -12431,6 +12431,10 @@ export type Database = {
         Returns: string
       }
       helpdesk_ticket_create: { Args: { _payload: Json }; Returns: string }
+      is_chat_channel_member: {
+        Args: { _channel: string; _user: string }
+        Returns: boolean
+      }
       is_manufacturing_component: {
         Args: { _product_id: string }
         Returns: boolean
