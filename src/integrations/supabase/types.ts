@@ -10353,6 +10353,45 @@ export type Database = {
           },
         ]
       }
+      user_list_views: {
+        Row: {
+          columns: Json
+          created_at: string
+          filters: Json
+          id: string
+          is_default: boolean
+          name: string
+          sort: Json
+          updated_at: string
+          user_id: string
+          view_key: string
+        }
+        Insert: {
+          columns?: Json
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          name: string
+          sort?: Json
+          updated_at?: string
+          user_id: string
+          view_key: string
+        }
+        Update: {
+          columns?: Json
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          sort?: Json
+          updated_at?: string
+          user_id?: string
+          view_key?: string
+        }
+        Relationships: []
+      }
       user_store_assignments: {
         Row: {
           active: boolean

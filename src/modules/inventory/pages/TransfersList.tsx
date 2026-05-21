@@ -11,10 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
 import { StateBadge } from "@/core/layout/StateBadge";
-import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Columns3, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { kindLabel } from "@/lib/picking";
 import { groupByOrigin, readToggle, writeToggle, type Group } from "@/modules/inventory/lib/groupChain";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button as UIButton } from "@/components/ui/button";
+import { useUserListView } from "@/core/layout/useUserListView";
 import { toast } from "sonner";
 
 export default function TransfersList() {
@@ -28,6 +31,39 @@ export default function TransfersList() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   useEffect(() => { writeToggle("transfers-group-by-origin", groupMode); }, [groupMode]);
   const toggleExpand = (key: string) => setExpanded((p) => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  // Per-user column visibility
+  const COL_DEFS: { key: string; label: string; alwaysVisible?: boolean }[] = [
+    { key: "name", label: "Referência", alwaysVisible: true },
+    { key: "kind", label: "Tipo" },
+    { key: "step", label: "Etapa" },
+    { key: "partner", label: "Parceiro" },
+    { key: "state", label: "Estado" },
+    { key: "batch", label: "Lote" },
+    { key: "route", label: "Rota" },
+    { key: "scheduled_at", label: "Programado" },
+  ];
+  const listView = useUserListView("inventory.transfers", {
+    columns: COL_DEFS.map((c, i) => ({ key: c.key, visible: true, order: i })),
+    filters: {},
+    sort: { key: "created_at", asc: false },
+  });
+  const colVisible = (k: string) => {
+    if (COL_DEFS.find((c) => c.key === k)?.alwaysVisible) return true;
+    const p = listView.state.columns.find((c) => c.key === k);
+    return p ? p.visible : true;
+  };
+  const visibleColCount = 1 /* checkbox */ + COL_DEFS.filter((c) => colVisible(c.key)).length;
+  const toggleCol = (k: string) => {
+    if (COL_DEFS.find((c) => c.key === k)?.alwaysVisible) return;
+    const map = new Map(listView.state.columns.map((c) => [c.key, c]));
+    const cur = map.get(k);
+    if (cur) map.set(k, { ...cur, visible: !cur.visible });
+    else map.set(k, { key: k, visible: false, order: COL_DEFS.findIndex((c) => c.key === k) });
+    listView.update({
+      columns: COL_DEFS.map((c, i) => map.get(c.key) ?? { key: c.key, visible: true, order: i }),
+    });
+  };
 
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses-min"],
@@ -225,6 +261,24 @@ export default function TransfersList() {
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
+          <Popover>
+            <PopoverTrigger asChild>
+              <UIButton variant="outline" size="sm">
+                <Columns3 className="h-4 w-4 mr-1" /> Colunas
+              </UIButton>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2 space-y-1">
+              {COL_DEFS.map((c) => (
+                <label key={c.key} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                  <Checkbox checked={colVisible(c.key)} disabled={c.alwaysVisible} onCheckedChange={() => toggleCol(c.key)} />
+                  <span className="text-sm flex-1">{c.label}</span>
+                </label>
+              ))}
+              <div className="pt-2 border-t flex justify-end gap-2">
+                <UIButton size="sm" variant="ghost" onClick={listView.resetToDefaults}>Repor</UIButton>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <Switch id="group-origin" checked={groupMode} onCheckedChange={setGroupMode} />
             <Label htmlFor="group-origin" className="cursor-pointer">Agrupar por origem (SO/PO)</Label>
@@ -235,14 +289,14 @@ export default function TransfersList() {
             <thead className="bg-muted/40">
               <tr>
                  <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === visibleRows.length} onCheckedChange={toggleAll} /></th>
-                <SortHead k="name" label="Referência" />
-                <SortHead k="kind" label="Tipo" />
-                <th className="text-left px-3 py-2">Etapa</th>
-                <th className="text-left px-3 py-2">Parceiro</th>
-                <SortHead k="state" label="Estado" />
-                <th className="text-left px-3 py-2">Lote</th>
-                <th className="text-left px-3 py-2">Rota</th>
-                <SortHead k="scheduled_at" label="Programado" />
+                {colVisible("name") && <SortHead k="name" label="Referência" />}
+                {colVisible("kind") && <SortHead k="kind" label="Tipo" />}
+                {colVisible("step") && <th className="text-left px-3 py-2">Etapa</th>}
+                {colVisible("partner") && <th className="text-left px-3 py-2">Parceiro</th>}
+                {colVisible("state") && <SortHead k="state" label="Estado" />}
+                {colVisible("batch") && <th className="text-left px-3 py-2">Lote</th>}
+                {colVisible("route") && <th className="text-left px-3 py-2">Rota</th>}
+                {colVisible("scheduled_at") && <SortHead k="scheduled_at" label="Programado" />}
               </tr>
             </thead>
             <tbody>
@@ -250,13 +304,15 @@ export default function TransfersList() {
                 const renderRow = (r: any, opts?: { indent?: boolean; stepIdx?: number; stepTotal?: number }) => (
                   <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
                     <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
+                    {colVisible("name") && (
                     <td className="px-3 py-2" style={opts?.indent ? { paddingLeft: 36 } : undefined}>
                       <Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">
                         {opts?.indent ? "↳ " : ""}{r.name}
                       </Link>
                       {opts?.stepIdx ? <span className="text-[10px] text-muted-foreground ml-2">Etapa {opts.stepIdx}/{opts.stepTotal}</span> : null}
-                    </td>
-                    <td className="px-3 py-2">{kindLabel(r.kind)}</td>
+                    </td>)}
+                    {colVisible("kind") && <td className="px-3 py-2">{kindLabel(r.kind)}</td>}
+                    {colVisible("step") && (
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-wrap gap-1 items-center">
@@ -267,16 +323,18 @@ export default function TransfersList() {
                         </div>
                         {r.origin && !opts?.indent && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
                       </div>
-                    </td>
-                    <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
+                    </td>)}
+                    {colVisible("partner") && <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>}
+                    {colVisible("state") && (
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
                         {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
                         <StateBadge value={r.state} />
                       </div>
-                    </td>
-                    <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
+                    </td>)}
+                    {colVisible("batch") && <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>}
+                    {colVisible("route") && (
                     <td className="px-3 py-2">
                       {r.route_id ? (
                         <Link to={`/routes/${r.route_id}`} className="text-primary hover:underline text-xs flex items-center gap-1">
@@ -287,21 +345,21 @@ export default function TransfersList() {
                           <span className="text-muted-foreground">· {r.delivery_routes?.route_date}</span>
                         </Link>
                       ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
+                    </td>)}
+                    {colVisible("scheduled_at") && <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>}
                   </tr>
                 );
 
                 if (!groupMode) {
                   if (visibleRows.length === 0) {
-                    return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                    return <tr><td colSpan={visibleColCount} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                   }
                   return visibleRows.map((r: any) => renderRow(r));
                 }
 
                 const { groups, singletons } = grouped;
                 if (groups.length === 0 && singletons.length === 0) {
-                  return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                  return <tr><td colSpan={visibleColCount} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                 }
                 const out: JSX.Element[] = [];
                 for (const g of groups) {
