@@ -61,7 +61,7 @@ export default function TransferForm() {
   const load = async () => {
     const { data: p } = await supabase
       .from("stock_pickings")
-      .select("*, partners(name), source:source_location_id(name,full_path), dest:destination_location_id(name,full_path), vehicles(id,name,license_plate), delivery_carriers(id,name), delivery_routes(id,name,route_date,state,delivery_zones(name,color))")
+      .select("*, partners(name), source:source_location_id(name,full_path), dest:destination_location_id(name,full_path), vehicles(id,name,license_plate), delivery_carriers(id,name), delivery_routes(id,route_date,state,delivery_zones(name,color))")
       .eq("id", id!)
       .maybeSingle();
     setPicking(p);
