@@ -41,6 +41,8 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
   commitmentDate?: string | null;
 }) {
   const qc = useQueryClient();
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
 
   const { data, dataUpdatedAt, isLoading } = useQuery({
     enabled: !!saleOrderName && saleOrderName !== "Rascunho",
