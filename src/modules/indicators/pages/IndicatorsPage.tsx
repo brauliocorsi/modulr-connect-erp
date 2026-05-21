@@ -514,6 +514,10 @@ export default function IndicatorsPage() {
 
   const refreshKey = useMemo(() => bump, [bump]);
 
+  // F26-B realtime — debounced 2.5s invalidation of ["indicator"] prefix.
+  useIndicatorsRealtime();
+
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
