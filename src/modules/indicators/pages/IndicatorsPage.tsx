@@ -12,6 +12,7 @@ import { RefreshButton } from "@/core/operational/RefreshButton";
 import { LastUpdated } from "@/core/operational/LastUpdated";
 import { cn } from "@/lib/utils";
 import { fmtMoney } from "@/lib/format";
+import { useIndicatorsRealtime } from "@/core/realtime";
 
 type Period = "today" | "7d" | "30d";
 type Tone = "primary" | "success" | "warning" | "danger" | "default" | "muted";
