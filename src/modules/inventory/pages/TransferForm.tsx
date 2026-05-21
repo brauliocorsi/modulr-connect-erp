@@ -640,7 +640,20 @@ export default function TransferForm() {
 
 
             <Card>
-              <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
+              <div className="px-4 py-2.5 border-b flex items-center justify-between gap-3">
+                <div className="font-semibold text-sm">Movimentos</div>
+                {availSummary && !isLocked && (
+                  <div className="flex items-center gap-2">
+                    {isFullyShort ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-destructive font-medium"><AlertTriangle className="h-3.5 w-3.5" /> Sem stock</span>
+                    ) : isPartial ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-warning font-medium"><AlertTriangle className="h-3.5 w-3.5" /> Parcial · {availSummary.fullyAvailable}/{availSummary.total}</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-success font-medium"><PackageCheck className="h-3.5 w-3.5" /> Reservado · {availSummary.available}/{availSummary.needed} un.</span>
+                    )}
+                  </div>
+                )}
+              </div>
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
