@@ -387,9 +387,15 @@ export default function DeliveryScheduleCalendar() {
                               </div>
                             </div>
                             {s.sale_order_id && (
-                              <Button asChild size="sm" variant="ghost" className="h-7">
-                                <Link to={`/sales/orders/${s.sale_order_id}`}>Abrir</Link>
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button size="sm" variant="ghost" className="h-7 text-xs"
+                                  onClick={() => setScheduleDialog({ saleOrderId: s.sale_order_id, date: drawerDate })}>
+                                  <CalendarPlus className="h-3 w-3 mr-1" /> Reagendar
+                                </Button>
+                                <Button asChild size="sm" variant="ghost" className="h-7">
+                                  <Link to={`/sales/orders/${s.sale_order_id}`}>Abrir</Link>
+                                </Button>
+                              </div>
                             )}
                           </div>
                         );
@@ -397,11 +403,27 @@ export default function DeliveryScheduleCalendar() {
                     </div>
                   )}
                 </div>
+
+                {focusSoId && (
+                  <Button className="w-full" onClick={() => setScheduleDialog({ saleOrderId: focusSoId, date: drawerDate })}>
+                    <CalendarPlus className="h-4 w-4 mr-1" /> Agendar/Reagendar venda em foco para {new Date(drawerDate!).toLocaleDateString("pt-PT")}
+                  </Button>
+                )}
               </div>
             );
           })()}
         </SheetContent>
       </Sheet>
+
+      {scheduleDialog && (
+        <ScheduleSaleOrderDeliveryDialog
+          open={!!scheduleDialog}
+          onOpenChange={(o) => !o && setScheduleDialog(null)}
+          saleOrderId={scheduleDialog.saleOrderId}
+          preferredDate={scheduleDialog.date ?? null}
+        />
+      )}
+
     </div>
   );
 }
