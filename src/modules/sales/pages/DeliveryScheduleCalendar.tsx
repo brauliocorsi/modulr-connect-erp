@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, Wrench, Boxes, ExternalLink } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Truck, Wrench, Boxes, ExternalLink, CalendarPlus } from "lucide-react";
 import { useRealtimeInvalidate } from "@/core/realtime";
 import {
   calculateDayCapacity,
@@ -19,6 +19,7 @@ import {
   type ScheduleRow,
   type SaturationStatus,
 } from "@/modules/sales/lib/deliverySchedule";
+import { ScheduleSaleOrderDeliveryDialog } from "@/modules/sales/components/ScheduleSaleOrderDeliveryDialog";
 
 const fmt = (n: number | null | undefined, digits = 1) =>
   n == null ? "—" : Number(n).toLocaleString("pt-PT", { minimumFractionDigits: 0, maximumFractionDigits: digits });
