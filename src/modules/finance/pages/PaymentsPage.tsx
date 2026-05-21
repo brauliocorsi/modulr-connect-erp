@@ -70,6 +70,13 @@ export default function PaymentsPage() {
   };
   useEffect(() => { load(); }, []);
 
+  // F26-B realtime — re-load when payments/cash/reconciliation change anywhere.
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  usePaymentsRealtime({ onChange: () => { void loadRef.current(); } });
+
+
+
   // ── Pagamentos pendentes ────────────────────────────────────────────
   const confirmPending = async (id: string) => {
     const { error } = await supabase.rpc("confirm_pending_payment", { _payment: id });
