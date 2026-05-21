@@ -289,14 +289,14 @@ export default function TransfersList() {
             <thead className="bg-muted/40">
               <tr>
                  <th className="w-10 px-3 py-2"><Checkbox checked={selected.size > 0 && selected.size === visibleRows.length} onCheckedChange={toggleAll} /></th>
-                <SortHead k="name" label="Referência" />
-                <SortHead k="kind" label="Tipo" />
-                <th className="text-left px-3 py-2">Etapa</th>
-                <th className="text-left px-3 py-2">Parceiro</th>
-                <SortHead k="state" label="Estado" />
-                <th className="text-left px-3 py-2">Lote</th>
-                <th className="text-left px-3 py-2">Rota</th>
-                <SortHead k="scheduled_at" label="Programado" />
+                {colVisible("name") && <SortHead k="name" label="Referência" />}
+                {colVisible("kind") && <SortHead k="kind" label="Tipo" />}
+                {colVisible("step") && <th className="text-left px-3 py-2">Etapa</th>}
+                {colVisible("partner") && <th className="text-left px-3 py-2">Parceiro</th>}
+                {colVisible("state") && <SortHead k="state" label="Estado" />}
+                {colVisible("batch") && <th className="text-left px-3 py-2">Lote</th>}
+                {colVisible("route") && <th className="text-left px-3 py-2">Rota</th>}
+                {colVisible("scheduled_at") && <SortHead k="scheduled_at" label="Programado" />}
               </tr>
             </thead>
             <tbody>
@@ -304,13 +304,15 @@ export default function TransfersList() {
                 const renderRow = (r: any, opts?: { indent?: boolean; stepIdx?: number; stepTotal?: number }) => (
                   <tr key={r.id} className={`border-t hover:bg-accent/30 ${r.state === "waiting" ? "bg-warning/10 border-l-4 border-l-warning" : r.state === "ready" ? "bg-success/10 border-l-4 border-l-success" : ""}`}>
                     <td className="px-3 py-2"><Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} /></td>
+                    {colVisible("name") && (
                     <td className="px-3 py-2" style={opts?.indent ? { paddingLeft: 36 } : undefined}>
                       <Link to={`/inventory/transfers/${r.id}`} className="text-primary hover:underline font-medium">
                         {opts?.indent ? "↳ " : ""}{r.name}
                       </Link>
                       {opts?.stepIdx ? <span className="text-[10px] text-muted-foreground ml-2">Etapa {opts.stepIdx}/{opts.stepTotal}</span> : null}
-                    </td>
-                    <td className="px-3 py-2">{kindLabel(r.kind)}</td>
+                    </td>)}
+                    {colVisible("kind") && <td className="px-3 py-2">{kindLabel(r.kind)}</td>}
+                    {colVisible("step") && (
                     <td className="px-3 py-2">
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-wrap gap-1 items-center">
@@ -321,16 +323,18 @@ export default function TransfersList() {
                         </div>
                         {r.origin && !opts?.indent && <span className="text-xs text-muted-foreground">Doc: {r.origin}</span>}
                       </div>
-                    </td>
-                    <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>
+                    </td>)}
+                    {colVisible("partner") && <td className="px-3 py-2">{r.partners?.name ?? "—"}</td>}
+                    {colVisible("state") && (
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         {r.state === "ready" && <CheckCircle2 className="h-4 w-4 text-success" />}
                         {r.state === "waiting" && <AlertTriangle className="h-4 w-4 text-warning" />}
                         <StateBadge value={r.state} />
                       </div>
-                    </td>
-                    <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>
+                    </td>)}
+                    {colVisible("batch") && <td className="px-3 py-2">{r.batch_id ? <Link to={`/inventory/batches/${r.batch_id}`} className="text-primary hover:underline">Ver</Link> : "—"}</td>}
+                    {colVisible("route") && (
                     <td className="px-3 py-2">
                       {r.route_id ? (
                         <Link to={`/routes/${r.route_id}`} className="text-primary hover:underline text-xs flex items-center gap-1">
@@ -341,21 +345,21 @@ export default function TransfersList() {
                           <span className="text-muted-foreground">· {r.delivery_routes?.route_date}</span>
                         </Link>
                       ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>
+                    </td>)}
+                    {colVisible("scheduled_at") && <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>}
                   </tr>
                 );
 
                 if (!groupMode) {
                   if (visibleRows.length === 0) {
-                    return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                    return <tr><td colSpan={visibleColCount} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                   }
                   return visibleRows.map((r: any) => renderRow(r));
                 }
 
                 const { groups, singletons } = grouped;
                 if (groups.length === 0 && singletons.length === 0) {
-                  return <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
+                  return <tr><td colSpan={visibleColCount} className="px-3 py-8 text-center text-muted-foreground">Sem transferências</td></tr>;
                 }
                 const out: JSX.Element[] = [];
                 for (const g of groups) {
