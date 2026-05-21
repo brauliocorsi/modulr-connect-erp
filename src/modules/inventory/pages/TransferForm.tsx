@@ -486,165 +486,158 @@ export default function TransferForm() {
       />
       <PageBody>
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {picking.name && <SmartButtons kind="picking" orderName={picking.name} />}
+
+            {/* Odoo-style slim flow stepper */}
             {(flowDocs.sale || flowDocs.purchases.length > 0 || flowDocs.pickings.length > 1) && (
-              <Card className="p-4 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="o-section-title">Fluxo da venda ao inventário</div>
-                    <div className="font-semibold">
-                      {flowDocs.sale ? (
-                        <a href={`/sales/orders/${flowDocs.sale.id}`} className="text-primary hover:underline">{flowDocs.sale.name}</a>
-                      ) : picking.origin ? picking.origin : "Documento sem venda ligada"}
-                    </div>
+              <Card className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="uppercase tracking-wider font-medium">Fluxo</span>
+                    {flowDocs.sale ? (
+                      <>
+                        <span>·</span>
+                        <a href={`/sales/orders/${flowDocs.sale.id}`} className="text-primary hover:underline font-medium">{flowDocs.sale.name}</a>
+                      </>
+                    ) : picking.origin ? (
+                      <><span>·</span><span className="font-medium text-foreground">{picking.origin}</span></>
+                    ) : null}
+                    {flowDocs.purchases.length > 0 && (
+                      <>
+                        <span>·</span>
+                        {flowDocs.purchases.map((po, idx) => (
+                          <span key={po.id}>
+                            {idx > 0 && ", "}
+                            <a href={`/purchase/orders/${po.id}`} className="text-primary hover:underline">{po.name}</a>
+                          </span>
+                        ))}
+                      </>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {flowBlocked && <span className="inline-flex items-center gap-1 text-xs font-medium text-warning"><AlertTriangle className="h-3 w-3" /> Há etapa bloqueada</span>}
-                    {flowReady && <span className="inline-flex items-center gap-1 text-xs font-medium text-success"><PackageCheck className="h-3 w-3" /> Há etapa pronta</span>}
-                  </div>
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <div className="rounded-md border p-3 bg-muted/20">
-                    <div className="flex items-center gap-2 text-sm font-medium"><ShoppingCart className="h-4 w-4 text-primary" /> Venda</div>
-                    <div className="mt-2 text-sm">
-                      {flowDocs.sale ? (
-                        <>
-                          <a href={`/sales/orders/${flowDocs.sale.id}`} className="font-medium text-primary hover:underline">{flowDocs.sale.name}</a>
-                          <div className="text-xs text-muted-foreground">Estado: {stateLabel(flowDocs.sale.state)} · Preparação: {stateLabel(flowDocs.sale.fulfillment_status)}</div>
-                        </>
-                      ) : <span className="text-muted-foreground">Sem venda ligada</span>}
-                    </div>
-                  </div>
-                  <div className="rounded-md border p-3 bg-muted/20">
-                    <div className="flex items-center gap-2 text-sm font-medium"><ShoppingBag className="h-4 w-4 text-primary" /> Compra / Recebimento</div>
-                    <div className="mt-2 space-y-1 text-sm">
-                      {flowDocs.purchases.length ? flowDocs.purchases.map((po) => (
-                        <div key={po.id} className="flex items-center justify-between gap-2">
-                          <a href={`/purchase/orders/${po.id}`} className="font-medium text-primary hover:underline">{po.name}</a>
-                          <span className="text-xs text-muted-foreground">{stateLabel(po.state)}</span>
-                        </div>
-                      )) : <span className="text-muted-foreground">Sem compra pendente</span>}
-                    </div>
-                  </div>
-                  <div className="rounded-md border p-3 bg-muted/20">
-                    <div className="flex items-center gap-2 text-sm font-medium"><Truck className="h-4 w-4 text-primary" /> Armazém / Entrega</div>
-                    <div className="mt-2 text-sm">
-                      <div className="font-medium">{flowDocs.pickings.length} etapa(s)</div>
-                      <div className="text-xs text-muted-foreground">Atual: {picking.step_label ?? kindLabel(picking.kind)}</div>
-                    </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    {flowBlocked && <span className="inline-flex items-center gap-1 text-warning"><AlertTriangle className="h-3 w-3" /> Bloqueado</span>}
+                    {flowReady && <span className="inline-flex items-center gap-1 text-success"><PackageCheck className="h-3 w-3" /> Pronto</span>}
                   </div>
                 </div>
                 {flowDocs.pickings.length > 0 && (
-                  <div className="overflow-x-auto pb-1">
-                    <div className="flex min-w-max items-stretch gap-2">
-                      {flowDocs.pickings.map((pk, index) => (
-                        <div key={pk.id} className="flex items-center gap-2">
-                          <a
-                            href={`/inventory/transfers/${pk.id}`}
-                            className={`block w-56 rounded-md border p-3 transition-colors ${pk.id === picking.id ? "border-primary bg-accent" : pk.state === "ready" ? "border-success bg-success/10" : pk.state === "waiting" ? "border-warning bg-warning/10" : "bg-card hover:bg-muted/40"}`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-medium text-muted-foreground">Passo {index + 1}</span>
-                              <StateBadge value={pk.state} />
-                            </div>
-                            <div className="mt-1 font-medium text-sm">{pk.step_label ?? kindLabel(pk.kind)}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{pk.source?.name ?? "?"} → {pk.dest?.name ?? "?"}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{pk.name}</div>
-                          </a>
-                          {index < flowDocs.pickings.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
-                        </div>
-                      ))}
+                  <div className="overflow-x-auto -mx-1 pb-1">
+                    <div className="flex items-stretch gap-0 px-1 min-w-max">
+                      {flowDocs.pickings.map((pk, index) => {
+                        const isCurrent = pk.id === picking.id;
+                        const dotTone =
+                          pk.state === "done" ? "bg-success border-success" :
+                          pk.state === "cancelled" ? "bg-muted border-muted-foreground/40" :
+                          pk.state === "ready" ? "bg-success/20 border-success" :
+                          pk.state === "waiting" ? "bg-warning/20 border-warning" :
+                          "bg-background border-muted-foreground/40";
+                        return (
+                          <div key={pk.id} className="flex items-center">
+                            <a
+                              href={`/inventory/transfers/${pk.id}`}
+                              className={`group flex flex-col items-center gap-1 px-3 py-1 rounded transition-colors ${isCurrent ? "bg-accent" : "hover:bg-muted/50"}`}
+                              title={`${pk.name} · ${stateLabel(pk.state)}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center justify-center h-4 w-4 rounded-full border-2 ${dotTone} ${isCurrent ? "ring-2 ring-primary/40" : ""}`}>
+                                  {pk.state === "done" && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
+                                </span>
+                                <span className={`text-xs ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                                  {pk.step_label ?? kindLabel(pk.kind)}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground font-mono">{pk.name}</span>
+                            </a>
+                            {index < flowDocs.pickings.length - 1 && (
+                              <ArrowRight className="h-3 w-3 text-muted-foreground/50 mx-0.5" />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
               </Card>
             )}
-            {(picking.step_label || picking.batch_id || picking.previous_picking_id) && (
-              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-sky-50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-900">
-                {picking.step_label && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100 font-medium text-xs">
-                    Etapa: {picking.step_label}
-                  </span>
-                )}
+
+            {/* Inline notes (etapa anterior, batch, reschedule, backorder) */}
+            {(picking.step_label || picking.previous_picking_id || picking.batch_id || picking.reschedule_count > 0 || original || backorder || (isDone && receiptSummary)) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground px-1">
                 {picking.previous_picking_id && (
                   <span>← Etapa anterior: <a href={`/inventory/transfers/${picking.previous_picking_id}`} className="text-primary hover:underline">ver</a></span>
                 )}
                 {picking.batch_id && (
                   <span>Lote: <a href={`/inventory/batches/${picking.batch_id}`} className="text-primary hover:underline">abrir</a></span>
                 )}
-              </Card>
+                {picking.reschedule_count > 0 && (
+                  <span className="text-warning">🔄 Reagendado {picking.reschedule_count}× {picking.reschedule_reason ? `· ${picking.reschedule_reason}` : ""}</span>
+                )}
+                {original && (
+                  <span>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline">{original.name}</a></span>
+                )}
+                {backorder && (
+                  <span>→ Em falta: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline">{backorder.name}</a> ({stateLabel(backorder.state)})</span>
+                )}
+                {isDone && receiptSummary && (
+                  <span className={isPartialReceipt ? "text-warning" : "text-success"}>
+                    {isPartialReceipt
+                      ? `Parcial: ${receiptSummary.doneQty}/${receiptSummary.totalQty} un.`
+                      : `Completo: ${receiptSummary.doneQty}/${receiptSummary.totalQty} un.`}
+                  </span>
+                )}
+              </div>
             )}
-            {picking.reschedule_count > 0 && (
-              <Card className="p-3 text-sm flex flex-wrap items-center gap-3 bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900">
-                <Badge variant="secondary" className="bg-orange-200 text-orange-900">🔄 Reagendado · {picking.reschedule_count}x</Badge>
-                {picking.reschedule_reason && <span className="text-xs">Motivo: {picking.reschedule_reason}</span>}
-              </Card>
-            )}
+
             {isOutgoing && (
-              <Card className="p-3">
+              <Card className="px-4 py-2">
                 <DeliveryStatusBadge picking={picking} onChanged={load} showActions={!isLocked} />
               </Card>
             )}
-            {(original || backorder || (isDone && receiptSummary)) && (
-              <Card className={`p-3 text-sm flex flex-wrap items-center gap-3 ${isPartialReceipt ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900" : isDone ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900" : "bg-amber-50 border-amber-200"}`}>
-                {isDone && receiptSummary && (
-                  <div className="flex items-center gap-2 font-medium">
-                    {isPartialReceipt ? <AlertTriangle className="h-4 w-4 text-amber-700" /> : <CheckCircle2 className="h-4 w-4 text-emerald-700" />}
-                    {isPartialReceipt
-                      ? `Recebido parcial: ${receiptSummary.doneQty} de ${receiptSummary.totalQty} unidades · ${receiptSummary.doneCount} linha(s) recebida(s), ${receiptSummary.cancelledCount} em falta`
-                      : `Recebido completo: ${receiptSummary.doneQty} de ${receiptSummary.totalQty} unidades`}
+
+            {/* Compact info grid - Odoo style */}
+            <Card className="divide-y">
+              <div className="grid sm:grid-cols-3 gap-x-4 gap-y-2 px-4 py-3 text-sm">
+                <div><div className="o-section-title">Tipo</div><div>{kindLabel(picking.kind)}</div></div>
+                <div><div className="o-section-title">Origem</div><div className="truncate" title={picking.source?.full_path ?? picking.source?.name}>{picking.source?.full_path ?? picking.source?.name ?? "—"}</div></div>
+                <div><div className="o-section-title">Destino</div><div className="truncate" title={picking.dest?.full_path ?? picking.dest?.name}>{picking.dest?.full_path ?? picking.dest?.name ?? "—"}</div></div>
+                <div><div className="o-section-title">Parceiro</div><div>{picking.partners?.name ?? "—"}</div></div>
+                <div><div className="o-section-title">Doc. origem</div><div>{picking.origin ?? "—"}</div></div>
+                <div><div className="o-section-title">Programado</div><div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-PT") : "—"}</div></div>
+              </div>
+              {/* Route / Vehicle / Carrier row */}
+              {(picking.delivery_routes || picking.vehicles || picking.delivery_carriers || picking.tracking_ref) && (
+                <div className="grid sm:grid-cols-3 gap-x-4 gap-y-2 px-4 py-3 text-sm bg-muted/20">
+                  <div>
+                    <div className="o-section-title flex items-center gap-1"><RouteIcon className="h-3 w-3" /> Rota</div>
+                    {picking.delivery_routes ? (
+                      <a href={`/routes/${picking.delivery_routes.id}`} className="text-primary hover:underline inline-flex items-center gap-1.5">
+                        {picking.delivery_routes.delivery_zones?.color && (
+                          <span className="h-2 w-2 rounded-full" style={{ background: picking.delivery_routes.delivery_zones.color }} />
+                        )}
+                        <span>{picking.delivery_routes.delivery_zones?.name ?? "Rota"}</span>
+                        {picking.delivery_routes.route_date && (
+                          <span className="text-xs text-muted-foreground">· {new Date(picking.delivery_routes.route_date).toLocaleDateString("pt-PT")}</span>
+                        )}
+                      </a>
+                    ) : <span className="text-muted-foreground">— sem rota atribuída</span>}
                   </div>
-                )}
-                {original && (
-                  <div>↩ Backorder de <a href={`/inventory/transfers/${original.id}`} className="text-primary hover:underline font-medium">{original.name}</a></div>
-                )}
-                {backorder && (
-                  <div>→ Itens em falta movidos para: <a href={`/inventory/transfers/${backorder.id}`} className="text-primary hover:underline font-medium">{backorder.name}</a> ({stateLabel(backorder.state)})</div>
-                )}
-              </Card>
-            )}
-            <Card className="p-4 grid sm:grid-cols-3 gap-4 text-sm">
-              <div><div className="o-section-title">Tipo</div>{kindLabel(picking.kind)}</div>
-              <div><div className="o-section-title">Origem</div>{picking.source?.full_path ?? picking.source?.name}</div>
-              <div><div className="o-section-title">Destino</div>{picking.dest?.full_path ?? picking.dest?.name}</div>
-              <div><div className="o-section-title">Parceiro</div>{picking.partners?.name ?? "—"}</div>
-              <div><div className="o-section-title">Origem doc.</div>{picking.origin ?? "—"}</div>
-              <div><div className="o-section-title">Programado</div>{picking.scheduled_at ? new Date(picking.scheduled_at).toLocaleString("pt-PT") : "—"}</div>
+                  <div>
+                    <div className="o-section-title flex items-center gap-1"><Car className="h-3 w-3" /> Carrinha</div>
+                    {picking.vehicles ? (
+                      <span>{picking.vehicles.name} {picking.vehicles.license_plate && <span className="text-xs text-muted-foreground font-mono ml-1">{picking.vehicles.license_plate}</span>}</span>
+                    ) : <span className="text-muted-foreground">— sem carrinha</span>}
+                  </div>
+                  <div>
+                    <div className="o-section-title flex items-center gap-1"><Truck className="h-3 w-3" /> Transportadora</div>
+                    {picking.delivery_carriers ? (
+                      <span>{picking.delivery_carriers.name}{picking.tracking_ref && <span className="text-xs text-muted-foreground ml-1">· {picking.tracking_ref}</span>}</span>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </div>
+                </div>
+              )}
             </Card>
 
-            {availSummary && !isLocked && (
-              <Card className={`p-3 border ${
-                isFullyShort
-                  ? "bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900"
-                  : isPartial
-                    ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"
-                    : "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900"
-              }`}>
-                <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    {isFullyShort ? (
-                      <><AlertTriangle className="h-4 w-4 text-rose-600" /> Sem stock disponível para entrega</>
-                    ) : isPartial ? (
-                      <><AlertTriangle className="h-4 w-4 text-amber-600" /> Disponibilidade parcial — apenas parte dos produtos pode ser entregue agora</>
-                    ) : (
-                      <><PackageCheck className="h-4 w-4 text-emerald-600" /> Stock totalmente disponível e reservado</>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {availSummary.fullyAvailable}/{availSummary.total} linhas · {availSummary.available}/{availSummary.needed} unid.
-                  </div>
-                </div>
-                <Progress value={availSummary.pct} className="h-2" />
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"><PackageCheck className="h-3 w-3" /> Reservado</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200"><PackageCheck className="h-3 w-3" /> Disponível</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"><AlertTriangle className="h-3 w-3" /> Parcial</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200"><Truck className="h-3 w-3" /> Em receção</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200"><AlertTriangle className="h-3 w-3" /> Pendente</span>
-                </div>
-              </Card>
-            )}
+
 
             <Card>
               <div className="px-4 py-3 border-b font-semibold">Movimentos</div>
