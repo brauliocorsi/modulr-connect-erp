@@ -198,8 +198,13 @@ export default function AppShell() {
         </main>
       </div>
 
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-      <GlobalChatDock />
+      <GlobalWidgetsErrorBoundary name="GlobalSearch">
+        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      </GlobalWidgetsErrorBoundary>
+      <GlobalWidgetsErrorBoundary name="GlobalChatDock">
+        <GlobalChatDock />
+      </GlobalWidgetsErrorBoundary>
+
     </div>
   );
 }
