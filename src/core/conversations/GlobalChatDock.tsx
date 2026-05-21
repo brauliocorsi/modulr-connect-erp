@@ -15,7 +15,7 @@ import { inferEntityContextFromPath } from "./inferEntityContext";
 
 type DockState = "closed" | "minimized" | "open";
 const STORAGE_KEY = "erp.globalChatDock.state";
-const POLL_MS = 20000;
+
 
 type UnifiedThread = {
   id: string;
@@ -144,16 +144,25 @@ export default function GlobalChatDock() {
     [],
   );
 
-  // Initial + polling
+  // F26-A: realtime-only. Polling removed (was POLL_MS=20s). Realtime channel
+  // below covers thread/message updates; we refetch threads once when mounting
+  // or when the user opens the dock.
   useEffect(() => {
     if (!user || hidden) return;
     fetchThreads();
-    const id = window.setInterval(() => {
+  }, [user, hidden, fetchThreads]);
+
+  // Refocus refresh: when the tab becomes visible again, do a single catch-up
+  // refetch (covers gaps where realtime missed events while hidden).
+  useEffect(() => {
+    if (!user || hidden) return;
+    const onVisible = () => {
       if (document.hidden) return;
       fetchThreads();
       if (activeThread && dockState === "open") fetchMessages(activeThread);
-    }, POLL_MS);
-    return () => window.clearInterval(id);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [user, hidden, fetchThreads, fetchMessages, activeThread, dockState]);
 
   // Realtime: refresh threads on any new message; refresh active thread messages if it matches

@@ -125,6 +125,7 @@ import DamagedStockPage from "@/modules/inventory/pages/DamagedStockPage";
 import QuarantinePage from "@/modules/inventory/pages/QuarantinePage";
 import ServiceRepairsPage from "@/modules/service/pages/ServiceRepairsPage";
 import IndicatorsPage from "@/modules/indicators/pages/IndicatorsPage";
+import OperationalEventsPage from "@/modules/activity/pages/OperationalEventsPage";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,8 @@ const App = () => (
             >
               <Route index element={<Home />} />
               <Route path="indicators" element={<IndicatorsPage />} />
+              <Route path="activity/events" element={<OperationalEventsPage />} />
+
 
 
               {/* Barcode app (dentro do ERP) */}
