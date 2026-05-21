@@ -26,6 +26,7 @@ import {
 import { AlertTriangle, Boxes, Hammer } from "lucide-react";
 import { useRpcMutation } from "@/core/operational/hooks/useRpcMutation";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
+import { useManufacturingRealtime } from "@/core/realtime";
 
 const CLOSE_ERROR_MESSAGES: Record<string, string> = {
   WORK_ORDERS_NOT_DONE: "Ainda existem operações abertas.",
