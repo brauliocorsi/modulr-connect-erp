@@ -32,6 +32,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Vendas", label: "Cotações", to: "/sales/quotations" },
       { section: "Vendas", label: "Pedidos", to: "/sales/orders" },
       { section: "Vendas", label: "Stock", to: "/sales/stock" },
+      { section: "Vendas", label: "Cronograma de Entregas", to: "/sales/delivery-schedule" },
       { section: "Cadastros", label: "Clientes", to: "/sales/customers" },
       { section: "Configuração", label: "Tabelas de Preço", to: "/sales/pricelists" },
       { section: "Configuração", label: "Regras de Entrega", to: "/sales/delivery-rules" },
