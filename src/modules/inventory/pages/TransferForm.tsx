@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck, CalendarClock, Send } from "lucide-react";
+import { ArrowRight, CheckCircle2, X, Printer, AlertTriangle, RefreshCw, PackageCheck, ShoppingBag, ShoppingCart, Truck, CalendarClock, Send, Route as RouteIcon, Car } from "lucide-react";
 import { TransferReservationDialog } from "@/modules/inventory/components/TransferReservationDialog";
 import { DeliveryStatusBadge } from "@/modules/inventory/components/DeliveryStatusBadge";
 import { Progress } from "@/components/ui/progress";
