@@ -1,9 +1,11 @@
 import { fmtMoney } from "@/lib/format";
 import { ListView } from "@/core/layout/ListView";
+import { ConfigurableListView } from "@/core/layout/ConfigurableListView";
 import { FulfillmentBadge, FULFILLMENT_OPTIONS } from "@/core/orders/FulfillmentBadge";
 import { PaymentStatusBadge } from "@/core/orders/PaymentStatusBadge";
 import { InvoiceStatusBadge } from "@/core/orders/InvoiceStatusBadge";
 import { StateBadge } from "@/core/layout/StateBadge";
+import { Link } from "react-router-dom";
 
 const SALE_STATE_OPTS = [
   { value: "draft", label: "Rascunho" },
@@ -47,14 +49,18 @@ export const QuotationsList = () => (
 );
 
 export const SalesOrdersList = () => (
-  <ListView
+  <ConfigurableListView
+    viewKey="sales.orders"
     title="Pedidos de Venda"
     breadcrumb={[{ label: "Vendas", to: "/sales" }, { label: "Pedidos" }]}
     table="sale_orders_with_schedule_summary"
     select="sale_order_id, name, state, fulfillment_status, payment_status, invoice_status, operational_status, date_order, commitment_date, amount_total, delivery_mode, include_delivery, include_assembly, delivery_zone_label, scheduled_date, slot_start, slot_end, schedule_status, schedule_confirmed, route_id, route_date, partner_id"
     searchColumn="name"
     createTo="/sales/orders/new"
+    rowKey={(r: any) => r.sale_order_id}
     rowLink={(r: any) => `/sales/orders/${r.sale_order_id}`}
+    orderBy="date_order"
+    ascending={false}
     filter={(q) => q.in("state", ["confirmed", "done", "cancelled"])}
     filters={[
       { key: "state", label: "Estado", type: "select", options: SALE_STATE_OPTS.filter((s) => ["confirmed","done","cancelled"].includes(s.value)) },
@@ -76,10 +82,12 @@ export const SalesOrdersList = () => (
       { key: "assembly", label: "Montagem", type: "select", options: [
         { value: "yes", label: "Sim" }, { value: "no", label: "Não" },
       ]},
+      { key: "delivery_from", label: "Entrega de", type: "date" },
+      { key: "delivery_to", label: "Entrega até", type: "date" },
       { key: "scheduled_from", label: "Agendada de", type: "date" },
       { key: "scheduled_to", label: "Agendada até", type: "date" },
-      { key: "from", label: "Data de", type: "date" },
-      { key: "to", label: "Data até", type: "date" },
+      { key: "from", label: "Data pedido de", type: "date" },
+      { key: "to", label: "Data pedido até", type: "date" },
       { key: "min_total", label: "Total mínimo", type: "text" },
     ]}
     applyFilter={(q, v) => {
@@ -93,6 +101,8 @@ export const SalesOrdersList = () => (
       if (v.schedule === "pending") q = q.eq("schedule_confirmed", false);
       if (v.assembly === "yes") q = q.eq("include_assembly", true);
       if (v.assembly === "no") q = q.eq("include_assembly", false);
+      if (v.delivery_from) q = q.gte("commitment_date", v.delivery_from);
+      if (v.delivery_to) q = q.lte("commitment_date", v.delivery_to);
       if (v.scheduled_from) q = q.gte("scheduled_date", v.scheduled_from);
       if (v.scheduled_to) q = q.lte("scheduled_date", v.scheduled_to);
       if (v.from) q = q.gte("date_order", v.from);
@@ -101,15 +111,19 @@ export const SalesOrdersList = () => (
       return q;
     }}
     columns={[
-      { key: "name", header: "Número", sortable: true },
+      { key: "name", header: "Número", sortable: true, alwaysVisible: true },
       { key: "state", header: "Estado", sortable: true, render: (r: any) => <StateBadge value={r.state} /> },
       { key: "delivery_mode", header: "Modo", render: (r: any) => r.delivery_mode === "pickup" ? "Levantamento" : r.delivery_mode === "direct" ? "Direto" : "Entrega" },
+      { key: "commitment_date", header: "Data entrega", sortable: true, render: (r: any) => r.commitment_date ? new Date(r.commitment_date).toLocaleDateString("pt-PT") : "—" },
       { key: "scheduled_date", header: "Data agendada", sortable: true, render: (r: any) => r.scheduled_date ? new Date(r.scheduled_date).toLocaleDateString("pt-PT") : "—" },
       { key: "slot", header: "Janela", render: (r: any) => r.slot_start && r.slot_end ? `${String(r.slot_start).slice(0,5)}–${String(r.slot_end).slice(0,5)}` : "—" },
       { key: "schedule_confirmed", header: "Confirmado", render: (r: any) => r.scheduled_date ? (r.schedule_confirmed ? "✓" : "Pendente") : "—" },
-      { key: "include_assembly", header: "Montagem", render: (r: any) => r.include_assembly ? "Sim" : "Não" },
+      { key: "route", header: "Rota", render: (r: any) => r.route_id ? <Link to={`/routes/${r.route_id}`} className="text-primary hover:underline text-xs">{r.route_date ?? "Rota"}</Link> : "—" },
+      { key: "include_assembly", header: "Montagem", defaultVisible: false, render: (r: any) => r.include_assembly ? "Sim" : "Não" },
       { key: "fulfillment_status", header: "Fulfillment", render: (r: any) => <FulfillmentBadge status={r.fulfillment_status} /> },
       { key: "payment_status", header: "Pagamento", render: (r: any) => <PaymentStatusBadge status={r.payment_status} /> },
+      { key: "invoice_status", header: "Fatura", defaultVisible: false, render: (r: any) => <InvoiceStatusBadge status={r.invoice_status} /> },
+      { key: "date_order", header: "Data pedido", sortable: true, defaultVisible: false, render: (r: any) => r.date_order ? new Date(r.date_order).toLocaleDateString("pt-PT") : "—" },
       { key: "amount_total", header: "Total", sortable: true, render: (r: any) => `${fmtMoney(r.amount_total)}` },
     ]}
   />
