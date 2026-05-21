@@ -50,6 +50,17 @@ export default function PickingScan() {
 
   useEffect(() => { loadPending(); /* eslint-disable-next-line */ }, [kind]);
 
+  // F26-B realtime — refresh pending list when there is no active picking.
+  // We intentionally do NOT auto-refresh the active picking moves to avoid
+  // race conditions with optimistic scan increments (RPC drives local state).
+  const loadPendingRef = useRef(loadPending);
+  loadPendingRef.current = loadPending;
+  usePickingRealtime({
+    pickingId: picking?.id ?? null,
+    enabled: !picking,
+    onChange: () => { void loadPendingRef.current(); },
+  });
+
   const routerLoc = useLocation();
   useEffect(() => {
     const pid = (routerLoc.state as any)?.pickingId;
