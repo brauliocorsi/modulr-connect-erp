@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePaymentsRealtime } from "@/core/realtime";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
@@ -68,6 +69,13 @@ export default function PaymentsPage() {
     setPostedNonCash((posted.data ?? []).filter((p: any) => p.payment_methods?.requires_reconciliation));
   };
   useEffect(() => { load(); }, []);
+
+  // F26-B realtime — re-load when payments/cash/reconciliation change anywhere.
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  usePaymentsRealtime({ onChange: () => { void loadRef.current(); } });
+
+
 
   // ── Pagamentos pendentes ────────────────────────────────────────────
   const confirmPending = async (id: string) => {

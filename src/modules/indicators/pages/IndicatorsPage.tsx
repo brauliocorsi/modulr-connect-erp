@@ -12,6 +12,7 @@ import { RefreshButton } from "@/core/operational/RefreshButton";
 import { LastUpdated } from "@/core/operational/LastUpdated";
 import { cn } from "@/lib/utils";
 import { fmtMoney } from "@/lib/format";
+import { useIndicatorsRealtime } from "@/core/realtime";
 
 type Period = "today" | "7d" | "30d";
 type Tone = "primary" | "success" | "warning" | "danger" | "default" | "muted";
@@ -512,6 +513,10 @@ export default function IndicatorsPage() {
   };
 
   const refreshKey = useMemo(() => bump, [bump]);
+
+  // F26-B realtime — debounced 2.5s invalidation of ["indicator"] prefix.
+  useIndicatorsRealtime();
+
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">

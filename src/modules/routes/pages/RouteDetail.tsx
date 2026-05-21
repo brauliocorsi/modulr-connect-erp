@@ -26,6 +26,7 @@ import {
   type SummaryCardItem,
 } from "@/core/operational";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
+import { useRouteRealtime } from "@/core/realtime";
 
 // UI-4: visão operacional da rota.
 // NOTA: continua a respeitar UI-P0 — sem .update()/.delete() directos em
@@ -135,6 +136,9 @@ export default function RouteDetail() {
   });
 
   const refreshAll = () => { void refresh(); };
+
+  // F26-B realtime — invalidate route queries on related table changes.
+  useRouteRealtime({ routeId: id });
 
   const callRpc = async (key: string, fn: string, args: Record<string, any>, label: string, closeCtx = false) => {
     setBusy(key);

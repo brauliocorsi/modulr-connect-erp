@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useScanner } from "./useScanner";
 import { ScanInput, HistoryPanel, ScanLayout } from "./BarcodeUI";
 import { CheckCircle2, X, Package, MapPin, Lock, CalendarCheck } from "lucide-react";
 import { fmtDateTime } from "@/lib/format";
+import { usePickingRealtime } from "@/core/realtime";
 
 const KIND_LABEL: Record<string, string> = {
   incoming: "Receção",
@@ -48,6 +49,17 @@ export default function PickingScan() {
   };
 
   useEffect(() => { loadPending(); /* eslint-disable-next-line */ }, [kind]);
+
+  // F26-B realtime — refresh pending list when there is no active picking.
+  // We intentionally do NOT auto-refresh the active picking moves to avoid
+  // race conditions with optimistic scan increments (RPC drives local state).
+  const loadPendingRef = useRef(loadPending);
+  loadPendingRef.current = loadPending;
+  usePickingRealtime({
+    pickingId: picking?.id ?? null,
+    enabled: !picking,
+    onChange: () => { void loadPendingRef.current(); },
+  });
 
   const routerLoc = useLocation();
   useEffect(() => {
