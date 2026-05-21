@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import GlobalSidebar from "@/core/layout/GlobalSidebar";
 import ModuleInnerMenu from "@/core/layout/ModuleInnerMenu";
 import GlobalChatDock from "@/core/conversations/GlobalChatDock";
+import { GlobalWidgetsErrorBoundary } from "@/core/layout/GlobalWidgetsErrorBoundary";
+
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
