@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { GlobalWidgetsErrorBoundary } from "../GlobalWidgetsErrorBoundary";
 
-function Boom({ msg = "boom" }: { msg?: string }) {
+function Boom({ msg = "boom" }: { msg?: string }): JSX.Element {
   throw new Error(msg);
 }
 
