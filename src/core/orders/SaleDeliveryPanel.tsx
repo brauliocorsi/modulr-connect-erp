@@ -126,6 +126,9 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
         <Badge variant="outline" className={`text-[10px] ${tone.cls}`}>{tone.label}</Badge>
         <div className="ml-auto flex items-center gap-2">
           <LastUpdated value={dataUpdatedAt ? new Date(dataUpdatedAt) : null} />
+          <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => setScheduleOpen(true)}>
+            <CalendarPlus className="h-3 w-3 mr-1" /> {data.route_id || data.scheduled_at ? "Reagendar" : "Agendar entrega"}
+          </Button>
           <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
             <Link to={scheduleHref}>
               <CalendarClock className="h-3 w-3 mr-1" /> Ver cronograma
@@ -138,6 +141,14 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           </Button>
         </div>
       </div>
+      <ScheduleSaleOrderDeliveryDialog
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        saleOrderId={saleOrderId}
+        preferredDate={data.scheduled_at ? String(data.scheduled_at).slice(0,10) : commitmentDate}
+        onScheduled={() => qc.invalidateQueries({ queryKey: ["sale-delivery-panel", saleOrderName] })}
+      />
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-sm">
         {/* Data */}
