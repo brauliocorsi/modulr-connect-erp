@@ -26,6 +26,7 @@ import {
   type SummaryCardItem,
 } from "@/core/operational";
 import { useEntityRefresh } from "@/core/operational/hooks/useEntityRefresh";
+import { useRouteRealtime } from "@/core/realtime";
 
 // UI-4: visão operacional da rota.
 // NOTA: continua a respeitar UI-P0 — sem .update()/.delete() directos em
