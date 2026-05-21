@@ -59,10 +59,11 @@ describe("useUserListView", () => {
     expect(result.current.state.columns).toEqual(defaults.columns);
   });
 
-  it("resetToDefaults clears local prefs", () => {
-    localStorage.setItem("list-view:test.view", JSON.stringify({ ...defaults, sort: { key: "x", asc: true } }));
+  it("resetToDefaults restores defaults in state", () => {
     const { result } = renderHook(() => useUserListView("test.view", defaults), { wrapper });
+    act(() => result.current.update({ sort: { key: "x", asc: true } }));
     act(() => result.current.resetToDefaults());
-    expect(localStorage.getItem("list-view:test.view")).toBeNull();
+    expect(result.current.state.sort).toEqual(defaults.sort);
+    expect(result.current.currentViewId).toBeNull();
   });
 });
