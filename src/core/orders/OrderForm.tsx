@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { printSaleOrder } from "./printSaleOrder";
 import { DeliveryStatusBadge } from "@/modules/inventory/components/DeliveryStatusBadge";
+import { SaleDeliveryPanel } from "@/core/orders/SaleDeliveryPanel";
 import { NumberField } from "@/core/forms/NumberField";
 import {
   EntityHeader,
@@ -684,20 +685,21 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
               </div>
             </Card>
 
-            {kind === "sale" && shipment && (
+            {kind === "sale" && !isNew && id && (
+              <SaleDeliveryPanel
+                saleOrderName={order.name}
+                saleOrderId={id}
+                commitmentDate={order.commitment_date}
+              />
+            )}
+
+            {kind === "sale" && shipment && !["done", "cancelled"].includes(shipment.state ?? "") && (
               <Card className="p-3 flex flex-wrap items-center gap-3">
                 <DeliveryStatusBadge
                   picking={shipment as any}
                   onChanged={() => queryClient.invalidateQueries({ queryKey: ["sale-shipment", order.name] })}
-                  showActions={!["done", "cancelled"].includes(shipment.state ?? "")}
+                  showActions
                 />
-                <div className="ml-auto text-xs text-muted-foreground">
-                  Transferência {shipment.name}
-                  {shipment.done_at && <> · entregue {new Date(shipment.done_at).toLocaleString("pt-PT")}</>}
-                </div>
-                <Button asChild size="sm" variant="outline">
-                  <a href={`/inventory/transfers/${shipment.id}`}>Abrir</a>
-                </Button>
               </Card>
             )}
 
