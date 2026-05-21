@@ -100,7 +100,7 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
         <span className="font-medium text-sm">Entrega</span>
         <Badge variant="outline" className={`text-[10px] ${tone.cls}`}>{tone.label}</Badge>
         <div className="ml-auto flex items-center gap-2">
-          <LastUpdated value={dataUpdatedAt} />
+          <LastUpdated value={dataUpdatedAt ? new Date(dataUpdatedAt) : null} />
           <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
             <Link to={`/inventory/transfers/${data.id}`}>
               <ExternalLink className="h-3 w-3 mr-1" /> Abrir transferência
