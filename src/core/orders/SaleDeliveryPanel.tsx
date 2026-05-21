@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, MapPin, PackageCheck, CalendarClock, ExternalLink, CircleDashed } from "lucide-react";
+import { Truck, MapPin, PackageCheck, CalendarClock, ExternalLink, CircleDashed, CalendarPlus } from "lucide-react";
 import { useRealtimeInvalidate } from "@/core/realtime";
 import { LastUpdated } from "@/core/operational/LastUpdated";
+import { ScheduleSaleOrderDeliveryDialog } from "@/modules/sales/components/ScheduleSaleOrderDeliveryDialog";
 
 type Shipment = {
   id: string;
