@@ -2590,6 +2590,7 @@ export type Database = {
           cap_weight_kg: number | null
           capacity_status: string
           created_at: string
+          created_by: string | null
           current_assembly_minutes: number
           current_deliveries: number
           current_volume_m3: number
@@ -2618,6 +2619,7 @@ export type Database = {
           cap_weight_kg?: number | null
           capacity_status?: string
           created_at?: string
+          created_by?: string | null
           current_assembly_minutes?: number
           current_deliveries?: number
           current_volume_m3?: number
@@ -2646,6 +2648,7 @@ export type Database = {
           cap_weight_kg?: number | null
           capacity_status?: string
           created_at?: string
+          created_by?: string | null
           current_assembly_minutes?: number
           current_deliveries?: number
           current_volume_m3?: number
@@ -2668,6 +2671,13 @@ export type Database = {
           zone_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "delivery_routes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "delivery_routes_dock_fk"
             columns: ["dock_id"]
@@ -12133,6 +12143,19 @@ export type Database = {
         Args: { _lines: Json; _picking_id: string }
         Returns: string
       }
+      create_route_manual: {
+        Args: {
+          _delivery_only?: boolean
+          _driver_id?: string
+          _max_assembly_minutes?: number
+          _max_deliveries?: number
+          _notes?: string
+          _route_date: string
+          _vehicle_id?: string
+          _zone_id: string
+        }
+        Returns: string
+      }
       create_wave: { Args: { _moves: string[] }; Returns: string }
       current_user_default_store_id: { Args: never; Returns: string }
       current_user_store_ids: { Args: never; Returns: string[] }
@@ -12442,7 +12465,12 @@ export type Database = {
         Args: { _from: string; _to: string }
         Returns: Json
       }
-      generate_routes: { Args: { _horizon_days?: number }; Returns: number }
+      generate_routes:
+        | { Args: { _horizon_days?: number }; Returns: number }
+        | {
+            Args: { _horizon_days?: number; _zone_ids?: string[] }
+            Returns: number
+          }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
         Args: {
