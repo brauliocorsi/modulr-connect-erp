@@ -37,6 +37,7 @@ import BinsPage from "@/modules/inventory/pages/BinsPage";
 import PricelistForm from "@/modules/sales/pages/PricelistForm";
 import DeliveryRulesPage from "@/modules/sales/pages/DeliveryRulesPage";
 import SalesStockPage from "@/modules/sales/pages/SalesStockPage";
+import DeliveryScheduleCalendar from "@/modules/sales/pages/DeliveryScheduleCalendar";
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PurchaseNeedsList from "@/modules/purchase/pages/PurchaseNeedsList";
@@ -203,6 +204,7 @@ const App = () => (
               <Route path="sales/pricelists/:id" element={<PricelistForm />} />
               <Route path="sales/delivery-rules" element={<DeliveryRulesPage />} />
               <Route path="sales/stock" element={<SalesStockPage />} />
+              <Route path="sales/delivery-schedule" element={<DeliveryScheduleCalendar />} />
 
               {/* Purchase */}
               <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
