@@ -238,6 +238,20 @@ export default function DeliveryScheduleCalendar() {
         </div>
       </Card>
 
+      {focusSoId && (
+        <Card className="p-3 flex flex-wrap items-center gap-2 text-sm border-primary/40">
+          <CalendarPlus className="h-4 w-4 text-primary" />
+          <span>
+            Em foco: <b>{(focusSo as any)?.name ?? "venda"}</b>
+            {postalCode ? ` · CP ${postalCode}` : ""}
+          </span>
+          <Button size="sm" className="ml-auto h-7 text-xs"
+            onClick={() => setScheduleDialog({ saleOrderId: focusSoId, date: preferredDate })}>
+            <CalendarPlus className="h-3 w-3 mr-1" /> Agendar/Reagendar entrega
+          </Button>
+        </Card>
+      )}
+
       {suggestions.length > 0 && (
         <Card className="p-3 border-emerald-200/60 dark:border-emerald-900/40">
           <div className="flex items-center gap-2 text-sm font-medium mb-2">
@@ -255,6 +269,7 @@ export default function DeliveryScheduleCalendar() {
           </div>
         </Card>
       )}
+
 
       <TooltipProvider delayDuration={150}>
         <div className={view === "month" ? "grid grid-cols-7 gap-2" : "grid grid-cols-7 gap-2"}>
