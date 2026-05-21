@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import GlobalSidebar from "@/core/layout/GlobalSidebar";
 import ModuleInnerMenu from "@/core/layout/ModuleInnerMenu";
 import GlobalChatDock from "@/core/conversations/GlobalChatDock";
+import { GlobalWidgetsErrorBoundary } from "@/core/layout/GlobalWidgetsErrorBoundary";
+
 
 export default function AppShell() {
   const { user, signOut } = useAuth();
@@ -84,8 +86,13 @@ export default function AppShell() {
           <kbd className="ml-2 text-[10px] border border-white/20 rounded px-1">⌘K</kbd>
         </button>
 
-        <MessagesBell />
-        <NotificationsBell />
+        <GlobalWidgetsErrorBoundary name="MessagesBell">
+          <MessagesBell />
+        </GlobalWidgetsErrorBoundary>
+        <GlobalWidgetsErrorBoundary name="NotificationsBell">
+          <NotificationsBell />
+        </GlobalWidgetsErrorBoundary>
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -191,8 +198,13 @@ export default function AppShell() {
         </main>
       </div>
 
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-      <GlobalChatDock />
+      <GlobalWidgetsErrorBoundary name="GlobalSearch">
+        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      </GlobalWidgetsErrorBoundary>
+      <GlobalWidgetsErrorBoundary name="GlobalChatDock">
+        <GlobalChatDock />
+      </GlobalWidgetsErrorBoundary>
+
     </div>
   );
 }
