@@ -57,6 +57,9 @@ export default function ManufacturingOrderDetail() {
     ],
   });
 
+  // F26-B realtime — keep MO detail/components/operations/issues in sync.
+  useManufacturingRealtime({ moId: id });
+
   const { data: mo, isLoading } = useQuery({
     queryKey: ["manufacturing_order", id],
     enabled: !!id,
