@@ -261,6 +261,24 @@ export default function TransfersList() {
               { key: "product_search", label: "Produto contém", type: "text" },
             ]}
           />
+          <Popover>
+            <PopoverTrigger asChild>
+              <UIButton variant="outline" size="sm">
+                <Columns3 className="h-4 w-4 mr-1" /> Colunas
+              </UIButton>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2 space-y-1">
+              {COL_DEFS.map((c) => (
+                <label key={c.key} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                  <Checkbox checked={colVisible(c.key)} disabled={c.alwaysVisible} onCheckedChange={() => toggleCol(c.key)} />
+                  <span className="text-sm flex-1">{c.label}</span>
+                </label>
+              ))}
+              <div className="pt-2 border-t flex justify-end gap-2">
+                <UIButton size="sm" variant="ghost" onClick={listView.resetToDefaults}>Repor</UIButton>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <Switch id="group-origin" checked={groupMode} onCheckedChange={setGroupMode} />
             <Label htmlFor="group-origin" className="cursor-pointer">Agrupar por origem (SO/PO)</Label>
