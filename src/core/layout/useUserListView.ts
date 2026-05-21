@@ -97,7 +97,7 @@ export function useUserListView(viewKey: string, defaults: ListViewState) {
     saveTimer.current = setTimeout(async () => {
       await supabase
         .from("user_list_views")
-        .update({ columns: state.columns, filters: state.filters, sort: state.sort })
+        .update({ columns: state.columns as any, filters: state.filters as any, sort: state.sort as any })
         .eq("id", currentViewId)
         .eq("user_id", user.id);
     }, 600);
@@ -124,9 +124,9 @@ export function useUserListView(viewKey: string, defaults: ListViewState) {
         view_key: viewKey,
         name,
         is_default: asDefault,
-        columns: state.columns,
-        filters: state.filters,
-        sort: state.sort,
+        columns: state.columns as any,
+        filters: state.filters as any,
+        sort: state.sort as any,
       })
       .select("id,name,is_default,columns,filters,sort")
       .single();
