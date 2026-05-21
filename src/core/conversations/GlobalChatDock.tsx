@@ -15,7 +15,7 @@ import { inferEntityContextFromPath } from "./inferEntityContext";
 
 type DockState = "closed" | "minimized" | "open";
 const STORAGE_KEY = "erp.globalChatDock.state";
-const POLL_MS = 20000;
+
 
 type UnifiedThread = {
   id: string;

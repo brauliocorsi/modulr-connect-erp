@@ -19,7 +19,7 @@ type Event = {
   message: string | null;
   metadata: any;
   visibility: string | null;
-  actor_id: string | null;
+  actor_user_id: string | null;
   created_at: string;
 };
 
@@ -36,7 +36,7 @@ export default function OperationalEventsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("activity_events")
-      .select("id,entity_type,entity_id,event_type,message,metadata,visibility,actor_id,created_at")
+      .select("id,entity_type,entity_id,event_type,message,metadata,visibility,actor_user_id,created_at")
       .order("created_at", { ascending: false })
       .limit(LIMIT);
     setLoading(false);
@@ -82,7 +82,6 @@ export default function OperationalEventsPage() {
     <div className="space-y-4 p-4">
       <PageHeader
         title="Eventos Operacionais"
-        description="Feed em tempo real de todas as atividades do ERP."
         actions={
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw className={"h-4 w-4 mr-1 " + (loading ? "animate-spin" : "")} />
