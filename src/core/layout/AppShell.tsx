@@ -86,8 +86,13 @@ export default function AppShell() {
           <kbd className="ml-2 text-[10px] border border-white/20 rounded px-1">⌘K</kbd>
         </button>
 
-        <MessagesBell />
-        <NotificationsBell />
+        <GlobalWidgetsErrorBoundary name="MessagesBell">
+          <MessagesBell />
+        </GlobalWidgetsErrorBoundary>
+        <GlobalWidgetsErrorBoundary name="NotificationsBell">
+          <NotificationsBell />
+        </GlobalWidgetsErrorBoundary>
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
