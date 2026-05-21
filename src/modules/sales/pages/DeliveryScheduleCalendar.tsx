@@ -185,6 +185,7 @@ export default function DeliveryScheduleCalendar() {
   }, [suggestions]);
 
   const [drawerDate, setDrawerDate] = useState<string | null>(null);
+  const [scheduleDialog, setScheduleDialog] = useState<{ saleOrderId: string; date?: string | null } | null>(null);
 
   const monthLabel = anchor.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
