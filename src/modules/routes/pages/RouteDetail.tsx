@@ -137,6 +137,9 @@ export default function RouteDetail() {
 
   const refreshAll = () => { void refresh(); };
 
+  // F26-B realtime — invalidate route queries on related table changes.
+  useRouteRealtime({ routeId: id });
+
   const callRpc = async (key: string, fn: string, args: Record<string, any>, label: string, closeCtx = false) => {
     setBusy(key);
     setCloseError(null);
