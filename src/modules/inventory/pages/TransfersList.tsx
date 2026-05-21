@@ -11,10 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AdvancedFilters, FilterValues } from "@/core/filters/AdvancedFilters";
 import { StateBadge } from "@/core/layout/StateBadge";
-import { AlertTriangle, CheckCircle2, Clock, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Columns3, Layers, PackageCheck, Search, Truck, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { kindLabel } from "@/lib/picking";
 import { groupByOrigin, readToggle, writeToggle, type Group } from "@/modules/inventory/lib/groupChain";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button as UIButton } from "@/components/ui/button";
+import { useUserListView } from "@/core/layout/useUserListView";
 import { toast } from "sonner";
 
 export default function TransfersList() {
