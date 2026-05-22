@@ -11462,6 +11462,10 @@ export type Database = {
       _cleanup_golden_upm: { Args: never; Returns: undefined }
       _cleanup_phase17_payment_subcases: { Args: never; Returns: undefined }
       _cleanup_phase18_service_flow: { Args: never; Returns: undefined }
+      _ensure_route_order: {
+        Args: { _route: string; _schedule: string }
+        Returns: string
+      }
       _m25_backfill_real_packages: { Args: never; Returns: Json }
       _m3_apply_vehicle_capacity: {
         Args: { _route_id: string }
