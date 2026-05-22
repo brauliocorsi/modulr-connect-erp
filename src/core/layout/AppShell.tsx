@@ -27,6 +27,14 @@ export default function AppShell() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("full_name,avatar_url").eq("id", user.id).maybeSingle()
+      .then(({ data }) => { setAvatarUrl(data?.avatar_url ?? null); setFullName(data?.full_name ?? null); });
+  }, [user]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
