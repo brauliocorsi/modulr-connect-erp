@@ -5466,6 +5466,7 @@ export type Database = {
           company_id: string | null
           country: string | null
           created_at: string
+          default_expense_account_id: string | null
           email: string | null
           id: string
           is_customer: boolean
@@ -5486,6 +5487,7 @@ export type Database = {
           company_id?: string | null
           country?: string | null
           created_at?: string
+          default_expense_account_id?: string | null
           email?: string | null
           id?: string
           is_customer?: boolean
@@ -5506,6 +5508,7 @@ export type Database = {
           company_id?: string | null
           country?: string | null
           created_at?: string
+          default_expense_account_id?: string | null
           email?: string | null
           id?: string
           is_customer?: boolean
@@ -5528,6 +5531,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "partners_default_expense_account_id_fkey"
+            columns: ["default_expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payment_methods: {
@@ -5536,6 +5546,7 @@ export type Database = {
           code: string
           confirmation_mode: string
           created_at: string
+          default_account_id: string | null
           default_journal_id: string | null
           feeds_cash_session: boolean
           id: string
@@ -5551,6 +5562,7 @@ export type Database = {
           code: string
           confirmation_mode?: string
           created_at?: string
+          default_account_id?: string | null
           default_journal_id?: string | null
           feeds_cash_session?: boolean
           id?: string
@@ -5566,6 +5578,7 @@ export type Database = {
           code?: string
           confirmation_mode?: string
           created_at?: string
+          default_account_id?: string | null
           default_journal_id?: string | null
           feeds_cash_session?: boolean
           id?: string
@@ -5577,6 +5590,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_methods_default_account_id_fkey"
+            columns: ["default_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_methods_default_journal_id_fkey"
             columns: ["default_journal_id"]
@@ -10248,6 +10268,7 @@ export type Database = {
           code: string
           country: string | null
           created_at: string
+          default_cost_center_id: string | null
           email: string | null
           id: string
           manager_id: string | null
@@ -10266,6 +10287,7 @@ export type Database = {
           code: string
           country?: string | null
           created_at?: string
+          default_cost_center_id?: string | null
           email?: string | null
           id?: string
           manager_id?: string | null
@@ -10284,6 +10306,7 @@ export type Database = {
           code?: string
           country?: string | null
           created_at?: string
+          default_cost_center_id?: string | null
           email?: string | null
           id?: string
           manager_id?: string | null
@@ -10297,6 +10320,13 @@ export type Database = {
           zip?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stores_default_cost_center_id_fkey"
+            columns: ["default_cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stores_manager_id_fkey"
             columns: ["manager_id"]
