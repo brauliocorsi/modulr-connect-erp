@@ -5,7 +5,7 @@ import { PageHeader, PageBody } from "@/core/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fmtMoney } from "@/lib/format";
-import { Receipt, ExternalLink, Banknote } from "lucide-react";
+import { Receipt, ExternalLink, Banknote, Upload } from "lucide-react";
 import {
   OperationalDataTable,
   OperationalStatusBadge,
