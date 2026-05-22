@@ -55,9 +55,20 @@ export function RegisterSupplierPaymentDialog({
       _reference: form.reference || undefined,
       _idempotency_key: idempotencyKey,
     });
+    if (error) { setSaving(false); return toast.error(error.message); }
+    if (attachments.length) {
+      const { data: pay } = await supabase
+        .from("supplier_payments")
+        .select("id")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+      if (pay?.id) {
+        await supabase.from("supplier_payments").update({ attachments: attachments as any }).eq("id", pay.id);
+      }
+    }
     setSaving(false);
-    if (error) return toast.error(error.message);
     toast.success("Pagamento registado");
+    setAttachments([]);
     onOpenChange(false);
     onSaved?.();
   };
