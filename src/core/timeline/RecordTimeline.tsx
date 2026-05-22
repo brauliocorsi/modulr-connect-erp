@@ -181,7 +181,9 @@ export function RecordTimeline({
                         </span>
                         <div className="rounded-md border bg-background/50 px-3 py-2">
                           <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-                            <span className="font-medium text-foreground">{st.label}</span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${st.tone}`}>
+                              <Icon className="h-3 w-3" /> {st.label}
+                            </span>
                             {e.visibility === "customer_visible" ? (
                               <span title="Visível ao cliente" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200 text-[10px]">
                                 <Eye className="h-3 w-3" /> público
