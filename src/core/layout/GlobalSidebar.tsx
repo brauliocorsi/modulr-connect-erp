@@ -116,22 +116,26 @@ const GROUPS: NavGroup[] = [
   {
     id: "financeiro", label: "Financeiro", icon: Wallet,
     items: [
+      { label: "— Visão Geral —", status: "hidden" },
       { label: "Dashboard", to: "/finance" },
       { label: "Relatórios", to: "/finance/reports" },
+      { label: "— Operações —", status: "hidden" },
       { label: "Contas a Receber", to: "/finance/receivables" },
+      { label: "Contas a Pagar", to: "/finance/payables" },
+      { label: "Confirmações Pendentes", to: "/finance/pending" },
+      { label: "Despesas Fixas", to: "/finance/recurring" },
+      { label: "Créditos de Cliente", to: "/finance/credits" },
+      { label: "— Tesouraria —", status: "hidden" },
       { label: "Recebimentos de Vendas", to: "/finance/payments" },
       { label: "Recebimentos de Entregas", to: "/finance/handovers" },
-      { label: "Confirmações Pendentes", to: "/finance/pending" },
-      { label: "Créditos de Cliente", to: "/finance/credits" },
-      { label: "Contas a Pagar", to: "/finance/payables" },
-      { label: "Despesas Fixas", to: "/finance/recurring" },
-      { label: "Conciliação Bancária", to: "/finance/reconciliation" },
-      { label: "Importar Extrato", to: "/finance/bank-import" },
       { label: "Caixa Físico", to: "/cashbox" },
-      { label: "Contas / Diários", to: "/finance/journals" },
-      { label: "Métodos de Pagamento", to: "/finance/methods" },
-      { label: "Centros de Custo", to: "/finance/cost-centers" },
+      { label: "Importar Extrato", to: "/finance/bank-import" },
+      { label: "Conciliação Bancária", to: "/finance/reconciliation" },
+      { label: "— Configuração —", status: "hidden" },
       { label: "Plano de Contas", to: "/finance/chart-of-accounts" },
+      { label: "Centros de Custo", to: "/finance/cost-centers" },
+      { label: "Métodos de Pagamento", to: "/finance/methods" },
+      { label: "Contas / Diários", to: "/finance/journals" },
     ],
   },
   {
@@ -299,8 +303,19 @@ export default function GlobalSidebar() {
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-6 pt-0.5 pb-1 space-y-0.5">
                 {group.items.map((it) => {
+                  const isSection = it.label.startsWith("—") && it.label.endsWith("—");
+                  if (it.status === "hidden" && !isSection) return null;
+                  if (isSection) {
+                    return (
+                      <div
+                        key={it.label}
+                        className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
+                      >
+                        {it.label.replace(/—/g, "").trim()}
+                      </div>
+                    );
+                  }
                   const disabled = it.status === "coming_soon" || !it.to;
-                  if (it.status === "hidden") return null;
                   if (disabled) {
                     return (
                       <Tooltip key={it.label}>

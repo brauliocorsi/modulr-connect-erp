@@ -1,86 +1,122 @@
-# F28-FIN — Entrega B.2: Plano de fecho
 
-## Estado já no repo (não refazer)
+# F28-FIN — Entrega C: Redesign Financeiro + Integração CC/Conta
 
-- ReceivablesPage v2 com tabs (Todos/Balcão/Entregas/Banco/Vencidos/Pagos), filtros de origem/método/vendedor/loja, badge de vencido/conciliado.
-- BillForm v2 com locks por estado (paid/cancelled), seletor de plano de contas, origem (PO/recurring/manual), guarda total ≥ pago.
-- CostCentersPage em `/finance/cost-centers` com CRUD via `cost_center_upsert` / `cost_center_archive`, item no menu.
-- RPCs B.2 já criadas: `cost_center_upsert`, `cost_center_archive`, `supplier_bill_set_attachments`, `supplier_payment_set_attachments`, overload antiga de `supplier_payment_register` removida.
-- Zero-bypass: `rg` retorna 0 hits nas tabelas financeiras core.
-- PayablesList, RegisterSupplierPaymentDialog, RecurringExpenseDialog com CC/conta/diário (Entrega B fundação).
-- Relatórios: `.lovable/F28-FIN-B-final.md` existente (será atualizado, não reescrito do zero).
+Reconstrução **só de UI/UX** preservando 100% do schema, RPCs e regras já testadas das Entregas A e B. Aplicação da paleta **Emerald Prestige** (verde profundo + dourado) e integração de Centros de Custo e Plano de Contas no resto do sistema (vendas, compras, caixa) com a regra **obrigatório em despesas/AP, sugerido com defaults nos demais**.
 
-## O que falta para fechar B.2
+---
 
-A iteração anterior fez UI + RPCs + zero-bypass mas a bateria de testes vitest exigida no ponto 4 da spec não está completa para as alterações B/B.2. Esta iteração é só testes + verificação + relatório.
+## 1. Design system Emerald Prestige
 
-### 1. Atualizar/criar testes vitest
+Adicionar tokens ao `src/index.css` e `tailwind.config.ts` (HSL):
 
-Ficheiros a tocar (apenas testes — sem mexer em UI/RPC):
+- `--finance-primary` (verde esmeralda #064e3b) e `--finance-primary-glow` (#0d7a5f)
+- `--finance-accent` (dourado #c9a84c)
+- `--finance-surface` (creme #f5f0e0) para superfícies executivas
+- Gradiente `--gradient-finance`, sombra `--shadow-executive`, badges de KPI
 
-**`src/modules/finance/pages/__tests__/PayablesList.test.tsx`** (atualizar)
-- filtro por origem (manual / purchase_order / recurring_expense)
-- filtro por centro de custo
-- filtro por conta (plano de contas)
-- filtro rápido "próximos 7 dias"
+Tokens aplicados apenas em páginas `/finance/*` — não muda visual do resto da app.
 
-**`src/modules/finance/components/__tests__/RegisterSupplierPaymentDialog.test.tsx`** (atualizar)
-- ao confirmar, `supabase.rpc('supplier_payment_register', ...)` recebe `_cost_center_id`, `_account_id`, `_journal_id` conforme seleção.
+## 2. Novo Dashboard Financeiro v2 (`FinanceDashboard.tsx`)
 
-**`src/modules/finance/pages/__tests__/ReceivablesPage.test.tsx`** (atualizar)
-- tabs renderizam todas as 6 chaves
-- filtro origem reduz linhas
-- filtro método/vendedor/loja
-- linha vencida ganha badge `overdue`; linha de origem `banco` mostra atalho de conciliação
+Layout em 3 zonas:
 
-**`src/modules/finance/pages/__tests__/BillForm.test.tsx`** (atualizar)
-- estado `paid` → inputs financeiros desactivados
-- estado `cancelled` → inputs desactivados
-- estado `partial` → tentativa de total < `amount_paid` bloqueada (validação + toast)
-- guardar chama `supplier_bill_update` com `account_id` e `cost_center_id`
-- pagar chama `supplier_payment_register` com `_journal_id` e `_account_id`
-
-**`src/modules/finance/pages/__tests__/RecurringExpensesPage.test.tsx`** (atualizar — apenas a porção UI)
-- "Gerar conta" chama `recurring_expense_generate_bill` (a assertiva real do source/CC/account é coberta pelos self-tests SQL F28-FIN-A, não duplicar aqui).
-
-**`src/modules/finance/pages/__tests__/CostCentersPage.test.tsx`** (criar)
-- render lista (mock `from('cost_centers').select`)
-- criar chama `cost_center_upsert` sem `id`
-- editar chama `cost_center_upsert` com `id`
-- arquivar chama `cost_center_archive`
-- search filtra por código/nome
-
-Todos os testes usam o padrão já existente: mock de `@/integrations/supabase/client` com `from`/`rpc` chains, `render` com `MemoryRouter` quando há `<Link>`. Sem novas dependências.
-
-### 2. Execução
-
-```
-bunx vitest run src/modules/finance
+```text
+┌─────────────────────────────────────────────────┐
+│ KPI Cards (6): A Receber | A Pagar | Vencidos R │
+│ Vencidos P | Caixa Hoje | Saldo Banco           │
+├──────────────────────┬──────────────────────────┤
+│ Fluxo Caixa 7/30/90d │ Top 5 Fornecedores       │
+│ (gráfico área)       │ Top 5 Clientes devedores │
+├──────────────────────┼──────────────────────────┤
+│ Despesas por CC      │ Alertas vencimento (7d)  │
+│ (donut)              │ + Confirmações pendentes │
+└──────────────────────┴──────────────────────────┘
 ```
 
-Esperado: verde. Se algum self-test SQL referenciado na spec (`_test_phase20_financial_core`, `_test_phase24_finance_core_rebuild`, `_test_phase24b2_store_cash_delivery_guardrails`) quebrar quando invocado, parar e reportar (regra STOP).
+Usa recharts (já instalado). Drilldown clicando KPI → página relevante.
 
-### 3. Re-verificar zero-bypass
+## 3. Redesign AP (PayablesList) e AR (ReceivablesPage)
 
+Estrutura comum:
+- **Sidebar de filtros** colapsável (fornecedor/cliente, CC, conta, método, loja, vendedor, período, estado)
+- **Tabs no topo** mantendo lógica atual (Todos/Vencidos/Pagos/...)
+- **Tabela densa** com colunas configuráveis, badges de origem e estado consistentes via `OperationalStatusBadge`
+- **Barra de ações em massa** (selecionar várias contas → registar pagamento em lote, exportar CSV)
+- **Drawer lateral** ao clicar uma linha (em vez de modal) com tabs Detalhes / Pagamentos / Documentos / Atividade
+
+Sem alterar nenhum RPC nem regra de negócio.
+
+## 4. Redesign Banco/Caixa + Conciliação
+
+- `BankStatementImportPage`: wizard com stepper visual, prévia de match com badges coloridos (verde=auto, dourado=parcial, cinza=manual), barra de progresso
+- `ReconciliationPage`: split view venda × recebimento lado a lado com drag-para-conciliar
+- `CashboxPage`: hero com saldo + entradas/saídas do dia, gráfico mini
+
+## 5. Integração CC + Plano de Contas no resto do sistema
+
+Criar componente partilhado `<CostCenterAccountPicker>` em `src/core/finance/` com:
+- Combobox CC (carrega de `cost_centers`)
+- Combobox Conta (carrega de `chart_of_accounts`)
+- Prop `required` (true para despesas/AP, false para o resto)
+- Sugestão automática via prop `defaults` (loja, método, fornecedor)
+
+**Pontos de integração** (apenas adicionar picker ao formulário, gravação já suportada pelos RPCs):
+
+| Página | Picker | Obrigatório? |
+|---|---|---|
+| `BillForm` (AP) | CC + Conta | ✅ Sim |
+| `RecurringExpenseDialog` | CC + Conta | ✅ Sim |
+| `RegisterSupplierPaymentDialog` | CC + Conta | ✅ Sim |
+| `RegisterPaymentDialog` (AR) | CC + Conta | Sugerido |
+| `CashMovementDialog` | CC + Conta | Sugerido |
+| `SalesOrderForm` (campo opcional CC) | CC | Sugerido (herda da loja) |
+| `PurchaseOrderForm` | CC + Conta | Sugerido |
+
+**Defaults inteligentes**: hook `useFinanceDefaults({storeId, methodId, supplierId})` que devolve CC/conta sugeridos a partir de:
+- loja → CC mapeado (config nova em `stores.default_cost_center_id` — migração pequena)
+- método de pagamento → conta sugerida (`payment_methods.default_account_id`)
+- fornecedor → conta de despesa preferida (`partners.default_expense_account_id`)
+
+## 6. Reorganização do menu Financeiro
+
+Agrupar os 17 itens atuais em 4 secções colapsáveis no `GlobalSidebar`:
+
+```text
+Financeiro
+├── 📊 Visão Geral (Dashboard, Relatórios)
+├── 💰 Operações (A Receber, A Pagar, Pendentes, Despesas Fixas)
+├── 🏦 Tesouraria (Banco, Caixa, Importar Extrato, Conciliação)
+└── ⚙️ Configuração (Plano de Contas, Centros de Custo, Métodos, Diários)
 ```
-rg -n "from\(['\"](supplier_bills|supplier_bill_lines|supplier_payments|customer_payments|sale_payment_schedules|recurring_expenses|cost_centers|chart_of_accounts|bank_reconciliation_lines|cash_movements)['\"]\)\.(insert|update|upsert|delete)" src/modules src/core
-```
 
-Esperado: 0 hits (já está). Se houver regressão, migrar para RPC.
+## 7. Testes e zero-bypass
 
-### 4. Atualizar relatório
+- Atualizar testes existentes para nova UI (mantendo asserts de lógica)
+- Novo teste para `CostCenterAccountPicker` e `useFinanceDefaults`
+- Zero-bypass sweep mantido — nenhum write direto novo
+- Self-tests financeiros existentes não são tocados
 
-Editar `.lovable/F28-FIN-B-final.md` adicionando secção "B.2 — fecho" com:
-- testes novos/atualizados e contagem
-- saída do zero-bypass sweep
-- resultado dos self-tests SQL
-- backlog Entrega C (notificações, dashboard v2, gráficos, OCR, SAF-T, aprovação, IA, importação bancária v2).
+## Detalhes técnicos
 
-## Fora de scopo
+- **Schema** (migração pequena, não destrutiva):
+  - `stores.default_cost_center_id` (nullable, FK cost_centers)
+  - `payment_methods.default_account_id` (nullable, FK chart_of_accounts)
+  - `partners.default_expense_account_id` (nullable, FK chart_of_accounts)
+- **Sem alterações** em: supplier_bills, customer_payments, supplier_payments, cash_movements, recurring_expenses, RPCs existentes
+- **Stack**: shadcn + tailwind tokens, recharts para gráficos, framer-motion já presente para transições do dashboard
+- **Rotas**: mantém todas; sem breaking changes
 
-Não tocar em: RPCs financeiros, BillForm/ReceivablesPage/PayablesList/CostCentersPage UI, conciliação A, F24-B core, qualquer feature da Entrega C.
+## Backlog deixado para Entrega D
 
-## Riscos / STOP
+- Notificações push/email de vencimento
+- OCR de faturas de fornecedor
+- SAF-T export
+- Aprovação multinível de AP
+- IA/MCP financeiro
 
-- Se um teste expor bug real de regra financeira (ex.: total < pago não bloqueado), parar e reportar antes de mascarar com mock.
-- Se self-test SQL quebrar, reportar causa raiz sem patch.
+## Stop rules respeitadas
+
+- Nenhuma duplicação de pagamento/fatura possível (RPCs intocados)
+- Self-tests financeiros não alterados
+- Schema só adiciona 3 colunas nullable (zero conflito)
+- Zero-bypass preservado

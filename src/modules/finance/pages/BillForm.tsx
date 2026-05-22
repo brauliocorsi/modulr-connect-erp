@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
 import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
+import { CostCenterAccountPicker, isCostCenterAccountValid } from "@/core/finance/CostCenterAccountPicker";
 
 export default function BillForm() {
   const { id } = useParams();
@@ -119,6 +120,9 @@ export default function BillForm() {
     if (bill.state === "paid") return toast.error("Fatura paga — edição bloqueada");
     if (bill.state === "partial" && Number(bill.amount_total || 0) < Number(bill.amount_paid || 0)) {
       return toast.error("Total não pode ser inferior ao valor já pago");
+    }
+    if (!isCostCenterAccountValid({ cost_center_id: bill.cost_center_id || null, account_id: bill.account_id || null }, true)) {
+      return toast.error("Centro de Custo e Plano de Contas são obrigatórios em faturas de fornecedor");
     }
     if (isNew) {
       // PO-based: usar RPC supplier_bill_create_from_po (F20-B).
@@ -267,17 +271,15 @@ export default function BillForm() {
           <div><Label>Data</Label><Input type="date" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} disabled={locked} /></div>
           <div><Label>Vencimento</Label><Input type="date" value={bill.due_date ?? ""} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} disabled={locked} /></div>
           <div><Label>Total</Label><Input type="number" step="0.01" value={bill.amount_total} onChange={(e) => setBill({ ...bill, amount_total: Number(e.target.value) })} disabled={locked} /></div>
-          <div><Label>Centro de Custo</Label>
-            <Select value={bill.cost_center_id ?? ""} onValueChange={(v) => setBill({ ...bill, cost_center_id: v })} disabled={locked}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>{centers.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label>Plano de Contas</Label>
-            <Select value={bill.account_id ?? ""} onValueChange={(v) => setBill({ ...bill, account_id: v })} disabled={locked}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} · {a.name}</SelectItem>)}</SelectContent>
-            </Select>
+          <div className="sm:col-span-2">
+            <CostCenterAccountPicker
+              value={{ cost_center_id: bill.cost_center_id || null, account_id: bill.account_id || null }}
+              onChange={(v) => setBill({ ...bill, cost_center_id: v.cost_center_id ?? "", account_id: v.account_id ?? "" })}
+              required
+              context={{ supplierId: bill.partner_id || null }}
+              disabled={locked}
+              accountTypes={["expense", "liability", "asset"]}
+            />
           </div>
           <div className="sm:col-span-2"><Label>Referência</Label><Input value={bill.reference ?? ""} onChange={(e) => setBill({ ...bill, reference: e.target.value })} /></div>
           <div className="sm:col-span-2"><Label>Notas</Label><Textarea value={bill.notes ?? ""} onChange={(e) => setBill({ ...bill, notes: e.target.value })} /></div>
