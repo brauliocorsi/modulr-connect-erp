@@ -255,7 +255,7 @@ export default function InventoryStockPage() {
                   const variantList = Array.from(p.variants.values());
                   const hasRealVariants = variantList.some((v) => v.variant_id);
                   return (
-                    <>
+                    <Fragment key={p.product_id}>
                       <tr
                         key={p.product_id}
                         className="border-t hover:bg-muted/30 cursor-pointer"
