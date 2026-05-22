@@ -160,9 +160,11 @@ export default function DeliveryCashbox() {
         </div>
       )}
 
-      {!session && !pendingHandover && (
+      {!session && (
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
-          <div className="text-sm text-slate-400">Sem sessão aberta.</div>
+          <div className="text-sm text-slate-400">
+            {pendingHandover ? "Podes abrir nova sessão para a próxima rota." : "Sem sessão aberta."}
+          </div>
           <div>
             <Label className="text-xs">Saldo de abertura (deixa 0 para usar saldo anterior)</Label>
             <Input type="number" step="0.01" value={opening} onChange={(e) => setOpening(Number(e.target.value))} />
