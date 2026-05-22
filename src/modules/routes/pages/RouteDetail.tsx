@@ -357,6 +357,17 @@ export default function RouteDetail() {
     },
   ];
 
+  // Fallback to capacity RPC when manifest ainda não foi populado.
+  const capDeliveries = Number((capacity as any)?.current_deliveries ?? 0) || orderCounts.total;
+  const capVolUsed = Number((capacity as any)?.current_volume_m3 ?? 0);
+  const capVolMax = Number((capacity as any)?.cap_volume_m3 ?? 0);
+  const capWeightUsed = Number((capacity as any)?.current_weight_kg ?? 0);
+  const utilPct = Number((capacity as any)?.utilization_percent ?? 0);
+  const driverName = (people as any[]).find((p) => p.id === r.driver_id)?.full_name;
+  const helperName = (people as any[]).find((p) => p.id === r.helper_id)?.full_name;
+
+  const fmtEur = (n: number) => n.toLocaleString("pt-PT", { style: "currency", currency: "EUR" });
+
   const summaryItems: SummaryCardItem[] = [
     {
       key: "deliveries",
@@ -369,34 +380,44 @@ export default function RouteDetail() {
     {
       key: "packages",
       label: "Colis",
-      value: <span>{stats.loadedCount}<span className="text-muted-foreground text-base">/{stats.totalPackages}</span></span>,
-      hint: `Entregues: ${stats.deliveredCount} · Retornados: ${stats.returnedCount}`,
+      value: <span>{stats.loadedCount}<span className="text-muted-foreground text-base">/{stats.totalPackages || capDeliveries}</span></span>,
+      hint: stats.totalPackages === 0
+        ? "Manifesto ainda não populado (carregar viatura)"
+        : `Entregues: ${stats.deliveredCount} · Retornados: ${stats.returnedCount}`,
       tone: stats.totalPackages > 0 && stats.loadedCount < stats.totalPackages ? "warning" : "default",
       icon: <Package className="h-3 w-3" />,
     },
     {
       key: "capacity",
       label: "Capacidade",
-      value: <span className="capitalize">{r.capacity_status ?? "—"}</span>,
-      hint: (capacity as any)?.volume_used != null ? `Vol. ${Number((capacity as any).volume_used).toFixed(2)}` : "Conforme viatura",
-      tone: r.capacity_status === "overcapacity" ? "danger" : "muted",
+      value: <span className="tabular-nums">{utilPct}%</span>,
+      hint: `${capVolUsed.toFixed(2)}/${capVolMax || "—"} m³ · ${capWeightUsed.toFixed(1)} kg`,
+      tone: r.capacity_status === "overcapacity" ? "danger" : utilPct > 80 ? "warning" : "muted",
       icon: <Truck className="h-3 w-3" />,
     },
     {
       key: "verify",
       label: "Verificação",
       value: <span>{verifyStats.ver}<span className="text-muted-foreground text-base">/{verifyStats.req}</span></span>,
-      hint: "Manifesto verificado",
+      hint: verifyStats.req === 0 ? "Não exigida" : "Manifesto verificado",
       tone: verifyStats.req > 0 && verifyStats.ver < verifyStats.req ? "warning" : "success",
       icon: <CheckCircle2 className="h-3 w-3" />,
     },
     {
-      key: "issues",
-      label: "Stock na viatura",
+      key: "stock",
+      label: "Stock viatura",
       value: <span>{stockOnVehicle}</span>,
       hint: `Parciais/falhas: ${orderCounts.partial + orderCounts.failed}`,
       tone: stockOnVehicle > 0 ? "danger" : orderCounts.failed > 0 ? "warning" : "success",
       icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    {
+      key: "receber",
+      label: "A receber na entrega",
+      value: <span className="tabular-nums">{fmtEur(Number(amounts?.pending ?? 0))}</span>,
+      hint: `Previsto: ${fmtEur(Number(amounts?.expected ?? 0))} · Cobrado: ${fmtEur(Number(amounts?.collected ?? 0))}`,
+      tone: (amounts?.pending ?? 0) > 0 ? "primary" : "success",
+      icon: <Euro className="h-3 w-3" />,
     },
   ];
 
