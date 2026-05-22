@@ -314,24 +314,48 @@ export function PaymentsTab({
 
                   {hasPayments && isOpen && (
                     <div className="mt-3 ml-6 space-y-1">
-                      {linked.map((p) => (
-                        <div key={p.id} className={`flex items-center justify-between text-sm rounded-md border px-3 py-2 ${p.state === "cancelled" ? "opacity-50 line-through" : ""}`}>
-                          <div className="flex flex-col">
-                            <span className="font-mono text-xs">{p.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {p.payment_date} · {p.payment_methods?.name ?? "—"}{p.reference ? ` · ${p.reference}` : ""}
-                            </span>
+                      {linked.map((p) => {
+                        const recMeta: Record<string, { label: string; cls: string }> = {
+                          not_required: { label: "Sem conciliação", cls: "bg-muted text-muted-foreground" },
+                          pending: { label: "Aguarda conciliação", cls: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
+                          matched: { label: "Conciliado", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" },
+                          ignored: { label: "Ignorado", cls: "bg-muted text-muted-foreground" },
+                          rejected: { label: "Rejeitado", cls: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" },
+                        };
+                        const rec = recMeta[p.reconciliation_status] ?? recMeta.not_required;
+                        const finalMethod = p.reconciliation_status === "matched"
+                          ? (p.payment_methods?.name ?? "—")
+                          : (p.payment_methods?.name ?? "—");
+                        return (
+                          <div key={p.id} className={`flex items-center justify-between text-sm rounded-md border px-3 py-2 ${p.state === "cancelled" ? "opacity-50 line-through" : ""}`}>
+                            <div className="flex flex-col">
+                              <span className="font-mono text-xs">{p.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {p.payment_date} · <strong className="text-foreground">{finalMethod}</strong>
+                                {p.reference ? ` · ${p.reference}` : ""}
+                                {p.cash_sessions?.id && (
+                                  <> · <a
+                                    href={`/cashbox/sessions/${p.cash_sessions.id}`}
+                                    className="text-primary hover:underline"
+                                    onClick={(e) => { e.preventDefault(); window.location.assign(`/cashbox/sessions/${p.cash_sessions.id}`); }}
+                                  >Caixa {p.cash_sessions.name}</a></>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${rec.cls}`} title={`Conciliação: ${rec.label}`}>
+                                {rec.label}
+                              </span>
+                              <span className="tabular-nums font-medium">{fmtMoney(p.amount)}</span>
+                              {p.state !== "cancelled" && (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cancelPayment(p.id)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="tabular-nums font-medium">{fmtMoney(p.amount)}</span>
-                            {p.state !== "cancelled" && (
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cancelPayment(p.id)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
