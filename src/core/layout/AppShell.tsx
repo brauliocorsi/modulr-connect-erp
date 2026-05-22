@@ -106,7 +106,7 @@ export default function AppShell() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => nav("/settings/users")}>
+            <DropdownMenuItem onClick={() => nav("/profile")}>
               <UserIcon className="h-4 w-4 mr-2" /> Meu perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav("/settings/apps")}>
