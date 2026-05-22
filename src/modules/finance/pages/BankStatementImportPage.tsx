@@ -197,6 +197,7 @@ export default function BankStatementImportPage() {
                 <div className="text-xs text-muted-foreground mt-1">
                   Limita o auto-match aos recebimentos do tipo escolhido (MB Way, Multibanco, Getnet, Transferência, Sequra, ScalaPay…).
                 </div>
+              </div>
               <div>
                 <Label>Ficheiro (CSV / XLS / XLSX)</Label>
                 <Input type="file" accept=".csv,.xls,.xlsx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
