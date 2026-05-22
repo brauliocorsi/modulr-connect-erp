@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import GlobalSidebar from "@/core/layout/GlobalSidebar";
 import ModuleInnerMenu from "@/core/layout/ModuleInnerMenu";
 import GlobalChatDock from "@/core/conversations/GlobalChatDock";
+import { UserAvatar } from "@/core/chat/UserAvatar";
+import { supabase } from "@/integrations/supabase/client";
 import { GlobalWidgetsErrorBoundary } from "@/core/layout/GlobalWidgetsErrorBoundary";
 
 
@@ -25,6 +27,14 @@ export default function AppShell() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("full_name,avatar_url").eq("id", user.id).maybeSingle()
+      .then(({ data }) => { setAvatarUrl(data?.avatar_url ?? null); setFullName(data?.full_name ?? null); });
+  }, [user]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -97,16 +107,14 @@ export default function AppShell() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="text-topbar-foreground hover:bg-white/10 gap-2">
-              <div className="h-7 w-7 rounded-full bg-primary grid place-items-center text-primary-foreground text-xs">
-                {user?.email?.[0]?.toUpperCase()}
-              </div>
-              <span className="hidden sm:inline text-sm">{user?.email}</span>
+              <UserAvatar name={fullName} email={user?.email} url={avatarUrl} size={28} />
+              <span className="hidden sm:inline text-sm">{fullName || user?.email}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => nav("/settings/users")}>
+            <DropdownMenuItem onClick={() => nav("/profile")}>
               <UserIcon className="h-4 w-4 mr-2" /> Meu perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav("/settings/apps")}>

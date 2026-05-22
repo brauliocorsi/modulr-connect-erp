@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
-import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox } from "lucide-react";
+import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { inferEntityContextFromPath } from "./inferEntityContext";
+import { EmojiButton } from "@/core/chat/EmojiButton";
+import { AttachmentButton } from "@/core/chat/AttachmentButton";
+import { AttachmentBubble, type ChatAttachment } from "@/core/chat/AttachmentBubble";
+import { UserAvatar } from "@/core/chat/UserAvatar";
 
 type DockState = "closed" | "minimized" | "open";
 const STORAGE_KEY = "erp.globalChatDock.state";
@@ -43,7 +47,11 @@ type MsgRow = {
   message: string;
   visibility: string;
   created_at: string;
+  metadata?: any;
 };
+
+type ParticipantRow = { user_id: string; last_read_at: string | null };
+type ProfileRow = { id: string; full_name: string | null; email: string | null; avatar_url: string | null };
 
 type TabKey = "all" | "dm" | "channel" | "entity" | "page";
 
@@ -92,7 +100,40 @@ export default function GlobalChatDock() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<TabKey>("all");
+  const [pendingAtts, setPendingAtts] = useState<ChatAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Load profiles once
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const q: any = supabase.from("profiles").select("id,full_name,email,avatar_url").limit(500);
+      if (q && typeof q.then === "function") {
+        q.then(({ data }: any) => {
+          const map: Record<string, ProfileRow> = {};
+          (data ?? []).forEach((p: any) => { map[p.id] = p; });
+          setProfiles(map);
+        });
+      }
+    } catch { /* noop */ }
+  }, [user]);
+
+  // Load participants of active thread (for read receipts)
+  useEffect(() => {
+    if (!activeThread) { setParticipants([]); return; }
+    try {
+      const q: any = supabase.from("conversation_participants")
+        .select("user_id,last_read_at")
+        .eq("thread_id", activeThread)
+        .is("left_at", null);
+      if (q && typeof q.then === "function") {
+        q.then(({ data }: any) => setParticipants((data ?? []) as ParticipantRow[]));
+      }
+    } catch { /* noop */ }
+  }, [activeThread]);
 
   useEffect(() => {
     persist(dockState, activeThread);
@@ -235,16 +276,21 @@ export default function GlobalChatDock() {
   }, [threads, tab, pageCtx]);
 
   const send = async () => {
-    if (!activeThread || !text.trim()) return;
+    if (!activeThread) return;
+    if (!text.trim() && pendingAtts.length === 0) return;
     setSending(true);
+    const body = text.trim();
+    const atts = pendingAtts;
     try {
       const { error: sErr } = await supabase.rpc("conversation_send_message" as any, {
         _thread_id: activeThread,
-        _body: text.trim(),
+        _body: body,
         _visibility: "internal",
+        _attachments: atts as any,
       });
       if (sErr) throw sErr;
       setText("");
+      setPendingAtts([]);
       await Promise.all([fetchMessages(activeThread), fetchThreads()]);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar mensagem");
@@ -445,18 +491,36 @@ export default function GlobalChatDock() {
             ) : (
               messages.map((m) => {
                 const mine = m.sender_user_id === user.id;
+                const p = m.sender_user_id ? profiles[m.sender_user_id] : undefined;
+                const atts: ChatAttachment[] = Array.isArray(m.metadata?.attachments) ? m.metadata.attachments : [];
+                // Read receipts: someone other than sender has last_read_at >= created_at
+                const readByOthers = mine && participants.some(
+                  (pp) => pp.user_id !== user.id && pp.last_read_at && new Date(pp.last_read_at) >= new Date(m.created_at)
+                );
                 return (
-                  <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                  <div key={m.id} className={cn("flex gap-2", mine ? "justify-end" : "justify-start")}>
+                    {!mine && <UserAvatar name={p?.full_name} email={p?.email} url={p?.avatar_url} size={24} />}
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg px-3 py-1.5 text-sm",
                         mine ? "bg-primary text-primary-foreground" : "bg-muted",
                       )}
                     >
-                      <div className="whitespace-pre-wrap break-words">{m.message}</div>
-                      <div className="text-[10px] mt-0.5 opacity-70 flex items-center gap-1">
+                      {!mine && p && (
+                        <div className="text-[10px] font-semibold opacity-80 mb-0.5">{p.full_name ?? p.email}</div>
+                      )}
+                      {m.message && <div className="whitespace-pre-wrap break-words">{m.message}</div>}
+                      {atts.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {atts.map((a, i) => <AttachmentBubble key={i} att={a} />)}
+                        </div>
+                      )}
+                      <div className="text-[10px] mt-0.5 opacity-70 flex items-center gap-1 justify-end">
                         {m.visibility === "customer_visible" && <Eye className="h-2.5 w-2.5" />}
                         <span>{formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: ptBR })}</span>
+                        {mine && (readByOthers
+                          ? <CheckCheck className="h-3 w-3 text-sky-300" />
+                          : <Check className="h-3 w-3 opacity-70" />)}
                       </div>
                     </div>
                   </div>
@@ -465,24 +529,48 @@ export default function GlobalChatDock() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="border-t p-2 flex gap-2 items-end">
-            <Textarea
-              data-testid="global-chat-input"
-              rows={1}
-              placeholder="Mensagem…"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              className="min-h-[36px] resize-none"
-            />
-            <Button size="sm" onClick={send} disabled={sending || !text.trim()} data-testid="global-chat-send">
-              Enviar
-            </Button>
+          <div className="border-t p-2 space-y-2">
+            {pendingAtts.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {pendingAtts.map((a, i) => (
+                  <div key={i} className="relative">
+                    <AttachmentBubble att={a} />
+                    <button
+                      type="button"
+                      onClick={() => setPendingAtts((p) => p.filter((_, k) => k !== i))}
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs grid place-items-center"
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1 items-end">
+              <AttachmentButton
+                scope={activeThread ?? "dock"}
+                userId={user.id}
+                uploading={uploading}
+                setUploading={setUploading}
+                onUploaded={(a) => setPendingAtts((p) => [...p, a])}
+              />
+              <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
+              <Textarea
+                data-testid="global-chat-input"
+                rows={1}
+                placeholder="Mensagem…"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                className="min-h-[36px] resize-none"
+              />
+              <Button size="sm" onClick={send} disabled={sending || uploading || (!text.trim() && pendingAtts.length === 0)} data-testid="global-chat-send">
+                Enviar
+              </Button>
+            </div>
           </div>
         </>
       )}
