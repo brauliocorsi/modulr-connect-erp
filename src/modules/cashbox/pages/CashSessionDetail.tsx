@@ -49,7 +49,7 @@ export default function CashSessionDetail() {
     } else setOpenerName("");
     const { data: m } = await supabase
       .from("cash_movements")
-      .select("*, customer_payments(method_id, payment_methods(name))")
+      .select("*, customer_payments(method_id, order_id, payment_methods(name), sale_orders(id,name))")
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
