@@ -323,15 +323,19 @@ export function PaymentsTab({
                           rejected: { label: "Rejeitado", cls: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" },
                         };
                         const rec = recMeta[p.reconciliation_status] ?? recMeta.not_required;
-                        const finalMethod = p.reconciliation_status === "matched"
-                          ? (p.payment_methods?.name ?? "—")
-                          : (p.payment_methods?.name ?? "—");
+                        const declaredMethod = p.payment_methods?.name ?? "—";
+                        const isReconciled = p.reconciliation_status === "matched";
                         return (
                           <div key={p.id} className={`flex items-center justify-between text-sm rounded-md border px-3 py-2 ${p.state === "cancelled" ? "opacity-50 line-through" : ""}`}>
                             <div className="flex flex-col">
                               <span className="font-mono text-xs">{p.name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {p.payment_date} · <strong className="text-foreground">{finalMethod}</strong>
+                                {p.payment_date}
+                                {" · "}
+                                <span title={isReconciled ? "Forma final confirmada pela conciliação" : "Forma declarada na entrega — aguarda conferência"}>
+                                  {isReconciled ? "Forma final: " : "Forma declarada: "}
+                                  <strong className="text-foreground">{declaredMethod}</strong>
+                                </span>
                                 {p.reference ? ` · ${p.reference}` : ""}
                                 {p.cash_sessions?.id && (
                                   <> · <a
