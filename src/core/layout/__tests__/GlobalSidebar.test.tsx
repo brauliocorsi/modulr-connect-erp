@@ -36,11 +36,11 @@ describe("GlobalSidebar", () => {
     expect(screen.getByRole("link", { name: "Ordens de Fabricação" })).toHaveAttribute("href", "/manufacturing/orders");
   });
 
-  it("Financeiro group exposes Caixa, Créditos, A Receber, Contas a Pagar", () => {
+  it("Financeiro group exposes Caixa Físico, Créditos, Contas a Receber, Contas a Pagar", () => {
     setup("/finance");
-    expect(screen.getByRole("link", { name: "Caixa" })).toHaveAttribute("href", "/cashbox");
+    expect(screen.getByRole("link", { name: "Caixa Físico" })).toHaveAttribute("href", "/cashbox");
     expect(screen.getByRole("link", { name: "Créditos de Cliente" })).toHaveAttribute("href", "/finance/credits");
-    expect(screen.getByRole("link", { name: "A Receber" })).toHaveAttribute("href", "/finance/receivables");
+    expect(screen.getByRole("link", { name: "Contas a Receber" })).toHaveAttribute("href", "/finance/receivables");
     expect(screen.getAllByRole("link", { name: "Contas a Pagar" })[0]).toHaveAttribute("href", "/finance/payables");
   });
 
