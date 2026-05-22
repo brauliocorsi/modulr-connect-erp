@@ -89,7 +89,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     return () => clearTimeout(t);
   }, [q]);
 
-  const grouped = hits.reduce<Record<string, Hit[]>>((acc, h) => {
+  const grouped = [...moduleHits, ...hits].reduce<Record<string, Hit[]>>((acc, h) => {
     (acc[h.type] ??= []).push(h);
     return acc;
   }, {});
