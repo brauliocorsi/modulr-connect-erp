@@ -217,6 +217,10 @@ export default function RouteDetail() {
       ["route-orders", id],
       ["route-manifest", id],
       ["route-docks", id],
+      ["route-payments", id],
+      ["route-assistance", id],
+      ["route-amounts", id],
+      ["route-cash-summary", id],
       ["routes-schedule"],
     ],
   });
@@ -301,6 +305,7 @@ export default function RouteDetail() {
       else if (o.status === "loaded" || o.status === "in_transit" || o.status === "out_for_delivery") c.loaded++;
       else c.pending++;
     }
+    c.pending = Math.max(0, c.total - c.delivered - c.partial - c.failed - c.returned);
     return c;
   }, [routeOrders]);
 
@@ -335,7 +340,7 @@ export default function RouteDetail() {
 
   // packages still on vehicle (per stock_packages.current_location_id)
   const stockOnVehicle = manifestRows.filter(
-    (m) => m.package_status && !["delivered"].includes(m.package_status) && Number(m.qty_pending ?? 0) > 0
+    (m) => (!m.package_status || !["delivered"].includes(m.package_status)) && Number(m.qty_pending ?? 0) > 0
   ).length;
 
   const can = {
