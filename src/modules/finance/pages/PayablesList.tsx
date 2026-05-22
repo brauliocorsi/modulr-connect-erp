@@ -44,11 +44,31 @@ export default function PayablesList() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("supplier_bills")
-      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id, partners(id,name), purchase_orders(id,name)")
+      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id")
       .order("bill_date", { ascending: false })
       .limit(500);
+    if (error) {
+      setRows([]);
+      setLoading(false);
+      toast.error(`Erro ao carregar faturas: ${error.message}`);
+      return;
+    }
+
+    const partnerIds = Array.from(new Set((data ?? []).map((b: any) => b.partner_id).filter(Boolean)));
+    const poIds = Array.from(new Set((data ?? []).map((b: any) => b.purchase_order_id).filter(Boolean)));
+    const [{ data: partners }, { data: pos }] = await Promise.all([
+      partnerIds.length
+        ? supabase.from("partners").select("id,name").in("id", partnerIds)
+        : Promise.resolve({ data: [] as any[] }),
+      poIds.length
+        ? supabase.from("purchase_orders").select("id,name").in("id", poIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const partnerById = new Map((partners ?? []).map((p: any) => [p.id, p.name]));
+    const poById = new Map((pos ?? []).map((po: any) => [po.id, po.name]));
+
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const out: Row[] = (data ?? []).map((b: any) => {
       const total = Number(b.amount_total || 0);
@@ -62,9 +82,9 @@ export default function PayablesList() {
         amount_paid: paid,
         state: b.state,
         partner_id: b.partner_id,
-        partner_name: b.partners?.name ?? "—",
+        partner_name: partnerById.get(b.partner_id) ?? "—",
         po_id: b.purchase_order_id,
-        po_name: b.purchase_orders?.name ?? null,
+        po_name: poById.get(b.purchase_order_id) ?? null,
         _open: +(total - paid).toFixed(2),
         _overdue: !!b.due_date && new Date(b.due_date) < today && !["paid", "cancelled"].includes(b.state),
       };
