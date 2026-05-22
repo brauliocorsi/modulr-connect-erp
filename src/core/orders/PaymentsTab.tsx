@@ -57,7 +57,11 @@ export function PaymentsTab({
   const load = async () => {
     const [{ data: s }, { data: p }] = await Promise.all([
       supabase.from("sale_payment_schedules").select("*").eq("order_id", orderId).order("sequence"),
-      supabase.from("customer_payments").select("*, payment_methods(name), account_journals(name)").eq("order_id", orderId).order("payment_date", { ascending: false }),
+      supabase
+        .from("customer_payments")
+        .select("*, payment_methods(name), account_journals(name), cash_sessions(id,name,handover_state)")
+        .eq("order_id", orderId)
+        .order("payment_date", { ascending: false }),
     ]);
     setSchedules(s ?? []);
     setPayments(p ?? []);
