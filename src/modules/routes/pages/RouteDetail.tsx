@@ -5,9 +5,11 @@ import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
-import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock } from "lucide-react";
+import { toast } from "sonner";
+import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock, Euro, User, Wrench, Copy } from "lucide-react";
 
 import { callRouteRpc } from "../lib/routeRpc";
 import { RouteProgress } from "../components/RouteProgress";
@@ -113,6 +115,33 @@ export default function RouteDetail() {
     queryFn: async () => (await supabase.from("loading_docks").select("id,name").eq("active", true).order("name")).data ?? [],
   });
 
+  const { data: people = [] } = useQuery({
+    queryKey: ["profiles-route-crew"],
+    queryFn: async () =>
+      (await supabase.from("profiles").select("id,full_name").order("full_name")).data ?? [],
+  });
+
+  // Valores a receber: somatório dos SO da rota por estado de entrega.
+  const { data: amounts } = useQuery({
+    queryKey: ["route-amounts", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: orders } = await (supabase as any)
+        .from("delivery_route_orders")
+        .select("status, delivery_schedules(sale_orders(amount_total))")
+        .eq("route_id", id!);
+      let expected = 0, collected = 0, pending = 0;
+      for (const o of (orders ?? []) as any[]) {
+        const tot = Number(o?.delivery_schedules?.sale_orders?.amount_total ?? 0);
+        expected += tot;
+        if (o.status === "delivered" || o.status === "partial") collected += tot;
+        else if (!["cancelled", "returned", "failed"].includes(o.status)) pending += tot;
+      }
+      return { expected, collected, pending };
+    },
+    refetchInterval: 15000,
+  });
+
   const [busy, setBusy] = useState<string | null>(null);
   const [newVehicleId, setNewVehicleId] = useState<string>("");
   const [dockId, setDockId] = useState<string>("");
@@ -120,6 +149,15 @@ export default function RouteDetail() {
   const [returnOpen, setReturnOpen] = useState<string | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
+
+  const updateCrew = async (patch: { driver_id?: string | null; helper_id?: string | null }) => {
+    if (!id) return;
+    setBusy("crew");
+    const { error } = await (supabase as any).from("delivery_routes").update(patch).eq("id", id);
+    setBusy(null);
+    if (error) toast.error(`Erro ao atualizar equipa: ${error.message}`);
+    else { toast.success("Equipa atualizada"); refreshAll(); }
+  };
 
   const { refresh, lastUpdated, isFetching } = useEntityRefresh({
     entityType: "delivery_route",
@@ -318,6 +356,17 @@ export default function RouteDetail() {
     },
   ];
 
+  // Fallback to capacity RPC when manifest ainda não foi populado.
+  const capDeliveries = Number((capacity as any)?.current_deliveries ?? 0) || orderCounts.total;
+  const capVolUsed = Number((capacity as any)?.current_volume_m3 ?? 0);
+  const capVolMax = Number((capacity as any)?.cap_volume_m3 ?? 0);
+  const capWeightUsed = Number((capacity as any)?.current_weight_kg ?? 0);
+  const utilPct = Number((capacity as any)?.utilization_percent ?? 0);
+  const driverName = (people as any[]).find((p) => p.id === r.driver_id)?.full_name;
+  const helperName = (people as any[]).find((p) => p.id === r.helper_id)?.full_name;
+
+  const fmtEur = (n: number) => n.toLocaleString("pt-PT", { style: "currency", currency: "EUR" });
+
   const summaryItems: SummaryCardItem[] = [
     {
       key: "deliveries",
@@ -330,34 +379,44 @@ export default function RouteDetail() {
     {
       key: "packages",
       label: "Colis",
-      value: <span>{stats.loadedCount}<span className="text-muted-foreground text-base">/{stats.totalPackages}</span></span>,
-      hint: `Entregues: ${stats.deliveredCount} · Retornados: ${stats.returnedCount}`,
+      value: <span>{stats.loadedCount}<span className="text-muted-foreground text-base">/{stats.totalPackages || capDeliveries}</span></span>,
+      hint: stats.totalPackages === 0
+        ? "Manifesto ainda não populado (carregar viatura)"
+        : `Entregues: ${stats.deliveredCount} · Retornados: ${stats.returnedCount}`,
       tone: stats.totalPackages > 0 && stats.loadedCount < stats.totalPackages ? "warning" : "default",
       icon: <Package className="h-3 w-3" />,
     },
     {
       key: "capacity",
       label: "Capacidade",
-      value: <span className="capitalize">{r.capacity_status ?? "—"}</span>,
-      hint: (capacity as any)?.volume_used != null ? `Vol. ${Number((capacity as any).volume_used).toFixed(2)}` : "Conforme viatura",
-      tone: r.capacity_status === "overcapacity" ? "danger" : "muted",
+      value: <span className="tabular-nums">{utilPct}%</span>,
+      hint: `${capVolUsed.toFixed(2)}/${capVolMax || "—"} m³ · ${capWeightUsed.toFixed(1)} kg`,
+      tone: r.capacity_status === "overcapacity" ? "danger" : utilPct > 80 ? "warning" : "muted",
       icon: <Truck className="h-3 w-3" />,
     },
     {
       key: "verify",
       label: "Verificação",
       value: <span>{verifyStats.ver}<span className="text-muted-foreground text-base">/{verifyStats.req}</span></span>,
-      hint: "Manifesto verificado",
+      hint: verifyStats.req === 0 ? "Não exigida" : "Manifesto verificado",
       tone: verifyStats.req > 0 && verifyStats.ver < verifyStats.req ? "warning" : "success",
       icon: <CheckCircle2 className="h-3 w-3" />,
     },
     {
-      key: "issues",
-      label: "Stock na viatura",
+      key: "stock",
+      label: "Stock viatura",
       value: <span>{stockOnVehicle}</span>,
       hint: `Parciais/falhas: ${orderCounts.partial + orderCounts.failed}`,
       tone: stockOnVehicle > 0 ? "danger" : orderCounts.failed > 0 ? "warning" : "success",
       icon: <AlertTriangle className="h-3 w-3" />,
+    },
+    {
+      key: "receber",
+      label: "A receber na entrega",
+      value: <span className="tabular-nums">{fmtEur(Number(amounts?.pending ?? 0))}</span>,
+      hint: `Previsto: ${fmtEur(Number(amounts?.expected ?? 0))} · Cobrado: ${fmtEur(Number(amounts?.collected ?? 0))}`,
+      tone: (amounts?.pending ?? 0) > 0 ? "primary" : "success",
+      icon: <Euro className="h-3 w-3" />,
     },
   ];
 
@@ -366,10 +425,23 @@ export default function RouteDetail() {
       <EntityHeader
         title={`${r.delivery_zones?.name ?? "Rota"} · ${r.route_date}`}
         subtitle={
-          <span>
-            {r.vehicles?.name ?? "Sem viatura"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}
-            {" · "}Motorista: {r.driver_id ?? "—"}
-            {r.loading_docks?.name ? ` · Cais: ${r.loading_docks.name}` : ""}
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">
+              {String(r.id).slice(0, 8)}
+            </span>
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(String(r.id)); toast.success("ID copiado"); }}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Copiar ID"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+            <span>·</span>
+            <span>{r.vehicles?.name ?? "Sem viatura"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}</span>
+            <span>· Motorista: {driverName ?? "—"}</span>
+            <span>· Ajudante: {helperName ?? "—"}</span>
+            {r.loading_docks?.name ? <span>· Cais: {r.loading_docks.name}</span> : null}
           </span>
         }
         breadcrumb={[{ label: "Rotas", to: "/routes" }, { label: r.route_date }]}
@@ -383,6 +455,7 @@ export default function RouteDetail() {
           </>
         }
         metadata={[
+          { label: "ID rota", value: String(r.id).slice(0, 8) },
           { label: "Data", value: r.route_date },
           { label: "Zona", value: r.delivery_zones?.name ?? "—" },
           { label: "Pedidos", value: `${orderCounts.delivered + orderCounts.partial}/${orderCounts.total}` },
@@ -395,6 +468,40 @@ export default function RouteDetail() {
       />
       <PageBody>
         <SummaryCards items={summaryItems} className="mb-4" />
+
+        {/* Equipa: motorista + ajudante */}
+        <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1 mr-1">
+            <User className="h-3 w-3" /> Motorista
+          </span>
+          <Select
+            value={r.driver_id ?? "__none__"}
+            onValueChange={(v) => updateCrew({ driver_id: v === "__none__" ? null : v })}
+            disabled={busy !== null || state === "closed" || state === "done"}
+          >
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Sem motorista —</SelectItem>
+              {(people as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0, 8)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <span className="mx-2 h-5 w-px bg-border" aria-hidden />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1 mr-1">
+            <Wrench className="h-3 w-3" /> Ajudante de montagem
+          </span>
+          <Select
+            value={r.helper_id ?? "__none__"}
+            onValueChange={(v) => updateCrew({ helper_id: v === "__none__" ? null : v })}
+            disabled={busy !== null || state === "closed" || state === "done"}
+          >
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Sem ajudante —</SelectItem>
+              {(people as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0, 8)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Card>
 
         {/* Vehicle swap (kept as inline control — not a primary action) */}
         {can.changeVehicle && (

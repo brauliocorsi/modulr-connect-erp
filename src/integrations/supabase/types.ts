@@ -2597,6 +2597,7 @@ export type Database = {
           current_weight_kg: number
           dock_id: string | null
           driver_id: string | null
+          helper_id: string | null
           id: string
           max_assembly_minutes: number
           max_deliveries: number
@@ -2626,6 +2627,7 @@ export type Database = {
           current_weight_kg?: number
           dock_id?: string | null
           driver_id?: string | null
+          helper_id?: string | null
           id?: string
           max_assembly_minutes?: number
           max_deliveries?: number
@@ -2655,6 +2657,7 @@ export type Database = {
           current_weight_kg?: number
           dock_id?: string | null
           driver_id?: string | null
+          helper_id?: string | null
           id?: string
           max_assembly_minutes?: number
           max_deliveries?: number
@@ -2688,6 +2691,13 @@ export type Database = {
           {
             foreignKeyName: "delivery_routes_driver_id_fkey"
             columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_routes_helper_id_fkey"
+            columns: ["helper_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
