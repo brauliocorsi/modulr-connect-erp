@@ -180,14 +180,20 @@ export default function GlobalSidebar() {
     try { localStorage.setItem("erp.sidebar.collapsed", collapsed ? "1" : "0"); } catch { /* ignore */ }
   }, [collapsed]);
 
-  const initialOpen = useMemo(() => {
-    const map: Record<string, boolean> = {};
-    GROUPS.forEach((g) => { map[g.id] = groupContainsActive(pathname, g); });
-    return map;
+  const initialOpenId = useMemo(() => {
+    const g = GROUPS.find((g) => groupContainsActive(pathname, g));
+    return g?.id ?? null;
   }, [pathname]);
 
-  const [open, setOpen] = useState<Record<string, boolean>>(initialOpen);
-  const toggle = (id: string) => setOpen((s) => ({ ...s, [id]: !s[id] }));
+  // Single-open accordion: only one group expanded at a time.
+  const [openId, setOpenId] = useState<string | null>(initialOpenId);
+  // Keep in sync when route changes (only auto-open if no group is currently open
+  // or the active route belongs to a different group than the one open).
+  useEffect(() => {
+    if (initialOpenId && initialOpenId !== openId) setOpenId(initialOpenId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOpenId]);
+  const toggle = (id: string) => setOpenId((cur) => (cur === id ? null : id));
 
   const q = query.trim().toLowerCase();
   const filtered = q
