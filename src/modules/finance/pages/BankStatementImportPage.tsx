@@ -124,14 +124,16 @@ export default function BankStatementImportPage() {
       for (const ln of importedLines) {
         const dMin = new Date(ln.date); dMin.setDate(dMin.getDate() - 3);
         const dMax = new Date(ln.date); dMax.setDate(dMax.getDate() + 3);
-        const { data: cands } = await supabase
+        let q = supabase
           .from("customer_payments")
-          .select("id,name,amount,partner_id,partners(name)")
+          .select("id,name,amount,partner_id,payment_method_id,partners(name)")
           .eq("amount", Math.abs(ln.amount))
           .gte("payment_date", dMin.toISOString().slice(0, 10))
           .lte("payment_date", dMax.toISOString().slice(0, 10))
           .is("reconciled_at", null)
           .limit(3);
+        if (methodId) q = q.eq("payment_method_id", methodId);
+        const { data: cands } = await q;
         ln.suggestions = (cands ?? []).map((c: any) => ({
           payment_id: c.id, payment_name: c.name, partner_name: c.partners?.name, amount: Number(c.amount),
         }));
