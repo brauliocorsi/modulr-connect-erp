@@ -126,6 +126,37 @@ export default function TransfersList() {
     },
   });
 
+  const soNames = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of rows as any[]) {
+      if (r.origin && /^SO/i.test(r.origin)) s.add(r.origin);
+    }
+    return Array.from(s);
+  }, [rows]);
+
+  const { data: confirmedMap = {} } = useQuery({
+    queryKey: ["transfers-confirmed-dates", soNames],
+    enabled: soNames.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("delivery_schedules")
+        .select("scheduled_date, slot_start, sale_orders!inner(name)")
+        .eq("status", "confirmed")
+        .in("sale_orders.name", soNames);
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) {
+        const name = r.sale_orders?.name;
+        if (!name) continue;
+        const dt = r.slot_start ?? (r.scheduled_date ? `${r.scheduled_date}T00:00:00` : null);
+        if (dt) map[name] = dt;
+      }
+      return map;
+    },
+  });
+
+  const confirmedFor = (r: any): string | null =>
+    r?.origin && confirmedMap[r.origin] ? confirmedMap[r.origin] : null;
+
   const visibleRows = useMemo(() => {
     const priority: Record<string, number> = { waiting: 0, draft: 1, ready: 2, done: 3, cancelled: 4 };
     return [...rows].sort((a: any, b: any) => {
