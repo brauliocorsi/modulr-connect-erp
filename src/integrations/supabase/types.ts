@@ -12431,6 +12431,8 @@ export type Database = {
             Returns: string
           }
       conversation_unified_list: { Args: { _limit?: number }; Returns: Json }
+      cost_center_archive: { Args: { _id: string }; Returns: Json }
+      cost_center_upsert: { Args: { _payload: Json }; Returns: Json }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
       create_customer_credit: {
         Args: {
@@ -13685,6 +13687,10 @@ export type Database = {
         }
         Returns: Json
       }
+      supplier_bill_set_attachments: {
+        Args: { _attachments: Json; _bill_id: string }
+        Returns: Json
+      }
       supplier_bill_update: {
         Args: { _bill_id: string; _payload: Json }
         Returns: Json
@@ -13720,6 +13726,10 @@ export type Database = {
             }
             Returns: Json
           }
+      supplier_payment_set_attachments: {
+        Args: { _attachments: Json; _payment_id: string }
+        Returns: Json
+      }
       tg_route_recompute_current_manual: {
         Args: { _route_id: string }
         Returns: undefined
