@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck, X } from "lucide-react";
+import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck, X, Clock3, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScheduleDeliveryDialog } from "./ScheduleDeliveryDialog";
+import { usePermissions } from "@/core/permissions/usePermissions";
 
 type Picking = {
   id: string;
@@ -61,8 +62,38 @@ export function DeliveryStatusBadge({
         .maybeSingle()).data,
   });
 
+  // Active delivery_schedule for the linked SO (drives requested/confirmed UI)
+  const { data: schedule } = useQuery({
+    queryKey: ["delivery-status-schedule", (so as any)?.id],
+    enabled: !!(so as any)?.id && !isPickup,
+    queryFn: async () =>
+      (await supabase
+        .from("delivery_schedules")
+        .select("id,status,scheduled_date,route_id")
+        .eq("sale_order_id", (so as any).id)
+        .not("status", "in", "(cancelled,delivered,rescheduled)")
+        .maybeSingle()).data,
+  });
+
+  const { inGroup, isAdmin } = usePermissions();
+  const isLogistics = isAdmin || inGroup("inventory_user") || inGroup("inventory_manager") || inGroup("system_admin");
+
+  const confirmSchedule = async () => {
+    if (!(schedule as any)?.id) return;
+    const { data, error } = await supabase.rpc("delivery_schedule_confirm" as any, { _schedule_id: (schedule as any).id });
+    if (error) return toast.error(error.message);
+    if ((data as any)?.ok === false) return toast.error((data as any)?.error ?? "Falha ao confirmar");
+    toast.success("Entrega confirmada");
+    qc.invalidateQueries({ queryKey: ["delivery-status-schedule"] });
+    qc.invalidateQueries({ queryKey: ["sale-shipment"] });
+    onChanged?.();
+  };
+
   const zone = (route as any)?.delivery_zones;
   const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-PT") : "");
+  const scheduleStatus = (schedule as any)?.status as string | undefined;
+  const isRequested = scheduleStatus === "requested" || scheduleStatus === "scheduled" || scheduleStatus === "waiting_confirmation";
+  const isConfirmed = scheduleStatus === "confirmed" || scheduleStatus === "assigned";
 
   // ---- PICKUP (Levantamento) ----
   if (isPickup) {
@@ -130,11 +161,19 @@ export function DeliveryStatusBadge({
   // ---- DELIVERY (Entrega com rota) ----
   if (compact) {
     if (isDone) return <Badge variant="outline" className="gap-1"><Truck className="h-3 w-3" /> Entregue</Badge>;
-    if (!hasRoute) return <Badge variant="outline" className="gap-1 text-muted-foreground"><CircleDashed className="h-3 w-3" /> Não agendada</Badge>;
+    if (!hasRoute && !schedule) return <Badge variant="outline" className="gap-1 text-muted-foreground"><CircleDashed className="h-3 w-3" /> Não agendada</Badge>;
+    if (isRequested) {
+      return (
+        <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+          <Clock3 className="h-3 w-3" /> Aguarda confirmação
+          {(route as any)?.route_date && <span className="ml-1">· {(route as any).route_date}</span>}
+        </Badge>
+      );
+    }
     return (
       <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
         {zone?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: zone.color }} />}
-        <CalendarCheck2 className="h-3 w-3" /> Agendada
+        <CalendarCheck2 className="h-3 w-3" /> {isConfirmed ? "Confirmada" : "Agendada"}
         {(route as any)?.route_date && <span className="ml-1">· {(route as any).route_date}</span>}
       </Badge>
     );
@@ -146,7 +185,7 @@ export function DeliveryStatusBadge({
         <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
           <Truck className="h-3 w-3" /> Entregue
         </Badge>
-      ) : !hasRoute ? (
+      ) : !hasRoute && !schedule ? (
         <>
           <Badge variant="outline" className="gap-1 text-muted-foreground">
             <CircleDashed className="h-3 w-3" /> Entrega não agendada
@@ -163,10 +202,42 @@ export function DeliveryStatusBadge({
             />
           )}
         </>
+      ) : isRequested ? (
+        <>
+          <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+            <Clock3 className="h-3 w-3" /> Aguarda confirmação da logística
+          </Badge>
+          {route && (
+            <Link to={`/routes/${(route as any).id}`} className="flex items-center gap-1 text-sm hover:underline">
+              {zone?.color && <span className="inline-block h-2.5 w-2.5 rounded-full border" style={{ backgroundColor: zone.color }} />}
+              <span className="font-medium">{zone?.name ?? "Rota"}</span>
+              <span className="text-muted-foreground">· {(route as any).route_date}</span>
+            </Link>
+          )}
+          {showActions && isLogistics && (
+            <>
+              <Button size="sm" variant="default" className="h-8" onClick={confirmSchedule}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar data
+              </Button>
+              <ScheduleDeliveryDialog
+                picking={picking}
+                onChanged={onChanged}
+                trigger={<Button size="sm" variant="outline" className="h-8">Propor outra data</Button>}
+              />
+            </>
+          )}
+          {showActions && !isLogistics && (
+            <ScheduleDeliveryDialog
+              picking={picking}
+              onChanged={onChanged}
+              trigger={<Button size="sm" variant="outline" className="h-8">Trocar rota</Button>}
+            />
+          )}
+        </>
       ) : (
         <>
           <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
-            <CalendarCheck2 className="h-3 w-3" /> Entrega agendada
+            <CalendarCheck2 className="h-3 w-3" /> {isConfirmed ? "Entrega confirmada" : "Entrega agendada"}
           </Badge>
           {route && (
             <Link to={`/routes/${(route as any).id}`} className="flex items-center gap-1 text-sm hover:underline">
@@ -181,7 +252,7 @@ export function DeliveryStatusBadge({
               onChanged={onChanged}
               trigger={
                 <Button size="sm" variant="outline" className="h-8">
-                  Trocar rota
+                  Reagendar
                 </Button>
               }
             />

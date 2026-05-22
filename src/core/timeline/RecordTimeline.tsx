@@ -27,6 +27,12 @@ const EVENT_LABEL: Record<string, string> = {
   service_case_status_changed: "Status alterado",
   customer_ticket_created: "Ticket criado",
   customer_ticket_status_changed: "Status do ticket",
+  delivery_schedule_requested: "Entrega proposta",
+  delivery_schedule_scheduled: "Entrega agendada",
+  delivery_schedule_confirmed: "Entrega confirmada",
+  delivery_schedule_rescheduled: "Entrega reagendada",
+  delivery_schedule_replaced: "Agendamento substituído",
+  delivery_schedule_cancelled: "Agendamento cancelado",
 };
 
 export function RecordTimeline({
