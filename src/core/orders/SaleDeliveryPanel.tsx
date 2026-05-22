@@ -57,7 +57,7 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           id, name, state, scheduled_at, done_at, tracking_ref, route_id, origin,
           vehicles(id, name, license_plate),
           delivery_carriers(id, name),
-          delivery_routes(id, route_date, state, delivery_zones(name, color))
+          delivery_routes(id, route_date, state, delivery_zones(name, color), vehicles(id, name, license_plate))
         `)
         .eq("kind", "outgoing")
         .eq("origin", saleOrderName)
