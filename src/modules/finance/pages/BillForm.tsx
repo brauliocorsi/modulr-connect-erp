@@ -163,7 +163,7 @@ export default function BillForm() {
       if (error) return toast.error(error.message);
       const res: any = data;
       if (res?.error) return toast.error(mapBillError(res.error));
-      await supabase.from("supplier_bills").update({ attachments: bill.attachments ?? [] }).eq("id", id!);
+      await supabase.rpc("supplier_bill_set_attachments", { _bill_id: id!, _attachments: (bill.attachments ?? []) as any });
       toast.success("Salvo");
       load();
     }
@@ -172,7 +172,7 @@ export default function BillForm() {
   const updateAttachments = async (next: Attachment[]) => {
     setBill((b: any) => ({ ...b, attachments: next }));
     if (!isNew) {
-      const { error } = await supabase.from("supplier_bills").update({ attachments: next as any }).eq("id", id!);
+      const { error } = await supabase.rpc("supplier_bill_set_attachments", { _bill_id: id!, _attachments: next as any });
       if (error) toast.error(`Anexos: ${error.message}`);
     }
   };
