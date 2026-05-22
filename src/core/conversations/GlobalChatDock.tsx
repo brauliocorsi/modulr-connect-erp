@@ -109,21 +109,30 @@ export default function GlobalChatDock() {
   // Load profiles once
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("id,full_name,email,avatar_url").limit(500).then(({ data }) => {
-      const map: Record<string, ProfileRow> = {};
-      (data ?? []).forEach((p: any) => { map[p.id] = p; });
-      setProfiles(map);
-    });
+    try {
+      const q: any = supabase.from("profiles").select("id,full_name,email,avatar_url").limit(500);
+      if (q && typeof q.then === "function") {
+        q.then(({ data }: any) => {
+          const map: Record<string, ProfileRow> = {};
+          (data ?? []).forEach((p: any) => { map[p.id] = p; });
+          setProfiles(map);
+        });
+      }
+    } catch { /* noop */ }
   }, [user]);
 
   // Load participants of active thread (for read receipts)
   useEffect(() => {
     if (!activeThread) { setParticipants([]); return; }
-    supabase.from("conversation_participants")
-      .select("user_id,last_read_at")
-      .eq("thread_id", activeThread)
-      .is("left_at", null)
-      .then(({ data }) => setParticipants((data ?? []) as ParticipantRow[]));
+    try {
+      const q: any = supabase.from("conversation_participants")
+        .select("user_id,last_read_at")
+        .eq("thread_id", activeThread)
+        .is("left_at", null);
+      if (q && typeof q.then === "function") {
+        q.then(({ data }: any) => setParticipants((data ?? []) as ParticipantRow[]));
+      }
+    } catch { /* noop */ }
   }, [activeThread]);
 
   useEffect(() => {
