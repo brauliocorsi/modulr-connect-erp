@@ -29,8 +29,21 @@ type Row = {
   partner_name: string;
   po_id: string | null;
   po_name: string | null;
+  source: string;
+  cost_center_id: string | null;
+  cost_center_name: string | null;
+  account_id: string | null;
+  account_label: string | null;
   _open: number;
   _overdue: boolean;
+};
+
+const SOURCE_LABEL: Record<string, string> = {
+  manual: "Manual",
+  purchase_order: "PO",
+  recurring_expense: "Despesa fixa",
+  service: "Serviço",
+  sale: "Venda",
 };
 
 export default function PayablesList() {
@@ -46,7 +59,7 @@ export default function PayablesList() {
     setLoading(true);
     const { data, error } = await supabase
       .from("supplier_bills")
-      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id")
+      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id,source,cost_center_id,account_id")
       .order("bill_date", { ascending: false })
       .limit(500);
     if (error) {
@@ -58,16 +71,26 @@ export default function PayablesList() {
 
     const partnerIds = Array.from(new Set((data ?? []).map((b: any) => b.partner_id).filter(Boolean)));
     const poIds = Array.from(new Set((data ?? []).map((b: any) => b.purchase_order_id).filter(Boolean)));
-    const [{ data: partners }, { data: pos }] = await Promise.all([
+    const ccIds = Array.from(new Set((data ?? []).map((b: any) => b.cost_center_id).filter(Boolean)));
+    const accIds = Array.from(new Set((data ?? []).map((b: any) => b.account_id).filter(Boolean)));
+    const [{ data: partners }, { data: pos }, { data: ccs }, { data: accs }] = await Promise.all([
       partnerIds.length
         ? supabase.from("partners").select("id,name").in("id", partnerIds)
         : Promise.resolve({ data: [] as any[] }),
       poIds.length
         ? supabase.from("purchase_orders").select("id,name").in("id", poIds)
         : Promise.resolve({ data: [] as any[] }),
+      ccIds.length
+        ? supabase.from("cost_centers").select("id,name,code").in("id", ccIds)
+        : Promise.resolve({ data: [] as any[] }),
+      accIds.length
+        ? supabase.from("chart_of_accounts").select("id,name,code").in("id", accIds)
+        : Promise.resolve({ data: [] as any[] }),
     ]);
     const partnerById = new Map((partners ?? []).map((p: any) => [p.id, p.name]));
     const poById = new Map((pos ?? []).map((po: any) => [po.id, po.name]));
+    const ccById = new Map((ccs ?? []).map((c: any) => [c.id, c.code ? `${c.code} · ${c.name}` : c.name]));
+    const accById = new Map((accs ?? []).map((a: any) => [a.id, a.code ? `${a.code} · ${a.name}` : a.name]));
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const out: Row[] = (data ?? []).map((b: any) => {
@@ -85,6 +108,11 @@ export default function PayablesList() {
         partner_name: partnerById.get(b.partner_id) ?? "—",
         po_id: b.purchase_order_id,
         po_name: poById.get(b.purchase_order_id) ?? null,
+        source: b.source ?? "manual",
+        cost_center_id: b.cost_center_id,
+        cost_center_name: b.cost_center_id ? (ccById.get(b.cost_center_id) ?? null) : null,
+        account_id: b.account_id,
+        account_label: b.account_id ? (accById.get(b.account_id) ?? null) : null,
         _open: +(total - paid).toFixed(2),
         _overdue: !!b.due_date && new Date(b.due_date) < today && !["paid", "cancelled"].includes(b.state),
       };
@@ -93,6 +121,7 @@ export default function PayablesList() {
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
 
   const partnerOptions = useMemo(() => {
     const map = new Map<string, string>();
