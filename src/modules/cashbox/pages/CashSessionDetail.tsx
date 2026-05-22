@@ -262,6 +262,10 @@ export default function CashSessionDetail() {
             </table>
           </div>
         </Card>
+
+        <div className="mt-4">
+          <CashSessionAuditLog sessionId={id!} />
+        </div>
       </PageBody>
 
 
