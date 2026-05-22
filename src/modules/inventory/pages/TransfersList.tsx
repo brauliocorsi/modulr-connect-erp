@@ -157,25 +157,50 @@ export default function TransfersList() {
   const confirmedFor = (r: any): string | null =>
     r?.origin && confirmedMap[r.origin] ? confirmedMap[r.origin] : null;
 
+  const confFromTs = filters.confirmed_from ? new Date(filters.confirmed_from).getTime() : null;
+  const confToTs = filters.confirmed_to ? new Date(filters.confirmed_to + "T23:59:59").getTime() : null;
+  const matchesConfirmed = (r: any) => {
+    if (confFromTs == null && confToTs == null) return true;
+    const c = confirmedFor(r);
+    if (!c) return false;
+    const t = new Date(c).getTime();
+    if (confFromTs != null && t < confFromTs) return false;
+    if (confToTs != null && t > confToTs) return false;
+    return true;
+  };
+
   const visibleRows = useMemo(() => {
     const priority: Record<string, number> = { waiting: 0, draft: 1, ready: 2, done: 3, cancelled: 4 };
-    return [...rows].sort((a: any, b: any) => {
+    const filtered = (rows as any[]).filter(matchesConfirmed);
+    if (sort.key === "confirmed_at") {
+      return [...filtered].sort((a, b) => {
+        const ca = confirmedFor(a);
+        const cb = confirmedFor(b);
+        if (!ca && !cb) return 0;
+        if (!ca) return 1;
+        if (!cb) return -1;
+        const diff = new Date(ca).getTime() - new Date(cb).getTime();
+        return sort.asc ? diff : -diff;
+      });
+    }
+    return [...filtered].sort((a: any, b: any) => {
       const pa = priority[a.state] ?? 9;
       const pb = priority[b.state] ?? 9;
       if (pa !== pb) return pa - pb;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [rows]);
+  }, [rows, confirmedMap, confFromTs, confToTs, sort]);
 
   const grouped = useMemo(() => {
     if (!groupMode) return { groups: [] as Group<any>[], singletons: visibleRows as any[] };
-    const { groups, singletons } = groupByOrigin(rows as any[]);
+    const baseRows = (rows as any[]).filter(matchesConfirmed);
+    const { groups, singletons } = groupByOrigin(baseRows);
     // Apply state filter against consolidated state when grouping
     const stFilter = filters.state;
     const fGroups = stFilter ? groups.filter((g) => g.state === stFilter) : groups;
     const fSing = stFilter ? singletons.filter((s: any) => s.state === stFilter) : singletons;
     return { groups: fGroups, singletons: fSing };
-  }, [rows, visibleRows, groupMode, filters.state]);
+  }, [rows, visibleRows, groupMode, filters.state, confirmedMap, confFromTs, confToTs]);
 
   const flowStats = useMemo(() => {
     const active = rows.filter((r: any) => !["done", "cancelled"].includes(r.state));
