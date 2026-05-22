@@ -267,16 +267,21 @@ export default function GlobalChatDock() {
   }, [threads, tab, pageCtx]);
 
   const send = async () => {
-    if (!activeThread || !text.trim()) return;
+    if (!activeThread) return;
+    if (!text.trim() && pendingAtts.length === 0) return;
     setSending(true);
+    const body = text.trim();
+    const atts = pendingAtts;
     try {
       const { error: sErr } = await supabase.rpc("conversation_send_message" as any, {
         _thread_id: activeThread,
-        _body: text.trim(),
+        _body: body,
         _visibility: "internal",
+        _attachments: atts as any,
       });
       if (sErr) throw sErr;
       setText("");
+      setPendingAtts([]);
       await Promise.all([fetchMessages(activeThread), fetchThreads()]);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar mensagem");
