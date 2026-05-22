@@ -117,9 +117,21 @@ export default function CashRegisterDetail() {
                   <td className="px-3 py-2 text-right tabular-nums">{s.closing_balance_counted != null ? fmtMoney(s.closing_balance_counted) : "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{s.difference != null ? fmtMoney(s.difference) : "—"}</td>
                   <td className="px-3 py-2">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs ${s.state === "open" ? "bg-emerald-100 text-emerald-900" : "bg-muted text-muted-foreground"}`}>
-                      {s.state === "open" ? "Aberta" : "Fechada"}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs ${s.state === "open" ? "bg-emerald-100 text-emerald-900" : "bg-muted text-muted-foreground"}`}>
+                        {s.state === "open" ? "Aberta" : "Fechada"}
+                      </span>
+                      {s.handover_state === "pending_handover" && (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-900">
+                          Aguarda conciliação
+                        </span>
+                      )}
+                      {s.handover_state === "reconciled" && (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-sky-100 text-sky-900">
+                          Conciliado
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
