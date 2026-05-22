@@ -100,7 +100,31 @@ export default function GlobalChatDock() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<TabKey>("all");
+  const [pendingAtts, setPendingAtts] = useState<ChatAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Load profiles once
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("id,full_name,email,avatar_url").limit(500).then(({ data }) => {
+      const map: Record<string, ProfileRow> = {};
+      (data ?? []).forEach((p: any) => { map[p.id] = p; });
+      setProfiles(map);
+    });
+  }, [user]);
+
+  // Load participants of active thread (for read receipts)
+  useEffect(() => {
+    if (!activeThread) { setParticipants([]); return; }
+    supabase.from("conversation_participants")
+      .select("user_id,last_read_at")
+      .eq("thread_id", activeThread)
+      .is("left_at", null)
+      .then(({ data }) => setParticipants((data ?? []) as ParticipantRow[]));
+  }, [activeThread]);
 
   useEffect(() => {
     persist(dockState, activeThread);
