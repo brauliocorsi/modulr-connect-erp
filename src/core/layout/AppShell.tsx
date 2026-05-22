@@ -188,10 +188,10 @@ export default function AppShell() {
 
       {/* BODY */}
       <div className="flex-1 flex min-h-0">
-        <GlobalSidebar />
+        {activeModule && <GlobalSidebar />}
 
         <main className="flex-1 min-w-0 overflow-auto flex flex-col">
-          <ModuleInnerMenu />
+          {activeModule && <ModuleInnerMenu />}
           <div className="flex-1 min-h-0">
             <Outlet />
           </div>

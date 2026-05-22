@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ShoppingCart, Users, Warehouse, ShoppingBag, Truck } from "lucide-react";
+import { Package, ShoppingCart, Users, Warehouse, ShoppingBag, Truck, LayoutGrid } from "lucide-react";
+import { MODULES } from "@/core/modules/registry";
+import { useInstalledModules } from "@/core/modules/useInstalledModules";
 
 type Hit = { type: string; id: string; label: string; sub?: string; to: string; icon: any };
 
@@ -11,6 +13,13 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   const [hits, setHits] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+  const installed = useInstalledModules();
+  const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox", "service", "helpdesk"]);
+  const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
+  const moduleHits = visibleModules
+    .filter((m) => !q.trim() || m.name.toLowerCase().includes(q.toLowerCase()) || m.shortName.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 12)
+    .map((m) => ({ type: "Aplicações", id: m.id as string, label: m.name, sub: m.description, to: m.basePath, icon: m.icon }));
 
   useEffect(() => {
     if (!open) {
@@ -80,7 +89,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     return () => clearTimeout(t);
   }, [q]);
 
-  const grouped = hits.reduce<Record<string, Hit[]>>((acc, h) => {
+  const grouped = [...moduleHits, ...hits].reduce<Record<string, Hit[]>>((acc, h) => {
     (acc[h.type] ??= []).push(h);
     return acc;
   }, {});
@@ -89,7 +98,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput placeholder="Buscar produtos, parceiros, pedidos, compras, transferências…" value={q} onValueChange={setQ} />
       <CommandList>
-        <CommandEmpty>{loading ? "Buscando…" : q ? "Nenhum resultado" : "Comece a digitar para buscar"}</CommandEmpty>
+        <CommandEmpty>{loading ? "Buscando…" : "Nenhum resultado"}</CommandEmpty>
         {Object.entries(grouped).map(([type, items], i) => (
           <div key={type}>
             {i > 0 && <CommandSeparator />}
