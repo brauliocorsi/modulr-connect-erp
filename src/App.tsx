@@ -230,6 +230,7 @@ const App = () => (
 
               {/* Inventory */}
               <Route path="inventory" element={<InventoryDashboard />} />
+              <Route path="inventory/stock" element={<InventoryStockPage />} />
               <Route path="inventory/transfers" element={<TransfersList />} />
               <Route path="inventory/transfers/:id" element={<TransferForm />} />
               <Route path="inventory/batches" element={<BatchesList />} />
