@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CalendarPlus, MapPin, Truck, User2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { RouteCapacityMini } from "@/modules/routes/components/RouteCapacityMini";
 import { toast } from "sonner";
 
 // Local-date formatter — NEVER use toISOString here (it shifts dates by TZ).
@@ -109,7 +110,7 @@ export default function RoutesSchedule() {
       (await supabase
         .from("delivery_routes")
         .select(
-          "id,zone_id,route_date,state,max_deliveries,max_assembly_minutes,driver_id,vehicle_id,created_by,created_at,route_type,vehicles(name,license_plate),profiles!delivery_routes_created_by_fkey(full_name,email)"
+          "id,zone_id,route_date,state,max_deliveries,max_assembly_minutes,driver_id,vehicle_id,created_by,created_at,route_type,cap_deliveries,current_deliveries,cap_volume_m3,current_volume_m3,cap_assembly_minutes,current_assembly_minutes,vehicles(name,license_plate,usable_volume_m3,volume_m3,max_stops,assembly_minutes_capacity,max_assembly_minutes),profiles!delivery_routes_created_by_fkey(full_name,email)"
         )
         .gte("route_date", fromDate)
         .lte("route_date", toDate)
@@ -379,6 +380,7 @@ export default function RoutesSchedule() {
                               <span>{pickCounts[r.id] ?? 0}/{r.max_deliveries}</span>
                               {r.max_assembly_minutes === 0 && <Badge variant="outline" className="text-[8px] px-1 py-0">Só entrega</Badge>}
                             </div>
+                            <RouteCapacityMini route={r} compact />
                           </Link>
                         );
                       })}
@@ -505,6 +507,7 @@ function RouteCell({ route, count }: { route: any; count: number }) {
           {deliveryOnly && (
             <Badge variant="outline" className="text-[8px] px-1 py-0 mt-0.5">Só entrega</Badge>
           )}
+          <RouteCapacityMini route={route} />
         </Link>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
