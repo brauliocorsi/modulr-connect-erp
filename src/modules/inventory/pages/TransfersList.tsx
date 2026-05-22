@@ -42,6 +42,7 @@ export default function TransfersList() {
     { key: "batch", label: "Lote" },
     { key: "route", label: "Rota" },
     { key: "scheduled_at", label: "Programado" },
+    { key: "confirmed_at", label: "Data confirmada" },
   ];
   const listView = useUserListView("inventory.transfers", {
     columns: COL_DEFS.map((c, i) => ({ key: c.key, visible: true, order: i })),
@@ -125,25 +126,81 @@ export default function TransfersList() {
     },
   });
 
+  const soNames = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of rows as any[]) {
+      if (r.origin && /^SO/i.test(r.origin)) s.add(r.origin);
+    }
+    return Array.from(s);
+  }, [rows]);
+
+  const { data: confirmedMap = {} } = useQuery({
+    queryKey: ["transfers-confirmed-dates", soNames],
+    enabled: soNames.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("delivery_schedules")
+        .select("scheduled_date, slot_start, sale_orders!inner(name)")
+        .eq("status", "confirmed")
+        .in("sale_orders.name", soNames);
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) {
+        const name = r.sale_orders?.name;
+        if (!name) continue;
+        const dt = r.slot_start ?? (r.scheduled_date ? `${r.scheduled_date}T00:00:00` : null);
+        if (dt) map[name] = dt;
+      }
+      return map;
+    },
+  });
+
+  const confirmedFor = (r: any): string | null =>
+    r?.origin && confirmedMap[r.origin] ? confirmedMap[r.origin] : null;
+
+  const confFromTs = filters.confirmed_from ? new Date(filters.confirmed_from).getTime() : null;
+  const confToTs = filters.confirmed_to ? new Date(filters.confirmed_to + "T23:59:59").getTime() : null;
+  const matchesConfirmed = (r: any) => {
+    if (confFromTs == null && confToTs == null) return true;
+    const c = confirmedFor(r);
+    if (!c) return false;
+    const t = new Date(c).getTime();
+    if (confFromTs != null && t < confFromTs) return false;
+    if (confToTs != null && t > confToTs) return false;
+    return true;
+  };
+
   const visibleRows = useMemo(() => {
     const priority: Record<string, number> = { waiting: 0, draft: 1, ready: 2, done: 3, cancelled: 4 };
-    return [...rows].sort((a: any, b: any) => {
+    const filtered = (rows as any[]).filter(matchesConfirmed);
+    if (sort.key === "confirmed_at") {
+      return [...filtered].sort((a, b) => {
+        const ca = confirmedFor(a);
+        const cb = confirmedFor(b);
+        if (!ca && !cb) return 0;
+        if (!ca) return 1;
+        if (!cb) return -1;
+        const diff = new Date(ca).getTime() - new Date(cb).getTime();
+        return sort.asc ? diff : -diff;
+      });
+    }
+    return [...filtered].sort((a: any, b: any) => {
       const pa = priority[a.state] ?? 9;
       const pb = priority[b.state] ?? 9;
       if (pa !== pb) return pa - pb;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [rows]);
+  }, [rows, confirmedMap, confFromTs, confToTs, sort]);
 
   const grouped = useMemo(() => {
     if (!groupMode) return { groups: [] as Group<any>[], singletons: visibleRows as any[] };
-    const { groups, singletons } = groupByOrigin(rows as any[]);
+    const baseRows = (rows as any[]).filter(matchesConfirmed);
+    const { groups, singletons } = groupByOrigin(baseRows);
     // Apply state filter against consolidated state when grouping
     const stFilter = filters.state;
     const fGroups = stFilter ? groups.filter((g) => g.state === stFilter) : groups;
     const fSing = stFilter ? singletons.filter((s: any) => s.state === stFilter) : singletons;
     return { groups: fGroups, singletons: fSing };
-  }, [rows, visibleRows, groupMode, filters.state]);
+  }, [rows, visibleRows, groupMode, filters.state, confirmedMap, confFromTs, confToTs]);
 
   const flowStats = useMemo(() => {
     const active = rows.filter((r: any) => !["done", "cancelled"].includes(r.state));
@@ -255,6 +312,8 @@ export default function TransfersList() {
               { key: "to", label: "Programado até", type: "date" },
               { key: "done_from", label: "Entregue de", type: "date" },
               { key: "done_to", label: "Entregue até", type: "date" },
+              { key: "confirmed_from", label: "Confirmada de", type: "date" },
+              { key: "confirmed_to", label: "Confirmada até", type: "date" },
               { key: "origin", label: "Documento origem", type: "text" },
               { key: "tracking_ref", label: "Tracking", type: "text" },
               { key: "partner_search", label: "Parceiro contém", type: "text" },
@@ -297,6 +356,7 @@ export default function TransfersList() {
                 {colVisible("batch") && <th className="text-left px-3 py-2">Lote</th>}
                 {colVisible("route") && <th className="text-left px-3 py-2">Rota</th>}
                 {colVisible("scheduled_at") && <SortHead k="scheduled_at" label="Programado" />}
+                {colVisible("confirmed_at") && <SortHead k="confirmed_at" label="Data confirmada" />}
               </tr>
             </thead>
             <tbody>
@@ -347,6 +407,7 @@ export default function TransfersList() {
                       ) : <span className="text-muted-foreground">—</span>}
                     </td>)}
                     {colVisible("scheduled_at") && <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>}
+                    {colVisible("confirmed_at") && <td className="px-3 py-2">{confirmedFor(r) ? <span className="text-success font-medium">{new Date(confirmedFor(r)!).toLocaleString("pt-PT")}</span> : <span className="text-muted-foreground">—</span>}</td>}
                   </tr>
                 );
 
@@ -387,6 +448,7 @@ export default function TransfersList() {
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs">{g.scheduledAt ? new Date(g.scheduledAt).toLocaleString("pt-PT") : "—"}</td>
+                      {colVisible("confirmed_at") && <td className="px-3 py-2 text-xs">{confirmedMap[g.origin] ? <span className="text-success font-medium">{new Date(confirmedMap[g.origin]).toLocaleString("pt-PT")}</span> : <span className="text-muted-foreground">—</span>}</td>}
                     </tr>
                   );
                   if (isOpen) {
