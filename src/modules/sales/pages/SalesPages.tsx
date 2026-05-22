@@ -74,14 +74,32 @@ export const SalesOrdersList = () => (
       { key: "invoice_status", label: "Fatura", type: "select", options: [
         { value: "pending", label: "Pendente" }, { value: "invoiced", label: "Faturado" },
       ]},
+      { key: "operational_status", label: "Operacional", type: "select", options: [
+        { value: "new", label: "Novo" },
+        { value: "in_progress", label: "Em curso" },
+        { value: "ready", label: "Pronto" },
+        { value: "delivered", label: "Entregue" },
+        { value: "done", label: "Concluído" },
+        { value: "blocked", label: "Bloqueado" },
+      ]},
       { key: "schedule", label: "Agendamento", type: "select", options: [
         { value: "none", label: "Sem agendamento" },
         { value: "confirmed", label: "Confirmado" },
         { value: "pending", label: "Pendente" },
       ]},
+      { key: "route_assigned", label: "Rota", type: "select", options: [
+        { value: "yes", label: "Com rota" }, { value: "no", label: "Sem rota" },
+      ]},
+      { key: "slot_assigned", label: "Janela horária", type: "select", options: [
+        { value: "yes", label: "Com janela" }, { value: "no", label: "Sem janela" },
+      ]},
       { key: "assembly", label: "Montagem", type: "select", options: [
         { value: "yes", label: "Sim" }, { value: "no", label: "Não" },
       ]},
+      { key: "include_delivery", label: "Inclui entrega", type: "select", options: [
+        { value: "yes", label: "Sim" }, { value: "no", label: "Não" },
+      ]},
+      { key: "zone", label: "Zona de entrega", type: "text" },
       { key: "delivery_from", label: "Entrega de", type: "date" },
       { key: "delivery_to", label: "Entrega até", type: "date" },
       { key: "scheduled_from", label: "Agendada de", type: "date" },
@@ -89,6 +107,7 @@ export const SalesOrdersList = () => (
       { key: "from", label: "Data pedido de", type: "date" },
       { key: "to", label: "Data pedido até", type: "date" },
       { key: "min_total", label: "Total mínimo", type: "text" },
+      { key: "max_total", label: "Total máximo", type: "text" },
     ]}
     applyFilter={(q, v) => {
       if (v.state) q = q.eq("state", v.state);
@@ -96,11 +115,19 @@ export const SalesOrdersList = () => (
       if (v.fulfillment_status) q = q.eq("fulfillment_status", v.fulfillment_status);
       if (v.payment_status) q = q.eq("payment_status", v.payment_status);
       if (v.invoice_status) q = q.eq("invoice_status", v.invoice_status);
+      if (v.operational_status) q = q.eq("operational_status", v.operational_status);
       if (v.schedule === "none") q = q.is("scheduled_date", null);
       if (v.schedule === "confirmed") q = q.eq("schedule_confirmed", true);
       if (v.schedule === "pending") q = q.eq("schedule_confirmed", false);
+      if (v.route_assigned === "yes") q = q.not("route_id", "is", null);
+      if (v.route_assigned === "no") q = q.is("route_id", null);
+      if (v.slot_assigned === "yes") q = q.not("slot_start", "is", null);
+      if (v.slot_assigned === "no") q = q.is("slot_start", null);
       if (v.assembly === "yes") q = q.eq("include_assembly", true);
       if (v.assembly === "no") q = q.eq("include_assembly", false);
+      if (v.include_delivery === "yes") q = q.eq("include_delivery", true);
+      if (v.include_delivery === "no") q = q.eq("include_delivery", false);
+      if (v.zone) q = q.ilike("delivery_zone_label", `%${v.zone}%`);
       if (v.delivery_from) q = q.gte("commitment_date", v.delivery_from);
       if (v.delivery_to) q = q.lte("commitment_date", v.delivery_to);
       if (v.scheduled_from) q = q.gte("scheduled_date", v.scheduled_from);
@@ -108,6 +135,7 @@ export const SalesOrdersList = () => (
       if (v.from) q = q.gte("date_order", v.from);
       if (v.to) q = q.lte("date_order", v.to + "T23:59:59");
       if (v.min_total) q = q.gte("amount_total", Number(v.min_total));
+      if (v.max_total) q = q.lte("amount_total", Number(v.max_total));
       return q;
     }}
     columns={[

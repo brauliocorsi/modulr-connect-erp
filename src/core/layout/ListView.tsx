@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody, EmptyState } from "@/core/layout/PageHeader";
@@ -51,6 +51,7 @@ export function ListView<T extends { id: string }>({
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [sort, setSort] = useState<{ key: string; asc: boolean }>({ key: orderBy, asc: ascending });
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: [table, search, select, sort, filterValues],
@@ -115,29 +116,26 @@ export function ListView<T extends { id: string }>({
               </thead>
               <tbody>
                 {data.map((row) => {
-                  if (rowLink) {
-                    return (
-                      <tr key={row.id} className="o-list-row">
-                        <td colSpan={columns.length} className="p-0">
-                          <Link
-                            to={rowLink(row)}
-                            className="grid w-full"
-                            style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0,1fr))` }}
-                          >
-                            {columns.map((c) => (
-                              <div key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
-                                {c.render ? c.render(row) : (row as any)[c.key]}
-                              </div>
-                            ))}
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  }
+                  const href = rowLink ? rowLink(row) : undefined;
+                  const onRowClick = href
+                    ? (e: React.MouseEvent) => {
+                        const t = e.target as HTMLElement;
+                        if (t.closest("a,button,input,label,select,textarea,[data-no-row-nav]")) return;
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || (e as any).button === 1) {
+                          window.open(href, "_blank");
+                          return;
+                        }
+                        navigate(href);
+                      }
+                    : undefined;
                   return (
-                    <tr key={row.id} className="o-list-row">
+                    <tr
+                      key={row.id}
+                      className={"o-list-row border-t " + (href ? "cursor-pointer hover:bg-muted/40" : "")}
+                      onClick={onRowClick}
+                    >
                       {columns.map((c) => (
-                        <td key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
+                        <td key={c.key} className={"px-3 py-2 align-middle " + (c.className ?? "")}>
                           {c.render ? c.render(row) : (row as any)[c.key]}
                         </td>
                       ))}
