@@ -192,16 +192,22 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
             <Truck className="h-3 w-3" /> Carrinha
           </div>
-          {data.vehicles ? (
-            <div className="font-medium truncate">
-              {data.vehicles.name}
-              {data.vehicles.license_plate && (
-                <span className="ml-1 text-xs text-muted-foreground">· {data.vehicles.license_plate}</span>
-              )}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">Não atribuída</span>
-          )}
+          {(() => {
+            const v = data.vehicles ?? data.delivery_routes?.vehicles ?? null;
+            if (!v) return <span className="text-muted-foreground">Não atribuída</span>;
+            const fromRoute = !data.vehicles && !!data.delivery_routes?.vehicles;
+            return (
+              <div className="font-medium truncate">
+                {v.name}
+                {v.license_plate && (
+                  <span className="ml-1 text-xs text-muted-foreground">· {v.license_plate}</span>
+                )}
+                {fromRoute && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">(da rota)</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Carrier / tracking */}
