@@ -1,42 +1,34 @@
-## Objetivo
+Diagnóstico confirmado:
+- O Jeferson existe como `Jeferson Junior` / `entregas@upmoveis.pt`.
+- Ele tem o grupo `delivery_driver`.
+- Ele tem caixa atribuído: `Caixa Entrega`, com `driver_id` correto.
+- Ele tem sessão de caixa aberta: `CS/00001`, estado `open`, ligada à rota `56a8f3a4-1995-431f-a9bf-e60923000375`.
+- O problema provável é de permissões: as políticas atuais de `cash_registers`, `cash_sessions` e `cash_movements` só permitem ver caixa para financeiro/vendas/inventário, mas não para `delivery_driver`. Por isso o app de entregas não consegue ler o caixa dele mesmo.
 
-Na lista de **Inventário › Transferências** (`/inventory/transfers`):
-1. Mostrar a **data de entrega confirmada** (a que a logística confirmou em `delivery_schedules`) como nova coluna.
-2. Permitir filtrar a lista por **intervalo de data confirmada** e manter o filtro de estado **Pronto** (já é o default da página).
+Plano de correção:
+1. Ajustar as regras de acesso do backend para entregadores
+   - Permitir que `delivery_driver` veja apenas o próprio caixa onde `cash_registers.driver_id = auth.uid()`.
+   - Permitir que veja apenas as próprias sessões desse caixa.
+   - Permitir que veja apenas movimentos das próprias sessões.
+   - Permitir que execute abertura/prestação de contas via as funções já existentes, sem dar acesso ao módulo financeiro.
 
-## Onde mexer
+2. Manter segurança do entregador limitada
+   - Entregadores não terão acesso ao ERP completo.
+   - O login de entregador deve entrar/redirecionar para `/delivery`.
+   - Rotas fora de `/delivery` e `/discuss` devem ficar bloqueadas para utilizadores que tenham somente `delivery_driver`.
 
-Apenas em `src/modules/inventory/pages/TransfersList.tsx` (frontend, sem mudanças no backend).
+3. Corrigir o app de entregas para carregamento confiável
+   - `DeliveryCashbox` deve mostrar estado de carregamento antes de dizer “Não tens caixa associado”.
+   - Se a query falhar por permissão, mostrar erro claro em vez de parecer que não há caixa.
+   - Confirmar que ele encontra `Caixa Entrega` e a sessão aberta `CS/00001`.
 
-## Como vai funcionar
+4. Permitir Conversas para entregadores
+   - Adicionar rota/entrada acessível para conversas no ambiente permitido do entregador.
+   - Manter o restante do ERP inacessível para quem só tem role de entregador.
 
-### Fonte do dado "data confirmada"
-- `delivery_schedules.status = 'confirmed'` com `scheduled_at` representa a data confirmada pela logística.
-- A tabela está ligada à venda (`sale_order_id`), e o `stock_picking` traz `origin` = nome da SO. A forma mais direta sem mudar a query principal:
-  1. Após buscar as linhas (`rows`), recolher os `origin` distintos do tipo SOxxxxx.
-  2. Fazer um único `select` em `delivery_schedules` com `status='confirmed'` join `sale_orders!inner(name)` filtrando por esses nomes.
-  3. Construir um mapa `{ saleOrderName → confirmedAt }` e usar para preencher a coluna e o filtro client-side.
-- Em pickings internos/de entrada (sem SO) a célula mostra "—".
-
-### Nova coluna
-- Adicionar em `COL_DEFS`: `{ key: "confirmed_at", label: "Data confirmada" }`.
-- Adicionar `<SortHead>` no cabeçalho (ordenação client-side já que o campo é derivado).
-- Adicionar `<td>` formatado com `fmtDateTime` (de `@/lib/format`); quando não houver, mostrar "—" cinza.
-- Visível por default; respeita o popover de "Colunas".
-
-### Novo filtro
-- Adicionar em `<AdvancedFilters>` dois campos `type: "date"`:
-  - `confirmed_from` — "Confirmada de"
-  - `confirmed_to` — "Confirmada até"
-- Aplicação **client-side** (após o map de confirmações): manter apenas linhas com `confirmedAt` dentro do intervalo. Se ambos vazios, não filtra.
-- O preset `defaults={{ state: "ready" }}` já existe — apenas confirmar que continua a aplicar-se.
-
-### Pequenos ajustes
-- Recalcular `visibleRows` e `grouped` para considerar o filtro de data confirmada.
-- Incluir o mapa de confirmações nas dependências do `useMemo`.
-- Ordenação por `confirmed_at`: tratar nulls como "no fim" independentemente da direção.
-
-## Fora do scope
-- Não alterar RPCs, triggers ou `delivery_schedules`.
-- Não mexer no modo agrupado para além de aplicar o mesmo filtro de data confirmada na lista expandida.
-- Sem alterações no detalhe da transferência.
+Arquivos e áreas a alterar depois da aprovação:
+- Migração SQL para políticas de `cash_registers`, `cash_sessions` e `cash_movements`.
+- `src/pages/Login.tsx` para redirecionar entregador para `/delivery` após login.
+- `src/App.tsx` / proteção de rotas para bloquear ERP completo para entregadores puros e permitir `/delivery` + `/discuss`.
+- `src/modules/delivery/pages/DeliveryCashbox.tsx` para loading/erro mais correto.
+- Possivelmente `src/modules/delivery/DeliveryShell.tsx` para incluir aba/botão de Conversas.
