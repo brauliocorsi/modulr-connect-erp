@@ -239,27 +239,45 @@ export default function BillForm() {
         }
       />
       <PageBody>
+        {(bill.state === "paid" || bill.state === "cancelled") && (
+          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+            Esta fatura está {bill.state === "paid" ? "paga" : "cancelada"} — edição de campos financeiros bloqueada.
+          </div>
+        )}
         <Card className="p-6 grid sm:grid-cols-2 gap-4">
           <div><Label>Fornecedor</Label>
-            <Select value={bill.partner_id ?? ""} onValueChange={(v) => setBill({ ...bill, partner_id: v })}>
+            <Select value={bill.partner_id ?? ""} onValueChange={(v) => setBill({ ...bill, partner_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{partners.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div><Label>Origem</Label>
+            <div className="h-10 flex items-center px-3 rounded-md border bg-muted/30 text-xs">
+              {({ manual: "Manual", purchase_order: "PO", recurring_expense: "Despesa fixa", service: "Serviço", sale: "Venda" } as any)[bill.source] ?? bill.source ?? "—"}
+              {bill.recurring_expense_id && <Link to={`/finance/recurring/${bill.recurring_expense_id}`} className="ml-2 text-primary hover:underline inline-flex items-center gap-1">despesa fixa <ExternalLink className="h-3 w-3" /></Link>}
+            </div>
+          </div>
           <div><Label>Ordem de Compra (opc.)</Label>
-            <Select value={bill.purchase_order_id ?? ""} onValueChange={(v) => setBill({ ...bill, purchase_order_id: v })}>
+            <Select value={bill.purchase_order_id ?? ""} onValueChange={(v) => setBill({ ...bill, purchase_order_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{pos.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Data</Label><Input type="date" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} /></div>
-          <div><Label>Vencimento</Label><Input type="date" value={bill.due_date ?? ""} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} /></div>
-          <div><Label>Total</Label><Input type="number" step="0.01" value={bill.amount_total} onChange={(e) => setBill({ ...bill, amount_total: Number(e.target.value) })} /></div>
+          <div><Label>Data</Label><Input type="date" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} disabled={locked} /></div>
+          <div><Label>Vencimento</Label><Input type="date" value={bill.due_date ?? ""} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} disabled={locked} /></div>
+          <div><Label>Total</Label><Input type="number" step="0.01" value={bill.amount_total} onChange={(e) => setBill({ ...bill, amount_total: Number(e.target.value) })} disabled={locked} /></div>
           <div><Label>Centro de Custo</Label>
-            <Select value={bill.cost_center_id ?? ""} onValueChange={(v) => setBill({ ...bill, cost_center_id: v })}>
+            <Select value={bill.cost_center_id ?? ""} onValueChange={(v) => setBill({ ...bill, cost_center_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{centers.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
             </Select>
+          </div>
+          <div><Label>Plano de Contas</Label>
+            <Select value={bill.account_id ?? ""} onValueChange={(v) => setBill({ ...bill, account_id: v })} disabled={locked}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} · {a.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           </div>
           <div className="sm:col-span-2"><Label>Referência</Label><Input value={bill.reference ?? ""} onChange={(e) => setBill({ ...bill, reference: e.target.value })} /></div>
           <div className="sm:col-span-2"><Label>Notas</Label><Textarea value={bill.notes ?? ""} onChange={(e) => setBill({ ...bill, notes: e.target.value })} /></div>
