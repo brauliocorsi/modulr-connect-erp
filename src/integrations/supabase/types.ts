@@ -12058,6 +12058,8 @@ export type Database = {
         Returns: Json
       }
       cash_session_summary: { Args: { _session: string }; Returns: Json }
+      chat_channel_created_by: { Args: { _channel: string }; Returns: string }
+      chat_channel_is_public: { Args: { _channel: string }; Returns: boolean }
       close_cash_session: {
         Args: { _counted: number; _session: string }
         Returns: undefined
