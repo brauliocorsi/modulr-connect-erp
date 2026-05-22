@@ -380,6 +380,32 @@ export default function CashSessionDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={reconcileDlg} onOpenChange={setReconcileDlg}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Conciliar caixa</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="text-sm text-muted-foreground">
+              Marca esta sessão como conferida pelo financeiro. Apenas utilizadores do grupo Financeiro podem executar.
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Abertura</div><div className="font-semibold tabular-nums">{fmtMoney(sess.opening_balance ?? 0)}</div></div>
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Dinheiro contado</div><div className="font-semibold tabular-nums">{fmtMoney(sess.handover_cash_amount ?? sess.closing_balance_counted ?? 0)}</div></div>
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Diferença</div><div className="font-semibold tabular-nums">{fmtMoney(sess.difference ?? 0)}</div></div>
+            </div>
+            <div>
+              <Label>Notas (opcional)</Label>
+              <Textarea value={reconcileNotes} onChange={(e) => setReconcileNotes(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReconcileDlg(false)} disabled={reconciling}>Cancelar</Button>
+            <Button onClick={reconcileSession} disabled={reconciling}>
+              <ShieldCheck className="h-4 w-4 mr-1" /> {reconciling ? "A conciliar…" : "Conciliar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
