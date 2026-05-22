@@ -426,10 +426,23 @@ export default function RouteDetail() {
       <EntityHeader
         title={`${r.delivery_zones?.name ?? "Rota"} · ${r.route_date}`}
         subtitle={
-          <span>
-            {r.vehicles?.name ?? "Sem viatura"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}
-            {" · "}Motorista: {r.driver_id ?? "—"}
-            {r.loading_docks?.name ? ` · Cais: ${r.loading_docks.name}` : ""}
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">
+              {String(r.id).slice(0, 8)}
+            </span>
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(String(r.id)); toast.success("ID copiado"); }}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Copiar ID"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+            <span>·</span>
+            <span>{r.vehicles?.name ?? "Sem viatura"}{r.vehicles?.license_plate ? ` · ${r.vehicles.license_plate}` : ""}</span>
+            <span>· Motorista: {driverName ?? "—"}</span>
+            <span>· Ajudante: {helperName ?? "—"}</span>
+            {r.loading_docks?.name ? <span>· Cais: {r.loading_docks.name}</span> : null}
           </span>
         }
         breadcrumb={[{ label: "Rotas", to: "/routes" }, { label: r.route_date }]}
@@ -443,6 +456,7 @@ export default function RouteDetail() {
           </>
         }
         metadata={[
+          { label: "ID rota", value: String(r.id).slice(0, 8) },
           { label: "Data", value: r.route_date },
           { label: "Zona", value: r.delivery_zones?.name ?? "—" },
           { label: "Pedidos", value: `${orderCounts.delivered + orderCounts.partial}/${orderCounts.total}` },
