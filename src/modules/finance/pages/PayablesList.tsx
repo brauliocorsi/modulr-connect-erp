@@ -129,11 +129,20 @@ export default function PayablesList() {
     return Array.from(map.entries()).map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [rows]);
 
+  const ccOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.cost_center_id && r.cost_center_name) map.set(r.cost_center_id, r.cost_center_name); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [rows]);
+  const accOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.account_id && r.account_label) map.set(r.account_id, r.account_label); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [rows]);
+
   const filterDefs: FilterDef[] = useMemo(() => [
     {
-      key: "state",
-      label: "Estado",
-      type: "select",
+      key: "state", label: "Estado", type: "select",
       options: [
         { value: "draft", label: "Rascunho" },
         { value: "posted", label: "Lançada" },
@@ -143,24 +152,37 @@ export default function PayablesList() {
       ],
     },
     {
-      key: "overdue",
-      label: "Vencimento",
-      type: "select",
+      key: "overdue", label: "Vencimento", type: "select",
       options: [
         { value: "overdue", label: "Vencidas" },
         { value: "open", label: "Em aberto" },
+        { value: "week", label: "Próximos 7 dias" },
       ],
     },
+    {
+      key: "source", label: "Origem", type: "select",
+      options: Object.entries(SOURCE_LABEL).map(([value, label]) => ({ value, label })),
+    },
     { key: "partner", label: "Fornecedor", type: "select", options: partnerOptions, width: "w-56" },
-  ], [partnerOptions]);
+    { key: "cost_center", label: "Centro de custo", type: "select", options: ccOptions, width: "w-56" },
+    { key: "account", label: "Conta", type: "select", options: accOptions, width: "w-56" },
+  ], [partnerOptions, ccOptions, accOptions]);
 
-  const filtered = useMemo(() => rows.filter((r) => {
-    if (filters.state && filters.state !== r.state) return false;
-    if (filters.partner && filters.partner !== r.partner_id) return false;
-    if (filters.overdue === "overdue" && !r._overdue) return false;
-    if (filters.overdue === "open" && (["paid", "cancelled"].includes(r.state))) return false;
-    return true;
-  }), [rows, filters]);
+  const filtered = useMemo(() => {
+    const inWeek = (r: Row) => !!r.due_date && new Date(r.due_date) <= new Date(Date.now() + 7 * 86400000);
+    return rows.filter((r) => {
+      if (filters.state && filters.state !== r.state) return false;
+      if (filters.partner && filters.partner !== r.partner_id) return false;
+      if (filters.source && filters.source !== r.source) return false;
+      if (filters.cost_center && filters.cost_center !== r.cost_center_id) return false;
+      if (filters.account && filters.account !== r.account_id) return false;
+      if (filters.overdue === "overdue" && !r._overdue) return false;
+      if (filters.overdue === "open" && (["paid", "cancelled"].includes(r.state))) return false;
+      if (filters.overdue === "week" && (["paid", "cancelled"].includes(r.state) || !inWeek(r))) return false;
+      return true;
+    });
+  }, [rows, filters]);
+
 
   const summary = useMemo(() => {
     const open = filtered.filter((r) => !["paid", "cancelled"].includes(r.state));
