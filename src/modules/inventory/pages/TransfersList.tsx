@@ -407,6 +407,7 @@ export default function TransfersList() {
                       ) : <span className="text-muted-foreground">—</span>}
                     </td>)}
                     {colVisible("scheduled_at") && <td className="px-3 py-2">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-PT") : "—"}</td>}
+                    {colVisible("confirmed_at") && <td className="px-3 py-2">{confirmedFor(r) ? <span className="text-success font-medium">{new Date(confirmedFor(r)!).toLocaleString("pt-PT")}</span> : <span className="text-muted-foreground">—</span>}</td>}
                   </tr>
                 );
 
