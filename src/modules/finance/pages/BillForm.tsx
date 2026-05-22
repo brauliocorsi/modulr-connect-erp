@@ -350,7 +350,17 @@ export default function BillForm() {
                     <td className="px-3 py-2">{p.payment_date}</td>
                     <td className="px-3 py-2">{p.payment_methods?.name ?? "—"}</td>
                     <td className="px-3 py-2">{p.account_journals?.name ?? "—"}</td>
-                    <td className="px-3 py-2">{p.reference ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {p.reference ?? "—"}
+                      {Array.isArray(p.attachments) && p.attachments.length > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          {p.attachments.slice(0, 3).map((a: any, i: number) => (
+                            <a key={i} href={a.url} target="_blank" rel="noreferrer" className="underline hover:text-foreground" title={a.name}>📎</a>
+                          ))}
+                          {p.attachments.length > 3 && <span>+{p.attachments.length - 3}</span>}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(p.amount)}</td>
                     <td className="px-3 py-2">{p.state}</td>
                     <td>{p.state === "posted" && <Button size="sm" variant="ghost" onClick={() => cancelPayment(p.id)}><Trash2 className="h-4 w-4" /></Button>}</td>
