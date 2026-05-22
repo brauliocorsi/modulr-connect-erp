@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
 import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
+import { CostCenterAccountPicker, isCostCenterAccountValid } from "@/core/finance/CostCenterAccountPicker";
 
 export default function BillForm() {
   const { id } = useParams();
