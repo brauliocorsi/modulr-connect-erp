@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/core/auth/AuthProvider";
 import { RequireAuth } from "@/core/auth/RequireAuth";
+import { DriverOnlyGate } from "@/core/auth/DriverOnlyGate";
 import AppShell from "@/core/layout/AppShell";
 import Login from "@/pages/Login";
 import Home from "@/pages/Home";
