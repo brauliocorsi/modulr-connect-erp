@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.supplier_payment_register(uuid, numeric, uuid, date, text, text);

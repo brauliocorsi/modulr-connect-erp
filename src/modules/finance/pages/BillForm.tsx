@@ -35,9 +35,12 @@ export default function BillForm() {
     reference: "",
     notes: "",
     attachments: [] as Attachment[],
+    account_id: "",
+    source: "manual",
   });
   const [partners, setPartners] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [pos, setPos] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [lines, setLines] = useState<any[]>([]);
@@ -78,14 +81,16 @@ export default function BillForm() {
   };
   useEffect(() => {
     (async () => {
-      const [{ data: pp }, { data: cc }, { data: pp2 }] = await Promise.all([
+      const [{ data: pp }, { data: cc }, { data: pp2 }, { data: ac }] = await Promise.all([
         supabase.from("partners").select("id,name").eq("is_supplier", true).order("name"),
         supabase.from("cost_centers").select("id,name,code").eq("active", true).order("code"),
         supabase.from("purchase_orders").select("id,name").order("created_at", { ascending: false }).limit(200),
+        supabase.from("chart_of_accounts").select("id,name,code,type").eq("active", true).in("type", ["expense","liability","asset"]).order("code"),
       ]);
       setPartners(pp ?? []);
       setCenters(cc ?? []);
       setPos(pp2 ?? []);
+      setAccounts(ac ?? []);
       // Prefill from ?po=<id>
       if (prefillPoId) {
         const { data: po } = await supabase
@@ -110,6 +115,11 @@ export default function BillForm() {
 
   const save = async () => {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");
+    if (bill.state === "cancelled") return toast.error("Fatura cancelada — edição bloqueada");
+    if (bill.state === "paid") return toast.error("Fatura paga — edição bloqueada");
+    if (bill.state === "partial" && Number(bill.amount_total || 0) < Number(bill.amount_paid || 0)) {
+      return toast.error("Total não pode ser inferior ao valor já pago");
+    }
     if (isNew) {
       // PO-based: usar RPC supplier_bill_create_from_po (F20-B).
       if (bill.purchase_order_id) {
@@ -135,6 +145,8 @@ export default function BillForm() {
           due_date: bill.due_date || null,
           amount_total: Number(bill.amount_total || 0),
           cost_center_id: bill.cost_center_id || null,
+          account_id: bill.account_id || null,
+          source: "manual",
           reference: bill.reference || null,
           notes: bill.notes || null,
           state: "posted",
@@ -156,6 +168,7 @@ export default function BillForm() {
           due_date: bill.due_date || null,
           amount_total: Number(bill.amount_total || 0),
           cost_center_id: bill.cost_center_id || null,
+          account_id: bill.account_id || null,
           reference: bill.reference,
           notes: bill.notes,
         },
@@ -163,7 +176,7 @@ export default function BillForm() {
       if (error) return toast.error(error.message);
       const res: any = data;
       if (res?.error) return toast.error(mapBillError(res.error));
-      await supabase.from("supplier_bills").update({ attachments: bill.attachments ?? [] }).eq("id", id!);
+      await supabase.rpc("supplier_bill_set_attachments", { _bill_id: id!, _attachments: (bill.attachments ?? []) as any });
       toast.success("Salvo");
       load();
     }
@@ -172,7 +185,7 @@ export default function BillForm() {
   const updateAttachments = async (next: Attachment[]) => {
     setBill((b: any) => ({ ...b, attachments: next }));
     if (!isNew) {
-      const { error } = await supabase.from("supplier_bills").update({ attachments: next as any }).eq("id", id!);
+      const { error } = await supabase.rpc("supplier_bill_set_attachments", { _bill_id: id!, _attachments: next as any });
       if (error) toast.error(`Anexos: ${error.message}`);
     }
   };
@@ -203,6 +216,7 @@ export default function BillForm() {
   };
 
   const open = Number(bill.amount_total || 0) - Number(bill.amount_paid || 0);
+  const locked = bill.state === "paid" || bill.state === "cancelled";
 
   return (
     <>
@@ -226,26 +240,43 @@ export default function BillForm() {
         }
       />
       <PageBody>
+        {(bill.state === "paid" || bill.state === "cancelled") && (
+          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+            Esta fatura está {bill.state === "paid" ? "paga" : "cancelada"} — edição de campos financeiros bloqueada.
+          </div>
+        )}
         <Card className="p-6 grid sm:grid-cols-2 gap-4">
           <div><Label>Fornecedor</Label>
-            <Select value={bill.partner_id ?? ""} onValueChange={(v) => setBill({ ...bill, partner_id: v })}>
+            <Select value={bill.partner_id ?? ""} onValueChange={(v) => setBill({ ...bill, partner_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{partners.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div><Label>Origem</Label>
+            <div className="h-10 flex items-center px-3 rounded-md border bg-muted/30 text-xs">
+              {({ manual: "Manual", purchase_order: "PO", recurring_expense: "Despesa fixa", service: "Serviço", sale: "Venda" } as any)[bill.source] ?? bill.source ?? "—"}
+              {bill.recurring_expense_id && <Link to={`/finance/recurring/${bill.recurring_expense_id}`} className="ml-2 text-primary hover:underline inline-flex items-center gap-1">despesa fixa <ExternalLink className="h-3 w-3" /></Link>}
+            </div>
+          </div>
           <div><Label>Ordem de Compra (opc.)</Label>
-            <Select value={bill.purchase_order_id ?? ""} onValueChange={(v) => setBill({ ...bill, purchase_order_id: v })}>
+            <Select value={bill.purchase_order_id ?? ""} onValueChange={(v) => setBill({ ...bill, purchase_order_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{pos.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Data</Label><Input type="date" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} /></div>
-          <div><Label>Vencimento</Label><Input type="date" value={bill.due_date ?? ""} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} /></div>
-          <div><Label>Total</Label><Input type="number" step="0.01" value={bill.amount_total} onChange={(e) => setBill({ ...bill, amount_total: Number(e.target.value) })} /></div>
+          <div><Label>Data</Label><Input type="date" value={bill.bill_date} onChange={(e) => setBill({ ...bill, bill_date: e.target.value })} disabled={locked} /></div>
+          <div><Label>Vencimento</Label><Input type="date" value={bill.due_date ?? ""} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} disabled={locked} /></div>
+          <div><Label>Total</Label><Input type="number" step="0.01" value={bill.amount_total} onChange={(e) => setBill({ ...bill, amount_total: Number(e.target.value) })} disabled={locked} /></div>
           <div><Label>Centro de Custo</Label>
-            <Select value={bill.cost_center_id ?? ""} onValueChange={(v) => setBill({ ...bill, cost_center_id: v })}>
+            <Select value={bill.cost_center_id ?? ""} onValueChange={(v) => setBill({ ...bill, cost_center_id: v })} disabled={locked}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>{centers.map((c) => <SelectItem key={c.id} value={c.id}>{c.code} · {c.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Plano de Contas</Label>
+            <Select value={bill.account_id ?? ""} onValueChange={(v) => setBill({ ...bill, account_id: v })} disabled={locked}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} · {a.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="sm:col-span-2"><Label>Referência</Label><Input value={bill.reference ?? ""} onChange={(e) => setBill({ ...bill, reference: e.target.value })} /></div>

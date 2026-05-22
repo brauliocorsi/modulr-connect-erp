@@ -88,7 +88,7 @@ export function RegisterSupplierPaymentDialog({
         .eq("idempotency_key", idempotencyKey)
         .maybeSingle();
       if (pay?.id) {
-        await supabase.from("supplier_payments").update({ attachments: attachments as any }).eq("id", pay.id);
+        await supabase.rpc("supplier_payment_set_attachments", { _payment_id: pay.id, _attachments: attachments as any });
       }
     }
     setSaving(false);

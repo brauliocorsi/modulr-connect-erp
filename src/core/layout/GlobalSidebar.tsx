@@ -130,7 +130,7 @@ const GROUPS: NavGroup[] = [
       { label: "Caixa Físico", to: "/cashbox" },
       { label: "Contas / Diários", to: "/finance/journals" },
       { label: "Métodos de Pagamento", to: "/finance/methods" },
-      { label: "Centros de Custo", to: "/finance/cost_centers" },
+      { label: "Centros de Custo", to: "/finance/cost-centers" },
       { label: "Plano de Contas", to: "/finance/chart-of-accounts" },
     ],
   },
