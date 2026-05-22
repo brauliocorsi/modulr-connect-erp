@@ -84,14 +84,16 @@ export function RouteManifestTable({ rows }: { rows: ManifestRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
                 <td colSpan={11} className="px-3 py-6 text-center text-muted-foreground">
-                  Sem packages no manifesto ainda. Use "Carregar viatura" depois de mover o stock para o cais.
+                  {rows.length === 0
+                    ? 'Sem packages no manifesto ainda. Use "Carregar viatura" depois de mover o stock para o cais.'
+                    : "Nenhuma linha corresponde ao filtro."}
                 </td>
               </tr>
             ) : (
-              rows.map((m) => (
+              filtered.map((m) => (
                 <tr key={m.id} className="border-t hover:bg-accent/30">
                   <td className="px-2 py-1.5 tabular-nums">{m.route_order_sequence ?? "—"}</td>
                   <td className="px-2 py-1.5">
