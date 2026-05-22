@@ -159,7 +159,9 @@ const App = () => (
               path="/"
               element={
                 <RequireAuth>
-                  <AppShell />
+                  <DriverOnlyGate>
+                    <AppShell />
+                  </DriverOnlyGate>
                 </RequireAuth>
               }
             >
