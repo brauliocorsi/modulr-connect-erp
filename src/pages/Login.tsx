@@ -24,11 +24,23 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return toast.error(error.message);
+    const uid = data.user?.id;
+    if (uid) {
+      const { data: grps } = await supabase
+        .from("user_groups")
+        .select("groups(code)")
+        .eq("user_id", uid);
+      const codes = (grps ?? []).map((g: any) => g.groups?.code).filter(Boolean);
+      const driverOnly = codes.length > 0 && codes.every((c: string) => c === "delivery_driver");
+      nav(driverOnly ? "/delivery" : "/");
+      return;
+    }
     nav("/");
   };
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
