@@ -13,6 +13,13 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   const [hits, setHits] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+  const installed = useInstalledModules();
+  const ALWAYS_ON = new Set(["settings", "hr", "discuss", "finance", "cashbox", "service", "helpdesk"]);
+  const visibleModules = MODULES.filter((m) => ALWAYS_ON.has(m.id as string) || installed.data?.[m.id as string]);
+  const moduleHits = visibleModules
+    .filter((m) => !q.trim() || m.name.toLowerCase().includes(q.toLowerCase()) || m.shortName.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 12)
+    .map((m) => ({ type: "Aplicações", id: m.id as string, label: m.name, sub: m.description, to: m.basePath, icon: m.icon }));
 
   useEffect(() => {
     if (!open) {
