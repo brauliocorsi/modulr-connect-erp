@@ -80,7 +80,7 @@ export default function ClosedRoutesList() {
 
   return (
     <>
-      <PageHeader title="Rotas Fechadas" subtitle="Histórico de rotas concluídas com totais recebidos" />
+      <PageHeader title="Rotas Fechadas — Histórico de rotas concluídas com totais recebidos" />
       <PageBody>
         <Card className="p-3 mb-3 flex flex-wrap items-end gap-2">
           <div>
