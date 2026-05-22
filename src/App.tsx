@@ -169,6 +169,7 @@ const App = () => (
               }
             >
               <Route index element={<Home />} />
+              <Route path="profile" element={<Profile />} />
               <Route path="indicators" element={<IndicatorsPage />} />
               <Route path="activity/events" element={<OperationalEventsPage />} />
 
