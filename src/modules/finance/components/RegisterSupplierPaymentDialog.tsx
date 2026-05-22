@@ -91,6 +91,14 @@ export function RegisterSupplierPaymentDialog({
           </div>
           <div><Label>Referência</Label><Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} /></div>
           <div><Label>Notas (opcional)</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div className="rounded-md border p-3">
+            <AttachmentsField
+              value={attachments}
+              onChange={setAttachments}
+              folder={`payments/${billId}`}
+              label="Anexos do pagamento"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
