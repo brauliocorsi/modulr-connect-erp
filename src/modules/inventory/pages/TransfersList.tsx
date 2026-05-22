@@ -312,6 +312,8 @@ export default function TransfersList() {
               { key: "to", label: "Programado até", type: "date" },
               { key: "done_from", label: "Entregue de", type: "date" },
               { key: "done_to", label: "Entregue até", type: "date" },
+              { key: "confirmed_from", label: "Confirmada de", type: "date" },
+              { key: "confirmed_to", label: "Confirmada até", type: "date" },
               { key: "origin", label: "Documento origem", type: "text" },
               { key: "tracking_ref", label: "Tracking", type: "text" },
               { key: "partner_search", label: "Parceiro contém", type: "text" },
