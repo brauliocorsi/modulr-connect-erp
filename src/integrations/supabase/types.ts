@@ -12380,6 +12380,7 @@ export type Database = {
         Args: { _counted_cash?: number; _session: string }
         Returns: undefined
       }
+      driver_reopen_session: { Args: { _session: string }; Returns: undefined }
       emit_event: {
         Args: {
           _entity_id?: string
