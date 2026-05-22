@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
 
 export function RegisterSupplierPaymentDialog({
   open, onOpenChange, billId, partnerId: _partnerId, defaultAmount, onSaved,
