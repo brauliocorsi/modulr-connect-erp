@@ -81,14 +81,16 @@ export default function BillForm() {
   };
   useEffect(() => {
     (async () => {
-      const [{ data: pp }, { data: cc }, { data: pp2 }] = await Promise.all([
+      const [{ data: pp }, { data: cc }, { data: pp2 }, { data: ac }] = await Promise.all([
         supabase.from("partners").select("id,name").eq("is_supplier", true).order("name"),
         supabase.from("cost_centers").select("id,name,code").eq("active", true).order("code"),
         supabase.from("purchase_orders").select("id,name").order("created_at", { ascending: false }).limit(200),
+        supabase.from("chart_of_accounts").select("id,name,code,type").eq("active", true).in("type", ["expense","liability","asset"]).order("code"),
       ]);
       setPartners(pp ?? []);
       setCenters(cc ?? []);
       setPos(pp2 ?? []);
+      setAccounts(ac ?? []);
       // Prefill from ?po=<id>
       if (prefillPoId) {
         const { data: po } = await supabase
