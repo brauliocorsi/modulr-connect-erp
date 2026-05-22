@@ -661,11 +661,20 @@ export default function RouteDetail() {
               ) : (routeOrders as any[]).map((o) => {
                 const so = o.delivery_schedules?.sale_orders;
                 const partner = so?.partners;
-                const myPkgs = manifestRows.filter((m) => (manifest as any[]).find((mm) => mm.id === m.id)?.route_order_id === o.id);
-                const canDeliver = ["loaded", "in_transit", "out_for_delivery", "pending", "planned", "loading"].includes(o.status);
-                const canReturn = !["cancelled", "returned"].includes(o.status);
+                const myPkgs = manifestRows.filter((m) => m.route_order_id === o.id);
+                const deliveredQty = myPkgs.reduce((a, m) => a + m.qty_delivered, 0);
+                const loadedQty = myPkgs.reduce((a, m) => a + m.qty_loaded, 0);
+                const isDelivered = o.status === "delivered" || (loadedQty > 0 && deliveredQty >= loadedQty);
+                const fin = orderFinancials.get(so?.id) ?? { paid: 0, refs: [], methods: [] };
+                const orderAssist = [
+                  ...(assistanceByOrder.byOrigin.get(so?.name) ?? []),
+                  ...assistanceByOrder.routeLevel.filter((sr) => !sr.product_id || myPkgs.some((m) => m.product_id === sr.product_id)),
+                ];
+                const hasAssistance = orderAssist.length > 0 || myPkgs.some((m) => m.assistance_required);
+                const canDeliver = !isDelivered && ["loaded", "in_transit", "out_for_delivery", "pending", "planned", "loading", "partial"].includes(o.status);
+                const canReturn = !isDelivered && !["cancelled", "returned"].includes(o.status);
                 return (
-                  <tr key={o.id} className="border-t align-top">
+                  <tr key={o.id} className={`border-t align-top ${isDelivered ? "bg-emerald-500/5" : ""}`}>
                     <td className="px-2 py-2 tabular-nums">{o.sequence}</td>
                     <td className="px-2 py-2">
                       <div className="font-medium">{so?.name ?? o.schedule_id}</div>
@@ -677,16 +686,37 @@ export default function RouteDetail() {
                       </div>
                     </td>
                     <td className="px-2 py-2">
-                      <Badge variant="outline" className="capitalize">{o.status}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={isDelivered ? "default" : "outline"} className="capitalize">
+                          {isDelivered ? "entregue" : o.status}
+                        </Badge>
+                        {hasAssistance && <Badge variant="outline" className="border-orange-400 text-orange-700">assistência</Badge>}
+                        {fin.paid > 0 && <Badge variant="outline" className="border-emerald-500 text-emerald-700">recebido</Badge>}
+                      </div>
+                      {o.delivered_at && <div className="text-[10px] text-muted-foreground mt-1">{new Date(o.delivered_at).toLocaleString("pt-PT")}</div>}
                       {o.failed_reason && <div className="text-[10px] text-rose-700 mt-1">{o.failed_reason}</div>}
+                      {hasAssistance && (
+                        <div className="text-[10px] text-orange-700 mt-1">
+                          {orderAssist[0]?.name ?? "Assistência sinalizada"}{orderAssist[0]?.products?.name ? ` · ${orderAssist[0].products.name}` : ""}
+                        </div>
+                      )}
+                      {fin.paid > 0 && (
+                        <div className="text-[10px] text-emerald-700 mt-1">
+                          {fmtEur(fin.paid)}{fin.methods.length ? ` · ${Array.from(new Set(fin.methods)).join(", ")}` : ""}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums">
-                      {myPkgs.reduce((a, m) => a + m.qty_loaded, 0)}/
-                      {myPkgs.reduce((a, m) => a + m.qty_delivered, 0)}/
+                      {loadedQty}/
+                      {deliveredQty}/
                       {myPkgs.reduce((a, m) => a + m.qty_returned, 0)}
                     </td>
                     <td className="px-2 py-2">
-                      <div className="flex flex-wrap gap-1">
+                      {isDelivered ? (
+                        <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Concluído pelo app entregas
+                        </div>
+                      ) : <div className="flex flex-wrap gap-1">
                         <Button size="sm" variant="outline" disabled={!canDeliver || busy !== null}
                           onClick={() => setDeliverOpen(o.id)} aria-label={`entregar-${o.sequence}`}>
                           Entregar
@@ -708,7 +738,7 @@ export default function RouteDetail() {
                           aria-label={`reagendar-${o.sequence}`} data-testid={`reschedule-btn-${o.id}`}>
                           Reagendar
                         </Button>
-                      </div>
+                      </div>}
 
                       {deliverOpen === o.id && (
                         <DeliverOrderDialog
