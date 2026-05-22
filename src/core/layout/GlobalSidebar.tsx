@@ -276,7 +276,7 @@ export default function GlobalSidebar() {
       </div>
       <nav className="flex-1 overflow-auto p-2 space-y-1">
         {filtered.map((group) => {
-          const isOpen = q ? true : (open[group.id] ?? false);
+          const isOpen = q ? true : openId === group.id;
           const Icon = group.icon;
           const hasActive = groupContainsActive(pathname, group);
           return (
