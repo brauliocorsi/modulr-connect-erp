@@ -85,6 +85,7 @@ const GROUPS: NavGroup[] = [
     id: "inventario", label: "Inventário", icon: Warehouse,
     items: [
       { label: "Visão Geral", to: "/inventory" },
+      { label: "Stock", to: "/inventory/stock" },
       { label: "Cronograma", to: "/inventory/schedule" },
       { label: "Recebimentos", to: "/inventory/receipts" },
       { label: "Transferências", to: "/inventory/transfers" },
