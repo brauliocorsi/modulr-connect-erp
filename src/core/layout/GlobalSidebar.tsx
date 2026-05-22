@@ -303,8 +303,19 @@ export default function GlobalSidebar() {
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-6 pt-0.5 pb-1 space-y-0.5">
                 {group.items.map((it) => {
+                  const isSection = it.label.startsWith("—") && it.label.endsWith("—");
+                  if (it.status === "hidden" && !isSection) return null;
+                  if (isSection) {
+                    return (
+                      <div
+                        key={it.label}
+                        className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
+                      >
+                        {it.label.replace(/—/g, "").trim()}
+                      </div>
+                    );
+                  }
                   const disabled = it.status === "coming_soon" || !it.to;
-                  if (it.status === "hidden") return null;
                   if (disabled) {
                     return (
                       <Tooltip key={it.label}>
