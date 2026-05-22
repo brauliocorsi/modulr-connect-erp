@@ -362,6 +362,12 @@ export default function RouteDetail() {
 
   const actions: OperationalAction[] = [
     {
+      key: "print",
+      label: "Imprimir manifesto",
+      icon: <Printer className="h-4 w-4" />,
+      onClick: async () => { window.open(`/routes/${id}/print`, "_blank"); },
+    },
+    {
       key: "ptd",
       label: "Mover p/ cais",
       icon: <Package className="h-4 w-4" />,
