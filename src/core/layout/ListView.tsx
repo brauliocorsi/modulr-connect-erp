@@ -51,6 +51,7 @@ export function ListView<T extends { id: string }>({
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [sort, setSort] = useState<{ key: string; asc: boolean }>({ key: orderBy, asc: ascending });
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: [table, search, select, sort, filterValues],
