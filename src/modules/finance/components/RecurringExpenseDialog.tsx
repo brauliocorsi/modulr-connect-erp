@@ -31,7 +31,12 @@ export type RecurringExpense = {
   next_due_date: string;
   payment_method_id: string | null;
   notes: string | null;
+  cost_center_id?: string | null;
+  account_id?: string | null;
+  journal_id?: string | null;
 };
+
+type Opt = { id: string; name: string; code?: string | null };
 
 export function RecurringExpenseDialog({
   open, onOpenChange, expense, onSaved,
@@ -43,6 +48,9 @@ export function RecurringExpenseDialog({
 }) {
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
+  const [costCenters, setCostCenters] = useState<Opt[]>([]);
+  const [accounts, setAccounts] = useState<Opt[]>([]);
+  const [journals, setJournals] = useState<Opt[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -52,18 +60,27 @@ export function RecurringExpenseDialog({
     frequency: "monthly",
     next_due_date: new Date().toISOString().slice(0, 10),
     payment_method_id: "",
+    cost_center_id: "",
+    account_id: "",
+    journal_id: "",
     notes: "",
   });
 
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const [{ data: s }, { data: m }] = await Promise.all([
+      const [{ data: s }, { data: m }, { data: cc }, { data: acc }, { data: j }] = await Promise.all([
         supabase.from("partners").select("id,name").eq("is_supplier", true).order("name").limit(500),
         supabase.from("payment_methods").select("id,name").eq("active", true).order("name"),
+        supabase.from("cost_centers").select("id,name,code").eq("active", true).order("name"),
+        supabase.from("chart_of_accounts").select("id,name,code,type").eq("active", true).in("type", ["expense","liability"]).order("code"),
+        supabase.from("account_journals").select("id,name").eq("active", true).order("name"),
       ]);
       setSuppliers(s ?? []);
       setMethods(m ?? []);
+      setCostCenters(cc ?? []);
+      setAccounts(acc ?? []);
+      setJournals(j ?? []);
     })();
     if (expense) {
       setForm({
@@ -74,13 +91,16 @@ export function RecurringExpenseDialog({
         frequency: expense.frequency,
         next_due_date: expense.next_due_date,
         payment_method_id: expense.payment_method_id ?? "",
+        cost_center_id: expense.cost_center_id ?? "",
+        account_id: expense.account_id ?? "",
+        journal_id: expense.journal_id ?? "",
         notes: expense.notes ?? "",
       });
     } else {
       setForm({
         name: "", supplier_id: "", category: CATEGORIES[0], amount: 0,
         frequency: "monthly", next_due_date: new Date().toISOString().slice(0, 10),
-        payment_method_id: "", notes: "",
+        payment_method_id: "", cost_center_id: "", account_id: "", journal_id: "", notes: "",
       });
     }
   }, [open, expense]);
@@ -100,6 +120,9 @@ export function RecurringExpenseDialog({
       frequency: form.frequency,
       next_due_date: form.next_due_date,
       payment_method_id: form.payment_method_id || null,
+      cost_center_id: form.cost_center_id || null,
+      account_id: form.account_id || null,
+      journal_id: form.journal_id || null,
       notes: form.notes || null,
     };
     const { data, error } = expense
@@ -114,9 +137,13 @@ export function RecurringExpenseDialog({
     onSaved?.();
   };
 
+  const handle = (k: keyof typeof form) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v === "__none__" ? "" : v }));
+  const NoneItem = <SelectItem value="__none__">— Nenhum —</SelectItem>;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{expense ? "Editar despesa fixa" : "Nova despesa fixa"}</DialogTitle>
         </DialogHeader>
@@ -153,23 +180,45 @@ export function RecurringExpenseDialog({
           </div>
           <div>
             <Label>Fornecedor (opcional)</Label>
-            <Select value={form.supplier_id || "__none__"} onValueChange={(v) => setForm({ ...form, supplier_id: v === "__none__" ? "" : v })}>
+            <Select value={form.supplier_id || "__none__"} onValueChange={handle("supplier_id")}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">— Sem fornecedor —</SelectItem>
+                {NoneItem}
                 {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Método de pagamento (opcional)</Label>
-            <Select value={form.payment_method_id || "__none__"} onValueChange={(v) => setForm({ ...form, payment_method_id: v === "__none__" ? "" : v })}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">— Nenhum —</SelectItem>
-                {methods.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Método de pagamento</Label>
+              <Select value={form.payment_method_id || "__none__"} onValueChange={handle("payment_method_id")}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{NoneItem}{methods.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Diário / conta financeira</Label>
+              <Select value={form.journal_id || "__none__"} onValueChange={handle("journal_id")}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{NoneItem}{journals.map((j) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Centro de custo</Label>
+              <Select value={form.cost_center_id || "__none__"} onValueChange={handle("cost_center_id")}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{NoneItem}{costCenters.map((c) => <SelectItem key={c.id} value={c.id}>{c.code ? `${c.code} · ` : ""}{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Conta (plano de contas)</Label>
+              <Select value={form.account_id || "__none__"} onValueChange={handle("account_id")}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{NoneItem}{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code ? `${a.code} · ` : ""}{a.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
           <div>
             <Label>Notas</Label>

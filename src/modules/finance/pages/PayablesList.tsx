@@ -29,8 +29,21 @@ type Row = {
   partner_name: string;
   po_id: string | null;
   po_name: string | null;
+  source: string;
+  cost_center_id: string | null;
+  cost_center_name: string | null;
+  account_id: string | null;
+  account_label: string | null;
   _open: number;
   _overdue: boolean;
+};
+
+const SOURCE_LABEL: Record<string, string> = {
+  manual: "Manual",
+  purchase_order: "PO",
+  recurring_expense: "Despesa fixa",
+  service: "Serviço",
+  sale: "Venda",
 };
 
 export default function PayablesList() {
@@ -46,7 +59,7 @@ export default function PayablesList() {
     setLoading(true);
     const { data, error } = await supabase
       .from("supplier_bills")
-      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id")
+      .select("id,name,bill_date,due_date,amount_total,amount_paid,state,partner_id,purchase_order_id,source,cost_center_id,account_id")
       .order("bill_date", { ascending: false })
       .limit(500);
     if (error) {
@@ -58,16 +71,26 @@ export default function PayablesList() {
 
     const partnerIds = Array.from(new Set((data ?? []).map((b: any) => b.partner_id).filter(Boolean)));
     const poIds = Array.from(new Set((data ?? []).map((b: any) => b.purchase_order_id).filter(Boolean)));
-    const [{ data: partners }, { data: pos }] = await Promise.all([
+    const ccIds = Array.from(new Set((data ?? []).map((b: any) => b.cost_center_id).filter(Boolean)));
+    const accIds = Array.from(new Set((data ?? []).map((b: any) => b.account_id).filter(Boolean)));
+    const [{ data: partners }, { data: pos }, { data: ccs }, { data: accs }] = await Promise.all([
       partnerIds.length
         ? supabase.from("partners").select("id,name").in("id", partnerIds)
         : Promise.resolve({ data: [] as any[] }),
       poIds.length
         ? supabase.from("purchase_orders").select("id,name").in("id", poIds)
         : Promise.resolve({ data: [] as any[] }),
+      ccIds.length
+        ? supabase.from("cost_centers").select("id,name,code").in("id", ccIds)
+        : Promise.resolve({ data: [] as any[] }),
+      accIds.length
+        ? supabase.from("chart_of_accounts").select("id,name,code").in("id", accIds)
+        : Promise.resolve({ data: [] as any[] }),
     ]);
     const partnerById = new Map((partners ?? []).map((p: any) => [p.id, p.name]));
     const poById = new Map((pos ?? []).map((po: any) => [po.id, po.name]));
+    const ccById = new Map((ccs ?? []).map((c: any) => [c.id, c.code ? `${c.code} · ${c.name}` : c.name]));
+    const accById = new Map((accs ?? []).map((a: any) => [a.id, a.code ? `${a.code} · ${a.name}` : a.name]));
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const out: Row[] = (data ?? []).map((b: any) => {
@@ -85,6 +108,11 @@ export default function PayablesList() {
         partner_name: partnerById.get(b.partner_id) ?? "—",
         po_id: b.purchase_order_id,
         po_name: poById.get(b.purchase_order_id) ?? null,
+        source: b.source ?? "manual",
+        cost_center_id: b.cost_center_id,
+        cost_center_name: b.cost_center_id ? (ccById.get(b.cost_center_id) ?? null) : null,
+        account_id: b.account_id,
+        account_label: b.account_id ? (accById.get(b.account_id) ?? null) : null,
         _open: +(total - paid).toFixed(2),
         _overdue: !!b.due_date && new Date(b.due_date) < today && !["paid", "cancelled"].includes(b.state),
       };
@@ -94,17 +122,27 @@ export default function PayablesList() {
   };
   useEffect(() => { load(); }, []);
 
+
   const partnerOptions = useMemo(() => {
     const map = new Map<string, string>();
     rows.forEach((r) => { if (r.partner_id) map.set(r.partner_id, r.partner_name); });
     return Array.from(map.entries()).map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [rows]);
 
+  const ccOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.cost_center_id && r.cost_center_name) map.set(r.cost_center_id, r.cost_center_name); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [rows]);
+  const accOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => { if (r.account_id && r.account_label) map.set(r.account_id, r.account_label); });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [rows]);
+
   const filterDefs: FilterDef[] = useMemo(() => [
     {
-      key: "state",
-      label: "Estado",
-      type: "select",
+      key: "state", label: "Estado", type: "select",
       options: [
         { value: "draft", label: "Rascunho" },
         { value: "posted", label: "Lançada" },
@@ -114,24 +152,37 @@ export default function PayablesList() {
       ],
     },
     {
-      key: "overdue",
-      label: "Vencimento",
-      type: "select",
+      key: "overdue", label: "Vencimento", type: "select",
       options: [
         { value: "overdue", label: "Vencidas" },
         { value: "open", label: "Em aberto" },
+        { value: "week", label: "Próximos 7 dias" },
       ],
     },
+    {
+      key: "source", label: "Origem", type: "select",
+      options: Object.entries(SOURCE_LABEL).map(([value, label]) => ({ value, label })),
+    },
     { key: "partner", label: "Fornecedor", type: "select", options: partnerOptions, width: "w-56" },
-  ], [partnerOptions]);
+    { key: "cost_center", label: "Centro de custo", type: "select", options: ccOptions, width: "w-56" },
+    { key: "account", label: "Conta", type: "select", options: accOptions, width: "w-56" },
+  ], [partnerOptions, ccOptions, accOptions]);
 
-  const filtered = useMemo(() => rows.filter((r) => {
-    if (filters.state && filters.state !== r.state) return false;
-    if (filters.partner && filters.partner !== r.partner_id) return false;
-    if (filters.overdue === "overdue" && !r._overdue) return false;
-    if (filters.overdue === "open" && (["paid", "cancelled"].includes(r.state))) return false;
-    return true;
-  }), [rows, filters]);
+  const filtered = useMemo(() => {
+    const inWeek = (r: Row) => !!r.due_date && new Date(r.due_date) <= new Date(Date.now() + 7 * 86400000);
+    return rows.filter((r) => {
+      if (filters.state && filters.state !== r.state) return false;
+      if (filters.partner && filters.partner !== r.partner_id) return false;
+      if (filters.source && filters.source !== r.source) return false;
+      if (filters.cost_center && filters.cost_center !== r.cost_center_id) return false;
+      if (filters.account && filters.account !== r.account_id) return false;
+      if (filters.overdue === "overdue" && !r._overdue) return false;
+      if (filters.overdue === "open" && (["paid", "cancelled"].includes(r.state))) return false;
+      if (filters.overdue === "week" && (["paid", "cancelled"].includes(r.state) || !inWeek(r))) return false;
+      return true;
+    });
+  }, [rows, filters]);
+
 
   const summary = useMemo(() => {
     const open = filtered.filter((r) => !["paid", "cancelled"].includes(r.state));
@@ -201,6 +252,13 @@ export default function PayablesList() {
             { key: "total", header: "Total", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_total)}</span> },
             { key: "paid", header: "Pago", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_paid)}</span> },
             { key: "open", header: "Saldo", align: "right", cell: (r) => <span className="tabular-nums font-semibold">{fmtMoney(r._open)}</span> },
+            { key: "source", header: "Origem", cell: (r) => <span className="text-xs">{SOURCE_LABEL[r.source] ?? r.source}</span> },
+            { key: "cc", header: "C. custo", cell: (r) => r.cost_center_name
+              ? <span className="text-xs">{r.cost_center_name}</span>
+              : <span className="text-muted-foreground text-xs">—</span> },
+            { key: "acc", header: "Conta", cell: (r) => r.account_label
+              ? <span className="text-xs">{r.account_label}</span>
+              : <span className="text-muted-foreground text-xs">—</span> },
             { key: "state", header: "Estado", cell: (r) => (
               <OperationalStatusBadge domain="supplier_bill" status={r._overdue ? "overdue" : r.state} />
             ) },

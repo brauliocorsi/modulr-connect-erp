@@ -10411,7 +10411,9 @@ export type Database = {
           notes: string | null
           partner_id: string
           purchase_order_id: string | null
+          recurring_expense_id: string | null
           reference: string | null
+          source: string
           state: string
           updated_at: string
         }
@@ -10430,7 +10432,9 @@ export type Database = {
           notes?: string | null
           partner_id: string
           purchase_order_id?: string | null
+          recurring_expense_id?: string | null
           reference?: string | null
+          source?: string
           state?: string
           updated_at?: string
         }
@@ -10449,7 +10453,9 @@ export type Database = {
           notes?: string | null
           partner_id?: string
           purchase_order_id?: string | null
+          recurring_expense_id?: string | null
           reference?: string | null
+          source?: string
           state?: string
           updated_at?: string
         }
@@ -10466,6 +10472,13 @@ export type Database = {
             columns: ["cost_center_id"]
             isOneToOne: false
             referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_bills_recurring_expense_id_fkey"
+            columns: ["recurring_expense_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -13681,17 +13694,32 @@ export type Database = {
         Args: { _payment_id: string; _reason: string }
         Returns: Json
       }
-      supplier_payment_register: {
-        Args: {
-          _amount: number
-          _bill_id: string
-          _idempotency_key?: string
-          _method_id?: string
-          _payment_date?: string
-          _reference?: string
-        }
-        Returns: Json
-      }
+      supplier_payment_register:
+        | {
+            Args: {
+              _amount: number
+              _bill_id: string
+              _idempotency_key?: string
+              _method_id?: string
+              _payment_date?: string
+              _reference?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _account_id?: string
+              _amount: number
+              _bill_id: string
+              _cost_center_id?: string
+              _idempotency_key?: string
+              _journal_id?: string
+              _method_id?: string
+              _payment_date?: string
+              _reference?: string
+            }
+            Returns: Json
+          }
       tg_route_recompute_current_manual: {
         Args: { _route_id: string }
         Returns: undefined
