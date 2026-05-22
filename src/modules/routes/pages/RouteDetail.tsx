@@ -470,6 +470,40 @@ export default function RouteDetail() {
       <PageBody>
         <SummaryCards items={summaryItems} className="mb-4" />
 
+        {/* Equipa: motorista + ajudante */}
+        <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1 mr-1">
+            <User className="h-3 w-3" /> Motorista
+          </span>
+          <Select
+            value={r.driver_id ?? "__none__"}
+            onValueChange={(v) => updateCrew({ driver_id: v === "__none__" ? null : v })}
+            disabled={busy !== null || state === "closed" || state === "done"}
+          >
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Sem motorista —</SelectItem>
+              {(people as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0, 8)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <span className="mx-2 h-5 w-px bg-border" aria-hidden />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1 mr-1">
+            <Wrench className="h-3 w-3" /> Ajudante de montagem
+          </span>
+          <Select
+            value={r.helper_id ?? "__none__"}
+            onValueChange={(v) => updateCrew({ helper_id: v === "__none__" ? null : v })}
+            disabled={busy !== null || state === "closed" || state === "done"}
+          >
+            <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Sem ajudante —</SelectItem>
+              {(people as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0, 8)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Card>
+
         {/* Vehicle swap (kept as inline control — not a primary action) */}
         {can.changeVehicle && (
           <Card className="p-3 mb-3 flex flex-wrap items-center gap-2">
