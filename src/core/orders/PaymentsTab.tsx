@@ -312,6 +312,7 @@ export function PaymentsTab({
                           );
                         })()}
                       </div>
+                    </button>
                     <div className="text-right">
                       <div className="text-sm font-semibold tabular-nums">{fmtMoney(s.amount)}</div>
                       {Number(s.paid_amount || 0) > 0 && (
