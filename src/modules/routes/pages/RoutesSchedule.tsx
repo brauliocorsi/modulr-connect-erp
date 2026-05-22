@@ -124,13 +124,18 @@ export default function RoutesSchedule() {
     queryFn: async () => {
       const { data } = await supabase
         .from("stock_pickings")
-        .select("id,route_id,state")
+        .select("id,route_id,state,origin")
         .in("route_id", routeIds)
         .neq("state", "cancelled");
-      const map: Record<string, number> = {};
+      // Count unique deliveries per route (origin = SO/document); fallback to picking id when no origin.
+      const seen: Record<string, Set<string>> = {};
       (data ?? []).forEach((p: any) => {
-        map[p.route_id] = (map[p.route_id] ?? 0) + 1;
+        const key = p.origin ?? p.id;
+        if (!seen[p.route_id]) seen[p.route_id] = new Set();
+        seen[p.route_id].add(key);
       });
+      const map: Record<string, number> = {};
+      for (const rid of Object.keys(seen)) map[rid] = seen[rid].size;
       return map;
     },
   });
