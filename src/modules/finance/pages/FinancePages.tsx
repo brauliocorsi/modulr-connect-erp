@@ -117,3 +117,48 @@ export const CostCenterForm = () => (
     ]}
   />
 );
+
+export const ChartOfAccountsList = () => (
+  <ListView
+    title="Plano de Contas"
+    breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Plano de Contas" }]}
+    table="chart_of_accounts"
+    searchColumn="name"
+    createTo="/finance/chart-of-accounts/new"
+    rowLink={(r: any) => `/finance/chart-of-accounts/${r.id}`}
+    columns={[
+      { key: "code", header: "Código" },
+      { key: "name", header: "Nome" },
+      { key: "type", header: "Tipo", render: (r: any) => ({
+          asset: "Ativo", liability: "Passivo", equity: "Capital", revenue: "Receita", expense: "Despesa",
+        }[r.type as string] ?? r.type) },
+      { key: "active", header: "Ativo", render: (r: any) => (r.active ? "Sim" : "Não") },
+    ]}
+  />
+);
+
+export const ChartOfAccountForm = () => (
+  <SimpleForm
+    table="chart_of_accounts"
+    title="Conta do Plano"
+    basePath="/finance/chart-of-accounts"
+    breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Plano de Contas", to: "/finance/chart-of-accounts" }, { label: "Editar" }]}
+    fields={[
+      { name: "code", label: "Código", required: true },
+      { name: "name", label: "Nome", required: true },
+      { name: "type", label: "Tipo", type: "select", required: true, default: "expense",
+        options: [
+          { value: "asset", label: "Ativo" },
+          { value: "liability", label: "Passivo" },
+          { value: "equity", label: "Capital" },
+          { value: "revenue", label: "Receita" },
+          { value: "expense", label: "Despesa" },
+        ]
+      },
+      { name: "parent_id", label: "Conta-pai", type: "select",
+        optionsFrom: { table: "chart_of_accounts", value: "id", label: "name", filter: (q) => q.eq("active", true) } },
+      { name: "notes", label: "Notas", type: "textarea" },
+      { name: "active", label: "Ativo", type: "boolean", default: true },
+    ]}
+  />
+);
