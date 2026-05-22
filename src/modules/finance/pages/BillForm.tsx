@@ -260,6 +260,71 @@ export default function BillForm() {
           </Card>
         )}
 
+        {!isNew && poInfo && (
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold">Documento de origem</div>
+              <Link
+                to={`/purchase/orders/${poInfo.id}`}
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Abrir pedido <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-4 gap-3 text-sm">
+              <div><div className="text-xs text-muted-foreground">Pedido</div><div className="font-mono">{poInfo.name}</div></div>
+              <div><div className="text-xs text-muted-foreground">Estado</div><div>{poInfo.state}</div></div>
+              <div><div className="text-xs text-muted-foreground">Data</div><div>{poInfo.date_order?.slice(0,10) ?? "—"}</div></div>
+              <div><div className="text-xs text-muted-foreground">Total PO</div><div className="tabular-nums">{fmtMoney(poInfo.amount_total)}</div></div>
+              {poInfo.origin && (
+                <div className="sm:col-span-4"><div className="text-xs text-muted-foreground">Origem</div><div>{poInfo.origin}</div></div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {!isNew && (
+          <Card className="mt-4">
+            <div className="px-4 py-3 border-b font-semibold">Lançamentos da fatura</div>
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left px-3 py-2">Produto</th>
+                  <th className="text-left px-3 py-2">Descrição</th>
+                  <th className="text-right px-3 py-2">Qtd</th>
+                  <th className="text-right px-3 py-2">Preço</th>
+                  <th className="text-right px-3 py-2">Imp. %</th>
+                  <th className="text-right px-3 py-2">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.length === 0 ? (
+                  <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem lançamentos</td></tr>
+                ) : lines.map((l: any) => (
+                  <tr key={l.id} className="border-t">
+                    <td className="px-3 py-2">{l.products?.sku ? <span className="font-mono text-xs">{l.products.sku}</span> : "—"}</td>
+                    <td className="px-3 py-2">{l.description ?? l.products?.name ?? "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(l.quantity).toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.unit_price)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(l.tax_pct).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(l.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+
+        <Card className="mt-4 p-4">
+          <AttachmentsField
+            value={(bill.attachments as Attachment[]) ?? []}
+            onChange={updateAttachments}
+            folder={`bills/${id ?? "new"}`}
+            disabled={bill.state === "cancelled"}
+            label="Anexos da fatura"
+          />
+        </Card>
+
         {!isNew && (
           <Card className="mt-4">
             <div className="px-4 py-3 border-b font-semibold">Pagamentos</div>
