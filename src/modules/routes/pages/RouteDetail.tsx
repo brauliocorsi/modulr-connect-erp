@@ -145,7 +145,6 @@ export default function RouteDetail() {
   const [busy, setBusy] = useState<string | null>(null);
   const [newVehicleId, setNewVehicleId] = useState<string>("");
   const [dockId, setDockId] = useState<string>("");
-  const [productFilter, setProductFilter] = useState<string>("");
   const [deliverOpen, setDeliverOpen] = useState<string | null>(null);
   const [returnOpen, setReturnOpen] = useState<string | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
