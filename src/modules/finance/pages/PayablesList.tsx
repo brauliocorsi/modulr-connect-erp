@@ -10,7 +10,7 @@ import {
   OperationalDataTable,
   OperationalStatusBadge,
   OperationalFiltersBar,
-  SummaryCards,
+  SummaryCards as _SummaryCards,
   ConfirmActionDialog,
   type FilterDef,
   type FilterValue,

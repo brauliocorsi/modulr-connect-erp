@@ -10,7 +10,7 @@ import {
   OperationalDataTable,
   OperationalStatusBadge,
   OperationalFiltersBar,
-  SummaryCards,
+  SummaryCards as _SummaryCards,
   type FilterDef,
   type FilterValue,
 } from "@/core/operational";
