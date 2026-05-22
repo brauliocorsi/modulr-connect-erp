@@ -124,4 +124,28 @@
   .o-section-title {
     @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
+
+  /* F28-FIN Entrega C — utilitários Emerald Prestige */
+  .fin-hero {
+    background: var(--gradient-finance);
+    color: hsl(0 0% 100%);
+    box-shadow: var(--shadow-executive);
+  }
+  .fin-surface {
+    background: var(--gradient-finance-soft);
+  }
+  .fin-kpi {
+    @apply rounded-xl border bg-card p-4 transition-all;
+    box-shadow: var(--shadow-kpi);
+  }
+  .fin-kpi:hover {
+    box-shadow: var(--shadow-executive);
+    transform: translateY(-1px);
+  }
+  .fin-accent-text {
+    color: hsl(var(--finance-accent));
+  }
+  .fin-primary-text {
+    color: hsl(var(--finance-primary));
+  }
 }
