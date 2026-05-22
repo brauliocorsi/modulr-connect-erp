@@ -1,61 +1,57 @@
-# Indicador de capacidade no Cronograma de Rotas
+# Expor capacidade da viatura no formulário
 
-## Objetivo
+## Problema
 
-Tornar visível, em cada card de rota do calendário (`/routes/schedule`), a ocupação atual vs capacidade — sem precisar abrir o detalhe da rota.
+O formulário em `/inventory/vehicles/:id` (`VehicleForm.tsx`) só expõe: nome, matrícula, código de barras, motorista, caixa, notas, ativo.
+
+Os campos de **capacidade** existem todos na tabela `vehicles` mas estão invisíveis na UI. Sem eles, ao vincular a viatura a uma rota o `cap_volume_m3` fica `null` e o indicador no Cronograma de Rotas mostra "—".
 
 ## Mudanças
 
-### 1. Query — incluir campos de capacidade
+### 1. Adicionar campos ao `VehicleForm`
 
-Em `RoutesSchedule.tsx`, expandir o `select` das rotas para trazer:
-- `cap_deliveries`, `current_deliveries`
-- `cap_volume_m3`, `current_volume_m3`
-- `cap_assembly_minutes`, `current_assembly_minutes`
-- `vehicles(usable_volume_m3, volume_m3, max_stops, assembly_minutes_capacity)` (para fallback quando o cap manual está em branco)
+Organizados em secções visuais dentro do `SimpleForm`:
 
-### 2. Componente `RouteCapacityMini`
+**Identificação** (já existe)
+- Nome, Matrícula, Código de barras, Motorista, Caixa associado, Notas, Ativo
 
-Novo componente compacto reutilizável para o card de rota:
+**Capacidade de carga** (novo)
+- `usable_volume_m3` — "Volume útil (m³)" — número, decimal 2 casas — **principal campo para o cronograma**
+- `volume_m3` — "Volume total (m³)" — número, decimal 2 casas — fallback
+- `max_weight_kg` — "Carga máxima (kg)" — número inteiro
+- `weight_kg` — "Tara (kg)" — número inteiro (peso vazio)
 
-- 3 mini-barras horizontais finas (h-1) com label curto:
-  - **Paragens** — `current_deliveries / cap_deliveries`
-  - **m³** — `current_volume_m3 / cap_volume_m3`
-  - **Mont.** — `current_assembly_minutes / cap_assembly_minutes`
-- Cada barra com cor semântica:
-  - verde (`bg-emerald-500`) < 75%
-  - âmbar (`bg-amber-500`) 75–94%
-  - vermelho (`bg-rose-500`) ≥ 95%
-- Se um cap for `null`, mostra label "—" cinza (sem barra)
-- Usa `resolveRouteCapacityStatus` existente para o badge global ("Livre/Atenção/Saturado")
+**Dimensões úteis do compartimento** (novo, opcional)
+- `usable_length_cm` — "Comprimento útil (cm)"
+- `usable_width_cm` — "Largura útil (cm)"
+- `usable_height_cm` — "Altura útil (cm)"
+- `supports_flat_transport` — "Suporta transporte em plano" — boolean
 
-### 3. Integração no card da rota
+**Capacidade operacional** (novo)
+- `max_stops` — "Nº máximo de paragens" — inteiro (usado em `cap_deliveries` da rota)
+- `assembly_minutes_capacity` — "Minutos de montagem por turno" — inteiro
+- `max_assembly_minutes` — "Limite duro de montagem (min)" — inteiro
+- `requires_load_verification` — "Exige verificação de carga" — boolean
 
-No card de rota dentro de cada célula do calendário (vista semanal e mensal):
-- Acrescentar `<RouteCapacityMini route={r} />` logo abaixo da linha com zona + viatura
-- Badge de estado de capacidade no canto superior direito do card
+### 2. Adicionar colunas à `VehiclesList`
 
-### 4. Tooltip detalhado
+Mostrar na lista: Nome · Matrícula · Volume útil (m³) · Paragens · Motorista · Ativo.
 
-Hover no card mostra tooltip com valores absolutos:
-- "Paragens: 4 / 10"
-- "Volume: 6.2 / 12.0 m³"
-- "Montagem: 90 / 240 min"
-- "Fonte: viatura X" quando o cap vier do fallback do veículo
+Hoje provavelmente não mostra capacidade, o que dificulta perceber quais viaturas estão "configuradas".
 
-### 5. Sem alterações no backend
+### 3. Helper text / dicas
 
-Os campos `current_*` já são mantidos pelos triggers existentes (`recalc_route_capacity`). Só leitura.
+No campo "Volume útil (m³)" adicionar `helperText`: *"Usado pelo Cronograma de Rotas para calcular a ocupação. Recomendado: medir o compartimento de carga (C×L×A em metros)."*
+
+### 4. Verificação
+
+- Cadastrar viatura nova com `usable_volume_m3 = 12`
+- Atribuir à rota no Cronograma de Rotas (Trocar viatura)
+- Confirmar que `delivery_routes.cap_volume_m3` fica 12 (trigger automático)
+- Confirmar que o card de capacidade mostra a barra de m³ corretamente
 
 ## Fora de scope
 
-- Editar `cap_*` inline no card (continua via detalhe da rota)
-- Drag/drop de entregas para realocar capacidade
-- Otimização automática
-
-## Verificação
-
-- Card mostra barras corretas para rota com viatura vinculada
-- Card mostra "—" cinza para rota sem viatura e sem cap manual
-- Cores mudam conforme thresholds 75 / 95
-- Vista mensal e semanal ambos renderizam mini-barras
+- Calculadora automática (C×L×A → m³) — pode vir depois como melhoria
+- Migrations — todas as colunas já existem
+- Mudanças na lógica do backend / triggers
