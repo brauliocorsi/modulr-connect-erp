@@ -67,11 +67,15 @@ export default function CashSessionDetail() {
     } else setReconcile([]);
   };
 
+  const methodNameOf = (m: any) =>
+    m.kind === "opening"
+      ? "Dinheiro"
+      : (m.customer_payments?.payment_methods?.name ?? (m.payment_id ? (KIND_LABEL[m.kind] ?? m.kind) : "Dinheiro"));
+
   const methodTotals = (() => {
     const map = new Map<string, number>();
     for (const m of moves) {
-      const name = m.customer_payments?.payment_methods?.name
-        ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
+      const name = methodNameOf(m);
       map.set(name, (map.get(name) ?? 0) + Number(m.amount || 0));
     }
     return Array.from(map.entries()).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
@@ -91,13 +95,8 @@ export default function CashSessionDetail() {
   const totalOut = cashMoves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
   const reconcileTotal = nonCashMoves.reduce((s, m) => s + Number(m.amount || 0), 0);
 
-  const methodNames = Array.from(new Set(moves.map((m) =>
-    m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind)
-  )));
-  const filteredMoves = methodFilter === "all" ? moves : moves.filter((m) => {
-    const name = m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
-    return name === methodFilter;
-  });
+  const methodNames = Array.from(new Set(moves.map(methodNameOf)));
+  const filteredMoves = methodFilter === "all" ? moves : moves.filter((m) => methodNameOf(m) === methodFilter);
 
   const close = async () => {
     if (counted === "") return toast.error("Informe o valor contado");
