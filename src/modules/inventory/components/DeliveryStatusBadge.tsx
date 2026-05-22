@@ -62,8 +62,38 @@ export function DeliveryStatusBadge({
         .maybeSingle()).data,
   });
 
+  // Active delivery_schedule for the linked SO (drives requested/confirmed UI)
+  const { data: schedule } = useQuery({
+    queryKey: ["delivery-status-schedule", (so as any)?.id],
+    enabled: !!(so as any)?.id && !isPickup,
+    queryFn: async () =>
+      (await supabase
+        .from("delivery_schedules")
+        .select("id,status,scheduled_date,route_id")
+        .eq("sale_order_id", (so as any).id)
+        .not("status", "in", "(cancelled,delivered,rescheduled)")
+        .maybeSingle()).data,
+  });
+
+  const { inGroup, isAdmin } = usePermissions();
+  const isLogistics = isAdmin || inGroup("inventory_user") || inGroup("inventory_manager") || inGroup("system_admin");
+
+  const confirmSchedule = async () => {
+    if (!(schedule as any)?.id) return;
+    const { data, error } = await supabase.rpc("delivery_schedule_confirm" as any, { _schedule_id: (schedule as any).id });
+    if (error) return toast.error(error.message);
+    if ((data as any)?.ok === false) return toast.error((data as any)?.error ?? "Falha ao confirmar");
+    toast.success("Entrega confirmada");
+    qc.invalidateQueries({ queryKey: ["delivery-status-schedule"] });
+    qc.invalidateQueries({ queryKey: ["sale-shipment"] });
+    onChanged?.();
+  };
+
   const zone = (route as any)?.delivery_zones;
   const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("pt-PT") : "");
+  const scheduleStatus = (schedule as any)?.status as string | undefined;
+  const isRequested = scheduleStatus === "requested" || scheduleStatus === "scheduled" || scheduleStatus === "waiting_confirmation";
+  const isConfirmed = scheduleStatus === "confirmed" || scheduleStatus === "assigned";
 
   // ---- PICKUP (Levantamento) ----
   if (isPickup) {
