@@ -158,17 +158,50 @@ export default function CashSessionDetail() {
           { label: sess.name },
         ]}
         backTo={`/cashbox/${sess.register_id}`}
-        state={{ label: isOpen ? "aberta" : "fechada", tone: isOpen ? "success" : "default" }}
+        state={{
+          label: isOpen ? "aberta" : reconciled ? "conciliada" : pendingHandover ? "pendente conciliação" : "fechada",
+          tone: isOpen ? "success" : reconciled ? "success" : pendingHandover ? "warning" : "default",
+        }}
         actions={
           isOpen ? (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setMovDlg(true)}><Plus className="h-4 w-4 mr-1" /> Movimento</Button>
               <Button size="sm" onClick={() => { setCounted(String(balance.toFixed(2))); setCloseDlg(true); }}><Lock className="h-4 w-4 mr-1" /> Fechar</Button>
             </div>
+          ) : pendingHandover ? (
+            <Button size="sm" onClick={() => setReconcileDlg(true)}>
+              <ShieldCheck className="h-4 w-4 mr-1" /> Conciliar (Financeiro)
+            </Button>
           ) : null
         }
       />
       <PageBody>
+        {pendingHandover && (
+          <Card className="p-3 mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm">
+                <strong>Pendente de conferência pelo financeiro.</strong> Entregue em{" "}
+                {sess.handover_at ? new Date(sess.handover_at).toLocaleString("pt-PT") : "—"} ·
+                Dinheiro contado: <strong className="tabular-nums">{fmtMoney(sess.handover_cash_amount ?? 0)}</strong>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <a href="/finance/handovers"><ExternalLink className="h-4 w-4 mr-1" /> Ver fila do financeiro</a>
+                </Button>
+                <Button size="sm" onClick={() => setReconcileDlg(true)}>
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Conciliar caixa
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+        {reconciled && (
+          <Card className="p-3 mb-4 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-sm">
+            <strong>Caixa conciliada</strong>
+            {sess.reconciled_at && <> em {new Date(sess.reconciled_at).toLocaleString("pt-PT")}</>}
+            {sess.reconciliation_notes && <> · {sess.reconciliation_notes}</>}
+          </Card>
+        )}
         <Card className="p-4 grid grid-cols-2 sm:grid-cols-7 gap-4 mb-4">
           <Stat label="Aberta por" value={openerName || "—"} />
           <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
