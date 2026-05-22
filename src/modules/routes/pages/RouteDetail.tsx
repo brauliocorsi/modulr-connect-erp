@@ -115,13 +115,50 @@ export default function RouteDetail() {
     queryFn: async () => (await supabase.from("loading_docks").select("id,name").eq("active", true).order("name")).data ?? [],
   });
 
+  const { data: people = [] } = useQuery({
+    queryKey: ["profiles-route-crew"],
+    queryFn: async () =>
+      (await supabase.from("profiles").select("id,full_name").order("full_name")).data ?? [],
+  });
+
+  // Valores a receber: somatório dos SO da rota por estado de entrega.
+  const { data: amounts } = useQuery({
+    queryKey: ["route-amounts", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: orders } = await (supabase as any)
+        .from("delivery_route_orders")
+        .select("status, delivery_schedules(sale_orders(amount_total))")
+        .eq("route_id", id!);
+      let expected = 0, collected = 0, pending = 0;
+      for (const o of (orders ?? []) as any[]) {
+        const tot = Number(o?.delivery_schedules?.sale_orders?.amount_total ?? 0);
+        expected += tot;
+        if (o.status === "delivered" || o.status === "partial") collected += tot;
+        else if (!["cancelled", "returned", "failed"].includes(o.status)) pending += tot;
+      }
+      return { expected, collected, pending };
+    },
+    refetchInterval: 15000,
+  });
+
   const [busy, setBusy] = useState<string | null>(null);
   const [newVehicleId, setNewVehicleId] = useState<string>("");
   const [dockId, setDockId] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
   const [deliverOpen, setDeliverOpen] = useState<string | null>(null);
   const [returnOpen, setReturnOpen] = useState<string | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState<{ scheduleId: string; soName?: string } | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
+
+  const updateCrew = async (patch: { driver_id?: string | null; helper_id?: string | null }) => {
+    if (!id) return;
+    setBusy("crew");
+    const { error } = await (supabase as any).from("delivery_routes").update(patch).eq("id", id);
+    setBusy(null);
+    if (error) toast.error(`Erro ao atualizar equipa: ${error.message}`);
+    else { toast.success("Equipa atualizada"); refreshAll(); }
+  };
 
   const { refresh, lastUpdated, isFetching } = useEntityRefresh({
     entityType: "delivery_route",
