@@ -49,7 +49,7 @@ export default function CashSessionDetail() {
     } else setOpenerName("");
     const { data: m } = await supabase
       .from("cash_movements")
-      .select("*, customer_payments(method_id, payment_methods(name))")
+      .select("*, customer_payments(method_id, order_id, payment_methods(name), sale_orders(id,name))")
       .eq("session_id", id!)
       .order("created_at", { ascending: false });
     setMoves(m ?? []);
@@ -67,11 +67,15 @@ export default function CashSessionDetail() {
     } else setReconcile([]);
   };
 
+  const methodNameOf = (m: any) =>
+    m.kind === "opening"
+      ? "Dinheiro"
+      : (m.customer_payments?.payment_methods?.name ?? (m.payment_id ? (KIND_LABEL[m.kind] ?? m.kind) : "Dinheiro"));
+
   const methodTotals = (() => {
     const map = new Map<string, number>();
     for (const m of moves) {
-      const name = m.customer_payments?.payment_methods?.name
-        ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
+      const name = methodNameOf(m);
       map.set(name, (map.get(name) ?? 0) + Number(m.amount || 0));
     }
     return Array.from(map.entries()).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
@@ -91,13 +95,8 @@ export default function CashSessionDetail() {
   const totalOut = cashMoves.filter((m) => Number(m.amount) < 0).reduce((s, m) => s + Number(m.amount), 0);
   const reconcileTotal = nonCashMoves.reduce((s, m) => s + Number(m.amount || 0), 0);
 
-  const methodNames = Array.from(new Set(moves.map((m) =>
-    m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind)
-  )));
-  const filteredMoves = methodFilter === "all" ? moves : moves.filter((m) => {
-    const name = m.customer_payments?.payment_methods?.name ?? (m.kind === "opening" ? "Abertura" : KIND_LABEL[m.kind] ?? m.kind);
-    return name === methodFilter;
-  });
+  const methodNames = Array.from(new Set(moves.map(methodNameOf)));
+  const filteredMoves = methodFilter === "all" ? moves : moves.filter((m) => methodNameOf(m) === methodFilter);
 
   const close = async () => {
     if (counted === "") return toast.error("Informe o valor contado");
@@ -216,6 +215,7 @@ export default function CashSessionDetail() {
                   <th className="text-left px-3 py-2">Data</th>
                   <th className="text-left px-3 py-2">Tipo</th>
                   <th className="text-left px-3 py-2">Forma</th>
+                  <th className="text-left px-3 py-2">Venda</th>
                   <th className="text-left px-3 py-2">Referência</th>
                   <th className="text-left px-3 py-2">Notas</th>
                   <th className="text-right px-3 py-2">Valor</th>
@@ -224,11 +224,15 @@ export default function CashSessionDetail() {
               </thead>
               <tbody>
                 {filteredMoves.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
                 ) : filteredMoves.map((m) => {
                   const isReversal = !!m.reversal_of_id;
                   const wasReversed = reversedIds.has(m.id);
                   const canReverse = isOpen && !isReversal && !wasReversed && m.kind !== "opening";
+                  const sale = m.customer_payments?.sale_orders;
+                  const methodLabel = m.kind === "opening"
+                    ? "Dinheiro"
+                    : (m.customer_payments?.payment_methods?.name ?? (m.payment_id ? "—" : "Dinheiro"));
                   return (
                     <tr key={m.id} className={`border-t ${isReversal || wasReversed ? "opacity-60" : ""}`}>
                       <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
@@ -237,7 +241,18 @@ export default function CashSessionDetail() {
                         {isReversal && <span className="ml-2 text-xs text-muted-foreground">(reversão)</span>}
                         {wasReversed && <span className="ml-2 text-xs text-muted-foreground">(revertido)</span>}
                       </td>
-                      <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
+                      <td className="px-3 py-2">{methodLabel}</td>
+                      <td className="px-3 py-2">
+                        {sale?.id ? (
+                          <a
+                            href={`/sales/orders/${sale.id}`}
+                            className="font-mono text-xs text-primary hover:underline"
+                            onClick={(e) => { e.preventDefault(); nav(`/sales/orders/${sale.id}`); }}
+                          >
+                            {sale.name}
+                          </a>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
                       <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
                       <td className="px-3 py-2 text-muted-foreground">{m.notes ?? m.reversal_reason ?? ""}</td>
                       <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
