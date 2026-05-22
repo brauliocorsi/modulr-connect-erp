@@ -121,6 +121,9 @@ export default function BillForm() {
     if (bill.state === "partial" && Number(bill.amount_total || 0) < Number(bill.amount_paid || 0)) {
       return toast.error("Total não pode ser inferior ao valor já pago");
     }
+    if (!isCostCenterAccountValid({ cost_center_id: bill.cost_center_id || null, account_id: bill.account_id || null }, true)) {
+      return toast.error("Centro de Custo e Plano de Contas são obrigatórios em faturas de fornecedor");
+    }
     if (isNew) {
       // PO-based: usar RPC supplier_bill_create_from_po (F20-B).
       if (bill.purchase_order_id) {
