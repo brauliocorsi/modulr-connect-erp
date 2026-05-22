@@ -115,6 +115,11 @@ export default function BillForm() {
 
   const save = async () => {
     if (!bill.partner_id) return toast.error("Selecione fornecedor");
+    if (bill.state === "cancelled") return toast.error("Fatura cancelada — edição bloqueada");
+    if (bill.state === "paid") return toast.error("Fatura paga — edição bloqueada");
+    if (bill.state === "partial" && Number(bill.amount_total || 0) < Number(bill.amount_paid || 0)) {
+      return toast.error("Total não pode ser inferior ao valor já pago");
+    }
     if (isNew) {
       // PO-based: usar RPC supplier_bill_create_from_po (F20-B).
       if (bill.purchase_order_id) {
@@ -140,6 +145,8 @@ export default function BillForm() {
           due_date: bill.due_date || null,
           amount_total: Number(bill.amount_total || 0),
           cost_center_id: bill.cost_center_id || null,
+          account_id: bill.account_id || null,
+          source: "manual",
           reference: bill.reference || null,
           notes: bill.notes || null,
           state: "posted",
@@ -161,6 +168,7 @@ export default function BillForm() {
           due_date: bill.due_date || null,
           amount_total: Number(bill.amount_total || 0),
           cost_center_id: bill.cost_center_id || null,
+          account_id: bill.account_id || null,
           reference: bill.reference,
           notes: bill.notes,
         },
