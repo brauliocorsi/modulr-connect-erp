@@ -49,7 +49,7 @@ export function RegisterSupplierPaymentDialog({
         supabase.from("payment_methods").select("id,name").eq("active", true).order("name"),
         supabase.from("cost_centers").select("id,name,code").eq("active", true).order("name"),
         supabase.from("chart_of_accounts").select("id,name,code,type").eq("active", true).in("type", ["expense","liability","asset"]).order("code"),
-        supabase.from("journals").select("id,name").eq("active", true).order("name").then(r => r.error ? { data: [] as any[], error: r.error } : r),
+        supabase.from("account_journals").select("id,name").eq("active", true).order("name"),
         supabase.from("supplier_bills").select("cost_center_id,account_id").eq("id", billId).maybeSingle(),
       ]);
       setMethods(m ?? []);
