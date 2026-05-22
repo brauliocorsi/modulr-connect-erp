@@ -12110,10 +12110,20 @@ export type Database = {
         Args: { _thread_id: string; _visibility_filter?: string }
         Returns: Json
       }
-      conversation_send_message: {
-        Args: { _body: string; _thread_id: string; _visibility?: string }
-        Returns: string
-      }
+      conversation_send_message:
+        | {
+            Args: { _body: string; _thread_id: string; _visibility?: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _attachments?: Json
+              _body: string
+              _thread_id: string
+              _visibility?: string
+            }
+            Returns: string
+          }
       conversation_unified_list: { Args: { _limit?: number }; Returns: Json }
       create_batch: { Args: { _pickings: string[] }; Returns: string }
       create_customer_credit: {
@@ -12340,21 +12350,49 @@ export type Database = {
         Args: { _manifest_ids: string[]; _route_id: string }
         Returns: Json
       }
+      discuss_add_member: {
+        Args: { _channel: string; _user: string }
+        Returns: undefined
+      }
       discuss_bridge_channel_to_conversation: {
         Args: { _channel_id: string }
         Returns: string
       }
-      discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
-      discuss_open_dm: { Args: { _other: string }; Returns: string }
-      discuss_send_message: {
+      discuss_create_channel: {
         Args: {
-          _body?: string
-          _channel_id: string
-          _image_url?: string
-          _mentions?: string[]
+          _description?: string
+          _is_private?: boolean
+          _members?: string[]
+          _name: string
         }
         Returns: string
       }
+      discuss_mark_read: { Args: { _channel: string }; Returns: undefined }
+      discuss_open_dm: { Args: { _other: string }; Returns: string }
+      discuss_remove_member: {
+        Args: { _channel: string; _user: string }
+        Returns: undefined
+      }
+      discuss_send_message:
+        | {
+            Args: {
+              _body?: string
+              _channel_id: string
+              _image_url?: string
+              _mentions?: string[]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _attachments?: Json
+              _body?: string
+              _channel_id: string
+              _image_url?: string
+              _mentions?: string[]
+            }
+            Returns: string
+          }
       driver_assign_batch: {
         Args: {
           _batch: string
