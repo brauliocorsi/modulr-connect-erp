@@ -8,7 +8,6 @@ export default function VehicleForm() {
 
   useEffect(() => {
     (async () => {
-      // Drivers = users in delivery_driver group
       const { data: ug } = await supabase
         .from("user_groups")
         .select("user_id, groups!inner(code)")
@@ -34,13 +33,33 @@ export default function VehicleForm() {
         { label: "Editar" },
       ]}
       fields={[
+        // Identificação
         { name: "name", label: "Nome (ex: VAN-01)", required: true },
         { name: "license_plate", label: "Matrícula" },
         { name: "barcode", label: "Código de barras" },
         { name: "driver_id", label: "Motorista", type: "select", options: drivers },
         { name: "cash_register_id", label: "Caixa associado", type: "select", options: registers },
-        { name: "notes", label: "Notas", type: "textarea", span: 2 },
         { name: "active", label: "Ativo", type: "boolean", default: true },
+
+        // Capacidade de carga (usada pelo Cronograma de Rotas)
+        { name: "usable_volume_m3", label: "Volume útil (m³) — usado no cronograma", type: "number", placeholder: "ex: 12.5" },
+        { name: "volume_m3", label: "Volume total (m³)", type: "number" },
+        { name: "max_weight_kg", label: "Carga máxima (kg)", type: "number" },
+        { name: "weight_kg", label: "Tara — peso vazio (kg)", type: "number" },
+
+        // Dimensões úteis do compartimento
+        { name: "usable_length_cm", label: "Comprimento útil (cm)", type: "number" },
+        { name: "usable_width_cm", label: "Largura útil (cm)", type: "number" },
+        { name: "usable_height_cm", label: "Altura útil (cm)", type: "number" },
+        { name: "supports_flat_transport", label: "Suporta transporte em plano", type: "boolean" },
+
+        // Capacidade operacional
+        { name: "max_stops", label: "Nº máximo de paragens", type: "number" },
+        { name: "assembly_minutes_capacity", label: "Minutos de montagem por turno", type: "number" },
+        { name: "max_assembly_minutes", label: "Limite duro de montagem (min)", type: "number" },
+        { name: "requires_load_verification", label: "Exige verificação de carga", type: "boolean" },
+
+        { name: "notes", label: "Notas", type: "textarea", span: 2 },
       ]}
     />
   );
