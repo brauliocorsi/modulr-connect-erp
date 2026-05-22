@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Receipt, Trash2 } from "lucide-react";
+import { Save, Receipt, Trash2, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
+import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
 
 export default function BillForm() {
   const { id } = useParams();
