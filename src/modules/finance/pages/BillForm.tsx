@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Receipt, Trash2 } from "lucide-react";
+import { Save, Receipt, Trash2, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
+import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
 
 export default function BillForm() {
   const { id } = useParams();
@@ -32,17 +34,40 @@ export default function BillForm() {
     cost_center_id: "",
     reference: "",
     notes: "",
+    attachments: [] as Attachment[],
   });
   const [partners, setPartners] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
   const [pos, setPos] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [lines, setLines] = useState<any[]>([]);
+  const [poInfo, setPoInfo] = useState<any | null>(null);
   const [payDlg, setPayDlg] = useState(false);
 
   const load = async () => {
     if (!isNew) {
       const { data } = await supabase.from("supplier_bills").select("*, partners(name)").eq("id", id!).maybeSingle();
-      if (data) setBill(data);
+      if (data) {
+        setBill({ ...data, attachments: Array.isArray((data as any).attachments) ? (data as any).attachments : [] });
+        // Bill lines
+        const { data: ls } = await supabase
+          .from("supplier_bill_lines")
+          .select("*, products(name,sku), po_line_id")
+          .eq("bill_id", id!)
+          .order("created_at");
+        setLines(ls ?? []);
+        // Origin PO
+        if ((data as any).purchase_order_id) {
+          const { data: po } = await supabase
+            .from("purchase_orders")
+            .select("id,name,state,date_order,origin,amount_total")
+            .eq("id", (data as any).purchase_order_id)
+            .maybeSingle();
+          setPoInfo(po ?? null);
+        } else {
+          setPoInfo(null);
+        }
+      }
       const { data: p } = await supabase
         .from("supplier_payments")
         .select("*, payment_methods(name), account_journals(name)")
@@ -138,8 +163,17 @@ export default function BillForm() {
       if (error) return toast.error(error.message);
       const res: any = data;
       if (res?.error) return toast.error(mapBillError(res.error));
+      await supabase.from("supplier_bills").update({ attachments: bill.attachments ?? [] }).eq("id", id!);
       toast.success("Salvo");
       load();
+    }
+  };
+
+  const updateAttachments = async (next: Attachment[]) => {
+    setBill((b: any) => ({ ...b, attachments: next }));
+    if (!isNew) {
+      const { error } = await supabase.from("supplier_bills").update({ attachments: next as any }).eq("id", id!);
+      if (error) toast.error(`Anexos: ${error.message}`);
     }
   };
 
@@ -226,6 +260,71 @@ export default function BillForm() {
           </Card>
         )}
 
+        {!isNew && poInfo && (
+          <Card className="mt-4 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-semibold">Documento de origem</div>
+              <Link
+                to={`/purchase/orders/${poInfo.id}`}
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Abrir pedido <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-4 gap-3 text-sm">
+              <div><div className="text-xs text-muted-foreground">Pedido</div><div className="font-mono">{poInfo.name}</div></div>
+              <div><div className="text-xs text-muted-foreground">Estado</div><div>{poInfo.state}</div></div>
+              <div><div className="text-xs text-muted-foreground">Data</div><div>{poInfo.date_order?.slice(0,10) ?? "—"}</div></div>
+              <div><div className="text-xs text-muted-foreground">Total PO</div><div className="tabular-nums">{fmtMoney(poInfo.amount_total)}</div></div>
+              {poInfo.origin && (
+                <div className="sm:col-span-4"><div className="text-xs text-muted-foreground">Origem</div><div>{poInfo.origin}</div></div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {!isNew && (
+          <Card className="mt-4">
+            <div className="px-4 py-3 border-b font-semibold">Lançamentos da fatura</div>
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left px-3 py-2">Produto</th>
+                  <th className="text-left px-3 py-2">Descrição</th>
+                  <th className="text-right px-3 py-2">Qtd</th>
+                  <th className="text-right px-3 py-2">Preço</th>
+                  <th className="text-right px-3 py-2">Imp. %</th>
+                  <th className="text-right px-3 py-2">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.length === 0 ? (
+                  <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Sem lançamentos</td></tr>
+                ) : lines.map((l: any) => (
+                  <tr key={l.id} className="border-t">
+                    <td className="px-3 py-2">{l.products?.sku ? <span className="font-mono text-xs">{l.products.sku}</span> : "—"}</td>
+                    <td className="px-3 py-2">{l.description ?? l.products?.name ?? "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(l.quantity).toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(l.unit_price)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{Number(l.tax_pct).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(l.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+
+        <Card className="mt-4 p-4">
+          <AttachmentsField
+            value={(bill.attachments as Attachment[]) ?? []}
+            onChange={updateAttachments}
+            folder={`bills/${id ?? "new"}`}
+            disabled={bill.state === "cancelled"}
+            label="Anexos da fatura"
+          />
+        </Card>
+
         {!isNew && (
           <Card className="mt-4">
             <div className="px-4 py-3 border-b font-semibold">Pagamentos</div>
@@ -251,7 +350,17 @@ export default function BillForm() {
                     <td className="px-3 py-2">{p.payment_date}</td>
                     <td className="px-3 py-2">{p.payment_methods?.name ?? "—"}</td>
                     <td className="px-3 py-2">{p.account_journals?.name ?? "—"}</td>
-                    <td className="px-3 py-2">{p.reference ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {p.reference ?? "—"}
+                      {Array.isArray(p.attachments) && p.attachments.length > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          {p.attachments.slice(0, 3).map((a: any, i: number) => (
+                            <a key={i} href={a.url} target="_blank" rel="noreferrer" className="underline hover:text-foreground" title={a.name}>📎</a>
+                          ))}
+                          {p.attachments.length > 3 && <span>+{p.attachments.length - 3}</span>}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(p.amount)}</td>
                     <td className="px-3 py-2">{p.state}</td>
                     <td>{p.state === "posted" && <Button size="sm" variant="ghost" onClick={() => cancelPayment(p.id)}><Trash2 className="h-4 w-4" /></Button>}</td>

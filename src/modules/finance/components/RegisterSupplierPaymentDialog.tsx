@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { AttachmentsField, type Attachment } from "@/modules/finance/components/AttachmentsField";
 
 export function RegisterSupplierPaymentDialog({
   open, onOpenChange, billId, partnerId: _partnerId, defaultAmount, onSaved,
@@ -28,6 +29,7 @@ export function RegisterSupplierPaymentDialog({
     reference: "",
     notes: "",
   });
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -53,9 +55,20 @@ export function RegisterSupplierPaymentDialog({
       _reference: form.reference || undefined,
       _idempotency_key: idempotencyKey,
     });
+    if (error) { setSaving(false); return toast.error(error.message); }
+    if (attachments.length) {
+      const { data: pay } = await supabase
+        .from("supplier_payments")
+        .select("id")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+      if (pay?.id) {
+        await supabase.from("supplier_payments").update({ attachments: attachments as any }).eq("id", pay.id);
+      }
+    }
     setSaving(false);
-    if (error) return toast.error(error.message);
     toast.success("Pagamento registado");
+    setAttachments([]);
     onOpenChange(false);
     onSaved?.();
   };
@@ -78,6 +91,14 @@ export function RegisterSupplierPaymentDialog({
           </div>
           <div><Label>Referência</Label><Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} /></div>
           <div><Label>Notas (opcional)</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div className="rounded-md border p-3">
+            <AttachmentsField
+              value={attachments}
+              onChange={setAttachments}
+              folder={`payments/${billId}`}
+              label="Anexos do pagamento"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
