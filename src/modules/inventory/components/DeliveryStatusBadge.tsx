@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck, X } from "lucide-react";
+import { CalendarPlus, CalendarCheck2, CircleDashed, Truck, PackageCheck, X, Clock3, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScheduleDeliveryDialog } from "./ScheduleDeliveryDialog";
+import { usePermissions } from "@/core/permissions/usePermissions";
 
 type Picking = {
   id: string;
