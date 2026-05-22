@@ -22,7 +22,11 @@ type Shipment = {
   vehicles: { id: string; name: string; license_plate: string | null } | null;
   delivery_carriers: { id: string; name: string } | null;
   delivery_routes:
-    | { id: string; route_date: string | null; state: string | null; delivery_zones: { name: string; color: string | null } | null }
+    | { id: string; route_date: string | null; state: string | null;
+        delivery_zones: { name: string; color: string | null } | null;
+        vehicles: { id: string; name: string; license_plate: string | null } | null;
+        hr_employees: { id: string; full_name: string | null } | null;
+      }
     | null;
 };
 
