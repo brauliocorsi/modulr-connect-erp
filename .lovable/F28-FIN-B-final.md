@@ -56,3 +56,26 @@ Nenhuma das condições de paragem foi atingida.
 - ReceivablesPage: persistir tab/filtros em URL + export CSV.
 - Bank import: matching contra `supplier_payments`, fuzzy por referência.
 - Suíte vitest financeira ampliada (PayablesList, ReceivablesPage, CostCentersPage, BillForm) — adiada por escopo.
+
+## B.2 — Fecho de testes (esta iteração)
+
+Conteúdo desta passagem: **apenas testes vitest + verificação**. Nenhuma alteração em UI, RPCs ou migrations.
+
+### Testes atualizados/criados
+- `src/modules/finance/pages/__tests__/ReceivablesPage.test.tsx` — reescrito para v2: mock chainable suportando `customer_payments.select().in()` e `profiles.select()`; cobre summary, badge vencido, render das 6 tabs, classificação de origem (`bank` via tipo de diário, `delivery` via `due_kind=on_delivery`), método de pagamento, vendedor, atalho para a venda, abertura do `RegisterPaymentDialog`. **9/9 OK**.
+- `src/modules/finance/pages/__tests__/CostCentersPage.test.tsx` — novo. Render lista, search por código/nome, criar (chama `cost_center_upsert` com `id=null`), editar (chama `cost_center_upsert` com `id`), arquivar (chama `cost_center_archive`). **5/5 OK**.
+
+### Bateria financeira completa
+`bunx vitest run src/modules/finance` → **11 ficheiros, 46/46 testes OK**:
+- RegisterPaymentDialog.cta (2) · RegisterPaymentDialog (4) · RegisterSupplierPaymentDialog (3) · CustomerCreditsPanel (5)
+- BillForm (3) · PayablesList (5) · PaymentsPage (1) · PendingConfirmationsPage (4) · ReceivablesPage v2 (9) · RecurringExpensesPage (6) · CostCentersPage (5)
+
+### Zero-bypass financeiro (re-verificação)
+```
+rg -n "from\(['\"](supplier_bills|supplier_bill_lines|supplier_payments|customer_payments|sale_payment_schedules|recurring_expenses|cost_centers|chart_of_accounts|bank_reconciliation_lines|cash_movements)['\"]\)\.(insert|update|upsert|delete)" src/modules src/core
+```
+→ **0 hits**. Sem regressões.
+
+### Backlog Entrega C (consolidado)
+Notificações de vencimento · Dashboard financeiro v2 (cards executivos, gráficos, fluxo 7/30 d) · Diários com IBAN/saldo inicial · Bank import v2 (matching de `supplier_payments`, fuzzy por referência) · OCR de faturas · SAF-T · Aprovação avançada · IA/MCP financeiro · Tab "Pagamentos" no BillForm · Persistência de filtros/tab em URL + export CSV nas listagens AP/AR.
+
