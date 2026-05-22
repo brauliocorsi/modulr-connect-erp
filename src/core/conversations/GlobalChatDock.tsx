@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
-import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox } from "lucide-react";
+import { MessageCircle, Hash, X, Minus, ChevronLeft, Eye, EyeOff, Loader2, AtSign, Inbox, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { inferEntityContextFromPath } from "./inferEntityContext";
+import { EmojiButton } from "@/core/chat/EmojiButton";
+import { AttachmentButton } from "@/core/chat/AttachmentButton";
+import { AttachmentBubble, type ChatAttachment } from "@/core/chat/AttachmentBubble";
+import { UserAvatar } from "@/core/chat/UserAvatar";
 
 type DockState = "closed" | "minimized" | "open";
 const STORAGE_KEY = "erp.globalChatDock.state";
