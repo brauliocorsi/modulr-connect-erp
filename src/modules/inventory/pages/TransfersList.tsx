@@ -42,6 +42,7 @@ export default function TransfersList() {
     { key: "batch", label: "Lote" },
     { key: "route", label: "Rota" },
     { key: "scheduled_at", label: "Programado" },
+    { key: "confirmed_at", label: "Data confirmada" },
   ];
   const listView = useUserListView("inventory.transfers", {
     columns: COL_DEFS.map((c, i) => ({ key: c.key, visible: true, order: i })),
