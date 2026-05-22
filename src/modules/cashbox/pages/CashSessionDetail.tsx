@@ -216,6 +216,7 @@ export default function CashSessionDetail() {
                   <th className="text-left px-3 py-2">Data</th>
                   <th className="text-left px-3 py-2">Tipo</th>
                   <th className="text-left px-3 py-2">Forma</th>
+                  <th className="text-left px-3 py-2">Venda</th>
                   <th className="text-left px-3 py-2">Referência</th>
                   <th className="text-left px-3 py-2">Notas</th>
                   <th className="text-right px-3 py-2">Valor</th>
