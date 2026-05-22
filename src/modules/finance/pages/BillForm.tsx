@@ -34,11 +34,14 @@ export default function BillForm() {
     cost_center_id: "",
     reference: "",
     notes: "",
+    attachments: [] as Attachment[],
   });
   const [partners, setPartners] = useState<any[]>([]);
   const [centers, setCenters] = useState<any[]>([]);
   const [pos, setPos] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [lines, setLines] = useState<any[]>([]);
+  const [poInfo, setPoInfo] = useState<any | null>(null);
   const [payDlg, setPayDlg] = useState(false);
 
   const load = async () => {
