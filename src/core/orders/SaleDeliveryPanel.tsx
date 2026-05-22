@@ -25,7 +25,6 @@ type Shipment = {
     | { id: string; route_date: string | null; state: string | null;
         delivery_zones: { name: string; color: string | null } | null;
         vehicles: { id: string; name: string; license_plate: string | null } | null;
-        hr_employees: { id: string; full_name: string | null } | null;
       }
     | null;
 };
