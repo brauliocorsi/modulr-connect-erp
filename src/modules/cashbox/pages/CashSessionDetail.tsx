@@ -225,11 +225,15 @@ export default function CashSessionDetail() {
               </thead>
               <tbody>
                 {filteredMoves.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Sem movimentos</td></tr>
                 ) : filteredMoves.map((m) => {
                   const isReversal = !!m.reversal_of_id;
                   const wasReversed = reversedIds.has(m.id);
                   const canReverse = isOpen && !isReversal && !wasReversed && m.kind !== "opening";
+                  const sale = m.customer_payments?.sale_orders;
+                  const methodLabel = m.kind === "opening"
+                    ? "Dinheiro"
+                    : (m.customer_payments?.payment_methods?.name ?? (m.payment_id ? "—" : "Dinheiro"));
                   return (
                     <tr key={m.id} className={`border-t ${isReversal || wasReversed ? "opacity-60" : ""}`}>
                       <td className="px-3 py-2 whitespace-nowrap">{new Date(m.created_at).toLocaleString("pt-PT")}</td>
@@ -238,7 +242,18 @@ export default function CashSessionDetail() {
                         {isReversal && <span className="ml-2 text-xs text-muted-foreground">(reversão)</span>}
                         {wasReversed && <span className="ml-2 text-xs text-muted-foreground">(revertido)</span>}
                       </td>
-                      <td className="px-3 py-2">{m.customer_payments?.payment_methods?.name ?? "—"}</td>
+                      <td className="px-3 py-2">{methodLabel}</td>
+                      <td className="px-3 py-2">
+                        {sale?.id ? (
+                          <a
+                            href={`/sales/orders/${sale.id}`}
+                            className="font-mono text-xs text-primary hover:underline"
+                            onClick={(e) => { e.preventDefault(); nav(`/sales/orders/${sale.id}`); }}
+                          >
+                            {sale.name}
+                          </a>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
                       <td className="px-3 py-2 font-mono">{m.reference ?? "—"}</td>
                       <td className="px-3 py-2 text-muted-foreground">{m.notes ?? m.reversal_reason ?? ""}</td>
                       <td className={`px-3 py-2 text-right tabular-nums font-medium ${Number(m.amount) < 0 ? "text-rose-600" : "text-emerald-600"}`}>
