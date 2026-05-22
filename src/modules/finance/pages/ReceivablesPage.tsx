@@ -205,6 +205,13 @@ export default function ReceivablesPage() {
       <PageHeader
         title="Contas a Receber"
         breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "A Receber" }]}
+        actions={
+          <Link to="/finance/bank-import">
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-1" /> Importar extrato bancário
+            </Button>
+          </Link>
+        }
       />
       <PageBody>
         <SummaryCards
