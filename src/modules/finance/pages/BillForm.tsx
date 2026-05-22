@@ -278,7 +278,6 @@ export default function BillForm() {
               <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} · {a.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          </div>
           <div className="sm:col-span-2"><Label>Referência</Label><Input value={bill.reference ?? ""} onChange={(e) => setBill({ ...bill, reference: e.target.value })} /></div>
           <div className="sm:col-span-2"><Label>Notas</Label><Textarea value={bill.notes ?? ""} onChange={(e) => setBill({ ...bill, notes: e.target.value })} /></div>
         </Card>
