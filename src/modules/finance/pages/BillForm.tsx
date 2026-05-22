@@ -47,7 +47,27 @@ export default function BillForm() {
   const load = async () => {
     if (!isNew) {
       const { data } = await supabase.from("supplier_bills").select("*, partners(name)").eq("id", id!).maybeSingle();
-      if (data) setBill(data);
+      if (data) {
+        setBill({ ...data, attachments: Array.isArray((data as any).attachments) ? (data as any).attachments : [] });
+        // Bill lines
+        const { data: ls } = await supabase
+          .from("supplier_bill_lines")
+          .select("*, products(name,sku), po_line_id")
+          .eq("bill_id", id!)
+          .order("created_at");
+        setLines(ls ?? []);
+        // Origin PO
+        if ((data as any).purchase_order_id) {
+          const { data: po } = await supabase
+            .from("purchase_orders")
+            .select("id,name,state,date_order,origin,amount_total")
+            .eq("id", (data as any).purchase_order_id)
+            .maybeSingle();
+          setPoInfo(po ?? null);
+        } else {
+          setPoInfo(null);
+        }
+      }
       const { data: p } = await supabase
         .from("supplier_payments")
         .select("*, payment_methods(name), account_journals(name)")
