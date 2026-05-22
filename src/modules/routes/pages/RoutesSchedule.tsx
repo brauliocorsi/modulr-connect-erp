@@ -507,6 +507,7 @@ function RouteCell({ route, count }: { route: any; count: number }) {
           {deliveryOnly && (
             <Badge variant="outline" className="text-[8px] px-1 py-0 mt-0.5">Só entrega</Badge>
           )}
+          <RouteCapacityMini route={route} />
         </Link>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
