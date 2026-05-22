@@ -347,6 +347,7 @@ const App = () => (
                 <Route path="zones/new" element={<ZoneForm />} />
                 <Route path="zones/:id" element={<ZoneForm />} />
                 <Route path=":id" element={<RouteDetail />} />
+                <Route path=":id/print" element={<RouteManifestPrint />} />
               </Route>
 
               {/* M5 — Pickups & Carriers */}
