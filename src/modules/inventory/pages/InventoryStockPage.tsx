@@ -387,7 +387,7 @@ export default function InventoryStockPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
