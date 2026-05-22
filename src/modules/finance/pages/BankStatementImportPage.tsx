@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageBody } from "@/core/layout/PageHeader";
@@ -36,12 +36,10 @@ export default function BankStatementImportPage() {
   const [lines, setLines] = useState<Array<{ id: string; date: string; description: string; reference: string; amount: number; suggestions: Suggestion[]; status: string }>>([]);
   const [busy, setBusy] = useState(false);
 
-  // load journals on mount
-  useState(() => {
+  useEffect(() => {
     supabase.from("account_journals").select("id,name").eq("active", true).order("name")
       .then(({ data }) => setJournals(data ?? []));
-    return null;
-  });
+  }, []);
 
   const onFile = async (f: File) => {
     setFileName(f.name);
