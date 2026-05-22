@@ -252,6 +252,13 @@ export default function PayablesList() {
             { key: "total", header: "Total", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_total)}</span> },
             { key: "paid", header: "Pago", align: "right", cell: (r) => <span className="tabular-nums">{fmtMoney(r.amount_paid)}</span> },
             { key: "open", header: "Saldo", align: "right", cell: (r) => <span className="tabular-nums font-semibold">{fmtMoney(r._open)}</span> },
+            { key: "source", header: "Origem", cell: (r) => <span className="text-xs">{SOURCE_LABEL[r.source] ?? r.source}</span> },
+            { key: "cc", header: "C. custo", cell: (r) => r.cost_center_name
+              ? <span className="text-xs">{r.cost_center_name}</span>
+              : <span className="text-muted-foreground text-xs">—</span> },
+            { key: "acc", header: "Conta", cell: (r) => r.account_label
+              ? <span className="text-xs">{r.account_label}</span>
+              : <span className="text-muted-foreground text-xs">—</span> },
             { key: "state", header: "Estado", cell: (r) => (
               <OperationalStatusBadge domain="supplier_bill" status={r._overdue ? "overdue" : r.state} />
             ) },
