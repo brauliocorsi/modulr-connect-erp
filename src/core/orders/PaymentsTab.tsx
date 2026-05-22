@@ -456,6 +456,69 @@ export function PaymentsTab({
         )}
       </Card>
 
+      {/* Resumo das formas recebidas (entrega / conciliação) */}
+      {(() => {
+        const posted = payments.filter((p) => p.state === "posted");
+        if (posted.length === 0) return null;
+        const byMethod = new Map<string, { amount: number; matched: number; pending: number; other: number }>();
+        for (const p of posted) {
+          const name = p.payment_methods?.name ?? "—";
+          const cur = byMethod.get(name) ?? { amount: 0, matched: 0, pending: 0, other: 0 };
+          cur.amount += Number(p.amount || 0);
+          if (p.reconciliation_status === "matched") cur.matched += Number(p.amount || 0);
+          else if (p.reconciliation_status === "pending") cur.pending += Number(p.amount || 0);
+          else cur.other += Number(p.amount || 0);
+          byMethod.set(name, cur);
+        }
+        const rows = Array.from(byMethod.entries()).sort((a, b) => b[1].amount - a[1].amount);
+        const totalMatched = rows.reduce((s, [, v]) => s + v.matched, 0);
+        const totalPending = rows.reduce((s, [, v]) => s + v.pending, 0);
+        return (
+          <Card>
+            <div className="px-4 py-3 border-b flex items-center justify-between flex-wrap gap-2">
+              <div className="font-semibold flex items-center gap-2">
+                <Receipt className="h-4 w-4" /> Formas recebidas na entrega
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Conciliado: <strong className="text-emerald-600">{fmtMoney(totalMatched)}</strong>
+                {totalPending > 0 && <> · A confirmar: <strong className="text-amber-600">{fmtMoney(totalPending)}</strong></>}
+              </div>
+            </div>
+            <div className="divide-y">
+              {rows.map(([name, v]) => {
+                const fullyMatched = v.matched > 0 && v.pending === 0 && v.other === 0;
+                const anyPending = v.pending > 0;
+                return (
+                  <div key={name} className="px-4 py-2.5 flex items-center gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {fullyMatched
+                          ? "Forma final confirmada pela conciliação do caixa"
+                          : anyPending
+                          ? "Forma declarada na entrega — aguarda conferência do financeiro"
+                          : "Recebimento direto"}
+                      </div>
+                    </div>
+                    {fullyMatched && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">conciliado</span>
+                    )}
+                    {anyPending && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">a conciliar</span>
+                    )}
+                    <div className="text-sm font-semibold tabular-nums w-28 text-right">{fmtMoney(v.amount)}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="px-4 py-2 border-t text-[11px] text-muted-foreground">
+              Informativo. A forma definitiva é confirmada quando o financeiro concilia o caixa da entrega.
+            </div>
+          </Card>
+        );
+      })()}
+
+
       {picked && (
         <RegisterPaymentDialog
           open={!!picked}
