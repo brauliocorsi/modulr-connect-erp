@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CalendarPlus, MapPin, Truck, User2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { RouteCapacityMini } from "@/modules/routes/components/RouteCapacityMini";
 import { toast } from "sonner";
 
 // Local-date formatter — NEVER use toISOString here (it shifts dates by TZ).
