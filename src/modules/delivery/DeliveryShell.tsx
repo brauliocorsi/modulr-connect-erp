@@ -29,7 +29,7 @@ export default function DeliveryShell() {
           `flex-1 text-center py-3 text-sm ${isActive ? "text-emerald-400 border-b-2 border-emerald-400" : "text-slate-400"}`}>
           <Wallet className="h-4 w-4 inline mr-1" /> Caixa
         </NavLink>
-        <NavLink to="/discuss" className={({ isActive }) =>
+        <NavLink to="/delivery/discuss" className={({ isActive }) =>
           `flex-1 text-center py-3 text-sm ${isActive ? "text-emerald-400 border-b-2 border-emerald-400" : "text-slate-400"}`}>
           <MessageCircle className="h-4 w-4 inline mr-1" /> Conversas
         </NavLink>

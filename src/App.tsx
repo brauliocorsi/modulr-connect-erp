@@ -153,6 +153,8 @@ const App = () => (
               <Route path="batch/:id" element={<DeliveryBatch />} />
               <Route path="picking/:id" element={<DeliveryPicking />} />
               <Route path="cashbox" element={<DeliveryCashbox />} />
+              <Route path="discuss" element={<Discuss />} />
+              <Route path="discuss/:channelId" element={<Discuss />} />
             </Route>
 
             <Route
