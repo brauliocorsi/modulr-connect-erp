@@ -258,6 +258,7 @@ export default function RouteDetail() {
       qty_pending: m.qty_pending == null ? null : Number(m.qty_pending),
       assistance_required: !!m.assistance_required,
       damaged: !!m.damaged,
+      route_order_id: m.route_order_id,
       package_status: m.stock_packages?.status,
     })), [manifest]);
 
@@ -302,6 +303,30 @@ export default function RouteDetail() {
     }
     return c;
   }, [routeOrders]);
+
+  const orderFinancials = useMemo(() => {
+    const byOrder = new Map<string, { paid: number; refs: string[]; methods: string[] }>();
+    for (const p of routePayments as any[]) {
+      const item = byOrder.get(p.order_id) ?? { paid: 0, refs: [], methods: [] };
+      item.paid += Number(p.amount ?? 0);
+      if (p.reference) item.refs.push(p.reference);
+      const method = p.payment_methods?.name ?? p.payment_methods?.code;
+      if (method) item.methods.push(method);
+      byOrder.set(p.order_id, item);
+    }
+    return byOrder;
+  }, [routePayments]);
+
+  const assistanceByOrder = useMemo(() => {
+    const byOrigin = new Map<string, any[]>();
+    const routeLevel: any[] = [];
+    for (const sr of routeAssistance as any[]) {
+      const origin = sr.stock_pickings?.origin;
+      if (origin) byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), sr]);
+      else routeLevel.push(sr);
+    }
+    return { byOrigin, routeLevel };
+  }, [routeAssistance]);
 
   if (!route) return <PageBody>Carregando…</PageBody>;
   const r: any = route;
