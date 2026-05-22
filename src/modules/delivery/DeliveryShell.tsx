@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth/AuthProvider";
-import { Truck, Home, Wallet, LogOut } from "lucide-react";
+import { Truck, Home, Wallet, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DeliveryShell() {
@@ -29,7 +29,12 @@ export default function DeliveryShell() {
           `flex-1 text-center py-3 text-sm ${isActive ? "text-emerald-400 border-b-2 border-emerald-400" : "text-slate-400"}`}>
           <Wallet className="h-4 w-4 inline mr-1" /> Caixa
         </NavLink>
+        <NavLink to="/discuss" className={({ isActive }) =>
+          `flex-1 text-center py-3 text-sm ${isActive ? "text-emerald-400 border-b-2 border-emerald-400" : "text-slate-400"}`}>
+          <MessageCircle className="h-4 w-4 inline mr-1" /> Conversas
+        </NavLink>
       </nav>
+
 
       <main className="flex-1 overflow-auto">
         <Outlet />
