@@ -291,6 +291,26 @@ export function PaymentsTab({
                         <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-3 w-3" /> {dueLabel(s)}
                         </div>
+                        {(() => {
+                          const posted = linked.filter((p) => p.state === "posted");
+                          if (posted.length === 0) return null;
+                          const methods = Array.from(new Set(posted.map((p) => p.payment_methods?.name).filter(Boolean)));
+                          const anyMatched = posted.some((p) => p.reconciliation_status === "matched");
+                          const anyPending = posted.some((p) => p.reconciliation_status === "pending");
+                          if (methods.length === 0) return null;
+                          return (
+                            <div className="text-xs mt-0.5 flex items-center gap-1 flex-wrap">
+                              <span className="text-muted-foreground">{anyMatched ? "Recebido em:" : "Declarado em:"}</span>
+                              <strong className="text-foreground">{methods.join(" + ")}</strong>
+                              {anyMatched && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">conciliado</span>
+                              )}
+                              {!anyMatched && anyPending && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200">aguarda conciliação</span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </button>
                     <div className="text-right">

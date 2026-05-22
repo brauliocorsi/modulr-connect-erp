@@ -22,7 +22,10 @@ type Shipment = {
   vehicles: { id: string; name: string; license_plate: string | null } | null;
   delivery_carriers: { id: string; name: string } | null;
   delivery_routes:
-    | { id: string; route_date: string | null; state: string | null; delivery_zones: { name: string; color: string | null } | null }
+    | { id: string; route_date: string | null; state: string | null;
+        delivery_zones: { name: string; color: string | null } | null;
+        vehicles: { id: string; name: string; license_plate: string | null } | null;
+      }
     | null;
 };
 
@@ -54,7 +57,7 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           id, name, state, scheduled_at, done_at, tracking_ref, route_id, origin,
           vehicles(id, name, license_plate),
           delivery_carriers(id, name),
-          delivery_routes(id, route_date, state, delivery_zones(name, color))
+          delivery_routes(id, route_date, state, delivery_zones(name, color), vehicles(id, name, license_plate))
         `)
         .eq("kind", "outgoing")
         .eq("origin", saleOrderName)
@@ -189,16 +192,22 @@ export function SaleDeliveryPanel({ saleOrderName, saleOrderId, commitmentDate }
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
             <Truck className="h-3 w-3" /> Carrinha
           </div>
-          {data.vehicles ? (
-            <div className="font-medium truncate">
-              {data.vehicles.name}
-              {data.vehicles.license_plate && (
-                <span className="ml-1 text-xs text-muted-foreground">· {data.vehicles.license_plate}</span>
-              )}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">Não atribuída</span>
-          )}
+          {(() => {
+            const v = data.vehicles ?? data.delivery_routes?.vehicles ?? null;
+            if (!v) return <span className="text-muted-foreground">Não atribuída</span>;
+            const fromRoute = !data.vehicles && !!data.delivery_routes?.vehicles;
+            return (
+              <div className="font-medium truncate">
+                {v.name}
+                {v.license_plate && (
+                  <span className="ml-1 text-xs text-muted-foreground">· {v.license_plate}</span>
+                )}
+                {fromRoute && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">(da rota)</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Carrier / tracking */}

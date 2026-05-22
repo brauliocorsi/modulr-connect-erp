@@ -39,19 +39,23 @@ const EVENT_STYLES: Record<string, EventStyle> = {
   sale_order_invoiced:            { label: "Faturado",                  icon: FileText,      tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
   sale_order_invoice_reverted:    { label: "Faturação revertida",       icon: RotateCcw,     tone: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
 
-  // Assistência / tickets
-  service_case_created:           { label: "Caso criado",               icon: Wrench,        tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200" },
-  service_case_status_changed:    { label: "Status do caso",            icon: Activity,      tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200" },
+  // Assistência / Montagem
+  service_case_created:           { label: "Montagem agendada",         icon: Wrench,        tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200" },
+  service_case_status_changed:    { label: "Montagem · status",         icon: Wrench,        tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200" },
+  service_case_done:              { label: "Montagem concluída",        icon: CheckCircle2,  tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
+  service_request_created:        { label: "Pedido de assistência",     icon: Wrench,        tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200" },
+
   customer_ticket_created:        { label: "Ticket criado",             icon: Ticket,        tone: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200" },
   customer_ticket_status_changed: { label: "Status do ticket",          icon: Ticket,        tone: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200" },
 
-  // Agendamento
-  delivery_schedule_requested:    { label: "Entrega proposta",          icon: Calendar,      tone: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
-  delivery_schedule_scheduled:    { label: "Entrega agendada",          icon: Calendar,      tone: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
-  delivery_schedule_confirmed:    { label: "Entrega confirmada",        icon: CheckCircle2,  tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
-  delivery_schedule_rescheduled:  { label: "Entrega reagendada",        icon: RotateCcw,     tone: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
-  delivery_schedule_replaced:     { label: "Agendamento substituído",   icon: RotateCcw,     tone: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
-  delivery_schedule_cancelled:    { label: "Agendamento cancelado",     icon: XCircle,       tone: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" },
+  // Entrega / agendamento
+  delivery_schedule_requested:    { label: "Entrega · proposta",        icon: Calendar,      tone: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
+  delivery_schedule_scheduled:    { label: "Entrega · agendada",        icon: Calendar,      tone: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
+  delivery_schedule_confirmed:    { label: "Entrega · confirmada",      icon: CheckCircle2,  tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
+  delivery_schedule_rescheduled:  { label: "Entrega · reagendada",      icon: RotateCcw,     tone: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
+  delivery_schedule_replaced:     { label: "Entrega · substituída",     icon: RotateCcw,     tone: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
+  delivery_schedule_cancelled:    { label: "Entrega · cancelada",       icon: XCircle,       tone: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-200" },
+  delivery_schedule_delivered:    { label: "Entregue ao cliente",       icon: Truck,         tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
 
   // Pagamentos / caixa
   customer_payment_posted:        { label: "Recebimento registado",     icon: Banknote,      tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
@@ -177,7 +181,9 @@ export function RecordTimeline({
                         </span>
                         <div className="rounded-md border bg-background/50 px-3 py-2">
                           <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-                            <span className="font-medium text-foreground">{st.label}</span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${st.tone}`}>
+                              <Icon className="h-3 w-3" /> {st.label}
+                            </span>
                             {e.visibility === "customer_visible" ? (
                               <span title="Visível ao cliente" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200 text-[10px]">
                                 <Eye className="h-3 w-3" /> público
