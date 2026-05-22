@@ -102,6 +102,7 @@ import RoutesSchedule from "@/modules/routes/pages/RoutesSchedule";
 import ZonesList from "@/modules/routes/pages/ZonesList";
 import ZoneForm from "@/modules/routes/pages/ZoneForm";
 import RouteDetail from "@/modules/routes/pages/RouteDetail";
+import RouteManifestPrint from "@/modules/routes/pages/RouteManifestPrint";
 import {
   EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
   LeavesList, LeaveForm, AttendanceClock, AttendancesList,
@@ -346,6 +347,7 @@ const App = () => (
                 <Route path="zones/new" element={<ZoneForm />} />
                 <Route path="zones/:id" element={<ZoneForm />} />
                 <Route path=":id" element={<RouteDetail />} />
+                <Route path=":id/print" element={<RouteManifestPrint />} />
               </Route>
 
               {/* M5 — Pickups & Carriers */}

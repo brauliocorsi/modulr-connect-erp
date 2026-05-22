@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock, Euro, User, Wrench, Copy } from "lucide-react";
+import { Truck, MapPin, Package, CheckCircle2, AlertTriangle, PlayCircle, FlagOff, Lock, Euro, User, Wrench, Copy, Printer } from "lucide-react";
 
 import { callRouteRpc } from "../lib/routeRpc";
 import { RouteProgress } from "../components/RouteProgress";
@@ -361,6 +361,12 @@ export default function RouteDetail() {
       : undefined;
 
   const actions: OperationalAction[] = [
+    {
+      key: "print",
+      label: "Imprimir manifesto",
+      icon: <Printer className="h-4 w-4" />,
+      onClick: async () => { window.open(`/routes/${id}/print`, "_blank"); },
+    },
     {
       key: "ptd",
       label: "Mover p/ cais",
