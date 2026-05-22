@@ -45,7 +45,9 @@ import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PurchaseNeedsList from "@/modules/purchase/pages/PurchaseNeedsList";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
-import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm } from "@/modules/finance/pages/FinancePages";
+import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm, ChartOfAccountsList, ChartOfAccountForm } from "@/modules/finance/pages/FinancePages";
+import FinanceReportsPage from "@/modules/finance/pages/FinanceReportsPage";
+import BankStatementImportPage from "@/modules/finance/pages/BankStatementImportPage";
 import FinanceDashboard from "@/modules/finance/pages/FinanceDashboard";
 import ReceivablesPage from "@/modules/finance/pages/ReceivablesPage";
 import PendingConfirmationsPage from "@/modules/finance/pages/PendingConfirmationsPage";
@@ -329,6 +331,11 @@ const App = () => (
               <Route path="finance/cost_centers" element={<CostCentersList />} />
               <Route path="finance/cost_centers/new" element={<CostCenterForm />} />
               <Route path="finance/cost_centers/:id" element={<CostCenterForm />} />
+              <Route path="finance/chart-of-accounts" element={<ChartOfAccountsList />} />
+              <Route path="finance/chart-of-accounts/new" element={<ChartOfAccountForm />} />
+              <Route path="finance/chart-of-accounts/:id" element={<ChartOfAccountForm />} />
+              <Route path="finance/reports" element={<FinanceReportsPage />} />
+              <Route path="finance/bank-import" element={<BankStatementImportPage />} />
 
               {/* HR */}
               <Route path="hr" element={<Navigate to="/hr/employees" replace />} />
