@@ -161,6 +161,7 @@ export function ConfigurableListView<T extends { id?: string }>({
   };
 
   const getRowKey = (row: T, i: number) => rowKey?.(row) ?? row.id ?? String(i);
+  const navigate = useNavigate();
 
   return (
     <>
