@@ -13700,32 +13700,20 @@ export type Database = {
         Args: { _payment_id: string; _reason: string }
         Returns: Json
       }
-      supplier_payment_register:
-        | {
-            Args: {
-              _amount: number
-              _bill_id: string
-              _idempotency_key?: string
-              _method_id?: string
-              _payment_date?: string
-              _reference?: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _account_id?: string
-              _amount: number
-              _bill_id: string
-              _cost_center_id?: string
-              _idempotency_key?: string
-              _journal_id?: string
-              _method_id?: string
-              _payment_date?: string
-              _reference?: string
-            }
-            Returns: Json
-          }
+      supplier_payment_register: {
+        Args: {
+          _account_id?: string
+          _amount: number
+          _bill_id: string
+          _cost_center_id?: string
+          _idempotency_key?: string
+          _journal_id?: string
+          _method_id?: string
+          _payment_date?: string
+          _reference?: string
+        }
+        Returns: Json
+      }
       supplier_payment_set_attachments: {
         Args: { _attachments: Json; _payment_id: string }
         Returns: Json
