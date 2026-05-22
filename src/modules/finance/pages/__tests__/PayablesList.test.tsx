@@ -5,25 +5,30 @@ import { MemoryRouter } from "react-router-dom";
 const sample = [
   { id: "b1", name: "BILL/001", bill_date: "2026-05-01", due_date: "2025-12-01",
     amount_total: 300, amount_paid: 100, state: "partial",
-    partner_id: "p1", purchase_order_id: "po1",
-    partners: { id: "p1", name: "Fornecedor A" }, purchase_orders: { id: "po1", name: "PO/001" } },
+    partner_id: "p1", purchase_order_id: "po1" },
   { id: "b2", name: "BILL/002", bill_date: "2026-05-10", due_date: "2027-01-01",
     amount_total: 500, amount_paid: 0, state: "posted",
-    partner_id: "p2", purchase_order_id: null,
-    partners: { id: "p2", name: "Fornecedor B" }, purchase_orders: null },
+    partner_id: "p2", purchase_order_id: null },
 ];
+
+const partnerSample = [{ id: "p1", name: "Fornecedor A" }, { id: "p2", name: "Fornecedor B" }];
+const poSample = [{ id: "po1", name: "PO/001" }];
 
 const { rpcMock } = vi.hoisted(() => ({ rpcMock: vi.fn(() => Promise.resolve({ error: null })) }));
 
 vi.mock("@/integrations/supabase/client", () => {
-  const builder: any = {
-    select: () => builder,
-    order: () => builder,
-    limit: () => Promise.resolve({ data: sample, error: null }),
+  const makeBuilder = (rows: any[]) => {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      limit: () => Promise.resolve({ data: rows, error: null }),
+      in: (_column: string, ids: string[]) => Promise.resolve({ data: rows.filter((r) => ids.includes(r.id)), error: null }),
+    };
+    return builder;
   };
   return {
     supabase: {
-      from: () => builder,
+      from: (table: string) => makeBuilder(table === "partners" ? partnerSample : table === "purchase_orders" ? poSample : sample),
       rpc: rpcMock,
       auth: { getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })) },
     },
