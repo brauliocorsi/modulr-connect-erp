@@ -8,7 +8,7 @@ import { Wallet, LockOpen, Lock, Banknote, CreditCard, ShieldCheck, Clock, Map a
 import { toast } from "sonner";
 
 export default function DeliveryCashbox() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [register, setRegister] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [pendingHandover, setPendingHandover] = useState<any>(null);
@@ -16,13 +16,23 @@ export default function DeliveryCashbox() {
   const [route, setRoute] = useState<any>(null);
   const [opening, setOpening] = useState(0);
   const [counted, setCounted] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
-    const { data: reg } = await supabase.from("cash_registers").select("*")
+    setLoading(true);
+    setLoadError(null);
+    const { data: reg, error: regErr } = await supabase.from("cash_registers").select("*")
       .eq("driver_id", user.id).eq("active", true).maybeSingle();
+    if (regErr) {
+      setLoadError(regErr.message);
+      setRegister(null); setSession(null); setMovements([]); setPendingHandover(null);
+      setLoading(false);
+      return;
+    }
     setRegister(reg);
-    if (!reg) { setSession(null); setMovements([]); setPendingHandover(null); return; }
+    if (!reg) { setSession(null); setMovements([]); setPendingHandover(null); setLoading(false); return; }
 
     // Pendente de conferência?
     const { data: ph } = await supabase.from("cash_sessions").select("*")
@@ -51,8 +61,9 @@ export default function DeliveryCashbox() {
     } else {
       setMovements([]); setRoute(null);
     }
+    setLoading(false);
   };
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { if (!authLoading) load(); }, [user, authLoading]);
 
   const open = async () => {
     const { error } = await supabase.rpc("open_cash_session", { _register: register.id, _opening: opening || null });
@@ -109,6 +120,17 @@ export default function DeliveryCashbox() {
     }
     return Array.from(groups.values());
   })();
+
+  if (loading || authLoading) return (
+    <div className="p-6 text-center text-slate-500">A carregar caixa…</div>
+  );
+
+  if (loadError) return (
+    <div className="p-6 text-center text-rose-400">
+      <Wallet className="h-10 w-10 mx-auto mb-2 opacity-40" />
+      Erro ao ler o caixa: {loadError}
+    </div>
+  );
 
   if (!register) return (
     <div className="p-6 text-center text-slate-500">
