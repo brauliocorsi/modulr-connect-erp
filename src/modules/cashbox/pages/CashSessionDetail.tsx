@@ -12,6 +12,7 @@ import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { Lock, Plus, ArrowDownToLine, Undo2 } from "lucide-react";
 import { CashMovementDialog } from "@/modules/cashbox/components/CashMovementDialog";
+import { CashSessionAuditLog } from "@/modules/cashbox/components/CashSessionAuditLog";
 import { ConfirmActionDialog } from "@/core/operational";
 
 const KIND_LABEL: Record<string, string> = {
@@ -261,6 +262,10 @@ export default function CashSessionDetail() {
             </table>
           </div>
         </Card>
+
+        <div className="mt-4">
+          <CashSessionAuditLog sessionId={id!} />
+        </div>
       </PageBody>
 
 
