@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ShoppingCart, Users, Warehouse, ShoppingBag, Truck } from "lucide-react";
+import { Package, ShoppingCart, Users, Warehouse, ShoppingBag, Truck, LayoutGrid } from "lucide-react";
+import { MODULES } from "@/core/modules/registry";
+import { useInstalledModules } from "@/core/modules/useInstalledModules";
 
 type Hit = { type: string; id: string; label: string; sub?: string; to: string; icon: any };
 
