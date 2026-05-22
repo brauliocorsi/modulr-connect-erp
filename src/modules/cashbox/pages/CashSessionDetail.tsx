@@ -127,9 +127,25 @@ export default function CashSessionDetail() {
     load();
   };
 
+  const reconcileSession = async () => {
+    setReconciling(true);
+    const { error } = await supabase.rpc("finance_reconcile_session", {
+      _session: id!,
+      _notes: reconcileNotes || null,
+    });
+    setReconciling(false);
+    if (error) return toast.error(error.message);
+    toast.success("Caixa conciliado");
+    setReconcileDlg(false);
+    setReconcileNotes("");
+    load();
+  };
 
   if (!sess) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isOpen = sess.state === "open";
+  const handover = sess.handover_state ?? "none";
+  const pendingHandover = handover === "pending_handover";
+  const reconciled = handover === "reconciled";
 
   return (
     <>
