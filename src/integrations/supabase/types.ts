@@ -10176,6 +10176,7 @@ export type Database = {
         Row: {
           amount_paid: number
           amount_total: number
+          attachments: Json
           bill_date: string
           cost_center_id: string | null
           created_at: string
@@ -10193,6 +10194,7 @@ export type Database = {
         Insert: {
           amount_paid?: number
           amount_total?: number
+          attachments?: Json
           bill_date?: string
           cost_center_id?: string | null
           created_at?: string
@@ -10210,6 +10212,7 @@ export type Database = {
         Update: {
           amount_paid?: number
           amount_total?: number
+          attachments?: Json
           bill_date?: string
           cost_center_id?: string | null
           created_at?: string
@@ -10237,6 +10240,7 @@ export type Database = {
       supplier_payments: {
         Row: {
           amount: number
+          attachments: Json
           bill_id: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -10256,6 +10260,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          attachments?: Json
           bill_id?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -10275,6 +10280,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          attachments?: Json
           bill_id?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
