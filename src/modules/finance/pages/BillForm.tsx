@@ -163,8 +163,17 @@ export default function BillForm() {
       if (error) return toast.error(error.message);
       const res: any = data;
       if (res?.error) return toast.error(mapBillError(res.error));
+      await supabase.from("supplier_bills").update({ attachments: bill.attachments ?? [] }).eq("id", id!);
       toast.success("Salvo");
       load();
+    }
+  };
+
+  const updateAttachments = async (next: Attachment[]) => {
+    setBill((b: any) => ({ ...b, attachments: next }));
+    if (!isNew) {
+      const { error } = await supabase.from("supplier_bills").update({ attachments: next as any }).eq("id", id!);
+      if (error) toast.error(`Anexos: ${error.message}`);
     }
   };
 
