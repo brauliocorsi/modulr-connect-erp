@@ -12296,6 +12296,10 @@ export type Database = {
         Args: { _reason: string; _schedule_id: string }
         Returns: Json
       }
+      delivery_schedule_confirm: {
+        Args: { _schedule_id: string }
+        Returns: Json
+      }
       delivery_schedule_create: {
         Args: {
           _delivery_address_id?: string
@@ -12543,6 +12547,16 @@ export type Database = {
           _payload?: Json
           _record_id: string
           _record_type: string
+        }
+        Returns: undefined
+      }
+      log_schedule_event: {
+        Args: {
+          _meta?: Json
+          _msg: string
+          _picking: string
+          _so: string
+          _type: string
         }
         Returns: undefined
       }
