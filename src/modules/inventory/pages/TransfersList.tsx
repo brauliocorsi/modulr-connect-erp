@@ -448,6 +448,7 @@ export default function TransfersList() {
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">—</td>
                       <td className="px-3 py-2 text-xs">{g.scheduledAt ? new Date(g.scheduledAt).toLocaleString("pt-PT") : "—"}</td>
+                      {colVisible("confirmed_at") && <td className="px-3 py-2 text-xs">{confirmedMap[g.origin] ? <span className="text-success font-medium">{new Date(confirmedMap[g.origin]).toLocaleString("pt-PT")}</span> : <span className="text-muted-foreground">—</span>}</td>}
                     </tr>
                   );
                   if (isOpen) {
