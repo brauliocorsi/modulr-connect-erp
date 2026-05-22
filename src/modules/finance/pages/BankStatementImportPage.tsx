@@ -22,11 +22,15 @@ type Suggestion = {
   amount: number;
 };
 
+const TARGET_METHODS = ["MB Way", "Multibanco", "Getnet", "Transferência", "Sequra (BNPL)", "ScalaPay (BNPL)"];
+
 export default function BankStatementImportPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState("");
   const [journalId, setJournalId] = useState<string>("");
   const [journals, setJournals] = useState<{ id: string; name: string }[]>([]);
+  const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
+  const [methodId, setMethodId] = useState<string>("");
   const [fileName, setFileName] = useState("");
   const [fileKind, setFileKind] = useState<"csv" | "xls" | "xlsx" | "">("");
   const [headers, setHeaders] = useState<string[]>([]);
@@ -39,6 +43,8 @@ export default function BankStatementImportPage() {
   useEffect(() => {
     supabase.from("account_journals").select("id,name").eq("active", true).order("name")
       .then(({ data }) => setJournals(data ?? []));
+    supabase.from("payment_methods").select("id,name").in("name", TARGET_METHODS).order("name")
+      .then(({ data }) => setMethods(data ?? []));
   }, []);
 
   const onFile = async (f: File) => {
@@ -118,14 +124,16 @@ export default function BankStatementImportPage() {
       for (const ln of importedLines) {
         const dMin = new Date(ln.date); dMin.setDate(dMin.getDate() - 3);
         const dMax = new Date(ln.date); dMax.setDate(dMax.getDate() + 3);
-        const { data: cands } = await supabase
+        let q = supabase
           .from("customer_payments")
-          .select("id,name,amount,partner_id,partners(name)")
+          .select("id,name,amount,partner_id,method_id,partners(name)")
           .eq("amount", Math.abs(ln.amount))
           .gte("payment_date", dMin.toISOString().slice(0, 10))
           .lte("payment_date", dMax.toISOString().slice(0, 10))
           .is("reconciled_at", null)
           .limit(3);
+        if (methodId) q = q.eq("method_id", methodId);
+        const { data: cands } = await q;
         ln.suggestions = (cands ?? []).map((c: any) => ({
           payment_id: c.id, payment_name: c.name, partner_name: c.partners?.name, amount: Number(c.amount),
         }));
@@ -176,6 +184,19 @@ export default function BankStatementImportPage() {
                   <SelectTrigger><SelectValue placeholder="Escolher diário" /></SelectTrigger>
                   <SelectContent>{journals.map((j) => <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Tipo de pagamento (filtro de conciliação)</Label>
+                <Select value={methodId || "all"} onValueChange={(v) => setMethodId(v === "all" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Todos os tipos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    {methods.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Limita o auto-match aos recebimentos do tipo escolhido (MB Way, Multibanco, Getnet, Transferência, Sequra, ScalaPay…).
+                </div>
               </div>
               <div>
                 <Label>Ficheiro (CSV / XLS / XLSX)</Label>
