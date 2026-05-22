@@ -107,10 +107,8 @@ export default function AppShell() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="text-topbar-foreground hover:bg-white/10 gap-2">
-              <div className="h-7 w-7 rounded-full bg-primary grid place-items-center text-primary-foreground text-xs">
-                {user?.email?.[0]?.toUpperCase()}
-              </div>
-              <span className="hidden sm:inline text-sm">{user?.email}</span>
+              <UserAvatar name={fullName} email={user?.email} url={avatarUrl} size={28} />
+              <span className="hidden sm:inline text-sm">{fullName || user?.email}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
