@@ -345,11 +345,13 @@ const App = () => (
               {/* Routes / Rotas */}
               <Route path="routes" element={<RoutesShell />}>
                 <Route index element={<RoutesSchedule />} />
+                <Route path="closed" element={<ClosedRoutesList />} />
                 <Route path="zones" element={<ZonesList />} />
                 <Route path="zones/new" element={<ZoneForm />} />
                 <Route path="zones/:id" element={<ZoneForm />} />
                 <Route path=":id" element={<RouteDetail />} />
                 <Route path=":id/print" element={<RouteManifestPrint />} />
+                <Route path=":id/payments" element={<RoutePaymentsPrint />} />
               </Route>
 
               {/* M5 — Pickups & Carriers */}
