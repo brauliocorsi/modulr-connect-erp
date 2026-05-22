@@ -102,6 +102,7 @@ import RoutesSchedule from "@/modules/routes/pages/RoutesSchedule";
 import ZonesList from "@/modules/routes/pages/ZonesList";
 import ZoneForm from "@/modules/routes/pages/ZoneForm";
 import RouteDetail from "@/modules/routes/pages/RouteDetail";
+import RouteManifestPrint from "@/modules/routes/pages/RouteManifestPrint";
 import {
   EmployeesList, EmployeeForm, DepartmentsList, DepartmentForm,
   LeavesList, LeaveForm, AttendanceClock, AttendancesList,
