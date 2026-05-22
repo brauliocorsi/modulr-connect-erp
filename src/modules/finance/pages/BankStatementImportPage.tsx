@@ -22,11 +22,15 @@ type Suggestion = {
   amount: number;
 };
 
+const TARGET_METHODS = ["MB Way", "Multibanco", "Getnet", "Transferência", "Sequra (BNPL)", "ScalaPay (BNPL)"];
+
 export default function BankStatementImportPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState("");
   const [journalId, setJournalId] = useState<string>("");
   const [journals, setJournals] = useState<{ id: string; name: string }[]>([]);
+  const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
+  const [methodId, setMethodId] = useState<string>("");
   const [fileName, setFileName] = useState("");
   const [fileKind, setFileKind] = useState<"csv" | "xls" | "xlsx" | "">("");
   const [headers, setHeaders] = useState<string[]>([]);
@@ -39,6 +43,8 @@ export default function BankStatementImportPage() {
   useEffect(() => {
     supabase.from("account_journals").select("id,name").eq("active", true).order("name")
       .then(({ data }) => setJournals(data ?? []));
+    supabase.from("payment_methods").select("id,name").in("name", TARGET_METHODS).order("name")
+      .then(({ data }) => setMethods(data ?? []));
   }, []);
 
   const onFile = async (f: File) => {
