@@ -22,6 +22,7 @@ export default function DeliveryHome() {
         .eq("driver_id", user.id)
         .gte("route_date", today)
         .neq("state", "done")
+        .neq("state", "closed")
         .neq("state", "cancelled")
         .order("route_date", { ascending: true });
 
