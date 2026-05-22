@@ -380,6 +380,7 @@ export default function RoutesSchedule() {
                               <span>{pickCounts[r.id] ?? 0}/{r.max_deliveries}</span>
                               {r.max_assembly_minutes === 0 && <Badge variant="outline" className="text-[8px] px-1 py-0">Só entrega</Badge>}
                             </div>
+                            <RouteCapacityMini route={r} compact />
                           </Link>
                         );
                       })}
