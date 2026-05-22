@@ -65,7 +65,7 @@ export default function RouteDetail() {
     queryFn: async () =>
       (await supabase
         .from("stock_pickings")
-        .select("id,name,state,scheduled_at,origin,partners(name,zip,city)")
+        .select("id,name,state,scheduled_at,origin,destination_location_id,partners(name,zip,city)")
         .eq("route_id", id!).order("scheduled_at", { ascending: true })).data ?? [],
   });
 
@@ -76,7 +76,7 @@ export default function RouteDetail() {
       (await supabase
         .from("delivery_route_orders")
         .select(`id, sequence, status, schedule_id, failed_reason, loaded_at, delivered_at, returned_at,
-                 delivery_schedules(so_id:sale_order_id, sale_orders(name, partner_id, partners(name, phone, street, city, zip)))`)
+                 delivery_schedules(so_id:sale_order_id, sale_orders(id, name, amount_total, payment_status, fulfillment_status, partner_id, partners(name, phone, street, city, zip)))`)
         .eq("route_id", id!).order("sequence")).data ?? [],
   });
 
@@ -128,18 +128,66 @@ export default function RouteDetail() {
     queryFn: async () => {
       const { data: orders } = await (supabase as any)
         .from("delivery_route_orders")
-        .select("status, delivery_schedules(sale_orders(amount_total))")
+        .select("delivery_schedules(sale_order_id, sale_orders(amount_total))")
         .eq("route_id", id!);
+      const orderIds = ((orders ?? []) as any[]).map((o) => o?.delivery_schedules?.sale_order_id).filter(Boolean);
+      const { data: pays } = orderIds.length
+        ? await supabase.from("customer_payments").select("order_id, amount").in("order_id", orderIds).eq("state", "posted")
+        : { data: [] as any[] };
+      const paidByOrder = new Map<string, number>();
+      for (const p of (pays ?? []) as any[]) paidByOrder.set(p.order_id, (paidByOrder.get(p.order_id) ?? 0) + Number(p.amount ?? 0));
       let expected = 0, collected = 0, pending = 0;
       for (const o of (orders ?? []) as any[]) {
         const tot = Number(o?.delivery_schedules?.sale_orders?.amount_total ?? 0);
+        const paid = paidByOrder.get(o?.delivery_schedules?.sale_order_id) ?? 0;
         expected += tot;
-        if (o.status === "delivered" || o.status === "partial") collected += tot;
-        else if (!["cancelled", "returned", "failed"].includes(o.status)) pending += tot;
+        collected += paid;
+        pending += Math.max(0, tot - paid);
       }
       return { expected, collected, pending };
     },
     refetchInterval: 15000,
+  });
+
+  const { data: routePayments = [] } = useQuery<any[]>({
+    queryKey: ["route-payments", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: orders } = await (supabase as any)
+        .from("delivery_route_orders")
+        .select("delivery_schedules(sale_order_id)")
+        .eq("route_id", id!);
+      const orderIds = ((orders ?? []) as any[]).map((o) => o?.delivery_schedules?.sale_order_id).filter(Boolean);
+      if (orderIds.length === 0) return [];
+      return (await supabase
+        .from("customer_payments")
+        .select("id, order_id, amount, state, reference, payment_date, payment_methods(name, code)")
+        .in("order_id", orderIds)
+        .eq("state", "posted")
+        .order("payment_date", { ascending: false })).data ?? [];
+    },
+  });
+
+  const { data: routeAssistance = [] } = useQuery<any[]>({
+    queryKey: ["route-assistance", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: byRoute } = await (supabase as any)
+        .from("service_requests")
+        .select("id, name, state, priority, description, route_id, picking_id, product_id, stock_pickings(name, origin), products(name)")
+        .eq("route_id", id!)
+        .neq("state", "cancelled");
+      const { data: pks } = await supabase.from("stock_pickings").select("id").eq("route_id", id!);
+      const pickingIds = ((pks ?? []) as any[]).map((p) => p.id);
+      const { data: byPicking } = pickingIds.length
+        ? await (supabase as any)
+            .from("service_requests")
+            .select("id, name, state, priority, description, route_id, picking_id, product_id, stock_pickings(name, origin), products(name)")
+            .in("picking_id", pickingIds)
+            .neq("state", "cancelled")
+        : { data: [] as any[] };
+      return Array.from(new Map([...(byRoute ?? []), ...(byPicking ?? [])].map((sr: any) => [sr.id, sr])).values());
+    },
   });
 
   const [busy, setBusy] = useState<string | null>(null);
