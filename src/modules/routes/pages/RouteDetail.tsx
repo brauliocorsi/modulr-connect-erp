@@ -65,7 +65,7 @@ export default function RouteDetail() {
     queryFn: async () =>
       (await supabase
         .from("stock_pickings")
-        .select("id,name,state,scheduled_at,origin,partners(name,zip,city)")
+        .select("id,name,state,scheduled_at,origin,destination_location_id,partners(name,zip,city)")
         .eq("route_id", id!).order("scheduled_at", { ascending: true })).data ?? [],
   });
 
@@ -76,7 +76,7 @@ export default function RouteDetail() {
       (await supabase
         .from("delivery_route_orders")
         .select(`id, sequence, status, schedule_id, failed_reason, loaded_at, delivered_at, returned_at,
-                 delivery_schedules(so_id:sale_order_id, sale_orders(name, partner_id, partners(name, phone, street, city, zip)))`)
+                 delivery_schedules(so_id:sale_order_id, sale_orders(id, name, amount_total, payment_status, fulfillment_status, partner_id, partners(name, phone, street, city, zip)))`)
         .eq("route_id", id!).order("sequence")).data ?? [],
   });
 
@@ -128,18 +128,66 @@ export default function RouteDetail() {
     queryFn: async () => {
       const { data: orders } = await (supabase as any)
         .from("delivery_route_orders")
-        .select("status, delivery_schedules(sale_orders(amount_total))")
+        .select("delivery_schedules(sale_order_id, sale_orders(amount_total))")
         .eq("route_id", id!);
+      const orderIds = ((orders ?? []) as any[]).map((o) => o?.delivery_schedules?.sale_order_id).filter(Boolean);
+      const { data: pays } = orderIds.length
+        ? await supabase.from("customer_payments").select("order_id, amount").in("order_id", orderIds).eq("state", "posted")
+        : { data: [] as any[] };
+      const paidByOrder = new Map<string, number>();
+      for (const p of (pays ?? []) as any[]) paidByOrder.set(p.order_id, (paidByOrder.get(p.order_id) ?? 0) + Number(p.amount ?? 0));
       let expected = 0, collected = 0, pending = 0;
       for (const o of (orders ?? []) as any[]) {
         const tot = Number(o?.delivery_schedules?.sale_orders?.amount_total ?? 0);
+        const paid = paidByOrder.get(o?.delivery_schedules?.sale_order_id) ?? 0;
         expected += tot;
-        if (o.status === "delivered" || o.status === "partial") collected += tot;
-        else if (!["cancelled", "returned", "failed"].includes(o.status)) pending += tot;
+        collected += paid;
+        pending += Math.max(0, tot - paid);
       }
       return { expected, collected, pending };
     },
     refetchInterval: 15000,
+  });
+
+  const { data: routePayments = [] } = useQuery<any[]>({
+    queryKey: ["route-payments", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: orders } = await (supabase as any)
+        .from("delivery_route_orders")
+        .select("delivery_schedules(sale_order_id)")
+        .eq("route_id", id!);
+      const orderIds = ((orders ?? []) as any[]).map((o) => o?.delivery_schedules?.sale_order_id).filter(Boolean);
+      if (orderIds.length === 0) return [];
+      return (await supabase
+        .from("customer_payments")
+        .select("id, order_id, amount, state, reference, payment_date, payment_methods(name, code)")
+        .in("order_id", orderIds)
+        .eq("state", "posted")
+        .order("payment_date", { ascending: false })).data ?? [];
+    },
+  });
+
+  const { data: routeAssistance = [] } = useQuery<any[]>({
+    queryKey: ["route-assistance", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data: byRoute } = await (supabase as any)
+        .from("service_requests")
+        .select("id, name, state, priority, description, route_id, picking_id, product_id, stock_pickings(name, origin), products(name)")
+        .eq("route_id", id!)
+        .neq("state", "cancelled");
+      const { data: pks } = await supabase.from("stock_pickings").select("id").eq("route_id", id!);
+      const pickingIds = ((pks ?? []) as any[]).map((p) => p.id);
+      const { data: byPicking } = pickingIds.length
+        ? await (supabase as any)
+            .from("service_requests")
+            .select("id, name, state, priority, description, route_id, picking_id, product_id, stock_pickings(name, origin), products(name)")
+            .in("picking_id", pickingIds)
+            .neq("state", "cancelled")
+        : { data: [] as any[] };
+      return Array.from(new Map([...(byRoute ?? []), ...(byPicking ?? [])].map((sr: any) => [sr.id, sr])).values());
+    },
   });
 
   const [busy, setBusy] = useState<string | null>(null);
@@ -169,6 +217,10 @@ export default function RouteDetail() {
       ["route-orders", id],
       ["route-manifest", id],
       ["route-docks", id],
+      ["route-payments", id],
+      ["route-assistance", id],
+      ["route-amounts", id],
+      ["route-cash-summary", id],
       ["routes-schedule"],
     ],
   });
@@ -210,6 +262,7 @@ export default function RouteDetail() {
       qty_pending: m.qty_pending == null ? null : Number(m.qty_pending),
       assistance_required: !!m.assistance_required,
       damaged: !!m.damaged,
+      route_order_id: m.route_order_id,
       package_status: m.stock_packages?.status,
     })), [manifest]);
 
@@ -252,8 +305,33 @@ export default function RouteDetail() {
       else if (o.status === "loaded" || o.status === "in_transit" || o.status === "out_for_delivery") c.loaded++;
       else c.pending++;
     }
+    c.pending = Math.max(0, c.total - c.delivered - c.partial - c.failed - c.returned);
     return c;
   }, [routeOrders]);
+
+  const orderFinancials = useMemo(() => {
+    const byOrder = new Map<string, { paid: number; refs: string[]; methods: string[] }>();
+    for (const p of routePayments as any[]) {
+      const item = byOrder.get(p.order_id) ?? { paid: 0, refs: [], methods: [] };
+      item.paid += Number(p.amount ?? 0);
+      if (p.reference) item.refs.push(p.reference);
+      const method = p.payment_methods?.name ?? p.payment_methods?.code;
+      if (method) item.methods.push(method);
+      byOrder.set(p.order_id, item);
+    }
+    return byOrder;
+  }, [routePayments]);
+
+  const assistanceByOrder = useMemo(() => {
+    const byOrigin = new Map<string, any[]>();
+    const routeLevel: any[] = [];
+    for (const sr of routeAssistance as any[]) {
+      const origin = sr.stock_pickings?.origin;
+      if (origin) byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), sr]);
+      else routeLevel.push(sr);
+    }
+    return { byOrigin, routeLevel };
+  }, [routeAssistance]);
 
   if (!route) return <PageBody>Carregando…</PageBody>;
   const r: any = route;
@@ -262,7 +340,7 @@ export default function RouteDetail() {
 
   // packages still on vehicle (per stock_packages.current_location_id)
   const stockOnVehicle = manifestRows.filter(
-    (m) => m.package_status && !["delivered"].includes(m.package_status) && Number(m.qty_pending ?? 0) > 0
+    (m) => (!m.package_status || !["delivered"].includes(m.package_status)) && Number(m.qty_pending ?? 0) > 0
   ).length;
 
   const can = {
@@ -588,11 +666,20 @@ export default function RouteDetail() {
               ) : (routeOrders as any[]).map((o) => {
                 const so = o.delivery_schedules?.sale_orders;
                 const partner = so?.partners;
-                const myPkgs = manifestRows.filter((m) => (manifest as any[]).find((mm) => mm.id === m.id)?.route_order_id === o.id);
-                const canDeliver = ["loaded", "in_transit", "out_for_delivery", "pending", "planned", "loading"].includes(o.status);
-                const canReturn = !["cancelled", "returned"].includes(o.status);
+                const myPkgs = manifestRows.filter((m) => m.route_order_id === o.id);
+                const deliveredQty = myPkgs.reduce((a, m) => a + m.qty_delivered, 0);
+                const loadedQty = myPkgs.reduce((a, m) => a + m.qty_loaded, 0);
+                const isDelivered = o.status === "delivered" || (loadedQty > 0 && deliveredQty >= loadedQty);
+                const fin = orderFinancials.get(so?.id) ?? { paid: 0, refs: [], methods: [] };
+                const orderAssist = [
+                  ...(assistanceByOrder.byOrigin.get(so?.name) ?? []),
+                  ...assistanceByOrder.routeLevel.filter((sr) => !sr.product_id || myPkgs.some((m) => m.product_id === sr.product_id)),
+                ];
+                const hasAssistance = orderAssist.length > 0 || myPkgs.some((m) => m.assistance_required);
+                const canDeliver = !isDelivered && ["loaded", "in_transit", "out_for_delivery", "pending", "planned", "loading", "partial"].includes(o.status);
+                const canReturn = !isDelivered && !["cancelled", "returned"].includes(o.status);
                 return (
-                  <tr key={o.id} className="border-t align-top">
+                  <tr key={o.id} className={`border-t align-top ${isDelivered ? "bg-emerald-500/5" : ""}`}>
                     <td className="px-2 py-2 tabular-nums">{o.sequence}</td>
                     <td className="px-2 py-2">
                       <div className="font-medium">{so?.name ?? o.schedule_id}</div>
@@ -604,16 +691,37 @@ export default function RouteDetail() {
                       </div>
                     </td>
                     <td className="px-2 py-2">
-                      <Badge variant="outline" className="capitalize">{o.status}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={isDelivered ? "default" : "outline"} className="capitalize">
+                          {isDelivered ? "entregue" : o.status}
+                        </Badge>
+                        {hasAssistance && <Badge variant="outline" className="border-orange-400 text-orange-700">assistência</Badge>}
+                        {fin.paid > 0 && <Badge variant="outline" className="border-emerald-500 text-emerald-700">recebido</Badge>}
+                      </div>
+                      {o.delivered_at && <div className="text-[10px] text-muted-foreground mt-1">{new Date(o.delivered_at).toLocaleString("pt-PT")}</div>}
                       {o.failed_reason && <div className="text-[10px] text-rose-700 mt-1">{o.failed_reason}</div>}
+                      {hasAssistance && (
+                        <div className="text-[10px] text-orange-700 mt-1">
+                          {orderAssist[0]?.name ?? "Assistência sinalizada"}{orderAssist[0]?.products?.name ? ` · ${orderAssist[0].products.name}` : ""}
+                        </div>
+                      )}
+                      {fin.paid > 0 && (
+                        <div className="text-[10px] text-emerald-700 mt-1">
+                          {fmtEur(fin.paid)}{fin.methods.length ? ` · ${Array.from(new Set(fin.methods)).join(", ")}` : ""}
+                        </div>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums">
-                      {myPkgs.reduce((a, m) => a + m.qty_loaded, 0)}/
-                      {myPkgs.reduce((a, m) => a + m.qty_delivered, 0)}/
+                      {loadedQty}/
+                      {deliveredQty}/
                       {myPkgs.reduce((a, m) => a + m.qty_returned, 0)}
                     </td>
                     <td className="px-2 py-2">
-                      <div className="flex flex-wrap gap-1">
+                      {isDelivered ? (
+                        <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Concluído pelo app entregas
+                        </div>
+                      ) : <div className="flex flex-wrap gap-1">
                         <Button size="sm" variant="outline" disabled={!canDeliver || busy !== null}
                           onClick={() => setDeliverOpen(o.id)} aria-label={`entregar-${o.sequence}`}>
                           Entregar
@@ -635,7 +743,7 @@ export default function RouteDetail() {
                           aria-label={`reagendar-${o.sequence}`} data-testid={`reschedule-btn-${o.id}`}>
                           Reagendar
                         </Button>
-                      </div>
+                      </div>}
 
                       {deliverOpen === o.id && (
                         <DeliverOrderDialog

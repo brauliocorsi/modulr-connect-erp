@@ -28,6 +28,7 @@ export interface ManifestRow {
   qty_pending: number | null;
   assistance_required: boolean;
   damaged: boolean;
+  route_order_id?: string | null;
   package_status?: string | null;
   package_location?: string | null;
 }
