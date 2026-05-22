@@ -47,7 +47,11 @@ type MsgRow = {
   message: string;
   visibility: string;
   created_at: string;
+  metadata?: any;
 };
+
+type ParticipantRow = { user_id: string; last_read_at: string | null };
+type ProfileRow = { id: string; full_name: string | null; email: string | null; avatar_url: string | null };
 
 type TabKey = "all" | "dm" | "channel" | "entity" | "page";
 
