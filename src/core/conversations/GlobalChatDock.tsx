@@ -482,18 +482,36 @@ export default function GlobalChatDock() {
             ) : (
               messages.map((m) => {
                 const mine = m.sender_user_id === user.id;
+                const p = m.sender_user_id ? profiles[m.sender_user_id] : undefined;
+                const atts: ChatAttachment[] = Array.isArray(m.metadata?.attachments) ? m.metadata.attachments : [];
+                // Read receipts: someone other than sender has last_read_at >= created_at
+                const readByOthers = mine && participants.some(
+                  (pp) => pp.user_id !== user.id && pp.last_read_at && new Date(pp.last_read_at) >= new Date(m.created_at)
+                );
                 return (
-                  <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                  <div key={m.id} className={cn("flex gap-2", mine ? "justify-end" : "justify-start")}>
+                    {!mine && <UserAvatar name={p?.full_name} email={p?.email} url={p?.avatar_url} size={24} />}
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg px-3 py-1.5 text-sm",
                         mine ? "bg-primary text-primary-foreground" : "bg-muted",
                       )}
                     >
-                      <div className="whitespace-pre-wrap break-words">{m.message}</div>
-                      <div className="text-[10px] mt-0.5 opacity-70 flex items-center gap-1">
+                      {!mine && p && (
+                        <div className="text-[10px] font-semibold opacity-80 mb-0.5">{p.full_name ?? p.email}</div>
+                      )}
+                      {m.message && <div className="whitespace-pre-wrap break-words">{m.message}</div>}
+                      {atts.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {atts.map((a, i) => <AttachmentBubble key={i} att={a} />)}
+                        </div>
+                      )}
+                      <div className="text-[10px] mt-0.5 opacity-70 flex items-center gap-1 justify-end">
                         {m.visibility === "customer_visible" && <Eye className="h-2.5 w-2.5" />}
                         <span>{formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: ptBR })}</span>
+                        {mine && (readByOthers
+                          ? <CheckCheck className="h-3 w-3 text-sky-300" />
+                          : <Check className="h-3 w-3 opacity-70" />)}
                       </div>
                     </div>
                   </div>
@@ -502,24 +520,48 @@ export default function GlobalChatDock() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="border-t p-2 flex gap-2 items-end">
-            <Textarea
-              data-testid="global-chat-input"
-              rows={1}
-              placeholder="Mensagem…"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              className="min-h-[36px] resize-none"
-            />
-            <Button size="sm" onClick={send} disabled={sending || !text.trim()} data-testid="global-chat-send">
-              Enviar
-            </Button>
+          <div className="border-t p-2 space-y-2">
+            {pendingAtts.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {pendingAtts.map((a, i) => (
+                  <div key={i} className="relative">
+                    <AttachmentBubble att={a} />
+                    <button
+                      type="button"
+                      onClick={() => setPendingAtts((p) => p.filter((_, k) => k !== i))}
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs grid place-items-center"
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1 items-end">
+              <AttachmentButton
+                scope={activeThread ?? "dock"}
+                userId={user.id}
+                uploading={uploading}
+                setUploading={setUploading}
+                onUploaded={(a) => setPendingAtts((p) => [...p, a])}
+              />
+              <EmojiButton onPick={(emoji) => setText((t) => t + emoji)} />
+              <Textarea
+                data-testid="global-chat-input"
+                rows={1}
+                placeholder="Mensagem…"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                className="min-h-[36px] resize-none"
+              />
+              <Button size="sm" onClick={send} disabled={sending || uploading || (!text.trim() && pendingAtts.length === 0)} data-testid="global-chat-send">
+                Enviar
+              </Button>
+            </div>
           </div>
         </>
       )}
