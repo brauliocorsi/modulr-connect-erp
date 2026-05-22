@@ -110,7 +110,7 @@ export default function RoutesSchedule() {
       (await supabase
         .from("delivery_routes")
         .select(
-          "id,zone_id,route_date,state,max_deliveries,max_assembly_minutes,driver_id,vehicle_id,created_by,created_at,route_type,vehicles(name,license_plate),profiles!delivery_routes_created_by_fkey(full_name,email)"
+          "id,zone_id,route_date,state,max_deliveries,max_assembly_minutes,driver_id,vehicle_id,created_by,created_at,route_type,cap_deliveries,current_deliveries,cap_volume_m3,current_volume_m3,cap_assembly_minutes,current_assembly_minutes,vehicles(name,license_plate,usable_volume_m3,volume_m3,max_stops,assembly_minutes_capacity,max_assembly_minutes),profiles!delivery_routes_created_by_fkey(full_name,email)"
         )
         .gte("route_date", fromDate)
         .lte("route_date", toDate)
