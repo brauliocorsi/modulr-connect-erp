@@ -29,6 +29,7 @@ export function RegisterSupplierPaymentDialog({
     reference: "",
     notes: "",
   });
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
