@@ -98,7 +98,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput placeholder="Buscar produtos, parceiros, pedidos, compras, transferências…" value={q} onValueChange={setQ} />
       <CommandList>
-        <CommandEmpty>{loading ? "Buscando…" : q ? "Nenhum resultado" : "Comece a digitar para buscar"}</CommandEmpty>
+        <CommandEmpty>{loading ? "Buscando…" : "Nenhum resultado"}</CommandEmpty>
         {Object.entries(grouped).map(([type, items], i) => (
           <div key={type}>
             {i > 0 && <CommandSeparator />}
