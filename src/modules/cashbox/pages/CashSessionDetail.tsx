@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
-import { Lock, Plus, ArrowDownToLine, Undo2 } from "lucide-react";
+import { Lock, Plus, ArrowDownToLine, Undo2, ShieldCheck, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { CashMovementDialog } from "@/modules/cashbox/components/CashMovementDialog";
 import { CashSessionAuditLog } from "@/modules/cashbox/components/CashSessionAuditLog";
 import { ConfirmActionDialog } from "@/core/operational";
@@ -35,6 +36,9 @@ export default function CashSessionDetail() {
   const [reconcile, setReconcile] = useState<any[]>([]);
   const [reverseTarget, setReverseTarget] = useState<{ id: string; reason: string } | null>(null);
   const [reversing, setReversing] = useState(false);
+  const [reconcileDlg, setReconcileDlg] = useState(false);
+  const [reconcileNotes, setReconcileNotes] = useState("");
+  const [reconciling, setReconciling] = useState(false);
 
   const load = async () => {
     const { data: s } = await supabase
@@ -123,9 +127,25 @@ export default function CashSessionDetail() {
     load();
   };
 
+  const reconcileSession = async () => {
+    setReconciling(true);
+    const { error } = await supabase.rpc("finance_reconcile_session", {
+      _session: id!,
+      _notes: reconcileNotes || null,
+    });
+    setReconciling(false);
+    if (error) return toast.error(error.message);
+    toast.success("Caixa conciliado");
+    setReconcileDlg(false);
+    setReconcileNotes("");
+    load();
+  };
 
   if (!sess) return <div className="p-6 text-muted-foreground">Carregando…</div>;
   const isOpen = sess.state === "open";
+  const handover = sess.handover_state ?? "none";
+  const pendingHandover = handover === "pending_handover";
+  const reconciled = handover === "reconciled";
 
   return (
     <>
@@ -138,17 +158,50 @@ export default function CashSessionDetail() {
           { label: sess.name },
         ]}
         backTo={`/cashbox/${sess.register_id}`}
-        state={{ label: isOpen ? "aberta" : "fechada", tone: isOpen ? "success" : "default" }}
+        state={{
+          label: isOpen ? "aberta" : reconciled ? "conciliada" : pendingHandover ? "pendente conciliação" : "fechada",
+          tone: isOpen ? "success" : reconciled ? "success" : pendingHandover ? "warning" : "default",
+        }}
         actions={
           isOpen ? (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setMovDlg(true)}><Plus className="h-4 w-4 mr-1" /> Movimento</Button>
               <Button size="sm" onClick={() => { setCounted(String(balance.toFixed(2))); setCloseDlg(true); }}><Lock className="h-4 w-4 mr-1" /> Fechar</Button>
             </div>
+          ) : pendingHandover ? (
+            <Button size="sm" onClick={() => setReconcileDlg(true)}>
+              <ShieldCheck className="h-4 w-4 mr-1" /> Conciliar (Financeiro)
+            </Button>
           ) : null
         }
       />
       <PageBody>
+        {pendingHandover && (
+          <Card className="p-3 mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm">
+                <strong>Pendente de conferência pelo financeiro.</strong> Entregue em{" "}
+                {sess.handover_at ? new Date(sess.handover_at).toLocaleString("pt-PT") : "—"} ·
+                Dinheiro contado: <strong className="tabular-nums">{fmtMoney(sess.handover_cash_amount ?? 0)}</strong>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <a href="/finance/handovers"><ExternalLink className="h-4 w-4 mr-1" /> Ver fila do financeiro</a>
+                </Button>
+                <Button size="sm" onClick={() => setReconcileDlg(true)}>
+                  <ShieldCheck className="h-4 w-4 mr-1" /> Conciliar caixa
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+        {reconciled && (
+          <Card className="p-3 mb-4 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 text-sm">
+            <strong>Caixa conciliada</strong>
+            {sess.reconciled_at && <> em {new Date(sess.reconciled_at).toLocaleString("pt-PT")}</>}
+            {sess.reconciliation_notes && <> · {sess.reconciliation_notes}</>}
+          </Card>
+        )}
         <Card className="p-4 grid grid-cols-2 sm:grid-cols-7 gap-4 mb-4">
           <Stat label="Aberta por" value={openerName || "—"} />
           <Stat label="Aberta em" value={sess.opened_at ? new Date(sess.opened_at).toLocaleString("pt-PT") : "—"} />
@@ -323,6 +376,32 @@ export default function CashSessionDetail() {
             <Button variant="ghost" onClick={() => setReverseTarget(null)} disabled={reversing}>Cancelar</Button>
             <Button variant="destructive" onClick={reverseMove} disabled={reversing}>
               <Undo2 className="h-4 w-4 mr-1" /> {reversing ? "A reverter…" : "Reverter"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reconcileDlg} onOpenChange={setReconcileDlg}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Conciliar caixa</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="text-sm text-muted-foreground">
+              Marca esta sessão como conferida pelo financeiro. Apenas utilizadores do grupo Financeiro podem executar.
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Abertura</div><div className="font-semibold tabular-nums">{fmtMoney(sess.opening_balance ?? 0)}</div></div>
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Dinheiro contado</div><div className="font-semibold tabular-nums">{fmtMoney(sess.handover_cash_amount ?? sess.closing_balance_counted ?? 0)}</div></div>
+              <div className="rounded border bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Diferença</div><div className="font-semibold tabular-nums">{fmtMoney(sess.difference ?? 0)}</div></div>
+            </div>
+            <div>
+              <Label>Notas (opcional)</Label>
+              <Textarea value={reconcileNotes} onChange={(e) => setReconcileNotes(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReconcileDlg(false)} disabled={reconciling}>Cancelar</Button>
+            <Button onClick={reconcileSession} disabled={reconciling}>
+              <ShieldCheck className="h-4 w-4 mr-1" /> {reconciling ? "A conciliar…" : "Conciliar"}
             </Button>
           </DialogFooter>
         </DialogContent>
