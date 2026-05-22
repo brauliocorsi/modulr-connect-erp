@@ -9,6 +9,7 @@ import { DriverOnlyGate } from "@/core/auth/DriverOnlyGate";
 import AppShell from "@/core/layout/AppShell";
 import Login from "@/pages/Login";
 import Home from "@/pages/Home";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 
 import ProductsList from "@/modules/products/pages/ProductsList";
