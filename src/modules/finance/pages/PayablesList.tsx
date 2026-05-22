@@ -16,6 +16,7 @@ import {
   type FilterValue,
 } from "@/core/operational";
 import { RegisterSupplierPaymentDialog } from "@/modules/finance/components/RegisterSupplierPaymentDialog";
+import { FinanceHero } from "@/core/finance/FinanceHero";
 
 type Row = {
   id: string;
@@ -214,14 +215,24 @@ export default function PayablesList() {
       <PageHeader
         title="Contas a Pagar"
         breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "Contas a Pagar" }]}
-        actions={<Button size="sm" onClick={() => nav("/finance/payables/new")}><Plus className="h-4 w-4 mr-1" /> Nova fatura</Button>}
       />
       <PageBody>
-        <SummaryCards
-          className="mb-4"
-          items={[
+        <FinanceHero
+          eyebrow="Tesouraria · A Pagar"
+          title="Contas a Pagar"
+          subtitle="Gestão de faturas de fornecedores, despesas fixas e ordens de compra com centro de custo e plano de contas."
+          actions={
+            <Button
+              size="sm"
+              onClick={() => nav("/finance/payables/new")}
+              className="bg-[hsl(var(--finance-accent))] text-[hsl(162_86%_10%)] hover:bg-[hsl(var(--finance-accent))]/90 border-0"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Nova fatura
+            </Button>
+          }
+          kpis={[
             { key: "count", label: "Faturas", value: String(summary.count) },
-            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "primary" },
+            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "gold" },
             { key: "overdue", label: "Vencidas", value: fmtMoney(summary.overdue), hint: `${summary.overdueCount} faturas`, tone: summary.overdueCount ? "danger" : "muted" },
           ]}
         />
