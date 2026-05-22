@@ -356,6 +356,7 @@ export default function TransfersList() {
                 {colVisible("batch") && <th className="text-left px-3 py-2">Lote</th>}
                 {colVisible("route") && <th className="text-left px-3 py-2">Rota</th>}
                 {colVisible("scheduled_at") && <SortHead k="scheduled_at" label="Programado" />}
+                {colVisible("confirmed_at") && <SortHead k="confirmed_at" label="Data confirmada" />}
               </tr>
             </thead>
             <tbody>
