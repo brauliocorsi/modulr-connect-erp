@@ -186,6 +186,18 @@ export default function BankStatementImportPage() {
                 </Select>
               </div>
               <div>
+                <Label>Tipo de pagamento (filtro de conciliação)</Label>
+                <Select value={methodId || "all"} onValueChange={(v) => setMethodId(v === "all" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Todos os tipos" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tipos</SelectItem>
+                    {methods.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Limita o auto-match aos recebimentos do tipo escolhido (MB Way, Multibanco, Getnet, Transferência, Sequra, ScalaPay…).
+                </div>
+              <div>
                 <Label>Ficheiro (CSV / XLS / XLSX)</Label>
                 <Input type="file" accept=".csv,.xls,.xlsx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
                 {fileName && <div className="text-xs text-muted-foreground mt-1">{fileName} · {parsed.length} linhas</div>}
