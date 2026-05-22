@@ -216,6 +216,7 @@ export default function BillForm() {
   };
 
   const open = Number(bill.amount_total || 0) - Number(bill.amount_paid || 0);
+  const locked = bill.state === "paid" || bill.state === "cancelled";
 
   return (
     <>
