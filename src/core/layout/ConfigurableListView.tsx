@@ -293,29 +293,27 @@ export function ConfigurableListView<T extends { id?: string }>({
               <tbody>
                 {data.map((row, i) => {
                   const key = getRowKey(row, i);
-                  if (rowLink) {
-                    return (
-                      <tr key={key} className="o-list-row">
-                        <td colSpan={visibleColumns.length} className="p-0">
-                          <Link
-                            to={rowLink(row)}
-                            className="grid w-full"
-                            style={{ gridTemplateColumns: `repeat(${visibleColumns.length}, minmax(0,1fr))` }}
-                          >
-                            {visibleColumns.map((c) => (
-                              <div key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
-                                {c.render ? c.render(row) : (row as any)[c.key]}
-                              </div>
-                            ))}
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  }
+                  const href = rowLink ? rowLink(row) : undefined;
+                  const onRowClick = href
+                    ? (e: React.MouseEvent) => {
+                        // Let interactive children (links, buttons, inputs) handle their own clicks.
+                        const t = e.target as HTMLElement;
+                        if (t.closest("a,button,input,label,select,textarea,[data-no-row-nav]")) return;
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || (e as any).button === 1) {
+                          window.open(href, "_blank");
+                          return;
+                        }
+                        navigate(href);
+                      }
+                    : undefined;
                   return (
-                    <tr key={key} className="o-list-row">
+                    <tr
+                      key={key}
+                      className={"o-list-row border-t " + (href ? "cursor-pointer hover:bg-muted/40" : "")}
+                      onClick={onRowClick}
+                    >
                       {visibleColumns.map((c) => (
-                        <td key={c.key} className={"px-3 py-2 " + (c.className ?? "")}>
+                        <td key={c.key} className={"px-3 py-2 align-middle " + (c.className ?? "")}>
                           {c.render ? c.render(row) : (row as any)[c.key]}
                         </td>
                       ))}
