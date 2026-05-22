@@ -60,6 +60,7 @@ import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
 import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
 import RecurringExpensesPage from "@/modules/finance/pages/RecurringExpensesPage";
+import CostCentersPage from "@/modules/finance/pages/CostCentersPage";
 import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
@@ -328,7 +329,8 @@ const App = () => (
               <Route path="finance/methods" element={<MethodsList />} />
               <Route path="finance/methods/new" element={<MethodForm />} />
               <Route path="finance/methods/:id" element={<MethodForm />} />
-              <Route path="finance/cost_centers" element={<CostCentersList />} />
+              <Route path="finance/cost-centers" element={<CostCentersPage />} />
+              <Route path="finance/cost_centers" element={<CostCentersPage />} />
               <Route path="finance/cost_centers/new" element={<CostCenterForm />} />
               <Route path="finance/cost_centers/:id" element={<CostCenterForm />} />
               <Route path="finance/chart-of-accounts" element={<ChartOfAccountsList />} />
