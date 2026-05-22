@@ -10,11 +10,12 @@ import {
   OperationalDataTable,
   OperationalStatusBadge,
   OperationalFiltersBar,
-  SummaryCards,
+  SummaryCards as _SummaryCards,
   type FilterDef,
   type FilterValue,
 } from "@/core/operational";
 import { RegisterPaymentDialog } from "@/modules/finance/components/RegisterPaymentDialog";
+import { FinanceHero } from "@/core/finance/FinanceHero";
 
 type Row = {
   id: string;
@@ -205,20 +206,26 @@ export default function ReceivablesPage() {
       <PageHeader
         title="Contas a Receber"
         breadcrumb={[{ label: "Financeiro", to: "/finance" }, { label: "A Receber" }]}
-        actions={
-          <Link to="/finance/bank-import">
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-1" /> Importar extrato bancário
-            </Button>
-          </Link>
-        }
       />
       <PageBody>
-        <SummaryCards
-          className="mb-4"
-          items={[
+        <FinanceHero
+          eyebrow="Tesouraria · A Receber"
+          title="Contas a Receber"
+          subtitle="Parcelas de vendas, entregas, crédito e conciliação bancária — selecione por método para reconciliar com o extrato."
+          actions={
+            <Link to="/finance/bank-import">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+              >
+                <Upload className="h-4 w-4 mr-1" /> Importar extrato bancário
+              </Button>
+            </Link>
+          }
+          kpis={[
             { key: "total", label: "Parcelas", value: String(summary.total) },
-            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "primary" },
+            { key: "open", label: "Saldo aberto", value: fmtMoney(summary.open), tone: "gold" },
             { key: "overdue", label: "Vencidos", value: fmtMoney(summary.overdueAmt), hint: `${summary.overdueCount} parcelas`, tone: summary.overdueCount ? "danger" : "muted" },
           ]}
         />
