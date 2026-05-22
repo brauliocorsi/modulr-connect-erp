@@ -38,11 +38,33 @@ function dim(v: any) {
 }
 
 export function RouteManifestTable({ rows }: { rows: ManifestRow[] }) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return rows;
+    return rows.filter((m) =>
+      [m.product_name, m.package_ref, m.customer_name, m.sale_order_name]
+        .filter(Boolean)
+        .some((s) => String(s).toLowerCase().includes(t))
+    );
+  }, [rows, q]);
+
   return (
     <Card>
-      <div className="px-3 py-2 border-b flex items-center justify-between">
+      <div className="px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2">
         <div className="font-semibold text-sm">Manifesto da viatura</div>
-        <div className="text-xs text-muted-foreground">{rows.length} linha(s)</div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Filtrar por produto, package, cliente…"
+              className="h-8 w-72 pl-7 text-xs"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">{filtered.length}/{rows.length} linha(s)</div>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
