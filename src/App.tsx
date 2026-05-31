@@ -61,6 +61,7 @@ import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
 import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
 import RecurringExpensesPage from "@/modules/finance/pages/RecurringExpensesPage";
+import ExpensesCalendarPage from "@/modules/finance/pages/ExpensesCalendarPage";
 import CostCentersPage from "@/modules/finance/pages/CostCentersPage";
 import DailyClosePage from "@/modules/finance/pages/DailyClosePage";
 import RouteCashClosePage from "@/modules/delivery/pages/RouteCashClosePage";
@@ -318,6 +319,7 @@ const App = () => (
               <Route path="finance/payables/:id" element={<BillForm />} />
               <Route path="finance/handovers" element={<DriverHandoversPage />} />
               <Route path="finance/recurring" element={<RecurringExpensesPage />} />
+              <Route path="finance/expenses/calendar" element={<ExpensesCalendarPage />} />
 
               {/* Assistência */}
               <Route path="service" element={<Navigate to="/service/requests" replace />} />
