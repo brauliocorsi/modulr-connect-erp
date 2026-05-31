@@ -61,6 +61,7 @@ import CashRegisterDetail from "@/modules/cashbox/pages/CashRegisterDetail";
 import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
 import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
 import RecurringExpensesPage from "@/modules/finance/pages/RecurringExpensesPage";
+import ExpensesCalendarPage from "@/modules/finance/pages/ExpensesCalendarPage";
 import CostCentersPage from "@/modules/finance/pages/CostCentersPage";
 import DailyClosePage from "@/modules/finance/pages/DailyClosePage";
 import RouteCashClosePage from "@/modules/delivery/pages/RouteCashClosePage";
