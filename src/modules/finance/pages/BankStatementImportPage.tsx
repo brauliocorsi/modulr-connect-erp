@@ -47,16 +47,50 @@ export default function BankStatementImportPage() {
       .then(({ data }) => setMethods(data ?? []));
   }, []);
 
+  const parseOfx = (text: string): ParsedRow[] => {
+    // Normalize OFX 1.x (SGML) into XML-ish by closing tags on line breaks
+    const xml = text.replace(/\r/g, "").replace(/<([A-Z0-9.]+)>([^<\n]+)(?=\n)/g, "<$1>$2</$1>");
+    const rows: ParsedRow[] = [];
+    const re = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/g;
+    let m;
+    while ((m = re.exec(xml)) !== null) {
+      const block = m[1];
+      const pick = (tag: string) => {
+        const r = new RegExp(`<${tag}>([^<\\n]+)`, "i").exec(block);
+        return r ? r[1].trim() : "";
+      };
+      const dt = pick("DTPOSTED").slice(0, 8); // YYYYMMDD
+      const iso = dt.length === 8 ? `${dt.slice(0, 4)}-${dt.slice(4, 6)}-${dt.slice(6, 8)}` : "";
+      rows.push({
+        Data: iso,
+        Descrição: pick("MEMO") || pick("NAME"),
+        Referência: pick("FITID") || pick("CHECKNUM"),
+        Valor: pick("TRNAMT"),
+      });
+    }
+    return rows;
+  };
+
   const onFile = async (f: File) => {
     setFileName(f.name);
     const ext = f.name.toLowerCase().split(".").pop() as any;
-    setFileKind(ext === "csv" ? "csv" : ext === "xls" ? "xls" : "xlsx");
-    const buf = await f.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array", cellDates: true });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { defval: "", raw: false });
-    if (!rows.length) return toast.error("Ficheiro sem dados");
-    const cols = Object.keys(rows[0]);
+    const kind = ext === "csv" ? "csv" : ext === "xls" ? "xls" : ext === "ofx" || ext === "qfx" ? "ofx" : "xlsx";
+    setFileKind(kind);
+    let rows: ParsedRow[];
+    let cols: string[];
+    if (kind === "ofx") {
+      const text = await f.text();
+      rows = parseOfx(text);
+      if (!rows.length) return toast.error("OFX sem transações (STMTTRN)");
+      cols = ["Data", "Descrição", "Referência", "Valor"];
+    } else {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { defval: "", raw: false });
+      if (!rows.length) return toast.error("Ficheiro sem dados");
+      cols = Object.keys(rows[0]);
+    }
     setHeaders(cols);
     setParsed(rows);
     // auto-guess mapping
@@ -64,8 +98,8 @@ export default function BankStatementImportPage() {
     setMapping({
       date: guess(/data|date/),
       description: guess(/descri|desc|memo|histor/),
-      reference: guess(/ref|doc/),
-      amount: guess(/valor|amount|montante/),
+      reference: guess(/ref|doc|fitid/),
+      amount: guess(/valor|amount|montante|trnamt/),
       balance: guess(/saldo|balance/),
     });
   };
