@@ -61,6 +61,7 @@ const GROUPS: NavGroup[] = [
   {
     id: "compras", label: "Compras", icon: ShoppingBag,
     items: [
+      { label: "Dashboard", to: "/purchase" },
       { label: "Necessidades", to: "/purchase/needs" },
       { label: "Pedidos de Compra", to: "/purchase/orders" },
       { label: "Kanban RFQ", to: "/purchase/kanban" },
