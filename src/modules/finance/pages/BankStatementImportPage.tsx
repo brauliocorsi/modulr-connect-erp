@@ -233,9 +233,9 @@ export default function BankStatementImportPage() {
                 </div>
               </div>
               <div>
-                <Label>Ficheiro (CSV / XLS / XLSX)</Label>
-                <Input type="file" accept=".csv,.xls,.xlsx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-                {fileName && <div className="text-xs text-muted-foreground mt-1">{fileName} · {parsed.length} linhas</div>}
+                <Label>Ficheiro (CSV / XLS / XLSX / OFX)</Label>
+                <Input type="file" accept=".csv,.xls,.xlsx,.ofx,.qfx" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+                {fileName && <div className="text-xs text-muted-foreground mt-1">{fileName} · {parsed.length} linhas{fileKind === "ofx" ? " (OFX)" : ""}</div>}
               </div>
               <Button disabled={!parsed.length || !name || !journalId} onClick={() => setStep(2)}>
                 Continuar <ArrowRight className="h-4 w-4 ml-1" />
