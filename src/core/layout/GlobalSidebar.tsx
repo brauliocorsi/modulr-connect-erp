@@ -118,6 +118,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { label: "— Visão Geral —", status: "hidden" },
       { label: "Dashboard", to: "/finance" },
+      { label: "Fecho do Dia", to: "/finance/daily" },
       { label: "Relatórios", to: "/finance/reports" },
       { label: "— Operações —", status: "hidden" },
       { label: "Contas a Receber", to: "/finance/receivables" },
