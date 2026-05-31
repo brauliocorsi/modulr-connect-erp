@@ -23,8 +23,8 @@ const fmtEUR = (n: number | null | undefined) =>
 type RouteData = {
   id: string; route_date: string; state: string; notes: string | null;
   driver_id: string | null; helper_id: string | null; vehicle_id: string | null;
-  driver: { name: string } | null;
-  vehicle: { name: string | null; plate: string | null } | null;
+  driver: { full_name: string } | null;
+  vehicle: { name: string | null; license_plate: string | null } | null;
   zone: { name: string } | null;
 };
 
@@ -60,7 +60,7 @@ export default function RouteCashClosePage() {
     queryFn: async (): Promise<RouteData | null> => {
       const { data, error } = await supabase
         .from("delivery_routes")
-        .select("id,route_date,state,notes,driver_id,helper_id,vehicle_id,driver:hr_employees!delivery_routes_driver_id_fkey(name),vehicle:vehicles(name,plate),zone:delivery_zones(name)")
+        .select("id,route_date,state,notes,driver_id,helper_id,vehicle_id,driver:hr_employees!delivery_routes_driver_id_fkey(full_name),vehicle:vehicles(name,license_plate),zone:delivery_zones(name)")
         .eq("id", routeId!)
         .maybeSingle();
       if (error) throw error;
