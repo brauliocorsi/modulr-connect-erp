@@ -44,6 +44,7 @@ import DeliveryScheduleCalendar from "@/modules/sales/pages/DeliveryScheduleCale
 import GroupForm from "@/modules/settings/pages/GroupForm";
 import RfqKanban from "@/modules/purchase/pages/RfqKanban";
 import PurchaseNeedsList from "@/modules/purchase/pages/PurchaseNeedsList";
+import PurchaseDashboardPage from "@/modules/purchase/pages/PurchaseDashboardPage";
 import PaymentsPage from "@/modules/finance/pages/PaymentsPage";
 import { JournalsList, JournalForm, MethodsList, MethodForm, CostCentersList, CostCenterForm, ChartOfAccountsList, ChartOfAccountForm } from "@/modules/finance/pages/FinancePages";
 import FinanceReportsPage from "@/modules/finance/pages/FinanceReportsPage";
