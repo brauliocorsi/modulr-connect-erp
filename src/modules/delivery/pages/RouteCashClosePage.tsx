@@ -23,8 +23,8 @@ const fmtEUR = (n: number | null | undefined) =>
 type RouteData = {
   id: string; route_date: string; state: string; notes: string | null;
   driver_id: string | null; helper_id: string | null; vehicle_id: string | null;
-  driver: { name: string } | null;
-  vehicle: { name: string | null; plate: string | null } | null;
+  driver: { full_name: string } | null;
+  vehicle: { name: string | null; license_plate: string | null } | null;
   zone: { name: string } | null;
 };
 
@@ -60,7 +60,7 @@ export default function RouteCashClosePage() {
     queryFn: async (): Promise<RouteData | null> => {
       const { data, error } = await supabase
         .from("delivery_routes")
-        .select("id,route_date,state,notes,driver_id,helper_id,vehicle_id,driver:hr_employees!delivery_routes_driver_id_fkey(name),vehicle:vehicles(name,plate),zone:delivery_zones(name)")
+        .select("id,route_date,state,notes,driver_id,helper_id,vehicle_id,driver:hr_employees!delivery_routes_driver_id_fkey(full_name),vehicle:vehicles(name,license_plate),zone:delivery_zones(name)")
         .eq("id", routeId!)
         .maybeSingle();
       if (error) throw error;
@@ -163,8 +163,8 @@ export default function RouteCashClosePage() {
         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div><div className="text-muted-foreground text-xs">Data</div><div className="font-medium">{new Date(r.route_date).toLocaleDateString("pt-PT")}</div></div>
           <div><div className="text-muted-foreground text-xs">Zona</div><div className="font-medium">{r.zone?.name ?? "—"}</div></div>
-          <div><div className="text-muted-foreground text-xs">Entregador</div><div className="font-medium">{r.driver?.name ?? "—"}</div></div>
-          <div><div className="text-muted-foreground text-xs">Veículo</div><div className="font-medium">{r.vehicle?.name ?? r.vehicle?.plate ?? "—"}</div></div>
+          <div><div className="text-muted-foreground text-xs">Entregador</div><div className="font-medium">{r.driver?.full_name ?? "—"}</div></div>
+          <div><div className="text-muted-foreground text-xs">Veículo</div><div className="font-medium">{r.vehicle?.name ?? r.vehicle?.license_plate ?? "—"}</div></div>
         </CardContent>
       </Card>
 

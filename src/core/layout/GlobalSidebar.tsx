@@ -105,6 +105,7 @@ const GROUPS: NavGroup[] = [
     id: "logistica", label: "Logística", icon: Truck,
     items: [
       { label: "Cronograma de Rotas", to: "/routes" },
+      { label: "Planeamento de Rotas", to: "/delivery/routes/plan" },
       { label: "Rotas Fechadas", to: "/routes/closed" },
       { label: "Zonas", to: "/routes/zones" },
       { label: "Entregas", to: "/delivery" },
