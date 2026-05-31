@@ -128,6 +128,7 @@ const GROUPS: NavGroup[] = [
       { label: "Contas a Pagar", to: "/finance/payables" },
       { label: "Confirmações Pendentes", to: "/finance/pending" },
       { label: "Despesas Fixas", to: "/finance/recurring" },
+      { label: "Calendário Vencimentos", to: "/finance/expenses/calendar" },
       { label: "Créditos de Cliente", to: "/finance/credits" },
       { label: "— Tesouraria —", status: "hidden" },
       { label: "Recebimentos de Vendas", to: "/finance/payments" },
