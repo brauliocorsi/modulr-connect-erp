@@ -40,6 +40,7 @@ const GROUPS: NavGroup[] = [
   {
     id: "comercial", label: "Comercial", icon: ShoppingCart,
     items: [
+      { label: "Pipeline", to: "/sales/pipeline" },
       { label: "Cotações", to: "/sales/quotations" },
       { label: "Pedidos", to: "/sales/orders" },
       { label: "Clientes", to: "/sales/customers" },

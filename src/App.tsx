@@ -68,6 +68,7 @@ import RouteCashClosePage from "@/modules/delivery/pages/RouteCashClosePage";
 import RouteCashCloseReceipt from "@/modules/delivery/pages/RouteCashCloseReceipt";
 import RoutePlannerPage from "@/modules/delivery/pages/RoutePlannerPage";
 import SaleOrderSchedulePage from "@/modules/sales/pages/SaleOrderSchedulePage";
+import SalesPipelinePage from "@/modules/sales/pages/SalesPipelinePage";
 import WarehousePickingPage from "@/modules/warehouse/pages/WarehousePickingPage";
 import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
@@ -214,6 +215,7 @@ const App = () => (
 
               {/* Sales */}
               <Route path="sales" element={<Navigate to="/sales/quotations" replace />} />
+              <Route path="sales/pipeline" element={<SalesPipelinePage />} />
               <Route path="sales/quotations" element={<QuotationsList />} />
               <Route path="sales/orders" element={<SalesOrdersList />} />
               <Route path="sales/orders/new" element={<OrderForm kind="sale" />} />
