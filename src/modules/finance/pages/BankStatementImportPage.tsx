@@ -32,7 +32,7 @@ export default function BankStatementImportPage() {
   const [methods, setMethods] = useState<{ id: string; name: string }[]>([]);
   const [methodId, setMethodId] = useState<string>("");
   const [fileName, setFileName] = useState("");
-  const [fileKind, setFileKind] = useState<"csv" | "xls" | "xlsx" | "">("");
+  const [fileKind, setFileKind] = useState<"csv" | "xls" | "xlsx" | "ofx" | "">("");
   const [headers, setHeaders] = useState<string[]>([]);
   const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [mapping, setMapping] = useState<Mapping>({ date: "", description: "", reference: "", amount: "", balance: "" });
