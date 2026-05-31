@@ -61,6 +61,9 @@ import CashSessionDetail from "@/modules/cashbox/pages/CashSessionDetail";
 import DriverHandoversPage from "@/modules/finance/pages/DriverHandoversPage";
 import RecurringExpensesPage from "@/modules/finance/pages/RecurringExpensesPage";
 import CostCentersPage from "@/modules/finance/pages/CostCentersPage";
+import DailyClosePage from "@/modules/finance/pages/DailyClosePage";
+import RouteCashClosePage from "@/modules/delivery/pages/RouteCashClosePage";
+import RouteCashCloseReceipt from "@/modules/delivery/pages/RouteCashCloseReceipt";
 import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
@@ -294,6 +297,9 @@ const App = () => (
 
               {/* Finance */}
               <Route path="finance" element={<FinanceDashboard />} />
+              <Route path="finance/daily" element={<DailyClosePage />} />
+              <Route path="delivery/routes/:routeId/cash-close" element={<RouteCashClosePage />} />
+              <Route path="delivery/routes/:routeId/cash-close/receipt" element={<RouteCashCloseReceipt />} />
               <Route path="finance/payments" element={<PaymentsPage />} />
               <Route path="finance/receivables" element={<ReceivablesPage />} />
               <Route path="finance/pending" element={<PendingConfirmationsPage />} />

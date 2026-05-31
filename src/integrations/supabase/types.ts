@@ -415,6 +415,13 @@ export type Database = {
             foreignKeyName: "bank_reconciliation_lines_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_lines_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "customer_payments"
             referencedColumns: ["id"]
           },
@@ -538,6 +545,13 @@ export type Database = {
             columns: ["import_id"]
             isOneToOne: false
             referencedRelation: "bank_statement_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_suggested_payment_id_fkey"
+            columns: ["suggested_payment_id"]
+            isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
             referencedColumns: ["id"]
           },
           {
@@ -1111,6 +1125,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
             referencedColumns: ["id"]
           },
           {
@@ -1751,6 +1772,13 @@ export type Database = {
             foreignKeyName: "customer_credit_applications_customer_payment_id_fkey"
             columns: ["customer_payment_id"]
             isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_credit_applications_customer_payment_id_fkey"
+            columns: ["customer_payment_id"]
+            isOneToOne: false
             referencedRelation: "customer_payments"
             referencedColumns: ["id"]
           },
@@ -1838,6 +1866,13 @@ export type Database = {
           state?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "customer_credits_origin_payment_id_fkey"
+            columns: ["origin_payment_id"]
+            isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customer_credits_origin_payment_id_fkey"
             columns: ["origin_payment_id"]
@@ -2016,6 +2051,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_refund_of_fkey"
+            columns: ["refund_of"]
+            isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
             referencedColumns: ["id"]
           },
           {
@@ -5552,6 +5594,8 @@ export type Database = {
           id: string
           journal_type: string
           name: string
+          provider_fee_fixed: number
+          provider_fee_pct: number
           requires_reconciliation: boolean
           requires_reference: boolean
           settlement_delay_days: number
@@ -5568,6 +5612,8 @@ export type Database = {
           id?: string
           journal_type?: string
           name: string
+          provider_fee_fixed?: number
+          provider_fee_pct?: number
           requires_reconciliation?: boolean
           requires_reference?: boolean
           settlement_delay_days?: number
@@ -5584,6 +5630,8 @@ export type Database = {
           id?: string
           journal_type?: string
           name?: string
+          provider_fee_fixed?: number
+          provider_fee_pct?: number
           requires_reconciliation?: boolean
           requires_reference?: boolean
           settlement_delay_days?: number
@@ -8369,6 +8417,13 @@ export type Database = {
             columns: ["customer_credit_id"]
             isOneToOne: false
             referencedRelation: "customer_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_case_charges_customer_payment_id_fkey"
+            columns: ["customer_payment_id"]
+            isOneToOne: false
+            referencedRelation: "bnpl_pending_settlements"
             referencedColumns: ["id"]
           },
           {
@@ -11394,6 +11449,24 @@ export type Database = {
       }
     }
     Views: {
+      bnpl_pending_settlements: {
+        Row: {
+          amount_gross: number | null
+          amount_net: number | null
+          cliente: string | null
+          expected_settlement_date: string | null
+          fee_amount: number | null
+          id: string | null
+          metodo: string | null
+          metodo_code: string | null
+          name: string | null
+          payment_date: string | null
+          reconciled_at: string | null
+          state: string | null
+          venda: string | null
+        }
+        Relationships: []
+      }
       product_stock_forecast: {
         Row: {
           available: number | null
