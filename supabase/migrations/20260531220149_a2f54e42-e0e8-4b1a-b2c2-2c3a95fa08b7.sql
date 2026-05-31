@@ -1,0 +1,1 @@
+ALTER VIEW public.bnpl_pending_settlements SET (security_invoker = true);
