@@ -66,6 +66,8 @@ import RouteCashClosePage from "@/modules/delivery/pages/RouteCashClosePage";
 import RouteCashCloseReceipt from "@/modules/delivery/pages/RouteCashCloseReceipt";
 import RoutePlannerPage from "@/modules/delivery/pages/RoutePlannerPage";
 import SaleOrderSchedulePage from "@/modules/sales/pages/SaleOrderSchedulePage";
+import WarehousePickingPage from "@/modules/warehouse/pages/WarehousePickingPage";
+import PickupsPage from "@/modules/m5/pages/PickupsPage";
 import { ServiceRequestsList, ServiceRequestForm } from "@/modules/service/pages/ServicePages";
 
 import { QuotationsList, SalesOrdersList, CustomersList, PricelistsList } from "@/modules/sales/pages/SalesPages";
