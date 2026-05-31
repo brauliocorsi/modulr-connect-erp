@@ -319,6 +319,7 @@ const App = () => (
               <Route path="finance/payables/:id" element={<BillForm />} />
               <Route path="finance/handovers" element={<DriverHandoversPage />} />
               <Route path="finance/recurring" element={<RecurringExpensesPage />} />
+              <Route path="finance/expenses/calendar" element={<ExpensesCalendarPage />} />
 
               {/* Assistência */}
               <Route path="service" element={<Navigate to="/service/requests" replace />} />
