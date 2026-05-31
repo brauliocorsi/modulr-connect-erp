@@ -27,13 +27,21 @@ export default function SaleOrderSchedulePage() {
     queryKey: ["sale-order-schedule", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sale_orders")
-        .select("id,name,state,commitment_date,delivery_mode,delivery_zone_label,amount_total,amount_paid,payment_status,partner:partners(name,zip)")
-        .eq("id", orderId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data as Record<string, unknown> & { id: string; name: string };
+      const [orderRes, paymentsRes] = await Promise.all([
+        supabase
+          .from("sale_orders")
+          .select("id,name,state,commitment_date,delivery_mode,delivery_zone_label,amount_total,payment_status,partner:partners(name,zip)")
+          .eq("id", orderId!)
+          .maybeSingle(),
+        supabase
+          .from("customer_payments")
+          .select("amount")
+          .eq("order_id", orderId!)
+          .eq("state", "posted"),
+      ]);
+      if (orderRes.error) throw orderRes.error;
+      const paid = (paymentsRes.data ?? []).reduce((s, r) => s + Number(r.amount ?? 0), 0);
+      return { ...orderRes.data, amount_paid: paid } as Record<string, unknown> & { id: string; name: string };
     },
   });
 
