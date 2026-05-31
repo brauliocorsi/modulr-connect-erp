@@ -304,6 +304,8 @@ const App = () => (
               <Route path="delivery/routes/:routeId/cash-close" element={<RouteCashClosePage />} />
               <Route path="delivery/routes/:routeId/cash-close/receipt" element={<RouteCashCloseReceipt />} />
               <Route path="delivery/routes/plan" element={<RoutePlannerPage />} />
+              <Route path="warehouse/picking" element={<WarehousePickingPage />} />
+              <Route path="warehouse/pickups" element={<PickupsPage />} />
               <Route path="sales/orders/:orderId/schedule" element={<SaleOrderSchedulePage />} />
               <Route path="finance/payments" element={<PaymentsPage />} />
               <Route path="finance/receivables" element={<ReceivablesPage />} />
