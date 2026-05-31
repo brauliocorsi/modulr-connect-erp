@@ -20,7 +20,7 @@ export default function RouteCashCloseReceipt() {
       const [route, closure] = await Promise.all([
         supabase
           .from("delivery_routes")
-          .select("route_date,driver:hr_employees!delivery_routes_driver_id_fkey(name),vehicle:vehicles(name,plate),zone:delivery_zones(name)")
+          .select("route_date,driver:hr_employees!delivery_routes_driver_id_fkey(full_name),vehicle:vehicles(name,license_plate),zone:delivery_zones(name)")
           .eq("id", routeId!)
           .maybeSingle(),
         supabase
@@ -56,8 +56,8 @@ export default function RouteCashCloseReceipt() {
         <tbody>
           <tr><td className="py-1 text-gray-600">Data da rota</td><td className="font-medium">{new Date(route.route_date).toLocaleDateString("pt-PT")}</td></tr>
           <tr><td className="py-1 text-gray-600">Zona</td><td>{route.zone?.name ?? "—"}</td></tr>
-          <tr><td className="py-1 text-gray-600">Entregador</td><td className="font-medium">{route.driver?.name ?? "—"}</td></tr>
-          <tr><td className="py-1 text-gray-600">Veículo</td><td>{route.vehicle?.name ?? route.vehicle?.plate ?? "—"}</td></tr>
+          <tr><td className="py-1 text-gray-600">Entregador</td><td className="font-medium">{route.driver?.full_name ?? "—"}</td></tr>
+          <tr><td className="py-1 text-gray-600">Veículo</td><td>{route.vehicle?.name ?? route.vehicle?.license_plate ?? "—"}</td></tr>
           <tr><td className="py-1 text-gray-600">Fechada em</td><td>{closure.closed_at ? new Date(closure.closed_at).toLocaleString("pt-PT") : "—"}</td></tr>
         </tbody>
       </table>

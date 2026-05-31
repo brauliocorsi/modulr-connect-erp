@@ -163,8 +163,8 @@ export default function RouteCashClosePage() {
         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div><div className="text-muted-foreground text-xs">Data</div><div className="font-medium">{new Date(r.route_date).toLocaleDateString("pt-PT")}</div></div>
           <div><div className="text-muted-foreground text-xs">Zona</div><div className="font-medium">{r.zone?.name ?? "—"}</div></div>
-          <div><div className="text-muted-foreground text-xs">Entregador</div><div className="font-medium">{r.driver?.name ?? "—"}</div></div>
-          <div><div className="text-muted-foreground text-xs">Veículo</div><div className="font-medium">{r.vehicle?.name ?? r.vehicle?.plate ?? "—"}</div></div>
+          <div><div className="text-muted-foreground text-xs">Entregador</div><div className="font-medium">{r.driver?.full_name ?? "—"}</div></div>
+          <div><div className="text-muted-foreground text-xs">Veículo</div><div className="font-medium">{r.vehicle?.name ?? r.vehicle?.license_plate ?? "—"}</div></div>
         </CardContent>
       </Card>
 
