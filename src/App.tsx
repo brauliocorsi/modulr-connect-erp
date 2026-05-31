@@ -227,7 +227,7 @@ const App = () => (
               <Route path="sales/delivery-schedule" element={<DeliveryScheduleCalendar />} />
 
               {/* Purchase */}
-              <Route path="purchase" element={<Navigate to="/purchase/orders" replace />} />
+              <Route path="purchase" element={<PurchaseDashboardPage />} />
               <Route path="purchase/orders" element={<PurchaseOrdersList />} />
               <Route path="purchase/kanban" element={<RfqKanban />} />
               <Route path="purchase/needs" element={<PurchaseNeedsList />} />
