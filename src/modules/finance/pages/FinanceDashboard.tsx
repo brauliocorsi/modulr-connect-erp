@@ -361,8 +361,8 @@ function TopList({ title, subtitle, icon: Icon, rows, to, tone }: {
 
 function QuickLink({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
   return (
-    <Link to={to} className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border bg-card hover:fin-surface hover:border-[hsl(var(--finance-primary))]/30 transition text-center">
-      <Icon className="h-4 w-4 fin-primary-text" />
+    <Link to={to} className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border border-border/60 bg-card hover:bg-[#EFF6FF] hover:border-[#2563EB]/30 transition text-center">
+      <Icon className="h-4 w-4 text-[#2563EB]" />
       <span className="text-xs font-medium">{label}</span>
     </Link>
   );
