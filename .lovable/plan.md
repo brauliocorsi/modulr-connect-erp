@@ -1,122 +1,59 @@
+# Redesign do módulo Financeiro — estilo "Fecho do Dia"
 
-# F28-FIN — Entrega C: Redesign Financeiro + Integração CC/Conta
+Aplicar a mesma linguagem visual (branco, azul #2563EB, bordas finas, cantos 8px, badges semânticas verde/âmbar/vermelho/azul, KPIs com ícone, skeletons, painéis com header de ícone+título) a todas as páginas financeiras.
 
-Reconstrução **só de UI/UX** preservando 100% do schema, RPCs e regras já testadas das Entregas A e B. Aplicação da paleta **Emerald Prestige** (verde profundo + dourado) e integração de Centros de Custo e Plano de Contas no resto do sistema (vendas, compras, caixa) com a regra **obrigatório em despesas/AP, sugerido com defaults nos demais**.
+## 1. Criar primitivos partilhados (`src/modules/finance/ui/`)
 
----
+Extrair os blocos visuais do `DailyClosePage` para um único módulo reutilizável:
 
-## 1. Design system Emerald Prestige
+- `FinancePageHeader` — título grande + subtítulo + data PT + botão refresh + slot de ações
+- `KpiCard` — label, valor 36px, sub com tom (red/green/muted), ícone em pílula azul clara
+- `Panel` — card com header (ícone azul + título) e zona de conteúdo / tabela
+- `StateBadge` — tons `green | amber | red | blue | gray` (mesmos hex do Fecho do Dia)
+- `TableSkeleton` / `EmptyState`
+- `fmtEUR`, `fmtDate`, `fmtDateLong`, `hoursAgo` (helpers já no DailyClose movidos para `lib/format.ts` local)
 
-Adicionar tokens ao `src/index.css` e `tailwind.config.ts` (HSL):
+`DailyClosePage` passa a importar destes primitivos (sem regressão visual).
 
-- `--finance-primary` (verde esmeralda #064e3b) e `--finance-primary-glow` (#0d7a5f)
-- `--finance-accent` (dourado #c9a84c)
-- `--finance-surface` (creme #f5f0e0) para superfícies executivas
-- Gradiente `--gradient-finance`, sombra `--shadow-executive`, badges de KPI
+## 2. Páginas a refazer (mesma estrutura, mesmo estilo)
 
-Tokens aplicados apenas em páginas `/finance/*` — não muda visual do resto da app.
+Para cada página: cabeçalho `FinancePageHeader`, KPIs no topo quando aplicável, conteúdo dentro de `Panel`, tabelas com `border-border/60` + hover subtil, badges via `StateBadge`, vazios com `EmptyState`, loading com `TableSkeleton`, botões primários `bg-[#2563EB]`.
 
-## 2. Novo Dashboard Financeiro v2 (`FinanceDashboard.tsx`)
+1. `FinanceDashboard` — hub do módulo, grelha de KPIs + atalhos para subpáginas
+2. `PayablesList` — KPIs (vencidas, a vencer 7d, total dívida) + tabela contas a pagar
+3. `ReceivablesPage` — KPIs (em atraso, a receber 30d, total) + tabela
+4. `PaymentsPage` — tabela pagamentos com filtros, badges de método
+5. `ReconciliationPage` — duas colunas (vendas / recebimentos) com painéis
+6. `BankStatementImportPage` — wizard import + tabela linhas; manter parser intacto
+7. `RecurringExpensesPage` — tabela + dialog
+8. `ExpensesCalendarPage` — calendário mensal já criado, repintar com novos tons
+9. `CustomerCreditsPage` — KPI total créditos + tabela
+10. `CostCentersPage` — tabela simples
+11. `DriverHandoversPage` — KPIs + tabela
+12. `PendingConfirmationsPage` — tabela de aprovações
+13. `FinanceReportsPage` — grelha de cards-link para relatórios
+14. `BillForm` — formulário em painéis (card branco + bordas finas)
+15. `FinancePages` (router interno, se existir) — só verificação
 
-Layout em 3 zonas:
+## 3. Sidebar
 
-```text
-┌─────────────────────────────────────────────────┐
-│ KPI Cards (6): A Receber | A Pagar | Vencidos R │
-│ Vencidos P | Caixa Hoje | Saldo Banco           │
-├──────────────────────┬──────────────────────────┤
-│ Fluxo Caixa 7/30/90d │ Top 5 Fornecedores       │
-│ (gráfico área)       │ Top 5 Clientes devedores │
-├──────────────────────┼──────────────────────────┤
-│ Despesas por CC      │ Alertas vencimento (7d)  │
-│ (donut)              │ + Confirmações pendentes │
-└──────────────────────┴──────────────────────────┘
-```
+Os labels do grupo Financeiro já existem; apenas garantir consistência (sem alterações de rotas).
 
-Usa recharts (já instalado). Drilldown clicando KPI → página relevante.
+## 4. Não mexer
 
-## 3. Redesign AP (PayablesList) e AR (ReceivablesPage)
-
-Estrutura comum:
-- **Sidebar de filtros** colapsável (fornecedor/cliente, CC, conta, método, loja, vendedor, período, estado)
-- **Tabs no topo** mantendo lógica atual (Todos/Vencidos/Pagos/...)
-- **Tabela densa** com colunas configuráveis, badges de origem e estado consistentes via `OperationalStatusBadge`
-- **Barra de ações em massa** (selecionar várias contas → registar pagamento em lote, exportar CSV)
-- **Drawer lateral** ao clicar uma linha (em vez de modal) com tabs Detalhes / Pagamentos / Documentos / Atividade
-
-Sem alterar nenhum RPC nem regra de negócio.
-
-## 4. Redesign Banco/Caixa + Conciliação
-
-- `BankStatementImportPage`: wizard com stepper visual, prévia de match com badges coloridos (verde=auto, dourado=parcial, cinza=manual), barra de progresso
-- `ReconciliationPage`: split view venda × recebimento lado a lado com drag-para-conciliar
-- `CashboxPage`: hero com saldo + entradas/saídas do dia, gráfico mini
-
-## 5. Integração CC + Plano de Contas no resto do sistema
-
-Criar componente partilhado `<CostCenterAccountPicker>` em `src/core/finance/` com:
-- Combobox CC (carrega de `cost_centers`)
-- Combobox Conta (carrega de `chart_of_accounts`)
-- Prop `required` (true para despesas/AP, false para o resto)
-- Sugestão automática via prop `defaults` (loja, método, fornecedor)
-
-**Pontos de integração** (apenas adicionar picker ao formulário, gravação já suportada pelos RPCs):
-
-| Página | Picker | Obrigatório? |
-|---|---|---|
-| `BillForm` (AP) | CC + Conta | ✅ Sim |
-| `RecurringExpenseDialog` | CC + Conta | ✅ Sim |
-| `RegisterSupplierPaymentDialog` | CC + Conta | ✅ Sim |
-| `RegisterPaymentDialog` (AR) | CC + Conta | Sugerido |
-| `CashMovementDialog` | CC + Conta | Sugerido |
-| `SalesOrderForm` (campo opcional CC) | CC | Sugerido (herda da loja) |
-| `PurchaseOrderForm` | CC + Conta | Sugerido |
-
-**Defaults inteligentes**: hook `useFinanceDefaults({storeId, methodId, supplierId})` que devolve CC/conta sugeridos a partir de:
-- loja → CC mapeado (config nova em `stores.default_cost_center_id` — migração pequena)
-- método de pagamento → conta sugerida (`payment_methods.default_account_id`)
-- fornecedor → conta de despesa preferida (`partners.default_expense_account_id`)
-
-## 6. Reorganização do menu Financeiro
-
-Agrupar os 17 itens atuais em 4 secções colapsáveis no `GlobalSidebar`:
-
-```text
-Financeiro
-├── 📊 Visão Geral (Dashboard, Relatórios)
-├── 💰 Operações (A Receber, A Pagar, Pendentes, Despesas Fixas)
-├── 🏦 Tesouraria (Banco, Caixa, Importar Extrato, Conciliação)
-└── ⚙️ Configuração (Plano de Contas, Centros de Custo, Métodos, Diários)
-```
-
-## 7. Testes e zero-bypass
-
-- Atualizar testes existentes para nova UI (mantendo asserts de lógica)
-- Novo teste para `CostCenterAccountPicker` e `useFinanceDefaults`
-- Zero-bypass sweep mantido — nenhum write direto novo
-- Self-tests financeiros existentes não são tocados
+- Lógica de negócio, queries, RPCs, RLS
+- Dialogs partilhados (`RegisterSupplierPaymentDialog`, `RegisterPaymentDialog`, `RecurringExpenseDialog`) — só uma passagem leve para usar `bg-[#2563EB]` no botão primário
+- Estrutura de rotas em `App.tsx`
 
 ## Detalhes técnicos
 
-- **Schema** (migração pequena, não destrutiva):
-  - `stores.default_cost_center_id` (nullable, FK cost_centers)
-  - `payment_methods.default_account_id` (nullable, FK chart_of_accounts)
-  - `partners.default_expense_account_id` (nullable, FK chart_of_accounts)
-- **Sem alterações** em: supplier_bills, customer_payments, supplier_payments, cash_movements, recurring_expenses, RPCs existentes
-- **Stack**: shadcn + tailwind tokens, recharts para gráficos, framer-motion já presente para transições do dashboard
-- **Rotas**: mantém todas; sem breaking changes
+- Tokens: o sistema usa HSL semantic tokens; aqui mantemos a exceção já aprovada (hex específicos da referência) confinada aos primitivos `StateBadge` e botão primário azul.
+- Skeletons via `@/components/ui/skeleton`, sem bloquear a página.
+- Refetch 60s nas páginas com KPIs ao vivo (Payables, Receivables, Dashboard).
+- Sem migrações, sem alterações de tipos.
 
-## Backlog deixado para Entrega D
+## Quality bar
 
-- Notificações push/email de vencimento
-- OCR de faturas de fornecedor
-- SAF-T export
-- Aprovação multinível de AP
-- IA/MCP financeiro
-
-## Stop rules respeitadas
-
-- Nenhuma duplicação de pagamento/fatura possível (RPCs intocados)
-- Self-tests financeiros não alterados
-- Schema só adiciona 3 colunas nullable (zero conflito)
-- Zero-bypass preservado
+- Cada página renderiza sem mexer em dados; layout responsivo a partir de 1024px com grelha 2 col, single col abaixo.
+- Vazios e loading visíveis em todas as tabelas.
+- Tipografia consistente (h1 24px semibold, h3 painel 14px semibold, label KPI 12px uppercase muted).

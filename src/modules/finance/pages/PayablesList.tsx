@@ -225,7 +225,7 @@ export default function PayablesList() {
             <Button
               size="sm"
               onClick={() => nav("/finance/payables/new")}
-              className="bg-[hsl(var(--finance-accent))] text-[hsl(162_86%_10%)] hover:bg-[hsl(var(--finance-accent))]/90 border-0"
+              className="bg-[#2563EB] text-white hover:bg-[#1D4ED8] border-0"
             >
               <Plus className="h-4 w-4 mr-1" /> Nova fatura
             </Button>

@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageBody } from "@/core/layout/PageHeader";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { fmtMoney } from "@/lib/format";
 import {
@@ -34,9 +34,9 @@ type FlowPoint = { date: string; in: number; out: number; net: number };
 type TopRow = { name: string; amount: number };
 type DonutSlice = { name: string; value: number };
 
-const EMERALD = "hsl(var(--finance-primary))";
-const GOLD = "hsl(var(--finance-accent))";
-const SOFT = "hsl(var(--finance-primary-glow))";
+const EMERALD = "#2563EB";
+const GOLD = "#16A34A";
+const SOFT = "#DBEAFE";
 
 export default function FinanceDashboard() {
   const [stats, setStats] = useState<Stats>({
@@ -241,7 +241,7 @@ export default function FinanceDashboard() {
                   <PieChart>
                     <Pie data={byCC} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} paddingAngle={2}>
                       {byCC.map((_, i) => (
-                        <Cell key={i} fill={[EMERALD, GOLD, SOFT, "hsl(162 50% 50%)", "hsl(44 70% 70%)", "hsl(162 30% 40%)"][i % 6]} />
+                        <Cell key={i} fill={[EMERALD, GOLD, SOFT, "#60A5FA", "#86EFAC", "#1D4ED8"][i % 6]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v: any) => fmtMoney(Number(v))} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
@@ -273,51 +273,53 @@ export default function FinanceDashboard() {
 function FinanceHero({ stats }: { stats: Stats }) {
   const net = stats.receivable - stats.payable;
   return (
-    <div className="fin-hero">
-      <div className="px-6 py-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs uppercase tracking-[0.2em] opacity-80">Financeiro · Visão Executiva</div>
-          <h1 className="text-3xl font-semibold mt-1 flex items-center gap-2">
-            <span style={{ color: "hsl(var(--finance-accent))" }}>●</span> Dashboard
-          </h1>
-          <div className="text-sm opacity-90 mt-1">Posição líquida: <span className="font-semibold">{fmtMoney(net)}</span></div>
+    <div className="px-6 pt-6 pb-2 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+          Financeiro · Visão Executiva
         </div>
-        <div className="flex gap-2">
-          <Button asChild size="sm" variant="secondary" className="bg-white/15 text-white hover:bg-white/25 border-white/20">
-            <Link to="/finance/reports"><TrendingUp className="h-4 w-4 mr-1" /> Relatórios</Link>
-          </Button>
-          <Button asChild size="sm" className="bg-[hsl(var(--finance-accent))] text-[hsl(var(--finance-ink))] hover:bg-[hsl(var(--finance-accent))]/90">
-            <Link to="/finance/bank-import"><ArrowDownToLine className="h-4 w-4 mr-1" /> Importar extrato</Link>
-          </Button>
+        <h1 className="text-2xl md:text-[28px] font-semibold mt-1 tracking-tight">Dashboard</h1>
+        <div className="text-sm text-muted-foreground mt-1">
+          Posição líquida: <span className="font-semibold text-foreground tabular-nums">{fmtMoney(net)}</span>
         </div>
+      </div>
+      <div className="flex gap-2">
+        <Button asChild size="sm" variant="outline">
+          <Link to="/finance/reports"><TrendingUp className="h-4 w-4 mr-1" /> Relatórios</Link>
+        </Button>
+        <Button asChild size="sm" className="bg-[#2563EB] text-white hover:bg-[#1D4ED8]">
+          <Link to="/finance/bank-import"><ArrowDownToLine className="h-4 w-4 mr-1" /> Importar extrato</Link>
+        </Button>
       </div>
     </div>
   );
 }
 
-function KpiCard({ to, icon: Icon, label, value, delta, deltaLabel, hint, tone }: {
+function KpiCard({ to, icon: Icon, label, value, delta, deltaLabel, hint }: {
   to: string; icon: any; label: string; value: string;
   delta?: number; deltaLabel?: string; hint?: string;
   tone?: "emerald" | "gold" | "amber";
 }) {
-  const accentBg = tone === "gold" ? "bg-[hsl(var(--finance-accent))]/10" : tone === "amber" ? "bg-amber-500/10" : "bg-[hsl(var(--finance-primary))]/10";
-  const accentText = tone === "gold" ? "text-[hsl(var(--finance-accent))]" : tone === "amber" ? "text-amber-600" : "fin-primary-text";
   return (
-    <Link to={to} className="fin-kpi block group">
-      <div className="flex items-start justify-between">
-        <div className={`p-2 rounded-lg ${accentBg}`}>
-          <Icon className={`h-4 w-4 ${accentText}`} />
+    <Link to={to} className="block group">
+      <Card className="p-5 border border-border/60 shadow-none rounded-lg hover:bg-muted/30 transition-colors">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+            <div className="text-[28px] leading-none font-semibold tabular-nums">{value}</div>
+            {delta !== undefined && delta > 0 ? (
+              <div className="text-xs text-[#DC2626] flex items-center gap-1">
+                <TrendingDown className="h-3 w-3" /> {fmtMoney(delta)} {deltaLabel}
+              </div>
+            ) : hint ? (
+              <div className="text-xs text-muted-foreground">{hint}</div>
+            ) : <div className="h-4" />}
+          </div>
+          <div className="h-10 w-10 rounded-lg bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0">
+            <Icon className="h-5 w-5" />
+          </div>
         </div>
-        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
-      </div>
-      <div className="mt-3 text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-semibold mt-1 ${accentText}`}>{value}</div>
-      {delta !== undefined && delta > 0 && (
-        <Badge variant="outline" className="mt-2 text-[10px] border-destructive/40 text-destructive">
-          <TrendingDown className="h-3 w-3 mr-1" /> {fmtMoney(delta)} {deltaLabel}
-        </Badge>
-      )}
-      {hint && <div className="text-[11px] text-muted-foreground mt-2">{hint}</div>}
+      </Card>
     </Link>
   );
 }
@@ -326,7 +328,7 @@ function TopList({ title, subtitle, icon: Icon, rows, to, tone }: {
   title: string; subtitle: string; icon: any; rows: TopRow[]; to: string; tone?: "gold";
 }) {
   const max = Math.max(1, ...rows.map((r) => r.amount));
-  const barColor = tone === "gold" ? "hsl(var(--finance-accent))" : "hsl(var(--finance-primary))";
+  const barColor = tone === "gold" ? "#16A34A" : "#2563EB";
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
@@ -359,8 +361,8 @@ function TopList({ title, subtitle, icon: Icon, rows, to, tone }: {
 
 function QuickLink({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
   return (
-    <Link to={to} className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border bg-card hover:fin-surface hover:border-[hsl(var(--finance-primary))]/30 transition text-center">
-      <Icon className="h-4 w-4 fin-primary-text" />
+    <Link to={to} className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border border-border/60 bg-card hover:bg-[#EFF6FF] hover:border-[#2563EB]/30 transition text-center">
+      <Icon className="h-4 w-4 text-[#2563EB]" />
       <span className="text-xs font-medium">{label}</span>
     </Link>
   );
