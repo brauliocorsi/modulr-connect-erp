@@ -217,7 +217,6 @@ export default function ReceivablesPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white/10 hover:bg-white/20 text-white border-white/20"
               >
                 <Upload className="h-4 w-4 mr-1" /> Importar extrato bancário
               </Button>
