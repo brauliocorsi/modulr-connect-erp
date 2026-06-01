@@ -241,7 +241,7 @@ export default function FinanceDashboard() {
                   <PieChart>
                     <Pie data={byCC} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} paddingAngle={2}>
                       {byCC.map((_, i) => (
-                        <Cell key={i} fill={[EMERALD, GOLD, SOFT, "hsl(162 50% 50%)", "hsl(44 70% 70%)", "hsl(162 30% 40%)"][i % 6]} />
+                        <Cell key={i} fill={[EMERALD, GOLD, SOFT, "#60A5FA", "#86EFAC", "#1D4ED8"][i % 6]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v: any) => fmtMoney(Number(v))} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
