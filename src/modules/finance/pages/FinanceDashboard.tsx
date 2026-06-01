@@ -328,7 +328,7 @@ function TopList({ title, subtitle, icon: Icon, rows, to, tone }: {
   title: string; subtitle: string; icon: any; rows: TopRow[]; to: string; tone?: "gold";
 }) {
   const max = Math.max(1, ...rows.map((r) => r.amount));
-  const barColor = tone === "gold" ? "hsl(var(--finance-accent))" : "hsl(var(--finance-primary))";
+  const barColor = tone === "gold" ? "#16A34A" : "#2563EB";
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
