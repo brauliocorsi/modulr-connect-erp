@@ -34,9 +34,9 @@ type FlowPoint = { date: string; in: number; out: number; net: number };
 type TopRow = { name: string; amount: number };
 type DonutSlice = { name: string; value: number };
 
-const EMERALD = "hsl(var(--finance-primary))";
-const GOLD = "hsl(var(--finance-accent))";
-const SOFT = "hsl(var(--finance-primary-glow))";
+const EMERALD = "#2563EB";
+const GOLD = "#16A34A";
+const SOFT = "#DBEAFE";
 
 export default function FinanceDashboard() {
   const [stats, setStats] = useState<Stats>({
