@@ -295,29 +295,31 @@ function FinanceHero({ stats }: { stats: Stats }) {
   );
 }
 
-function KpiCard({ to, icon: Icon, label, value, delta, deltaLabel, hint, tone }: {
+function KpiCard({ to, icon: Icon, label, value, delta, deltaLabel, hint }: {
   to: string; icon: any; label: string; value: string;
   delta?: number; deltaLabel?: string; hint?: string;
   tone?: "emerald" | "gold" | "amber";
 }) {
-  const accentBg = tone === "gold" ? "bg-[hsl(var(--finance-accent))]/10" : tone === "amber" ? "bg-amber-500/10" : "bg-[hsl(var(--finance-primary))]/10";
-  const accentText = tone === "gold" ? "text-[hsl(var(--finance-accent))]" : tone === "amber" ? "text-amber-600" : "fin-primary-text";
   return (
-    <Link to={to} className="fin-kpi block group">
-      <div className="flex items-start justify-between">
-        <div className={`p-2 rounded-lg ${accentBg}`}>
-          <Icon className={`h-4 w-4 ${accentText}`} />
+    <Link to={to} className="block group">
+      <Card className="p-5 border border-border/60 shadow-none rounded-lg hover:bg-muted/30 transition-colors">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+            <div className="text-[28px] leading-none font-semibold tabular-nums">{value}</div>
+            {delta !== undefined && delta > 0 ? (
+              <div className="text-xs text-[#DC2626] flex items-center gap-1">
+                <TrendingDown className="h-3 w-3" /> {fmtMoney(delta)} {deltaLabel}
+              </div>
+            ) : hint ? (
+              <div className="text-xs text-muted-foreground">{hint}</div>
+            ) : <div className="h-4" />}
+          </div>
+          <div className="h-10 w-10 rounded-lg bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0">
+            <Icon className="h-5 w-5" />
+          </div>
         </div>
-        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
-      </div>
-      <div className="mt-3 text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-semibold mt-1 ${accentText}`}>{value}</div>
-      {delta !== undefined && delta > 0 && (
-        <Badge variant="outline" className="mt-2 text-[10px] border-destructive/40 text-destructive">
-          <TrendingDown className="h-3 w-3 mr-1" /> {fmtMoney(delta)} {deltaLabel}
-        </Badge>
-      )}
-      {hint && <div className="text-[11px] text-muted-foreground mt-2">{hint}</div>}
+      </Card>
     </Link>
   );
 }
