@@ -305,6 +305,7 @@ const App = () => (
               {/* Finance */}
               <Route path="finance" element={<FinanceDashboard />} />
               <Route path="finance/daily" element={<DailyClosePage />} />
+              <Route path="financeiro/fecho-do-dia" element={<DailyClosePage />} />
               <Route path="delivery/routes/:routeId/cash-close" element={<RouteCashClosePage />} />
               <Route path="delivery/routes/:routeId/cash-close/receipt" element={<RouteCashCloseReceipt />} />
               <Route path="delivery/routes/plan" element={<RoutePlannerPage />} />
