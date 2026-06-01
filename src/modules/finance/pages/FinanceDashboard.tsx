@@ -273,23 +273,23 @@ export default function FinanceDashboard() {
 function FinanceHero({ stats }: { stats: Stats }) {
   const net = stats.receivable - stats.payable;
   return (
-    <div className="fin-hero">
-      <div className="px-6 py-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs uppercase tracking-[0.2em] opacity-80">Financeiro · Visão Executiva</div>
-          <h1 className="text-3xl font-semibold mt-1 flex items-center gap-2">
-            <span style={{ color: "hsl(var(--finance-accent))" }}>●</span> Dashboard
-          </h1>
-          <div className="text-sm opacity-90 mt-1">Posição líquida: <span className="font-semibold">{fmtMoney(net)}</span></div>
+    <div className="px-6 pt-6 pb-2 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+          Financeiro · Visão Executiva
         </div>
-        <div className="flex gap-2">
-          <Button asChild size="sm" variant="secondary" className="bg-white/15 text-white hover:bg-white/25 border-white/20">
-            <Link to="/finance/reports"><TrendingUp className="h-4 w-4 mr-1" /> Relatórios</Link>
-          </Button>
-          <Button asChild size="sm" className="bg-[hsl(var(--finance-accent))] text-[hsl(var(--finance-ink))] hover:bg-[hsl(var(--finance-accent))]/90">
-            <Link to="/finance/bank-import"><ArrowDownToLine className="h-4 w-4 mr-1" /> Importar extrato</Link>
-          </Button>
+        <h1 className="text-2xl md:text-[28px] font-semibold mt-1 tracking-tight">Dashboard</h1>
+        <div className="text-sm text-muted-foreground mt-1">
+          Posição líquida: <span className="font-semibold text-foreground tabular-nums">{fmtMoney(net)}</span>
         </div>
+      </div>
+      <div className="flex gap-2">
+        <Button asChild size="sm" variant="outline">
+          <Link to="/finance/reports"><TrendingUp className="h-4 w-4 mr-1" /> Relatórios</Link>
+        </Button>
+        <Button asChild size="sm" className="bg-[#2563EB] text-white hover:bg-[#1D4ED8]">
+          <Link to="/finance/bank-import"><ArrowDownToLine className="h-4 w-4 mr-1" /> Importar extrato</Link>
+        </Button>
       </div>
     </div>
   );
