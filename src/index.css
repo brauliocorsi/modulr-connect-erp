@@ -125,27 +125,29 @@
     @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
-  /* F28-FIN Entrega C — utilitários Emerald Prestige */
+  /* F29 — Finance clean style (white + #2563EB) */
   .fin-hero {
-    background: var(--gradient-finance);
-    color: hsl(0 0% 100%);
-    box-shadow: var(--shadow-executive);
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 !important;
+    margin-bottom: 1.5rem;
   }
   .fin-surface {
-    background: var(--gradient-finance-soft);
+    background: hsl(var(--background));
   }
   .fin-kpi {
-    @apply rounded-xl border bg-card p-4 transition-all;
-    box-shadow: var(--shadow-kpi);
+    @apply rounded-lg border border-border/60 bg-card p-5 transition-colors;
+    box-shadow: none;
   }
   .fin-kpi:hover {
-    box-shadow: var(--shadow-executive);
-    transform: translateY(-1px);
+    background: hsl(var(--muted) / 0.4);
   }
   .fin-accent-text {
-    color: hsl(var(--finance-accent));
+    color: #2563EB;
   }
   .fin-primary-text {
-    color: hsl(var(--finance-primary));
+    color: hsl(var(--foreground));
   }
 }
