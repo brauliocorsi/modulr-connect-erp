@@ -234,7 +234,7 @@ function StartDialog({ wo, onClose, onDone }: { wo: WO | null; onClose: () => vo
       _work_order_id: wo.id,
       _employee_id: employee || null,
       _machine_id: machine || null,
-      ..(reason ? { _override_reason: reason } : {}),
+      ...(reason ? { _override_reason: reason } : {}),
     } as any);
   };
 
