@@ -57,8 +57,8 @@ describe("GlobalSidebar", () => {
   it("renders coming-soon items as disabled (non-link)", () => {
     setup("/");
     fireEvent.click(screen.getByTestId("sidebar-group-assistencia"));
-    expect(screen.getByTestId("sidebar-item-disabled-Reparações")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Reparações" })).toBeNull();
+    expect(screen.getByTestId("sidebar-item-disabled-RMA")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "RMA" })).toBeNull();
   });
 
   it("search filter narrows visible items", () => {

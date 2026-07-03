@@ -78,9 +78,9 @@ const GROUPS: NavGroup[] = [
       { label: "Planeamento", to: "/manufacturing/planning" },
       { label: "Chão de Fábrica", to: "/shop-floor" },
       { label: "Controle de Qualidade", to: "/shop-floor/quality" },
-      { label: "Centros de Trabalho", status: "coming_soon" },
-      { label: "Operações", status: "coming_soon" },
-      { label: "Máquinas", status: "coming_soon" },
+      { label: "Centros de Trabalho", to: "/manufacturing/work-centers" },
+      { label: "Operações", to: "/manufacturing/operations" },
+      { label: "Máquinas", to: "/manufacturing/machines" },
     ],
   },
   {
@@ -100,7 +100,8 @@ const GROUPS: NavGroup[] = [
       { label: "Locais", to: "/inventory/locations" },
       { label: "Stock por Bin", to: "/inventory/bins" },
       { label: "Códigos de Barras", to: "/barcode" },
-      { label: "Danificados / Quarentena", status: "coming_soon" },
+      { label: "Danificados", to: "/inventory/damaged" },
+      { label: "Quarentena", to: "/inventory/quarantine" },
     ],
   },
   {
@@ -148,7 +149,7 @@ const GROUPS: NavGroup[] = [
     id: "assistencia", label: "Assistência", icon: Wrench,
     items: [
       { label: "Pedidos", to: "/service/requests" },
-      { label: "Reparações", status: "coming_soon" },
+      { label: "Reparações", to: "/service/repairs" },
       { label: "RMA", status: "coming_soon" },
     ],
   },
@@ -156,7 +157,7 @@ const GROUPS: NavGroup[] = [
     id: "helpdesk", label: "Helpdesk", icon: LifeBuoy,
     items: [
       { label: "Tickets", to: "/helpdesk/tickets" },
-      { label: "Portal Cliente", status: "coming_soon" },
+      { label: "Portal Cliente", to: "/helpdesk/portal-tokens" },
     ],
   },
   {
