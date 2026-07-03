@@ -2597,17 +2597,21 @@ export type Database = {
         Row: {
           actual_cash: number
           actual_mbway: number
+          actual_multibanco: number
           actual_other: number
           actual_transfer: number
+          bnpl_informational: Json
           cash_register_id: string | null
           closed_at: string | null
           closed_by: string | null
           created_at: string
           expected_cash: number
           expected_mbway: number
+          expected_multibanco: number
           expected_other: number
           expected_transfer: number
           id: string
+          method_breakdown: Json
           notes: string | null
           reconciled_at: string | null
           reconciled_by: string | null
@@ -2618,17 +2622,21 @@ export type Database = {
         Insert: {
           actual_cash?: number
           actual_mbway?: number
+          actual_multibanco?: number
           actual_other?: number
           actual_transfer?: number
+          bnpl_informational?: Json
           cash_register_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
           created_at?: string
           expected_cash?: number
           expected_mbway?: number
+          expected_multibanco?: number
           expected_other?: number
           expected_transfer?: number
           id?: string
+          method_breakdown?: Json
           notes?: string | null
           reconciled_at?: string | null
           reconciled_by?: string | null
@@ -2639,17 +2647,21 @@ export type Database = {
         Update: {
           actual_cash?: number
           actual_mbway?: number
+          actual_multibanco?: number
           actual_other?: number
           actual_transfer?: number
+          bnpl_informational?: Json
           cash_register_id?: string | null
           closed_at?: string | null
           closed_by?: string | null
           created_at?: string
           expected_cash?: number
           expected_mbway?: number
+          expected_multibanco?: number
           expected_other?: number
           expected_transfer?: number
           id?: string
+          method_breakdown?: Json
           notes?: string | null
           reconciled_at?: string | null
           reconciled_by?: string | null
@@ -5405,9 +5417,12 @@ export type Database = {
           id: string
           photos: Json | null
           reported_by: string | null
+          return_condition: string | null
           route_id: string | null
+          route_order_id: string | null
           sale_order_id: string | null
           sale_order_line_id: string | null
+          service_case_id: string | null
           status: Database["public"]["Enums"]["package_damage_status"]
           stock_package_id: string
           updated_at: string
@@ -5420,9 +5435,12 @@ export type Database = {
           id?: string
           photos?: Json | null
           reported_by?: string | null
+          return_condition?: string | null
           route_id?: string | null
+          route_order_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
           status?: Database["public"]["Enums"]["package_damage_status"]
           stock_package_id: string
           updated_at?: string
@@ -5435,14 +5453,24 @@ export type Database = {
           id?: string
           photos?: Json | null
           reported_by?: string | null
+          return_condition?: string | null
           route_id?: string | null
+          route_order_id?: string | null
           sale_order_id?: string | null
           sale_order_line_id?: string | null
+          service_case_id?: string | null
           status?: Database["public"]["Enums"]["package_damage_status"]
           stock_package_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "package_damage_reports_route_order_id_fkey"
+            columns: ["route_order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_route_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "package_damage_reports_sale_order_id_fkey"
             columns: ["sale_order_id"]
@@ -5491,6 +5519,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_sale_line_allocation_demand"
             referencedColumns: ["sale_order_line_id"]
+          },
+          {
+            foreignKeyName: "package_damage_reports_service_case_id_fkey"
+            columns: ["service_case_id"]
+            isOneToOne: false
+            referencedRelation: "service_cases"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "package_damage_reports_stock_package_id_fkey"
@@ -11996,6 +12031,7 @@ export type Database = {
         Returns: undefined
       }
       _svc_repair_loc: { Args: { _name: string }; Returns: string }
+      _test_delivery_cash_fixes: { Args: never; Returns: Json }
       _test_f24_chat_dock_discuss_bridge: { Args: never; Returns: Json }
       _test_inventory_allocation_policy: { Args: never; Returns: Json }
       _test_inventory_allocation_policy_impl: {
@@ -12897,6 +12933,7 @@ export type Database = {
       }
       erp_financial_health_check: { Args: never; Returns: Json }
       erp_health_check: { Args: { _threshold_days?: number }; Returns: Json }
+      erp_health_check_damaged_packages: { Args: never; Returns: Json }
       erp_health_check_run: {
         Args: { _threshold_days?: number }
         Returns: string
