@@ -11872,6 +11872,12 @@ export type Database = {
         Args: { _payment: Json; _route: string; _schedule: string; _so: string }
         Returns: Json
       }
+      _mfg_assert_finish_ok: { Args: { _op: string }; Returns: undefined }
+      _mfg_assert_sequence_ok: {
+        Args: { _op: string; _override_reason?: string }
+        Returns: undefined
+      }
+      _mfg_assert_start_ok: { Args: { _op: string }; Returns: undefined }
       _mfg_materialize_child_components: {
         Args: { _mo: string }
         Returns: undefined
@@ -11981,6 +11987,7 @@ export type Database = {
         Args: { v_prefix: string }
         Returns: Json
       }
+      _test_mfg_fixes: { Args: never; Returns: Json }
       _test_phase10: { Args: never; Returns: Json }
       _test_phase11: { Args: never; Returns: Json }
       _test_phase12: { Args: never; Returns: Json }
@@ -12474,7 +12481,9 @@ export type Database = {
         Args: { _counted: number; _session: string }
         Returns: undefined
       }
-      close_mo: { Args: { _mo: string; _qty_produced?: number }; Returns: Json }
+      close_mo:
+        | { Args: { _mo: string }; Returns: Json }
+        | { Args: { _mo: string; _qty_produced?: number }; Returns: Json }
       confirm_pending_payment: {
         Args: { _payment: string }
         Returns: undefined
@@ -13095,10 +13104,12 @@ export type Database = {
         }
         Returns: string
       }
-      mfg_create_mo_for_line: {
-        Args: { _line: string; _so: string }
-        Returns: string
-      }
+      mfg_create_mo_for_line:
+        | { Args: { _line: string; _so: string }; Returns: string }
+        | {
+            Args: { _line: string; _qty?: number; _so: string }
+            Returns: string
+          }
       mfg_create_needs_for_mo: { Args: { _mo: string }; Returns: number }
       mfg_create_orders_for_sale: { Args: { _so: string }; Returns: number }
       mfg_eval_formula: {
@@ -13155,7 +13166,12 @@ export type Database = {
         Args: { _issue: string; _resolution: string }
         Returns: undefined
       }
-      mfg_start_operation: { Args: { _op: string }; Returns: undefined }
+      mfg_start_operation:
+        | { Args: { _op: string }; Returns: undefined }
+        | {
+            Args: { _op: string; _override_reason?: string }
+            Returns: undefined
+          }
       mfg_suggest_component_allocation: {
         Args: { _product_id: string; _qty: number; _variant_id: string }
         Returns: {
@@ -13922,14 +13938,24 @@ export type Database = {
         Returns: Json
       }
       work_order_resume: { Args: { _work_order_id: string }; Returns: Json }
-      work_order_start: {
-        Args: {
-          _employee_id?: string
-          _machine_id?: string
-          _work_order_id: string
-        }
-        Returns: Json
-      }
+      work_order_start:
+        | {
+            Args: {
+              _employee_id?: string
+              _machine_id?: string
+              _work_order_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _employee_id?: string
+              _machine_id?: string
+              _override_reason?: string
+              _work_order_id: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       allocation_policy:
