@@ -6332,6 +6332,7 @@ export type Database = {
           assembly_fee: number
           assembly_minutes: number
           auto_purchase: boolean
+          average_cost: number
           barcode: string | null
           can_be_manufactured: boolean
           can_be_purchased: boolean
@@ -6339,6 +6340,7 @@ export type Database = {
           category_id: string | null
           company_id: string | null
           component_allocation_policy: Database["public"]["Enums"]["component_allocation_policy"]
+          cost_updated_at: string | null
           created_at: string
           delivery_surcharge: number
           depth: number | null
@@ -6348,6 +6350,7 @@ export type Database = {
           id: string
           image_url: string | null
           internal_ref: string | null
+          last_cost: number
           list_price: number
           max_stock: number
           mfg_lead_time_days: number
@@ -6390,6 +6393,7 @@ export type Database = {
           assembly_fee?: number
           assembly_minutes?: number
           auto_purchase?: boolean
+          average_cost?: number
           barcode?: string | null
           can_be_manufactured?: boolean
           can_be_purchased?: boolean
@@ -6397,6 +6401,7 @@ export type Database = {
           category_id?: string | null
           company_id?: string | null
           component_allocation_policy?: Database["public"]["Enums"]["component_allocation_policy"]
+          cost_updated_at?: string | null
           created_at?: string
           delivery_surcharge?: number
           depth?: number | null
@@ -6406,6 +6411,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           internal_ref?: string | null
+          last_cost?: number
           list_price?: number
           max_stock?: number
           mfg_lead_time_days?: number
@@ -6448,6 +6454,7 @@ export type Database = {
           assembly_fee?: number
           assembly_minutes?: number
           auto_purchase?: boolean
+          average_cost?: number
           barcode?: string | null
           can_be_manufactured?: boolean
           can_be_purchased?: boolean
@@ -6455,6 +6462,7 @@ export type Database = {
           category_id?: string | null
           company_id?: string | null
           component_allocation_policy?: Database["public"]["Enums"]["component_allocation_policy"]
+          cost_updated_at?: string | null
           created_at?: string
           delivery_surcharge?: number
           depth?: number | null
@@ -6464,6 +6472,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           internal_ref?: string | null
+          last_cost?: number
           list_price?: number
           max_stock?: number
           mfg_lead_time_days?: number
@@ -12031,6 +12040,7 @@ export type Database = {
         Returns: undefined
       }
       _svc_repair_loc: { Args: { _name: string }; Returns: string }
+      _test_costing_purchase: { Args: never; Returns: Json }
       _test_delivery_cash_fixes: { Args: never; Returns: Json }
       _test_f24_chat_dock_discuss_bridge: { Args: never; Returns: Json }
       _test_inventory_allocation_policy: { Args: never; Returns: Json }
@@ -13003,6 +13013,10 @@ export type Database = {
             Args: { _horizon_days?: number; _zone_ids?: string[] }
             Returns: number
           }
+      get_module_setting: {
+        Args: { _default: Json; _key: string; _module: string }
+        Returns: Json
+      }
       has_group: { Args: { _code: string; _uid: string }; Returns: boolean }
       has_permission: {
         Args: {
@@ -13345,6 +13359,7 @@ export type Database = {
         Args: { _product: string; _warehouse: string }
         Returns: number
       }
+      product_effective_cost: { Args: { _product: string }; Returns: number }
       product_manufacturing_configuration_check: {
         Args: { _product_id: string }
         Returns: Json
@@ -13771,6 +13786,10 @@ export type Database = {
       service_sla_resume: {
         Args: { _reason: string; _request_id: string }
         Returns: undefined
+      }
+      set_module_setting: {
+        Args: { _key: string; _module: string; _value: Json }
+        Returns: Json
       }
       set_product_stock: {
         Args: {
