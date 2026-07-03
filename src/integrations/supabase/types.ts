@@ -12135,6 +12135,7 @@ export type Database = {
           scenario: string
         }[]
       }
+      _test_supply_canonical_path: { Args: never; Returns: Json }
       _tpntpo_internal_neg: { Args: { _prod: string }; Returns: number }
       _tpntpo_internal_qty: {
         Args: { _prod: string; _var: string }
