@@ -184,10 +184,22 @@ export default function WorkOrdersSection({ moId, compact }: Props) {
   );
 }
 
+function parsePendingOps(msg: string): string[] {
+  if (!msg) return [];
+  const idx = msg.indexOf("PREVIOUS_OPERATIONS_PENDING");
+  if (idx < 0) return [];
+  const tail = msg.slice(idx + "PREVIOUS_OPERATIONS_PENDING".length).replace(/^[:\s-]+/, "").trim();
+  if (!tail) return [];
+  return tail.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+}
+
 function StartDialog({ wo, onClose, onDone }: { wo: WO | null; onClose: () => void; onDone: () => void }) {
   const [employee, setEmployee] = useState<string>("");
   const [machine, setMachine] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [pendingOps, setPendingOps] = useState<string[]>([]);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideOpen, setOverrideOpen] = useState(false);
 
   const empQ = useQuery({
     queryKey: ["wo-emp", wo?.work_center_id],
@@ -211,21 +223,52 @@ function StartDialog({ wo, onClose, onDone }: { wo: WO | null; onClose: () => vo
     },
   });
 
-  const submit = async () => {
-    if (!wo) return;
-    setBusy(true);
-    const { error } = await supabase.rpc("work_order_start", {
+  const reset = () => {
+    setEmployee(""); setMachine("");
+    setPendingOps([]); setOverrideReason(""); setOverrideOpen(false);
+  };
+
+  const callStart = async (reason: string | null) => {
+    if (!wo) return { error: null as any };
+    return await supabase.rpc("work_order_start", {
       _work_order_id: wo.id,
       _employee_id: employee || null,
       _machine_id: machine || null,
-    });
+      ..(reason ? { _override_reason: reason } : {}),
+    } as any);
+  };
+
+  const submit = async () => {
+    if (!wo) return;
+    setBusy(true);
+    const { error } = await callStart(null);
     setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Operação iniciada"); onDone(); onClose(); setEmployee(""); setMachine(""); }
+    if (error) {
+      const ops = parsePendingOps(error.message || "");
+      if (ops.length || /PREVIOUS_OPERATIONS_PENDING/i.test(error.message || "")) {
+        setPendingOps(ops);
+        setOverrideReason("");
+        setOverrideOpen(true);
+        return;
+      }
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Operação iniciada"); onDone(); onClose(); reset();
+  };
+
+  const confirmOverride = async () => {
+    if (overrideReason.trim().length < 10) return;
+    setBusy(true);
+    const { error } = await callStart(overrideReason.trim());
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Operação iniciada com override"); onDone(); onClose(); reset();
   };
 
   return (
-    <Dialog open={!!wo} onOpenChange={(o) => !o && onClose()}>
+    <>
+    <Dialog open={!!wo && !overrideOpen} onOpenChange={(o) => !o && (onClose(), reset())}>
       <DialogContent>
         <DialogHeader><DialogTitle>Iniciar — {wo?.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
@@ -258,11 +301,60 @@ function StartDialog({ wo, onClose, onDone }: { wo: WO | null; onClose: () => vo
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Cancelar</Button>
           <Button onClick={submit} disabled={busy}>Iniciar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={overrideOpen} onOpenChange={(o) => { if (!o) { setOverrideOpen(false); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" /> Iniciar fora de sequência
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+            Vai iniciar esta operação <strong>antes</strong> de concluir operações anteriores.
+            Esta ação fica registada no histórico da ordem com a justificação abaixo.
+          </div>
+          {pendingOps.length > 0 && (
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Operações pendentes:</div>
+              <ul className="list-disc pl-5 space-y-0.5">
+                {pendingOps.map((op, i) => <li key={i}>{op}</li>)}
+              </ul>
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">
+              Justificação <span className="text-destructive">*</span> (mínimo 10 caracteres)
+            </div>
+            <Textarea
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              placeholder="Motivo detalhado do arranque fora de sequência…"
+              rows={4}
+            />
+            <div className="text-xs text-muted-foreground mt-1">
+              {overrideReason.trim().length}/10
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOverrideOpen(false)}>Cancelar</Button>
+          <Button
+            variant="destructive"
+            onClick={confirmOverride}
+            disabled={busy || overrideReason.trim().length < 10}
+          >
+            Confirmar arranque
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
