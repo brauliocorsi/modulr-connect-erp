@@ -443,6 +443,7 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
       if (!schedCount) {
         return toast.error("Defina as condições de pagamento (parcelas) na aba Pagamento antes de confirmar.");
       }
+    }
     if (kind === "purchase") {
       const zeroPriced = lines.filter((l: any) => Number(l.quantity || 0) > 0 && Number(l.unit_price || 0) === 0).length;
       if (zeroPriced > 0) {
