@@ -111,6 +111,7 @@ import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
 import ModuleSettingsPage from "@/modules/settings/pages/ModuleSettingsPage";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
+import SaleMarginReport from "@/modules/reports/pages/SaleMarginReport";
 import Discuss from "@/modules/discuss/Discuss";
 import DemoFlowPage from "@/modules/demo/DemoFlowPage";
 import RoutesShell from "@/modules/routes/RoutesShell";
@@ -303,6 +304,7 @@ const App = () => (
               <Route path="reports/stock" element={<StockOnHandReport />} />
               <Route path="reports/sales" element={<SalesReport />} />
               <Route path="reports/purchase" element={<PurchaseReport />} />
+              <Route path="reports/margins" element={<SaleMarginReport />} />
 
               {/* Finance */}
               <Route path="finance" element={<FinanceDashboard />} />

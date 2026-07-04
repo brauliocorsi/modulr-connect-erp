@@ -37,6 +37,7 @@ export const MODULES: ModuleDef[] = [
       { section: "Configuração", label: "Tabelas de Preço", to: "/sales/pricelists" },
       { section: "Configuração", label: "Regras de Entrega", to: "/sales/delivery-rules" },
       { section: "Relatórios", label: "Vendas por Estado", to: "/reports/sales" },
+      { section: "Relatórios", label: "Margem por Venda", to: "/reports/margins" },
     ],
   },
   {
