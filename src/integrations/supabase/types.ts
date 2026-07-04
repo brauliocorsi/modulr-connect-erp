@@ -12753,7 +12753,7 @@ export type Database = {
       }
       close_mo:
         | { Args: { _mo: string }; Returns: Json }
-        | { Args: { _mo: string; _qty_produced?: number }; Returns: Json }
+        | { Args: { _mo: string; _qty_produced: number }; Returns: Json }
       confirm_pending_payment: {
         Args: { _payment: string }
         Returns: undefined
