@@ -9548,6 +9548,7 @@ export type Database = {
           destination_location_id: string
           id: string
           lot_id: string | null
+          mo_component_id: string | null
           package_id: string | null
           picking_id: string | null
           product_id: string
@@ -9569,6 +9570,7 @@ export type Database = {
           destination_location_id: string
           id?: string
           lot_id?: string | null
+          mo_component_id?: string | null
           package_id?: string | null
           picking_id?: string | null
           product_id: string
@@ -9590,6 +9592,7 @@ export type Database = {
           destination_location_id?: string
           id?: string
           lot_id?: string | null
+          mo_component_id?: string | null
           package_id?: string | null
           picking_id?: string | null
           product_id?: string
@@ -9619,6 +9622,13 @@ export type Database = {
             columns: ["lot_id"]
             isOneToOne: false
             referencedRelation: "stock_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_moves_mo_component_id_fkey"
+            columns: ["mo_component_id"]
+            isOneToOne: false
+            referencedRelation: "mo_components"
             referencedColumns: ["id"]
           },
           {
