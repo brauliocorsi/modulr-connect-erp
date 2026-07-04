@@ -109,6 +109,7 @@ import DeliveryCashbox from "@/modules/delivery/pages/DeliveryCashbox";
 import { AppsSettings, UsersSettings, UserForm, GroupsSettings, CompanySettings } from "@/modules/settings/pages/SettingsPages";
 import StoresList from "@/modules/settings/pages/StoresList";
 import StoreForm from "@/modules/settings/pages/StoreForm";
+import ModuleSettingsPage from "@/modules/settings/pages/ModuleSettingsPage";
 import { StockOnHandReport, SalesReport, PurchaseReport } from "@/modules/reports/pages/ReportsPages";
 import Discuss from "@/modules/discuss/Discuss";
 import DemoFlowPage from "@/modules/demo/DemoFlowPage";
@@ -296,6 +297,7 @@ const App = () => (
               <Route path="settings/stores" element={<StoresList />} />
               <Route path="settings/stores/new" element={<StoreForm />} />
               <Route path="settings/stores/:id" element={<StoreForm />} />
+              <Route path="settings/modules" element={<ModuleSettingsPage />} />
 
               {/* Reports */}
               <Route path="reports/stock" element={<StockOnHandReport />} />

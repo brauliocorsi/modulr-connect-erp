@@ -444,6 +444,12 @@ export default function OrderForm({ kind }: { kind: "sale" | "purchase" }) {
         return toast.error("Defina as condições de pagamento (parcelas) na aba Pagamento antes de confirmar.");
       }
     }
+    if (kind === "purchase") {
+      const zeroPriced = lines.filter((l: any) => Number(l.quantity || 0) > 0 && Number(l.unit_price || 0) === 0).length;
+      if (zeroPriced > 0) {
+        toast.warning(`${zeroPriced} linha(s) sem preço unitário — o custo do produto não será atualizado na receção. Pode confirmar mesmo assim (ex.: preço só na fatura).`);
+      }
+    }
     // Re-check current state to avoid double-confirm with stale UI
     const { data: cur } = await supabase.from(ordersTable as any).select("state").eq("id", id!).maybeSingle();
     const curState = (cur as any)?.state;

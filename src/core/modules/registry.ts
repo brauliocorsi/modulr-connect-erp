@@ -285,6 +285,7 @@ export const MODULES: ModuleDef[] = [
     description: "Empresa, usuários, grupos, módulos",
     menu: [
       { section: "Geral", label: "Apps Instalados", to: "/settings/apps" },
+      { section: "Geral", label: "Módulos (Configurações)", to: "/settings/modules" },
       { section: "Usuários", label: "Usuários", to: "/settings/users" },
       { section: "Usuários", label: "Grupos & Permissões", to: "/settings/groups" },
       { section: "Empresa", label: "Empresa", to: "/settings/company" },
